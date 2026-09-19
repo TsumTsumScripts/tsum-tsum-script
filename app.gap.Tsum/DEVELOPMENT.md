@@ -154,7 +154,7 @@ The host loads the script folder
         │                      │  onEvent('OnPlayClick') builds a settings object
         │                      │  and calls JavaScriptInterface.runScript(...)
         │                      ▼
-        │              start({ jpVersion: false, skillType: 'burst', ... })
+        │              start({ autoLaunchApp: true, skillType: 'burst', ... })
         │
         └── index.js ──────► start() in index.ts
                                  │
@@ -443,11 +443,11 @@ So `LiveWhen.NextRound` is what a setting gets unless it argues otherwise:
 the pre-round screen. `LiveWhen.Now` is earned by being **read fresh, during
 play, by the pass that wants it** — so a board already dealt is not being
 reinterpreted, it is simply played differently from the next scan on. Of the
-twenty-three rows a preset carries:
+twenty-four rows a preset carries:
 
 | | Rows | Why |
 |:--|:--|:--|
-| `Now` (11) | `maxChain`, `maxChainsPerScan`, `linkReachPercent`, `prioritizeMyTsum`, `useFan`, `bubbleStrategy`, `skillWaitingTime`, `skillAutoTap`, `noSkillLastFeverSec`, `skillLevel`, `roundDelayMinutes` | each has a read site inside the play loop, per scan or per activation. `LiveSettings` names them one by one. `roundDelayMinutes` is the odd one — it governs the gap, so there is no round to be halfway through, and `quickBarSetRoundDelay` deliberately re-bases a rest already running |
+| `Now` (12) | `maxChain`, `maxChainsPerScan`, `linkReachPercent`, `prioritizeMyTsum`, `useFan`, `bubbleStrategy`, `holdBubblesLastFeverSec`, `skillWaitingTime`, `skillAutoTap`, `noSkillLastFeverSec`, `skillLevel`, `roundDelayMinutes` | each has a read site inside the play loop, per scan, per pop or per activation. `LiveSettings` names them one by one. `roundDelayMinutes` is the odd one — it governs the gap, so there is no round to be halfway through, and `quickBarSetRoundDelay` deliberately re-bases a rest already running |
 | `NextRound` (10) | `skillType`, `lorcanaCard`, `bonus5to4`, the five other bonus items, `trackRoundStats` | the round committed to all of them before it began. The items are read only by `openRound`'s item screen, which is the next round's; `skillType` and `lorcanaCard` are the tsum on the board; `bonus5to4` is an item *and* `uniqueTsumCount`; and a stats row is opened at the whistle, so flipping the flag mid-round writes a partial row or drops a begun one |
 | `Restart` (2) | `autoPlayGame`, `clickAssist` | they decide which tasks a run registers |
 
@@ -711,7 +711,10 @@ the second of two lines inside 10ms, and a preset or the skill sheet writes two.
 The logger no longer sleeps, the host now lets an `Eval` through the gate and
 answers it off that thread, and `npm run live:check` fails on any gated call
 from an entry point (`entry`). `onPause` is the one exception, and it is the
-host that makes it one.
+host that makes it one. `detectMyTsum` (the Debug tab's Detect button) is the
+other, by construction rather than by exemption: it refuses a live run before
+it sleeps, so the one `sleep()` it makes — waiting for the closed panel to
+leave the frame — runs through the opened gate with no Resume behind it.
 
 **That handler has to be in the `dismiss` band, and it was in `navigate` until
 0.5.** The navigate band is silent when nothing set a goal — which is what stops
@@ -1207,7 +1210,7 @@ Two paths onto a device, and they are not the same thing:
 | Chains are poor / short | `pathfinding.ts` → `calculatePaths`, `findLongestTsumPath` |
 | A skill misfires | `src/skills/<name>.ts`, then `useSkill` in `skillCore.ts` |
 | A chore taps the wrong thing in the store, or buys nothing | `BoxStore` in `data.ts` first -- the tab row and the purchase buttons both move, and it says how each is read -- then `taskBuyBoxes` and its helpers in `boxes.ts` |
-| Bubbles are tapped too eagerly, or not at all | `Tsum.bubbleTapBudget` / `bubblePopChainLength` / `popGameBubbles` in `board.ts` and the Bubble Strategy setting; `settleScansAfterSkill` for the hold after a burst; `clearAllBubbles` and `sweepsBubbles` for the skills that override it |
+| Bubbles are tapped too eagerly, or not at all | `Tsum.bubbleTapBudget` / `bubblePopChainLength` / `popGameBubbles` in `board.ts` and the Bubble Strategy setting; `ripeGameBubbles` and `GameBubbleConfig.minTsumsInBlast` for a bubble popped in the hole a burst left (`bubble.unripe` in the log), `settleScansAfterSkill` for the hold after a choreographed one; `clearAllBubbles` and `sweepsBubbles` for the skills that override it |
 | Add a new skill | `src/skills/`, `tsconfig.json`, `settings.ts` dropdown |
 | Add a setting | `settings.ts` (`settings` array) **and** `index.ts` (`start`) |
 | Add a background job | `index.ts` → `gTaskController.newTask` in `buildRun`, task body in its own `src/` file (see `mail.ts`, `boxes.ts`) |
@@ -1216,6 +1219,7 @@ Two paths onto a device, and they are not the same thing:
 | Script gets stuck on a popup | `dialogs.ts`, and `PAGE_DISPATCH.md` for what was supposed to clear it |
 | React to a screen the script already recognises | `pageHandlers.ts` → a new `gPages.subscribe({...})` |
 | React to a fever starting or ending | `fever.ts` → a new `gFever.subscribe({...})`; `ts.isFeverTime()` for a one-off look |
+| Know how long a fever has left | `ts.feverRemainingMs()` — a crop of the bar's fill, read when asked, so a paused fever reads as paused; gate it on `gFever.active`. The bar's geometry is `FeverBar` in `data.ts` |
 | A screen goes away on its own | `data.ts` → `PageProfiles`, mark it `Transient` with a duration |
 | Wrong/missing log text | `logsEn.ts`, then the same key in `logsZhTw.ts` and any other language |
 | Wrong/missing settings-page or Quick Bar text | `uiEn.ts`, then the same key in `uiZhTw.ts`; a *new* string needs a `UiText` member in `strings.d.ts` first |

@@ -22,6 +22,11 @@
 //   ts.isFeverTime()      one look, no memory: is a fever running right now.
 //                         Pass a frame you already hold and it costs nothing
 //                         but the probe read.
+//   ts.feverRemainingMs() how long the fever on screen has left, off a crop
+//                         of the bar's fill taken right then -- cheap enough
+//                         to ask inside a link batch, and never a clock of
+//                         its own, so a fever the game has paused reads as
+//                         paused. Gate it on `gFever.active`.
 //   gFever.active         the debounced answer, as of the last reading, plus
 //                         when it started (`since`, `elapsedMs()`).
 //   gFever.subscribe()    a handler called once when a fever starts and once
@@ -326,6 +331,57 @@ Tsum.prototype.isFeverTime = function(img) {
     if (own) {
       releaseImage(frame);
     }
+  }
+};
+
+/**
+ * How long the fever on screen has left, in ms, off the bar's fill.
+ *
+ * A crop of the bar at native resolution, the read `checkSkillReadinessFast`
+ * makes of the gauge: ~2.4ms by the host's stage timings, a quarter of one
+ * tap. That is what lets it be taken at the moment the answer is wanted --
+ * inside a link batch, per pop -- rather than on the watcher's schedule and
+ * run forward by a clock. The game stops its clock under a skill animation,
+ * and a bar read now shows exactly that; an estimate would not.
+ *
+ * The fill drains from the right, so the answer is the run of lit samples from
+ * the left along `FeverBar`, each worth one slice of `durationMs` (500ms at 20
+ * samples). Says nothing about whether a fever is running -- gate on
+ * `gFever.active` first, since the ordinary gauge fills the same pixels yellow
+ * and a full one reads as a full fever.
+ */
+Tsum.prototype.feverRemainingMs = function() {
+  const bar = FeverBar;
+  // The crop, in capture pixels: the fill's span, `band` rows either side of
+  // the sample row so the row is inside it whatever the rounding.
+  const topLeft = this.toRealXY(bar.xStart, bar.y - bar.band);
+  const bottomRight = this.toRealXY(bar.xEnd, bar.y + bar.band);
+  const x = Math.max(0, topLeft.x);
+  const y = Math.max(0, topLeft.y);
+  const w = Math.max(1, bottomRight.x - x);
+  const h = Math.max(1, bottomRight.y - y);
+  // No resize, so a sample's coordinate is crop-local and cannot drift with
+  // resizeRatio the way getColors' mapping would.
+  const img = getScreenshotModify(x, y, w, h, 0, 0, 100);
+  try {
+    const pts: Point[] = [];
+    const step = (bar.xEnd - bar.xStart) / bar.samples;
+    for (let i = 0; i < bar.samples; i++) {
+      const p = this.toRealXY(bar.xStart + (i + 0.5) * step, bar.y);
+      pts.push({x: p.x - x, y: p.y - y});
+    }
+    const colors = getImageColors(img, pts);
+    let lit = 0;
+    while (lit < colors.length) {
+      const c = colors[lit];
+      if (Math.max(c.r, c.g, c.b) < bar.litValue) {
+        break;
+      }
+      lit++;
+    }
+    return Math.round(lit * bar.durationMs / bar.samples);
+  } finally {
+    releaseImage(img);
   }
 };
 

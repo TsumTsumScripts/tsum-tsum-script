@@ -68,6 +68,12 @@ declare const enum SkillType {
    */
   CoronationElsa = 'elsa_coronation',
   /**
+   * The same skill as it was played in 1.0, kept for side-by-side testing --
+   * see `src/skills/coronationElsaLegacy.ts`. Its own id so the round stats
+   * and the log tell the two apart.
+   */
+  CoronationElsaLegacy = 'elsa_coronation_legacy',
+  /**
    * Rapunzel+. Her activation makes the board colour-blind for a moment: one
    * chain may take tsums of any colour, up to a length her skill level sets --
    * see `src/skills/rapunzelPlus.ts`.
@@ -181,9 +187,39 @@ declare const enum BoxType {
   Happiness = 'happiness',
 }
 
+/**
+ * How many boxes one purchase takes, as the Box Buying chore is told to buy.
+ *
+ * The store refuses a 10-Time purchase once the box holds fewer than ten
+ * ("You can't use 10-Time Purchases", `PageName.BoxTenTimeRefused`), and the
+ * two ten-sized settings differ only in what the sweep does then: `Ten` ends
+ * it, `TenThenOne` carries on singly until the box sells out. Neither ever
+ * buys ten on a box that only draws a 1-Time button -- Happiness always -- and
+ * `One` never buys ten at all.
+ */
+declare const enum BoxPurchaseSize {
+  One = 'one',
+  Ten = 'ten',
+  TenThenOne = 'tenThenOne',
+}
+
 /** The keys of record.txt that are not sender-portrait filenames. */
 declare const enum RecordKey {
   HeartsCount = 'hearts_count',
+}
+
+/**
+ * Why `detectMyTsum` (src/roundStats.ts) read nothing, as its answer carries
+ * it back to the Debug tab's Detect button. A `const enum` because the value
+ * crosses the `runScriptCallback` bridge between two runtimes.
+ */
+declare const enum DetectMyTsumRefusal {
+  /** A run is up; it reads the tsum itself at every pre-round screen. */
+  Run = 'run',
+  /** This build carries no tsum library. */
+  Library = 'library',
+  /** The icon could not be captured -- the game is not on the pre-round screen. */
+  Unreadable = 'unreadable',
 }
 
 /**
@@ -233,7 +269,6 @@ declare const enum SettingKey {
   DebugGame = 'debugGame',
   CollectUnknownScreens = 'collectUnknownScreens',
   Walkthrough = 'walkthrough',
-  JpVersion = 'jpVersion',
   SpecialScreenRatio = 'specialScreenRatio',
   DeviceFps = 'deviceFps',
   PageHistoryDepth = 'pageHistoryDepth',
@@ -246,6 +281,7 @@ declare const enum SettingKey {
   MaxRoundMinutes = 'maxRoundMinutes',
   MaxRoundAction = 'maxRoundAction',
   BubbleStrategy = 'bubbleStrategy',
+  HoldBubblesLastFeverSec = 'holdBubblesLastFeverSec',
   UseFan = 'useFan',
   MaxChainsPerScan = 'maxChainsPerScan',
   MaxChain = 'maxChain',
@@ -266,9 +302,11 @@ declare const enum SettingKey {
   NoSkillLastFeverSec = 'noSkillLastFeverSec',
   UnlockLevelHoursWait = 'unlockLevelHoursWait',
   UnlockLevelsFirst = 'unlockLevelsFirst',
+  AutoUnlockMyTsumLevel = 'autoUnlockMyTsumLevel',
   BuyBoxHoursWait = 'buyBoxHoursWait',
   BuyBoxType = 'buyBoxType',
-  BuyBoxTenTimes = 'buyBoxTenTimes',
+  /** Replaced the `buyBoxTenTimes` switch; `loadSettings` carries a stored `true` over once. */
+  BuyBoxSize = 'buyBoxSize',
   BuyBoxMaxPurchases = 'buyBoxMaxPurchases',
   BuyBoxesFirst = 'buyBoxesFirst',
   ReceiveAllHearts = 'receiveAllHearts',
@@ -308,7 +346,6 @@ interface Settings {
    * what followed. Exclusive -- no other task is registered while it is on.
    */
   [SettingKey.Walkthrough]: boolean;
-  [SettingKey.JpVersion]: boolean;
   [SettingKey.SpecialScreenRatio]: boolean;
   /**
    * The device's frame rate. Scales the transient windows in `PageProfiles`,
@@ -346,6 +383,12 @@ interface Settings {
   /** What to do when `maxRoundMinutes` runs out. Ignored while that is 0. */
   [SettingKey.MaxRoundAction]: MaxRoundAction;
   [SettingKey.BubbleStrategy]: BubbleStrategy;
+  /**
+   * Pop no bubble while a fever has this many seconds left, so they are still
+   * there for the chains right after it -- a bubble popped into a chain cuts
+   * its clear short, which is what refills the gauge fastest. 0 never holds.
+   */
+  [SettingKey.HoldBubblesLastFeverSec]: number;
   [SettingKey.UseFan]: boolean;
   [SettingKey.MaxChainsPerScan]: number;
   [SettingKey.MaxChain]: number;
@@ -378,16 +421,23 @@ interface Settings {
    * button starts a run, and `buildRun` queues the sweep off it.
    */
   [SettingKey.UnlockLevelsFirst]?: boolean;
+  /**
+   * Raise the MyTsum's own level cap as soon as the post-round level-up panel
+   * shows it capped: one trip to the collection after that round, for the
+   * selected tsum only. Independent of the scheduled sweep above.
+   */
+  [SettingKey.AutoUnlockMyTsumLevel]: boolean;
   /** Hours between Box Buying sweeps; 0 turns the chore off. */
   [SettingKey.BuyBoxHoursWait]: number;
   /** Which box the sweep buys. Only ever this one -- it never falls back to another. */
   [SettingKey.BuyBoxType]: BoxType;
   /**
-   * Buy ten at a time where the box offers it. A box drawn with only a 1-Time
-   * button -- Happiness always is -- is bought singly instead; the reverse never
-   * happens, so a 1-Time setting can never spend ten boxes' worth.
+   * How many boxes a purchase takes, and what to do once the store refuses ten
+   * -- see `BoxPurchaseSize`. A box drawn with only a 1-Time button is bought
+   * singly whatever this says; the reverse never happens, so `One` can never
+   * spend ten boxes' worth.
    */
-  [SettingKey.BuyBoxTenTimes]: boolean;
+  [SettingKey.BuyBoxSize]: BoxPurchaseSize;
   /**
    * Purchases one sweep may make, where a 10-Time purchase counts as one. The
    * runaway guard on a chore that spends the player's coins: the game running

@@ -112,7 +112,7 @@ function start(settings: Settings) {
  * `endRun()`.
  */
 function buildRun(settings: Settings, logs: LogCatalogue): void {
-  ts = new Tsum(settings.jpVersion, settings.specialScreenRatio, logs);
+  ts = new Tsum(settings.specialScreenRatio, logs);
   // From here on there is a world to dismantle, whether or not the rest of this
   // function gets to finish -- `start()` tears it down in its `finally`.
   gRunActive = true;
@@ -136,6 +136,10 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   ts.sentToZero = settings.sendHeartsToZeroScore;
   ts.receiveCheckLimit = settings.mailOpenMax;
   ts.bubbleStrategy = settings.bubbleStrategy;
+  // Defaulted for a hand-written start() command and for a stored form from
+  // before the row existed: 0 is "never hold", which is how it always played.
+  ts.holdBubblesLastFeverSec = typeof settings.holdBubblesLastFeverSec === 'number'
+    ? settings.holdBubblesLastFeverSec : 0;
   ts.skillInterval = settings.skillWaitingTime * 1000;
   ts.skillLevel = settings.skillLevel;
   ts.skillType = settings.skillType;
@@ -154,11 +158,14 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   ts.skillAutoTap = settings.skillAutoTap;
   ts.lorcanaCard = settings.lorcanaCard === true;
   ts.unlockLevelHoursWait = settings.unlockLevelHoursWait;
+  // `=== true` for a stored form from before the row existed.
+  ts.autoUnlockMyTsumLevel = settings.autoUnlockMyTsumLevel === true;
   // Defaulted for a hand-written start() command: a missing box would make the
   // sweep buy nothing at all rather than the wrong thing, but naming one is
   // still the friendlier failure.
   ts.buyBoxType = settings.buyBoxType || BoxType.Premium;
-  ts.buyBoxTenTimes = settings.buyBoxTenTimes;
+  // Missing means singles: the one size that can never spend ten boxes' worth.
+  ts.buyBoxSize = settings.buyBoxSize || BoxPurchaseSize.One;
   // Checked rather than taken, because this one is what stops a chore that
   // spends the player's coins: a hand-written start() command has no range.
   ts.buyBoxMaxPurchases = typeof settings.buyBoxMaxPurchases === 'number'

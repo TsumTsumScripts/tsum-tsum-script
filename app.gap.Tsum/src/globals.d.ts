@@ -178,15 +178,26 @@ interface BoxPurchaseOffer {
 }
 
 /**
+ * What pressing a purchase button put on screen.
+ *
+ * `refused` is the store's "You can't use 10-Time Purchases" toast -- the box
+ * holds fewer than ten -- which only a 10-Time press can raise, and which was
+ * tapped away by the time it is reported. `missed` is neither dialog in time.
+ */
+type BoxDialog = 'confirm' | 'refused' | 'missed';
+
+/**
  * How one attempt at buying a box ended.
  *
- * `soldOut` and `noCoins` end the sweep and are not faults -- they are the
- * game's two ways of saying there is nothing more to buy. `missed` is the one
- * worth retrying. `stuck` is both at once: OK was pressed, so the coins are
- * gone and the purchase counts, but the screens it opened would not clear, so
- * it counts as a failure too.
+ * `soldOut`, `noCoins` and `tenRefused` are not faults -- they are the game's
+ * ways of saying there is nothing more to buy at this size. The first two end
+ * the sweep; the third ends it or drops it to singles, as the size setting
+ * says. `missed` is the one worth retrying. `stuck` is both at once: OK was
+ * pressed, so the coins are gone and the purchase counts, but the screens it
+ * opened would not clear, so it counts as a failure too.
  */
-type BoxPurchaseOutcome = 'bought' | 'stuck' | 'soldOut' | 'noCoins' | 'unavailable' | 'missed';
+type BoxPurchaseOutcome = 'bought' | 'stuck' | 'soldOut' | 'noCoins' | 'tenRefused'
+  | 'unavailable' | 'missed';
 
 /** One reference pixel used to fingerprint a page. */
 interface PageColor {
@@ -675,6 +686,13 @@ interface TsumPoint extends TsumTexture {
   b: number;
   g: number;
   r: number;
+  /**
+   * The centre's own colour, HSV off a light blur: what this tsum looks like
+   * with its neighbours kept out, where `b`/`g`/`r` above is the board-wide
+   * smear the clustering wants. Read per tsum by whatever must tell an
+   * overlay on one tsum from the tsum beside it (Elsa's ice).
+   */
+  local: Color;
 }
 
 /** One colour cluster from `classifyTsums`: a running mean plus its members. */
@@ -699,6 +717,10 @@ interface BoardPoint {
   tsumIdx: string;
   x: number;
   y: number;
+  /** `TsumPoint.local`, carried for per-tsum reads; absent on synthetic points. */
+  local?: Color;
+  /** `TsumTexture.contrast`, likewise. */
+  contrast?: number;
 }
 
 /**
@@ -722,6 +744,13 @@ interface GameBubble {
   x: number;
   y: number;
   r: number;
+  /**
+   * Tsums the pop would take: circles of the same scan inside the bubble's
+   * blast (`GameBubbleConfig.blastReach`). What tells a bubble buried in a
+   * refilled board from one sitting in the hole a burst just left. Absent on a
+   * list built without the tsum pass, which pops as it always did.
+   */
+  near?: number;
 }
 
 /**
@@ -768,6 +797,17 @@ interface MyTsumRect {
 }
 
 /**
+ * The two builds of the game: separate packages, and each prints its tsum
+ * names in its own language. `Tsum.gameBuild` (src/appLifecycle.ts) says which
+ * one this device plays -- launched, stopped and named by; the library carries
+ * a name for each. Also the stats CSV's `build` column.
+ */
+declare const enum GameBuild {
+  Global = 'global',
+  Japan = 'jp',
+}
+
+/**
  * A library entry with its signature decoded, as `myTsumLibrary` holds it.
  *
  * `short` is the game's own id for the tsum, what goes in the CSV's `tsum`
@@ -777,7 +817,11 @@ interface MyTsumRect {
  */
 interface MyTsumEntry {
   short: string;
-  full: string;
+  /**
+   * The name each build prints for it. A build with no strip for the tsum
+   * borrows the other's, or falls back to `short`, so every key reads.
+   */
+  names: {[build in GameBuild]: string};
   /** The signature through `myTsumPrepare`: centred, unit length, ready to dot. */
   vec: number[];
   /**
@@ -806,7 +850,9 @@ interface RoundOutcome {
 /** The best library entry for a signature, and how far clear of the runner-up. */
 interface MyTsumMatch {
   short: string;
+  /** The name `build` prints for it -- what the banner and the log show. */
   full: string;
+  build: GameBuild;
   score: number;
   /** `score` itself when the library holds one entry: there is no rival to beat. */
   margin: number;
@@ -1157,6 +1203,8 @@ interface Tsum {
   isAppOn(): boolean;
   /** Forget the cached `isAppOn` answer; call after moving the game in or out of focus. */
   invalidateAppOn(): void;
+  /** Which build this device plays: in front, else last seen, else installed. */
+  gameBuild(): GameBuild;
   startApp(): void;
   /** Wait for a launched game to be in front on a known screen; false at the budget. */
   awaitAppUp(): boolean;
@@ -1169,9 +1217,18 @@ interface Tsum {
   linkTsums(path: Point[]): void;
   /** Scans still to go before a mid-chain pop is worth taking again. */
   bubbleSettleScans: number;
+  /** Consecutive scans that saw a bubble with too few tsums in its blast. */
+  bubbleUnripeScans: number;
   /** The chain length that earns a bubble pop, bounded by the chain cap in
    * force -- `Config.maxChain`, or the selected skill's `chainLimits`. */
   bubblePopChainLength(): number;
+  /** The last scan's bubbles a pop is worth taking now, richest first. */
+  ripeGameBubbles(bubbles: GameBubble[]): GameBubble[];
+  /**
+   * Is the Bubble Strategy holding every bubble because a fever is about to
+   * end? The "Hold bubbles last fever seconds" setting, asked per pop.
+   */
+  bubblesHeldForFever(): boolean;
   /** How many bubbles the Bubble Strategy setting allows one pop to spend. */
   bubbleTapBudget(): number;
   /**
@@ -1194,6 +1251,8 @@ interface Tsum {
    * to tell two colours apart do so (`SkillHandler.orderPaths`).
    */
   boardClusters: Color[];
+  /** How many tsums each of `boardClusters` holds, same order. */
+  boardClusterSizes: number[];
   scanBoardQuick(): BoardPoint[];
 
   // --- play.ts ---------------------------------------------------------
@@ -1247,10 +1306,10 @@ interface Tsum {
    */
   readMailRows(img: NativeImage): number[];
   /**
-   * Which mail row a Skip Medals pass should open, as one of `readMailRows`'
-   * offsets; `MailNoRow` when nothing on screen can be opened, `MailAllMedals`
-   * when every row on screen is a Mission Clear medal and the hearts under them
-   * are only out of sight.
+   * Which mail row a Skip Medals / Skip Ruby pass should open, as one of
+   * `readMailRows`' offsets; `MailNoRow` when nothing on screen can be opened,
+   * `MailAllSkipped` when every row on screen is a medal or ruby being stepped
+   * past and the hearts under them are only out of sight.
    */
   mailRowToOpen(img: NativeImage): number;
   /** Drag the mail list on; false when it did not move, so the mail ended. */
@@ -1318,8 +1377,20 @@ interface Tsum {
   readCappedCards(): boolean[];
   /** Select card `slot` and raise its tsum's cap; false stops the sweep. */
   raiseCardLevelCap(slot: number): boolean;
+  /** Buy the raise for the tsum the detail panel shows; `fields` name it in the log. */
+  raiseSelectedLevelCap(fields: LogFields): boolean;
   /** Tap the "level cap raised" toast away, until the collection is back. */
   leaveLevelCapToast(): boolean;
+  /** Does the level-up panel show the MyTsum capped? Null when no card could be read. */
+  readLevelUpMyTsumCap(): boolean | null;
+  /** The `record.myTsumLevelCap` handler: keep a capped read for the round. */
+  noteLevelUpMyTsumCap(): void;
+  /** Is the collection's detail panel showing the MyTsum? By the greyed Set button. */
+  collectionShowsMyTsum(): boolean;
+  /** To the collection and buy the MyTsum's raise; false when it could not. */
+  raiseMyTsumLevelCap(): boolean;
+  /** After a round: raise the MyTsum's cap if this round's level-up said it is capped. */
+  raiseMyTsumLevelCapIfPending(): void;
   /**
    * Poll for `page` until it shows or `timeoutMs` runs out. `event` names the
    * chore in the give-up line; the level-cap sweep's when it is left out.
@@ -1343,6 +1414,10 @@ interface Tsum {
   awaitBoxPurchase(timeoutMs: number): BoxPurchaseOffer;
   /** Tap through everything one purchase opened, until the store is back or `deadline` passes. */
   clearBoxReveals(deadline: number): BoxReveals;
+  /** Tap the 10-Time refusal toast away. True once the store is back; false when it would not go. */
+  leaveBoxTenTimeToast(): boolean;
+  /** What a purchase button's tap put up: the confirmation, the 10-Time refusal, or nothing in time. */
+  awaitBoxDialog(tenTimes: boolean, timeoutMs: number): BoxDialog;
   /**
    * Buy one box at the size asked for, falling back to 1-Time where that is all
    * there is. `purchase` / `limit` are where this one sits in the sweep, for the
@@ -1350,7 +1425,7 @@ interface Tsum {
    */
   buyOneBox(tenTimes: boolean, purchase: number, limit: number): BoxPurchaseOutcome;
   /** The purchase loop. The fields for `Log.Box.End`, or null when the run stopped under it. */
-  buyBoxes(box: BoxType, tenTimes: boolean, maxPurchases: number): LogFields | null;
+  buyBoxes(box: BoxType, size: BoxPurchaseSize, maxPurchases: number): LogFields | null;
   /** True once the sweep has run; false when it stood aside for a paused round. */
   taskBuyBoxes(): boolean;
 
@@ -1363,6 +1438,11 @@ interface Tsum {
    * debounce and a broadcast around it.
    */
   isFeverTime(img?: NativeImage): boolean;
+  /**
+   * How long the fever on screen has left, in ms, off a crop of the bar's
+   * fill taken now (~2.4ms). Meaningful only while `gFever.active`.
+   */
+  feverRemainingMs(): number;
 
   // --- lorcana.ts ------------------------------------------------------
   /**
@@ -1477,30 +1557,44 @@ interface Tsum {
 
   // --- skills/coronationElsa.ts ----------------------------------------
   /**
-   * Set off the pile of frozen tsums: aimed taps over `frozen`, then the blind
-   * grid behind them. Returns how many of the taps were aimed.
-   */
-  /**
    * Set off the pile: aimed taps down the sorted pile, then -- only when
    * `grid` says so -- the blind sweep. The closing burst passes true; a
-   * mid-window burst must not, or the grid taps ice the model never claimed.
+   * mid-window burst must not, or the grid taps ice the read never claimed.
    */
   elsaBurstFrozen(frozen: BoardPoint[], grid: boolean): number;
   /**
-   * One settled capture (a mid-fall or bubbled ice-free look is retaken, up to
-   * twice each), then chains chosen for coverage until the board offers none
-   * or `closesAt` passes. `expected` is the settle gate's board population.
-   * Returns the board points the model believes are now ice, how many chains
-   * the pass drew, and the whole population it read.
+   * One settled capture (a mid-fall or bubbled ice-free look is retaken, a
+   * bounded number of times), split into free tsums and ice, plus what a drag
+   * must keep away from. `expected` is the settle gate's board population.
    */
-  elsaFreezePass(closesAt: number, expected?: number):
+  elsaLook(closesAt: number, expected?: number, popIcedMax?: number):
+    { free: BoardPoint[], iced: BoardPoint[], obstacles: {x: number, y: number, pad?: number}[],
+      waits: number, pops: number };
+  /**
+   * Play the freeze window as a sweep: chain after chain on the lowest free
+   * row, one look per chain, until the window is nearly out; then one break
+   * and the bomb it leaves popped. `expectTsums` seeds the settle gate with
+   * the pre-activation board's size.
+   */
+  useCoronationElsaSkill(activatedAt?: number, expectTsums?: number): void;
+
+  // --- skills/coronationElsaLegacy.ts ----------------------------------
+  // The 1.0 choreography, kept for comparison; the file's header says why.
+  /** As `elsaBurstFrozen`, over the pile the model believes is standing. */
+  elsaLegacyBurstFrozen(frozen: BoardPoint[], grid: boolean): number;
+  /**
+   * One settled capture, then chains chosen for coverage off a model of what
+   * each one froze, until the board offers none or `closesAt` passes. Returns
+   * the points the model believes are now ice, how many chains the pass drew,
+   * and the whole population it read.
+   */
+  elsaLegacyFreezePass(closesAt: number, expected?: number):
     { iced: BoardPoint[], chains: number, read: number };
   /**
    * Play out the freeze window: freeze until no more chains can be made, then
    * burst -- the clock forces the burst only at `burstTailMs` before close.
-   * `expectTsums` seeds the settle gate with the pre-activation board's size.
    */
-  useCoronationElsaSkill(activatedAt?: number, expectTsums?: number): void;
+  useCoronationElsaLegacySkill(activatedAt?: number, expectTsums?: number): void;
 
   // --- skills/formalBeast.ts -------------------------------------------
   /**

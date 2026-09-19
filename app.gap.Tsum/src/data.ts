@@ -98,6 +98,20 @@ var GameBubbleConfig = {
   // bubbles, so this only ever moves which chain spends them.
   settleScansAfterSkill: 1,
 
+  // What a pop is worth: the tsums within `blastReach` tsum widths past the
+  // bubble's edge, counted off the same scan (`GameBubble.near`). The
+  // strategy's pops leave a bubble under `minTsumsInBlast` for the next scan --
+  // one in the hole a burst just left clears nothing, and the refill closes
+  // round it within a scan or two. A full board puts ~6 in that ring, and the
+  // Hough pass keeps 45-80% of a landed board's circles, so 3 reads as
+  // "surrounded" where a fresh hole reads 0-1. The hold is bounded by
+  // `unripeHoldScans`: a bubble on a settled board always has neighbours, so
+  // past that many consecutive scans the count is a misread and the bubble is
+  // spent regardless. A skill's own pop (an explicit limit) reads none of this.
+  blastReach: 1,
+  minTsumsInBlast: 3,
+  unripeHoldScans: 5,
+
   // How long a row of the quick sweep waits before the next one.
   //
   // Zero: the quick sweep exists because the alternative is a skill sitting
@@ -179,10 +193,11 @@ var MyTsumPortrait = {
   // refuses a file that does not open with both -- a library cut through a
   // different grid scores against the wrong cells, which is a wrong name rather
   // than a missing one. The lexicon writes all three; they are here because
-  // everything else the file's layout depends on already is.
+  // everything else the file's layout depends on already is. `v2` is the row
+  // layout with a name column per game build, in place of v1's single name.
   library: 'tsums.dat',
   magic: 'gap-tsum-portraits',
-  format: 'v1',
+  format: 'v2',
   // Square, and centred on where the game draws the sprite -- the lexicon
   // fitted that transform against the art itself, so this rect is a crop of a
   // known drawing rather than a box someone framed by eye.
@@ -363,8 +378,8 @@ var Button = {
 // The mail list, as the one-by-one flow walks it.
 //
 // Every row is drawn the same, one `rowPitch` below the last, and the flow only
-// ever gets the row a tap lands on -- so stepping past a medal means aiming a
-// row lower, and running out of rows means scrolling.
+// ever gets the row a tap lands on -- so stepping past a medal or a ruby means
+// aiming a row lower, and running out of rows means scrolling.
 //
 // Which is why the rows are *found* rather than assumed. A scrolled list does
 // not come to rest on a row boundary, and the `outReceive*` probes are fixed
@@ -479,6 +494,13 @@ const enum PageName {
    * Rubies, and this script only ever presses Cancel -- see the entry in `Page`.
    */
   NotEnoughCoins = 'NotEnoughCoins',
+  /**
+   * "You can't use 10-Time Purchases -- Please use 1-Time Purchases as this is
+   * almost sold out". The toast the 10-Time button raises once the box holds
+   * fewer than ten; a tap anywhere clears it. `targeted`, like the two other
+   * toasts drawn with this sprite -- see the entry in `Page`.
+   */
+  BoxTenTimeRefused = 'BoxTenTimeRefused',
   OutOfMedals = 'OutOfMedals',
   RubyResetDifficulty = 'RubyResetDifficulty',
   // Mail / hearts
@@ -508,7 +530,8 @@ const enum PageName {
 // Its arrival is the game's own signal that the post-round count-up has
 // finished -- it withholds the row until it has -- so `roundStats.ts` scores
 // this list immediately before reading the score and coins
-// (`statsScoreButtonsReady`).
+// (`statsScoreButtonsReady`), and taps the tally on while the row is missing,
+// since a tap skips the count-up (`waitForScorePage`).
 //
 // The tally draws that row two ways, and both points below sit where the two
 // **overlap**. An ordinary round offers Close (x 97..502) beside Play
@@ -633,20 +656,51 @@ var GamePlayingHudProbes: PageColor[] = [
 //                        near-black teal. On its own this accepts every dimmed
 //                        overlay the game draws -- the pause menu, the level-up
 //                        panel and the Magical Time offer all darken the same
-//                        pixels (measured 65-78 apart, which is why the
-//                        threshold here is 60 rather than 80).
+//                        pixels -- which is what the ring above is for.
 //
-// Together they take a fever apart from all of those: over the corpus the six
-// fever frames clear every probe with 21/80, 31/60 and 27/60 to spare, and no
-// other frame comes within 336 of the two bright ones. Measured on 1080x1920
-// captures and re-checked at 540x960; a device the plain `GamePlaying` entry
-// needs its own fingerprint for (480x800) has not been measured for fever.
+// The dimmed pair is read beside the score capsule, where `LevelUpDimmedChrome`
+// reads too, and not under the gauge where it used to be: the 2025 layout on
+// MuMu (`mumu-360x640-fever*` in the corpus) ends the game in a black band
+// below the gauge, so the two probes that lived there read (0,0,0) on every
+// screen and no fever was ever recognised on that device. The capsule's
+// flanks are chrome on both layouts. They dim a little less on MuMu --
+// (8,52,74) against the older layout's (0,40,49) -- so the expected colour
+// sits between the two and the threshold covers both: the worst fever frame
+// is 69 away, the pause menu 37 (the ring rejects it by 325+), the level-up
+// panel 95+, a plain board 350+. The ring strokes read up to 68 away on MuMu
+// against 11 on the older captures, hence 100 there.
 var FeverProbes: PageColor[] = [
-  {x: 648, y: 1634, r: 255, g: 255, b: 255, match: true, threshold: 80},  // ring, top stroke -- identical on all six fever frames
-  {x: 462, y: 1697, r: 255, g: 251, b: 248, match: true, threshold: 80},  // ring, bottom stroke -- worst frame 21 away
-  {x: 660, y: 1736, r:   0, g:  35, b:  46, match: true, threshold: 60},  // dimmed chrome just under the gauge -- worst 31
-  {x: 135, y: 1813, r:   7, g:  37, b:  50, match: true, threshold: 60}   // dimmed chrome, bottom strip -- worst 27
+  {x: 648, y: 1634, r: 255, g: 255, b: 255, match: true, threshold: 100},  // ring, top stroke -- worst 58 (MuMu), 0 (older)
+  {x: 462, y: 1697, r: 255, g: 251, b: 248, match: true, threshold: 100},  // ring, bottom stroke -- worst 68 (MuMu), 11 (older)
+  {x: 300, y:  250, r:   4, g:  48, b:  62, match: true, threshold: 90},   // dimmed chrome left of the score capsule -- worst 69
+  {x: 800, y:  250, r:   0, g:  52, b:  62, match: true, threshold: 90}    // dimmed chrome right of the score capsule -- worst 69
 ];
+
+// The fever bar's fill, which is the fever's clock: pink from the left edge,
+// draining towards it as the fever runs out. Read off a crop by
+// `Tsum.feverRemainingMs` (src/fever.ts), and off the whole frame by the skill
+// hold-off (`skillWaitOutEndingFever`).
+//
+// Measured on the six corpus fever frames at y=1670: the fill reads a value of
+// 247-255 and the drained bar 24-66 -- the FEVER lettering drawn over it moves
+// saturation, never value, so one floor separates the two on every frame. The
+// fill's left edge is x=350 (the ring's white cap ends at ~345) and its right
+// edge on the just-started frame is x=705; the ring's right cap only brightens
+// past x=733, so nothing here is read there. A burst animation glowing over
+// the drained bar reads up to ~130, still under the floor.
+var FeverBar = {
+  y: 1670,
+  xStart: 350,
+  xEnd: 705,
+  /** Rows either side of `y` the crop takes, so the row is inside it whatever the rounding. */
+  band: 3,
+  /** How long a fever runs -- what a full fill stands for. */
+  durationMs: 10000,
+  /** Lowest value (max of r, g, b) that counts as fill. */
+  litValue: 150,
+  /** Sample points along the fill, one per `durationMs / samples`. */
+  samples: 20
+};
 
 // The level-up overlay dims the whole screen, and these four points are where
 // that is cheapest to prove: two beside the score capsule, two below the board.
@@ -1242,6 +1296,41 @@ var Page = {
     back: {x: 550, y: 1630},  // Close button
     next: {x: 550, y: 1630}   // Close button
   },
+  // "You got a Patch!" -- the popup a purchase carrying a patch ends its reveals
+  // on: the patch over a pulsing star burst, a cyan panel naming its effect,
+  // and its own Close. The reveal card's entries miss it on two probes, which
+  // read that card's lit backdrop at the left edge and beside Close; here both
+  // are near-black, and those two are what keep this entry off that card.
+  //
+  // Probes are the panel's furniture, the dark surround either side of it and
+  // of Close, and the flat ends of Close -- never the burst, the patch or the
+  // wording, which change with the patch. Authored on a 540x960 frame cut from
+  // a screen recording (H.264, so a little noisier than a device capture) and
+  // held on four more frames of the same popup; the reveal cards before it fail
+  // on seven probes and more, the 10-box tally on five. A frame caught while
+  // Close is still fading in fails on its two end probes alone, which is the
+  // point: the entry means "the popup, ready to be dismissed".
+  BoxPatchPurchasedPage: {
+    name: PageName.BoxPurchasedPage,
+    variant: 'patch',
+    colors: [
+      {x:  400, y: 1050, r:  32, g: 196, b: 232, match: true, threshold: 50},  // stability 12, cyan frame top, left of centre
+      {x:  700, y: 1050, r:  27, g: 190, b: 226, match: true, threshold: 50},  // stability 10, cyan frame top, right of centre
+      {x:  900, y: 1240, r:  37, g:  68, b: 111, match: true, threshold: 50},  // stability 9,  panel interior, right of the wording
+      {x:  130, y: 1310, r:  33, g:  63, b: 103, match: true, threshold: 50},  // stability 3,  panel interior, below the embossed stars
+      {x:  300, y: 1410, r:  33, g: 196, b: 232, match: true, threshold: 50},  // stability 9,  cyan frame bottom
+      {x:  780, y: 1410, r:  33, g: 197, b: 233, match: true, threshold: 50},  // stability 7,  cyan frame bottom
+      {x:   30, y: 1240, r:   0, g:   6, b:  13, match: true, threshold: 50},  // stability 7,  surround left of the panel
+      {x: 1050, y: 1180, r:   0, g:   4, b:   7, match: true, threshold: 50},  // stability 0,  surround right of the panel
+      {x:  180, y: 1640, r:   0, g:   4, b:   7, match: true, threshold: 50},  // stability 0,  surround left of Close -- lit on the reveal card
+      {x:  900, y: 1640, r:   0, g:   4, b:   7, match: true, threshold: 50},  // stability 0,  surround right of Close
+      {x:  390, y: 1630, r: 240, g: 178, b:  12, match: true, threshold: 50},  // stability 8,  Close left end
+      {x:  690, y: 1630, r: 236, g: 174, b:   6, match: true, threshold: 50},  // stability 3,  Close right end
+      {x:  540, y: 1870, r:  33, g: 197, b: 233, match: true, threshold: 50}   // stability 9,  cyan foot of the screen
+    ],
+    back: {x: 540, y: 1635},  // Close -- measured centre of a button spanning y 1535..1735
+    next: {x: 540, y: 1635}   // Close
+  },
   // The tally a 10-Time box purchase ends on: all ten tsums in a 4/4/2 grid
   // inside a cyan-framed panel, under a white "Box Purchase Result" band, over
   // the dimmed reveal scene.
@@ -1308,6 +1397,46 @@ var Page = {
     ],
     back: {x: 315, y: 1072},  // Cancel
     next: {x: 315, y: 1072}   // Cancel as well -- see above
+  },
+  // "You can't use 10-Time Purchases", thrown over the store by the 10-Time
+  // button once the box holds fewer than ten. The same toast sprite as
+  // `HeartSent` and `LevelCapRaised` -- cyan band, message band, cyan band with
+  // the logo -- so it is `targeted` for the reason those are: outside the
+  // wording every pixel is theirs too, and a sweep over this toast answers
+  // `HeartSent`, whose centre probe lands between this toast's two lines. Only
+  // `awaitBoxDialog` asks for it, by name, right after pressing the button that
+  // raises it, which is all `matches()` needs.
+  //
+  // What is this toast's own is the wording: two lines where the others centre
+  // one. The (540, 884) probe sits in the gap between them, which reads the
+  // panel here and a glyph on both twins (per-channel misses of 200 and 85), so
+  // `matches()` refuses those. The rest is the chrome, for the device's benefit
+  // -- eight probes on flat cyan and panel that say the toast is fully drawn.
+  //
+  // Authored on two 540x960 frames cut from a screen recording (H.264), with
+  // the colours written between what those read and what the two twins' device
+  // captures read at the same pixel -- never more than 8 per channel from
+  // either, against the 20 `matches()` allows. Every other corpus page fails on
+  // the five cyan probes at least; the purchase confirmation and Not enough
+  // Coins share only the panel probes, their own panel covering those points.
+  BoxTenTimeRefused: {
+    name: PageName.BoxTenTimeRefused,
+    targeted: true,
+    colors: [
+      {x: 170, y:  725, r:  33, g: 200, b: 240, match: true, threshold: 40},  // stability 10, cyan band above the message, left
+      {x: 540, y:  725, r:  32, g: 198, b: 235, match: true, threshold: 40},  // stability 12, ... centre
+      {x: 910, y:  725, r:  33, g: 200, b: 240, match: true, threshold: 40},  // stability 12, ... right
+      {x: 200, y:  790, r:  40, g:  72, b: 116, match: true, threshold: 40},  // stability 3,  message band, left gutter above the wording
+      {x: 880, y:  790, r:  40, g:  74, b: 119, match: true, threshold: 40},  // stability 4,  ... right gutter
+      {x: 540, y:  884, r:  55, g:  93, b: 145, match: true, threshold: 40},  // stability 6,  between the two lines -- text on the twins
+      {x: 200, y:  960, r:  41, g:  74, b: 119, match: true, threshold: 40},  // stability 5,  message band, left gutter below the wording
+      {x: 880, y:  960, r:  40, g:  71, b: 115, match: true, threshold: 40},  // stability 2,  ... right gutter
+      {x: 359, y: 1025, r:  32, g: 195, b: 234, match: true, threshold: 40},  // stability 5,  cyan band below, left of the logo
+      {x: 780, y: 1025, r:  32, g: 197, b: 234, match: true, threshold: 40}   // stability 9,  ... right of the logo
+    ],
+    // No button; a tap anywhere clears it, so both anchors aim at the toast.
+    back: {x: 540, y: 880},
+    next: {x: 540, y: 880}
   },
   GamePause: {
     name: PageName.GamePause,
@@ -1537,6 +1666,28 @@ var Page = {
     ],
     back: {x: 320, y: 1355},
     next: {x: 767, y: 1355}
+  },
+  // The JP build's dialog: the pre-2025 position and furniture, JP wording,
+  // and three footnote lines that make the panel ~75px taller. The pre-2025
+  // entry misses it on one probe -- its Cancel probe lands on the キャンセル
+  // glyphs, which run wider than "Cancel" -- so this one reads the flat ends
+  // of both buttons instead, either side of the text. The foot probe sits
+  // below where the EN panel ends, which is what keeps this entry off the
+  // pre-2025 frame: the two share every other piece of furniture.
+  MagicalTimeJp: {
+    name: PageName.MagicalTime,
+    variant: 'jp',
+    colors: [
+      {x: 614, y:  412, r:  34, g: 201, b: 236, match: true, threshold: 80},  // stability 14, cyan frame top
+      {x: 306, y:  505, r: 249, g: 249, b: 249, match: true, threshold: 75},  // stability 6,  white title band, left of the text
+      {x: 206, y: 1220, r: 241, g: 174, b:   9, match: true, threshold: 80},  // stability 2,  Cancel left end
+      {x: 426, y: 1220, r: 242, g: 175, b:  10, match: true, threshold: 80},  // stability 7,  Cancel right end
+      {x: 540, y: 1220, r:  61, g:  98, b: 150, match: true, threshold: 80},  // stability 14, gap between buttons
+      {x: 704, y: 1199, r: 242, g: 178, b:  11, match: true, threshold: 80},  // stability 8,  OK left end
+      {x: 809, y: 1436, r:  33, g: 194, b: 230, match: true, threshold: 80}   // stability 10, cyan foot, right of the footnotes
+    ],
+    back: {x: 314, y: 1219},
+    next: {x: 762, y: 1219}
   },
   OutOfMedals: {
     name: PageName.OutOfMedals,
@@ -2106,7 +2257,9 @@ var PageProfiles: PageProfileMap = {
     kind: PageKind.Permanent,
     note: 'One box\'s reveal card, with Close. What a 1-Time purchase ends on; a '
         + '10-Time one shows ten of these without the Close and then '
-        + '`BoxPurchaseResult`.'
+        + '`BoxPurchaseResult`. Also the "You got a Patch!" popup (the `patch` '
+        + 'configuration), which a purchase carrying a patch shows after its '
+        + 'reveals, with a Close of its own.'
   },
   BoxPurchaseResult: {
     kind: PageKind.Permanent,
@@ -2117,6 +2270,13 @@ var PageProfiles: PageProfileMap = {
     kind: PageKind.Permanent,
     note: 'Cancel / Buy with Rubies, over whatever asked for the coins. Both '
         + 'anchors are Cancel -- see the `Page` entry.'
+  },
+  BoxTenTimeRefused: {
+    kind: PageKind.Permanent,
+    note: 'The "You can\'t use 10-Time Purchases" toast: the box holds fewer '
+        + 'than ten. Like `HeartSent`, whose sprite it is, it carries no button '
+        + 'and waits for a tap anywhere. Targeted -- only the Box Buying sweep '
+        + 'asks for it, right after pressing 10-Time Purchase.'
   },
   OutOfMedals: {kind: PageKind.Permanent, note: 'Two buttons; neither times out.'},
   RubyResetDifficulty: {kind: PageKind.Permanent, note: 'OK / Cancel.'},
@@ -2335,7 +2495,73 @@ var CollectionGrid = {
   ],
   prevPageColor: {r: 220, g: 244, b: 253},
   prevPageDiff: 60,
-  prevPageVotes: 3
+  prevPageVotes: 3,
+  /**
+   * The "MyTsum Set" button under the grid, which the game greys out while the
+   * selected card is already the MyTsum -- the cheapest proof that the detail
+   * panel above shows the MyTsum rather than whatever card was tapped last.
+   * Four points on the button's body clear of its label; all four required.
+   * Measured on the three corpus frames: greyed 24-41/121-154/173-198, live
+   * (another card selected) 239-255/81-162/0-33.
+   */
+  setButtonSamples: [
+    {x: 410, y: 1600}, {x: 440, y: 1720}, {x: 540, y: 1720}, {x: 640, y: 1720}
+  ],
+  setButtonGreyColor: {r: 33, g: 140, b: 190},
+  setButtonGreyDiff: 60
+};
+
+// ---------------------------------------------------------------------------
+// The MyTsum's card on the post-round level-up panel, as the Auto Unlock
+// MyTsum Level read takes it (`Tsum.readLevelUpMyTsumCap`, src/levelCap.ts).
+//
+// The panel lists the party with the MyTsum first, and where the other cards
+// draw an EXP bar (or a MAX bar) a capped one draws a "Raise level cap!" pill
+// with a white padlock at its left end. The padlock is the tell: on every
+// corpus frame its body reads >= 243 on all three channels at the four
+// `lock` points, and the same points on an EXP or MAX bar are cyan fill, dark
+// track or the MAX fill -- red never above 189 -- so nothing there is white.
+//
+// The card is *found* rather than assumed. Three layouts put it at three
+// heights (five cards, four under the 5>4 bonus, one for a one-tsum party),
+// the router never says which, and the stack bounces into place: a report
+// trail frame recognised mid-bounce had the cards ~50px low, where a fixed
+// row read the "Lv" text as the padlock. So the gutter column between the
+// icon and the text is scanned for panel blue, the first run is the card, and
+// the bar row is its middle. The dimmed board under the panel never reads
+// above 74 on any channel, so panel blue (b >= 132) cannot be mistaken for it.
+// ---------------------------------------------------------------------------
+
+var LevelUpMyTsumCard = {
+  /** The column scanned: clear of the icon and the text on every card of every layout. */
+  gutterX: 450,
+  scanFromY: 300,
+  scanToY: 1560,
+  scanStepY: 3,
+  /** Panel blue at the gutter; the card's rim reads ~22 off it and passes too. */
+  gutterColor: {r: 52, g: 90, b: 144},
+  gutterDiff: 40,
+  /** The dotted inner border breaks a run for ~6px; runs this close are one card. */
+  mergeGapY: 12,
+  /** Shorter runs are not a card: a stray probe on the dimmed board, or text. */
+  minRunY: 100,
+  /** A card is 183 tall rim to rim; outside this the first run is not one. */
+  cardMinY: 170,
+  cardMaxY: 230,
+  /**
+   * A lone card sits far below any multi-card first card (~860 against
+   * ~400-575 mid-bounce), and its own gutter run is cut short by its wider
+   * Score row -- so it is told by its top, and its bar placed off the top
+   * rather than the middle. Unverified on a capped lone card: the one corpus
+   * frame of this layout shows an EXP bar.
+   */
+  singleMinTopY: 780,
+  singleBarFromTopY: 119,
+  /** The padlock body, about the bar row: two columns, two rows, all four required. */
+  lockX: [500, 515],
+  lockDy: [0, 6],
+  lockColor: {r: 255, g: 255, b: 255},
+  lockDiff: 40
 };
 
 /**
@@ -2847,11 +3073,17 @@ var PageRoutes: PageRouteMap = {
   ],
   // Both end on the store, and both by their Close. The ten reveals in between
   // have no entry at all: they are tapped through blind, being one screen the
-  // sweep never has to tell apart from another (`BoxStore.revealAdvance`).
+  // sweep never has to tell apart from another (`BoxStore.revealAdvance`). The
+  // patch popup's Close (the `patch` configuration) leads on to whatever the
+  // purchase still has to show -- the tally after ten boxes -- before the store.
   BoxPurchasedPage: [
     { via: PageAnchor.Back, to: PageName.TsumTsumStorePage, source: RouteSource.Declared }
   ],
   BoxPurchaseResult: [
+    { via: PageAnchor.Back, to: PageName.TsumTsumStorePage, source: RouteSource.Declared }
+  ],
+  // The 10-Time refusal toast: a tap anywhere drops it back onto the store.
+  BoxTenTimeRefused: [
     { via: PageAnchor.Back, to: PageName.TsumTsumStorePage, source: RouteSource.Declared }
   ],
 

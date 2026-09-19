@@ -250,10 +250,10 @@ function findLongestTsumPath(
 // at whatever it had set.
 // `lowFirst` grows each chain from the lowest tsum the search can start on
 // rather than from any equally good one, and tags what comes back with the
-// `startY` it grew from. Elsa's freeze window is the one caller: it freezes
-// rather than clears, so its chains can be worked bottom-up, and `startY` is
-// what the window orders them by. Everything else wants the longest chain
-// wherever on the board it happens to sit.
+// `startY` it grew from. Elsa's freeze window used to be the one caller; it
+// now sweeps the board a row at a time and hands this a row's tsums instead,
+// so nothing passes it today. Kept because it costs nothing and the
+// development toolkit's coverage harness still drives it.
 function calculatePaths(
     board: BoardPoint[],
     myTsumIdx: number, prioritizeMyTsum: boolean, maxChain?: number,
@@ -467,7 +467,12 @@ function buildBoardGray(img: NativeImage): NativeImage {
 // pass, now: `grayImg` is the board gray the scan already built for findTsums.
 // Locating them therefore costs no screenshot and no second blur, which is the
 // point: the taps have to land while the chain is still going off.
-function findGameBubbles(grayImg: NativeImage): GameBubble[] {
+//
+// `tsums` are that scan's tsum circles (centres, as `findTsums` returns them);
+// each bubble is handed the count of them inside its blast, which is what a pop
+// of it is worth -- see `GameBubbleConfig.blastReach`. A caller without a tsum
+// pass (Gaston's hemmed capture) leaves `near` unset.
+function findGameBubbles(grayImg: NativeImage, tsums?: Point[]): GameBubble[] {
   const cfg = GameBubbleConfig;
   // houghCircles returns centres, unlike the board points findTsums feeds the
   // pathfinder (those are shifted to a tsum's top-left corner).
@@ -475,9 +480,21 @@ function findGameBubbles(grayImg: NativeImage): GameBubble[] {
                              cfg.minRadius, cfg.maxRadius);
   const out: GameBubble[] = [];
   for (const k in found) {
+    const b = found[k];
     // `radius` is the native's own field name -- see `HoughCircle`. This read
     // `found[k].r` and so stored `undefined` until that was declared properly.
-    out.push({x: found[k].x, y: found[k].y, r: found[k].radius});
+    const bubble: GameBubble = {x: b.x, y: b.y, r: b.radius};
+    if (tsums) {
+      const reach = b.radius + cfg.blastReach * Config.tsumWidth;
+      let near = 0;
+      for (let i = 0; i < tsums.length; i++) {
+        const dx = tsums[i].x - b.x;
+        const dy = tsums[i].y - b.y;
+        if (dx * dx + dy * dy <= reach * reach) { near++; }
+      }
+      bubble.near = near;
+    }
+    out.push(bubble);
   }
   return out;
 }
@@ -485,6 +502,11 @@ function findGameBubbles(grayImg: NativeImage): GameBubble[] {
 // A tsum's circle in the 200px play square `findTsums` works in. Hoisted out of
 // it because `findTsumCount` runs the same pass for the count alone, and two
 // copies of these would drift the first time one was retuned.
+// The box blur behind `TsumPoint.local`: wide enough to flatten a face's
+// features at the centre cross, narrow enough (a fifth of a tsum) to keep the
+// neighbours out. The 22px smear the clustering samples is the other extreme.
+const LocalSampleBlur = 5;
+
 var TsumCircle = {
   dp: 1,           // accumulator resolution (lower = finer)
   minDist: 22,     // min gap between circle centers
@@ -526,6 +548,7 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
   // retries, so a leak on this hot path would silently recur on every scan.
   // `grayImg` is deliberately not on that list -- the caller allocated it.
   const hsvImg = clone(img);
+  let localImg: NativeImage | null = null;
   let debugImg: NativeImage | null = null;
   try {
     const minRadius = TsumCircle.minRadius;
@@ -577,6 +600,14 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
       pts.push({x: p.x, y: p.y + 1 < Config.screenResize ? p.y + 1 : p.y});
     }
     const samples = pts.length > 0 ? getImageColors(hsvImg, pts) : [];
+    // The same cross off a light blur: the tsum's own centre colour, with
+    // its neighbours kept out of it. The heavy blur above spans a whole tsum
+    // and reads a tsum ringed by pale ice as pale itself; this read does not,
+    // which is what tells an overlay on one tsum from the tsum next to it.
+    localImg = clone(img);
+    smooth(localImg, 1, LocalSampleBlur);
+    convertColor(localImg, 40);
+    const locals = pts.length > 0 ? getImageColors(localImg, pts) : [];
     // The texture read, off the gray the Hough pass already has.
     const textures = readTextures(grayImg, points);
 
@@ -585,9 +616,12 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
       const p = points[k];
       const base = k * CrossPoints;
       let sumb = 0, sumg = 0, sumr = 0;
+      let lb = 0, lg = 0, lr = 0;
       for (let s = 0; s < CrossPoints; s++) {
         const c = samples[base + s];
         sumb += c.b; sumg += c.g; sumr += c.r;
+        const l = locals[base + s];
+        lb += l.b; lg += l.g; lr += l.r;
       }
       const c = chromaFeature({
         b: sumb / CrossPoints,
@@ -601,6 +635,7 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
         x: p.x, y: p.y, z: p.radius,
         b: c.b, g: c.g, r: c.r,
         contrast: textures[k].contrast, peak: textures[k].peak,
+        local: {b: lb / CrossPoints, g: lg / CrossPoints, r: lr / CrossPoints},
       });
     }
 
@@ -611,6 +646,7 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
     return results;
   } finally {
     if (debugImg != null) { releaseImage(debugImg); }
+    if (localImg != null) { releaseImage(localImg); }
     releaseImage(hsvImg);
   }
 }

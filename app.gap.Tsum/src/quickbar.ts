@@ -115,17 +115,19 @@ function quickBarState(): string {
     state[SettingKey.PrioritizeMyTsum] = ts.prioritizeMyTsum;
     state[SettingKey.UseFan] = ts.useFan;
     state[SettingKey.BubbleStrategy] = ts.bubbleStrategy;
+    state[SettingKey.HoldBubblesLastFeverSec] = ts.holdBubblesLastFeverSec;
     state[SettingKey.LinkReachPercent] = Math.round(Config.linkReach * 100);
     // The Box Buying rows are the settings panel's, and they are reported for
     // the reason above: the panel is the only thing that changes them, and it
     // reads this back.
     state[SettingKey.BuyBoxType] = ts.buyBoxType;
-    state[SettingKey.BuyBoxTenTimes] = ts.buyBoxTenTimes;
+    state[SettingKey.BuyBoxSize] = ts.buyBoxSize;
     // The limit as the sweep would read it. 0 is "no usable setting", which
     // `buyBoxes` turns into BuyBoxDefaultMax; the form's row has no 0, so
     // reporting the raw value would move it to the row's minimum instead.
     state[SettingKey.BuyBoxMaxPurchases] = ts.buyBoxMaxPurchases > 0
       ? ts.buyBoxMaxPurchases : BuyBoxDefaultMax;
+    state[SettingKey.AutoUnlockMyTsumLevel] = ts.autoUnlockMyTsumLevel;
     // Reported without being drawn, for the reason above: the strip's own Rest
     // stepper made way for the preset chip, and the settings panel's row is now
     // the only one that moves it -- which means the panel reads this back.
@@ -289,6 +291,10 @@ function quickBarApplyOne(tsum: Tsum, key: SettingKey,
     case SettingKey.BubbleStrategy:
       tsum.bubbleStrategy = value as BubbleStrategy;
       break;
+    case SettingKey.HoldBubblesLastFeverSec:
+      applied = quickBarClamp(value, 0, 10);
+      tsum.holdBubblesLastFeverSec = applied as number;
+      break;
     case SettingKey.SkillWaitingTime:
       applied = quickBarClamp(value, 0, 15);
       tsum.skillInterval = (applied as number) * 1000;
@@ -321,13 +327,16 @@ function quickBarApplyOne(tsum: Tsum, key: SettingKey,
     case SettingKey.BuyBoxType:
       tsum.buyBoxType = value as BoxType;
       break;
-    case SettingKey.BuyBoxTenTimes:
-      applied = !!value;
-      tsum.buyBoxTenTimes = applied;
+    case SettingKey.BuyBoxSize:
+      tsum.buyBoxSize = value as BoxPurchaseSize;
       break;
     case SettingKey.BuyBoxMaxPurchases:
       applied = quickBarClamp(value, 1, BuyBoxMaxPurchases);
       tsum.buyBoxMaxPurchases = applied as number;
+      break;
+    case SettingKey.AutoUnlockMyTsumLevel:
+      applied = !!value;
+      tsum.autoUnlockMyTsumLevel = applied;
       break;
     case SettingKey.RoundDelayMinutes:
       applied = quickBarClamp(value, 0, 120);
@@ -444,6 +453,7 @@ const LiveSettings: { [key: string]: LiveWhen } = {
   //   prioritizeMyTsum             skillMyTsumPriority, per scan
   //   useFan                       play.ts, twice in the play loop
   //   bubbleStrategy               the bubble sweep, per scan
+  //   holdBubblesLastFeverSec      bubblesHeldForFever, per pop
   //   skillWaitingTime             ts.skillInterval, per activation
   //   skillAutoTap                 maybeAutoTapSkill, inside a link batch
   //   noSkillLastFeverSec          the skill decision, per activation
@@ -458,6 +468,7 @@ const LiveSettings: { [key: string]: LiveWhen } = {
   [SettingKey.PrioritizeMyTsum]: LiveWhen.Now,
   [SettingKey.UseFan]: LiveWhen.Now,
   [SettingKey.BubbleStrategy]: LiveWhen.Now,
+  [SettingKey.HoldBubblesLastFeverSec]: LiveWhen.Now,
   [SettingKey.SkillWaitingTime]: LiveWhen.Now,
   [SettingKey.SkillAutoTap]: LiveWhen.Now,
   [SettingKey.NoSkillLastFeverSec]: LiveWhen.Now,
@@ -480,8 +491,11 @@ const LiveSettings: { [key: string]: LiveWhen } = {
   // round is played -- and live because the sweep re-reads them when it runs,
   // which is between rounds by definition.
   [SettingKey.BuyBoxType]: LiveWhen.Now,
-  [SettingKey.BuyBoxTenTimes]: LiveWhen.Now,
+  [SettingKey.BuyBoxSize]: LiveWhen.Now,
   [SettingKey.BuyBoxMaxPurchases]: LiveWhen.Now,
+  // Read at the round's end -- by the level-up record handler and then the
+  // play task's tail -- so a switch thrown mid-round counts for this round.
+  [SettingKey.AutoUnlockMyTsumLevel]: LiveWhen.Now,
 
   // --- The round in front of the loop was set up under the old value -------
   //

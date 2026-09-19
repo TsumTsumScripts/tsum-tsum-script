@@ -59,6 +59,32 @@ Tsum.prototype.bubblePopChainLength = function() {
   return Math.min(GameBubbleConfig.minChainForPop, cap);
 };
 
+// Whether the "Hold bubbles last fever seconds" setting is holding every bubble
+// right now: a fever is running and has at most that many seconds left.
+//
+// A bubble popped into a chain cuts the chain's clear animation short, and
+// after a fever the gauge starts from empty -- so a bubble spent on a chain in
+// the fever's last seconds buys fever-bonus score once, where the same bubble
+// spent on the first chains after it gets the next fever sooner.
+//
+// The bar is read right here, per pop, off a ~2.4ms crop: a fever the game
+// has paused for a skill animation then reads as paused, where anything run
+// forward by a clock would not. Asked only with the setting on, a fever
+// running and bubbles to hold, so the crop is a handful of reads per fever.
+// The hold lasts until `gFever` calls the fever over, which its debounce does
+// a few hundred ms after the bar empties; that is at most one chain's cancel
+// late.
+Tsum.prototype.bubblesHeldForFever = function() {
+  if (this.holdBubblesLastFeverSec <= 0 || !gFever.active) { return false; }
+  const remainingMs = this.feverRemainingMs();
+  if (remainingMs > this.holdBubblesLastFeverSec * 1000) { return false; }
+  logDebug(Log.Bubble.Held, {
+    remainingMs: remainingMs,
+    bubbles: this.gameBubbles ? this.gameBubbles.length : 0
+  });
+  return true;
+};
+
 // How many of the bubbles the last scan found this strategy will spend at once.
 // The ceilings, and why there are any, are in GameBubbleConfig.
 Tsum.prototype.bubbleTapBudget = function() {
@@ -66,6 +92,10 @@ Tsum.prototype.bubbleTapBudget = function() {
   // on the way past is a link out of that chain, and its chain is worth far more
   // than the bigger clear the pop buys. See `SkillHandler.claimsBubbles`.
   if (skillClaimsBubbles(this)) { return 0; }
+  // The fever hold, for every strategy: the bubbles stay on the board for the
+  // chains after the fever. `popGameBubbles` keeps the list on a 0 budget, and
+  // the next scan re-finds them anyway.
+  if (this.bubblesHeldForFever()) { return 0; }
   switch (this.bubbleStrategy) {
     case BubbleStrategy.AllMidChain: return GameBubbleConfig.maxTapsMidChain;
     case BubbleStrategy.AllAsap: return GameBubbleConfig.maxTapsAsap;
@@ -77,30 +107,64 @@ Tsum.prototype.bubbleTapBudget = function() {
   }
 };
 
+// The bubbles of the last scan a pop is worth taking now: those with at least
+// `minTsumsInBlast` tsums in the blast, richest first, so a budget of one takes
+// the one that clears most. A bubble in the hole a burst just left has none
+// and is left for the next scan, which re-finds it once the refill has closed
+// round it. Past `unripeHoldScans` scans the count is a misread and every
+// bubble is worth it by fiat -- see GameBubbleConfig.
+Tsum.prototype.ripeGameBubbles = function(bubbles) {
+  const cfg = GameBubbleConfig;
+  const released = this.bubbleUnripeScans >= cfg.unripeHoldScans;
+  const ripe: GameBubble[] = [];
+  for (let i = 0; i < bubbles.length; i++) {
+    const b = bubbles[i];
+    if (released || b.near === undefined || b.near >= cfg.minTsumsInBlast) {
+      ripe.push(b);
+    }
+  }
+  ripe.sort(function(a, b) { return (b.near || 0) - (a.near || 0); });
+  return ripe;
+};
+
 // Tap the bubbles the last board scan found. Taps only -- the positions were
 // worked out at scan time -- so this stays inside the window where the chain is
 // still clearing. A tap that misses costs nothing: it is not a drag, so it
 // links nothing and the game ignores it.
 //
 // `limit` caps how many are taken; the default is whatever the Bubble Strategy
-// setting allows. Pass one explicitly only to override that setting outright,
-// the way a skill choreography does.
+// setting allows, and it spends only bubbles worth spending
+// (`ripeGameBubbles`). Pass one explicitly only to override that setting
+// outright, the way a skill choreography does -- that takes every bubble as
+// read, since a choreography wants them gone rather than spent well.
 Tsum.prototype.popGameBubbles = function(limit) {
-  const bubbles = this.gameBubbles;
-  if (!bubbles || bubbles.length === 0 || !this.isRunning) { return; }
+  const all = this.gameBubbles;
+  if (!all || all.length === 0 || !this.isRunning) { return; }
   const cfg = GameBubbleConfig;
   // An explicit `limit` is an override and stands on its own -- the ceilings in
   // bubbleTapBudget are what the *setting* allows, not a hard cap on callers.
-  const budget = typeof limit === 'number' ? limit : this.bubbleTapBudget();
+  const override = typeof limit === 'number';
+  const budget = override ? limit : this.bubbleTapBudget();
+  if (budget <= 0) { return; }
+  const bubbles = override ? all : this.ripeGameBubbles(all);
+  const held = all.length - bubbles.length;
   const count = Math.min(bubbles.length, budget);
-  if (count <= 0) { return; }
+  if (count <= 0) {
+    // Every bubble is in a hole. The list stays: the next scan replaces it.
+    logDebug(Log.Bubble.Unripe, {
+      held: held,
+      near: all.map(function(b) { return b.near || 0; }),
+      scans: this.bubbleUnripeScans
+    });
+    return;
+  }
   for (let i = 0; i < count; i++) {
     const b = bubbles[i];
     const x = Math.floor(this.playOffsetX + b.x * this.playWidth / this.playResizeWidth);
     const y = Math.floor(this.playOffsetY + b.y * this.playHeight / this.playResizeHeight);
     tap(x, y, cfg.tapDuring);
   }
-  logDebug(Log.Bubble.Popped, { popped: count, seen: bubbles.length });
+  logDebug(Log.Bubble.Popped, { popped: count, seen: all.length, held: held });
   // A bubble only pops once, and one left behind is one this strategy is
   // deliberately saving for the next chain -- either way this list is spent:
   // the board has moved, so the positions in it are no longer where anything
@@ -262,10 +326,23 @@ Tsum.prototype.scanBoardQuick = function() {
     // Read bubble positions off this same capture and remember them, so popping
     // one after a chain is taps only -- no screenshot in the middle of a batch,
     // which would stall the link cadence and the combo timer with it. Bubbles
-    // are big and drift slowly, so a position a second old still lands.
-    this.gameBubbles = findGameBubbles(grayImg);
+    // are big and drift slowly, so a position a second old still lands. Each
+    // carries how many of this scan's tsums its pop would take (`near`).
+    this.gameBubbles = findGameBubbles(grayImg, points);
     if (this.gameBubbles.length > 0) {
-      logDebug(Log.Bubble.Found, { bubbles: this.gameBubbles.length });
+      const near: number[] = [];
+      let unripe = false;
+      for (let i = 0; i < this.gameBubbles.length; i++) {
+        const n = this.gameBubbles[i].near || 0;
+        near.push(n);
+        if (n < GameBubbleConfig.minTsumsInBlast) { unripe = true; }
+      }
+      // Consecutive scans that saw a bubble with too few tsums round it -- the
+      // bound on how long `ripeGameBubbles` may hold one.
+      this.bubbleUnripeScans = unripe ? this.bubbleUnripeScans + 1 : 0;
+      logDebug(Log.Bubble.Found, { bubbles: this.gameBubbles.length, near: near });
+    } else {
+      this.bubbleUnripeScans = 0;
     }
     logDebug(Log.Board.RecognitionStart);
     const tcs = classifyTsums(points);
@@ -351,6 +428,7 @@ Tsum.prototype.scanBoardQuick = function() {
     // that has to tell two of them apart needs (`SkillHandler.orderPaths`).
     // Three numbers per cluster, off numbers the scan has already computed.
     this.boardClusters = [];
+    this.boardClusterSizes = [];
     for(const i in tcs) {
       if (+i >= clusterSlots) {
         break;
@@ -360,13 +438,23 @@ Tsum.prototype.scanBoardQuick = function() {
       // grouped on -- the skills that read these (Elsa's frozen box, Formal
       // Beast's two families) are written in those terms and stay that way.
       this.boardClusters.push(chromaToHsv({b: tc.b, g: tc.g, r: tc.r}));
+      // The size beside the colour: a colour that is a handful of tsums on one
+      // scan is a transient, and Elsa's ice-alike whitelist must not learn it.
+      this.boardClusterSizes.push(tc.points.length);
       // The debug palette is five long and a skill may ask for more slots than
       // that, so it wraps -- two clusters sharing an overlay colour is a
       // cosmetic collision, reading past the end is a crash.
       const dbg = Config.colors[+i % Config.colors.length];
       for (const j in tc.points) {
         const p = tc.points[j];
-        board.push({tsumIdx: i, x: p.x - (Config.tsumWidth / 2), y: p.y - (Config.tsumWidth / 2)});
+        // The tsum's own colour and texture ride along for per-tsum reads.
+        board.push({
+          tsumIdx: i,
+          x: p.x - (Config.tsumWidth / 2),
+          y: p.y - (Config.tsumWidth / 2),
+          local: p.local,
+          contrast: p.contrast,
+        });
         if (this.debug) {
           drawCircle(srcImg, p.x, p.y, 4, dbg[0], dbg[1], dbg[2], 0);
         }

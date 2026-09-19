@@ -63,6 +63,7 @@ class Tsum {
   myTsumColor: Color | null;
   myTsumIdx: number;
   boardClusters: Color[];
+  boardClusterSizes: number[];
   storagePath: string;
   originScreenWidth: number;
   originScreenHeight: number;
@@ -89,7 +90,6 @@ class Tsum {
    * restores exactly what the player chose.
    */
   myTsumPriorityHeld: boolean;
-  isJP: boolean;
   logs: LogCatalogue;
   scoreItem: boolean;
   coinItem: boolean;
@@ -117,12 +117,20 @@ class Tsum {
   _skillCooldownUntil: number;
   /** When the last real `dumpsys window` focus check ran; 0 means never. */
   _appOnCheckedAt: number;
+  /** The build last seen in front or resolved by `gameBuild`; null until one is. */
+  _gameBuild: GameBuild | null;
   overloadPending: boolean;
   unlockLevelHoursWait: number;
+  /** The "Auto Unlock MyTsum Level" setting. */
+  autoUnlockMyTsumLevel: boolean;
+  /** This round's level-up panel showed the MyTsum capped; consumed after the round. */
+  myTsumCapSeen: boolean;
+  /** No MyTsum raise before this instant, epoch ms -- set after one fails; 0 means no hold. */
+  myTsumCapRetryAt: number;
   /** Box Buying: which box the sweep buys. */
   buyBoxType: BoxType;
-  /** Box Buying: take the 10-Time button where the box draws one. */
-  buyBoxTenTimes: boolean;
+  /** Box Buying: boxes per purchase, and what to do once the store refuses ten. */
+  buyBoxSize: BoxPurchaseSize;
   /** Box Buying: purchases one sweep may make, a 10-Time one counting as one. */
   buyBoxMaxPurchases: number;
   /** The "Delay between rounds" setting in ms; 0 plays straight on. */
@@ -140,6 +148,7 @@ class Tsum {
    */
   nextRoundAt: number;
   sendHearts: boolean;
+  /** Step past the Ruby mails instead of opening them; untick them on Claim All. */
   keepRuby: boolean;
   /** Step past the Mission Clear medal mails instead of opening them. */
   skipMedals: boolean;
@@ -151,6 +160,10 @@ class Tsum {
   bubbleStrategy: BubbleStrategy;
   /** Scans still to go before a mid-chain pop is worth taking again. */
   bubbleSettleScans: number;
+  /** Consecutive scans that saw a bubble with too few tsums in its blast. */
+  bubbleUnripeScans: number;
+  /** Pop no bubble while a fever has this many seconds left; 0 never holds. */
+  holdBubblesLastFeverSec: number;
   noSkillLastFeverSec: number;
   /** Play a Lorcana tsum's transformation and its ink stones -- see src/lorcana.ts. */
   lorcanaCard: boolean;
@@ -264,7 +277,7 @@ class Tsum {
    */
   runCoins: RunCoinTally;
 
-  constructor(isJP: boolean, detect: boolean, logs: LogCatalogue) {
+  constructor(detect: boolean, logs: LogCatalogue) {
     this.debug = false;
     this.autoLaunch = false;
     this.isRunning = true;
@@ -276,6 +289,7 @@ class Tsum {
     this.myTsumColor = null;
     this.myTsumIdx = -1;
     this.boardClusters = [];
+    this.boardClusterSizes = [];
     this.storagePath = getStoragePath();
     // screen size config
     /** @type {{width: number, height: number}}  */
@@ -305,7 +319,6 @@ class Tsum {
     // length, and only pays off when the skill is worth more than the tsums.
     this.prioritizeMyTsum = false;
     this.myTsumPriorityHeld = false;
-    this.isJP = isJP;
     this.logs = logs;
     this.scoreItem = false;
     this.coinItem = false;
@@ -326,12 +339,16 @@ class Tsum {
     this._lastSkillAutoTap = 0;
     this._skillCooldownUntil = 0;
     this._appOnCheckedAt = 0;
+    this._gameBuild = null;
     // Burst-skill overload: set after a link batch so the next scan issues one
     // carry-over tap on the skill button (see link / scanBoardQuick).
     this.overloadPending = false;
     this.unlockLevelHoursWait = 0;
+    this.autoUnlockMyTsumLevel = false;
+    this.myTsumCapSeen = false;
+    this.myTsumCapRetryAt = 0;
     this.buyBoxType = BoxType.Premium;
-    this.buyBoxTenTimes = false;
+    this.buyBoxSize = BoxPurchaseSize.One;
     this.buyBoxMaxPurchases = 0;
     this.roundDelayMs = 0;
     this.maxRoundMs = 0;
@@ -354,6 +371,8 @@ class Tsum {
     this.receiveCheckLimit = 5;
     this.bubbleStrategy = BubbleStrategy.OneMidChain;
     this.bubbleSettleScans = 0;
+    this.bubbleUnripeScans = 0;
+    this.holdBubblesLastFeverSec = 0;
     this.noSkillLastFeverSec = 0;
     this.lorcanaCard = false;
     // Nothing is held back until the Quick Bar holds something back.

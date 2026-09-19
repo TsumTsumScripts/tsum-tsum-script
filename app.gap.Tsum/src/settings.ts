@@ -63,11 +63,6 @@ var tabs: TabSpec[] = [
                         // with nothing here to edit.
                         buttons: localeButtons()
                     },
-                    // {
-                    //     key: SettingKey.JpVersion,
-                    //     title: UiText.SettingJpVersion,
-                    //     default: false
-                    // },
                     {
                         key: SettingKey.SpecialScreenRatio,
                         title: UiText.SettingSpecialScreenRatio,
@@ -283,6 +278,19 @@ var tabs: TabSpec[] = [
                         // any of these -- they declare `sweepsBubbles` and call
                         // `clearAllBubbles` outright.
                         dropdown: BubbleOptions
+                    },
+                    {
+                        // A hold over the strategy above rather than an entry in
+                        // it, so it combines with all three. The same shape as
+                        // "No skill last fever seconds" on the Skills tab.
+                        key: SettingKey.HoldBubblesLastFeverSec,
+                        title: UiText.SettingHoldBubblesLastFever,
+                        help: UiText.SettingHoldBubblesLastFeverHelp,
+                        default: 0,
+                        step: 1,
+                        max: 10,
+                        min: 0,
+                        status: ReleaseStatus.Beta
                     },
                     {
                         key: SettingKey.UseFan,
@@ -557,6 +565,17 @@ var tabs: TabSpec[] = [
                         buttons: [
                             {text: i18nThunk(UiText.ButtonNow), onClick: function () { askUnlockLevelsNow(); }}
                         ]
+                    },
+                    {
+                        // One raise for the selected tsum, after the round whose
+                        // level-up screen showed it capped -- not a sweep, and
+                        // independent of the schedule above. Beta until a device
+                        // run has read `unlock.myTsum.*`.
+                        key: SettingKey.AutoUnlockMyTsumLevel,
+                        title: UiText.SettingUnlockMyTsumLevel,
+                        help: UiText.SettingUnlockMyTsumLevelHelp,
+                        default: false,
+                        status: ReleaseStatus.Beta
                     }
                 ]
             },
@@ -596,10 +615,20 @@ var tabs: TabSpec[] = [
                         ] satisfies { key: BoxType; share: string; title: UiText }[])
                     },
                     {
-                        key: SettingKey.BuyBoxTenTimes,
-                        title: UiText.SettingBuyBoxTenTimes,
-                        help: UiText.SettingBuyBoxTenTimesHelp,
-                        default: false
+                        key: SettingKey.BuyBoxSize,
+                        title: UiText.SettingBuyBoxSize,
+                        help: UiText.SettingBuyBoxSizeHelp,
+                        default: BoxPurchaseSize.One as BoxPurchaseSize,
+                        // No `share` ids: a Chores row, so no code or preset
+                        // carries it. `satisfies` for the reason the box
+                        // dropdown above has it -- a key that is not a
+                        // BoxPurchaseSize would compile and buy singly without
+                        // saying why.
+                        dropdown: ([
+                            {key: BoxPurchaseSize.One, title: UiText.BoxSizeOne},
+                            {key: BoxPurchaseSize.Ten, title: UiText.BoxSizeTen},
+                            {key: BoxPurchaseSize.TenThenOne, title: UiText.BoxSizeTenThenOne}
+                        ] satisfies { key: BoxPurchaseSize; title: UiText }[])
                     },
                     {
                         key: SettingKey.BuyBoxMaxPurchases,
@@ -661,6 +690,17 @@ var tabs: TabSpec[] = [
                         help: UiText.SettingReportIssueHelp,
                         buttons: [
                             {text: i18nThunk(UiText.ButtonReport), onClick: function () { openReportPanel(); }}
+                        ]
+                    },
+                    {
+                        // Tries the pre-round tsum read on whatever the game
+                        // shows now, so a template can be checked without a
+                        // round -- see `askDetectMyTsum`.
+                        key: RowKey.DetectMyTsum,
+                        title: UiText.SettingDetectMyTsum,
+                        help: UiText.SettingDetectMyTsumHelp,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonDetect), onClick: function () { askDetectMyTsum(); }}
                         ]
                     },
                     {
@@ -852,11 +892,30 @@ function loadSettings(settings: SettingSpec[][]) {
                 }
             }
         })();
+        carryBuyBoxTenTimes(recordSettings);
     } else {
         logInfo(Log.Settings.NoneFound, i18nText(UiText.LogNoSettings));
         return;
     }
     logInfo(Log.Settings.Loaded, i18nText(UiText.LogLoadSettings));
+}
+
+/** The switch the Boxes per purchase dropdown replaced. Read here once; nothing writes it. */
+var RETIRED_BUY_BOX_TEN_TIMES = 'buyBoxTenTimes';
+
+/**
+ * A stored "Buy ten at a time" becomes Ten, once: only while the dropdown that
+ * replaced it has no value of its own. The next save writes the new key and
+ * drops the old one with the rest of what the form no longer has.
+ */
+function carryBuyBoxTenTimes(stored: { [key: string]: SettingValue }) {
+    if (stored[SettingKey.BuyBoxSize] !== undefined || stored[RETIRED_BUY_BOX_TEN_TIMES] !== true) {
+        return;
+    }
+    var row = rowByKey(SettingKey.BuyBoxSize);
+    if (row !== undefined) {
+        row.default = BoxPurchaseSize.Ten;
+    }
 }
 
 // --- Saving ----------------------------------------------------------------
@@ -1333,6 +1392,7 @@ var SHARE_SLOTS: (SettingKey | '')[] = [
     // statistics were slotted beside it for one 0.12 build and taken out again
     // -- they are about the run, not about the round. See SHARE_TABS.
     SettingKey.BubbleStrategy,
+    SettingKey.HoldBubblesLastFeverSec,
 ];
 
 /**
@@ -2133,6 +2193,105 @@ function onReportSaved(answer: string): void {
         return;
     }
     setReportStatus(id + ' — ' + i18nText(UiText.ReportSaved), false);
+}
+
+// --- detecting MyTsum ------------------------------------------------------
+//
+// The pre-round tsum read (`selectedTsum`, src/roundStats.ts) tried on demand,
+// so a template can be checked against the game without playing a round. The
+// engine half is `detectMyTsum`.
+
+/** The status line under the Detect row, built the first time it is needed. */
+var detectPanel: HTMLElement | undefined;
+
+function ensureDetectPanel(): HTMLElement {
+    if (detectPanel !== undefined) {
+        return detectPanel;
+    }
+    var panel = fromTemplate('tpl-detect');
+    var row = document.getElementById(rowElementId(RowKey.DetectMyTsum));
+    if (row !== null && row.parentNode !== null) {
+        row.parentNode.insertBefore(panel, row.nextSibling);
+    } else {
+        document.getElementById('tabPanels')!.appendChild(panel);
+    }
+    detectPanel = panel;
+    return panel;
+}
+
+function setDetectStatus(message: string, isError: boolean): void {
+    var panel = ensureDetectPanel();
+    var status = pick(panel, '.detect-status');
+    status.textContent = message;
+    status.className = isError ? 'share-status detect-status share-error'
+        : 'share-status detect-status';
+    panel.hidden = false;
+}
+
+/**
+ * The Detect button: asks the engine to read the pre-round tsum icon now.
+ *
+ * The panel is closed first, as the two Now buttons close it: the host
+ * captures every window, so a panel left up would be what got read. The
+ * page's settings go with the call because the read needs the screen geometry
+ * `start()` would have set up, and there is no run to have done it. The answer
+ * lands at `onMyTsumDetected` -- on the banner as well, since the panel is
+ * down by then.
+ */
+// noinspection JSUnusedGlobalSymbols
+function askDetectMyTsum(): void {
+    var iface = bridge();
+    if (iface === undefined) {
+        setDetectStatus(i18nText(UiText.DetectMyTsumFailed), true);
+        return;
+    }
+    // A line from the last press must not stand as this one's answer.
+    if (detectPanel !== undefined) {
+        setDetectStatus('', false);
+    }
+    flushSettings();
+    iface.hideMenu();
+    iface.showMenu();
+    logInfo(Log.Settings.DetectMyTsumAsked, 'Asked the engine to read the selected tsum');
+    iface.runScriptCallback('typeof detectMyTsum === "function" ? detectMyTsum('
+        + JSON.stringify(startSettings(settings)) + ') : "no script"',
+        'onMyTsumDetected');
+}
+
+/**
+ * The engine's answer: the selection it read, or the reason it read nothing.
+ *
+ * Not JSON at all is the guarded eval's own "no script", or a host that gave
+ * nothing back -- the same sentence covers both.
+ */
+// noinspection JSUnusedGlobalSymbols
+function onMyTsumDetected(answer: string): void {
+    var read: any;
+    try {
+        read = JSON.parse(String(answer));
+    } catch (e) {
+        read = null;
+    }
+    if (read === null || typeof read !== 'object') {
+        setDetectStatus(i18nText(UiText.DetectMyTsumFailed), true);
+        return;
+    }
+    if (typeof read.reason === 'string') {
+        var reason: DetectMyTsumRefusal = read.reason;
+        setDetectStatus(i18nText(
+            reason === DetectMyTsumRefusal.Run ? UiText.DetectMyTsumRunUp
+                : reason === DetectMyTsumRefusal.Library ? UiText.DetectMyTsumNoLibrary
+                : UiText.DetectMyTsumUnreadable), true);
+        return;
+    }
+    var confident = read.confident === true;
+    setDetectStatus(i18nFormat(
+        confident ? UiText.DetectMyTsumFound : UiText.DetectMyTsumNearest, {
+            name: String(read.full),
+            tsum: String(read.short),
+            score: Number(read.score).toFixed(3),
+            margin: Number(read.margin).toFixed(3),
+        }), !confident);
 }
 
 /**
@@ -3022,7 +3181,7 @@ function taskDetail(name: TaskName, values: { [key: string]: SettingValue }): st
         case TaskName.BuyBoxes:
             return i18nFormat(UiText.RunBuyBoxesDetail, {
                 box: optionLabelOf(SettingKey.BuyBoxType, values[SettingKey.BuyBoxType]),
-                boxes: values[SettingKey.BuyBoxTenTimes] === true ? 10 : 1,
+                size: optionLabelOf(SettingKey.BuyBoxSize, values[SettingKey.BuyBoxSize]),
                 max: num(SettingKey.BuyBoxMaxPurchases)
             });
         case TaskName.PlayRound: {
@@ -3083,6 +3242,10 @@ function roundFlowChips(values: { [key: string]: SettingValue }): string[] {
     chips.push(i18nFormat(UiText.FlowKeep, {count: num(SettingKey.MaxChainsPerScan)}));
     if (on(SettingKey.SkillAutoTap)) {
         chips.push(i18nText(UiText.FlowTapSkill));
+    }
+    if (num(SettingKey.HoldBubblesLastFeverSec) > 0) {
+        chips.push(i18nFormat(UiText.FlowHoldBubblesFever,
+            {sec: num(SettingKey.HoldBubblesLastFeverSec)}));
     }
     chips.push(i18nText(strategy === BubbleStrategy.OneMidChain
         ? UiText.FlowLinkOneBubble
@@ -3892,9 +4055,11 @@ function renderPage(): void {
 
     bar.textContent = '';
     panels.textContent = '';
-    // Both panels are appended into #tabPanels, so they have just gone with it.
+    // Every panel is appended into #tabPanels, so they have just gone with it.
     sharePanel = undefined;
     presetExportPanel = undefined;
+    reportPanel = undefined;
+    detectPanel = undefined;
 
     renderTabs(bar, panels, tabs);
     selectTab(rememberedTab());

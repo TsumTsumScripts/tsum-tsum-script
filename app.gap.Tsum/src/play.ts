@@ -554,6 +554,8 @@ Tsum.prototype.taskPlayGameQuick = function() {
   // changed which tsum is selected, and `identifyMyTsum` has just re-read it.
   this.myTsumColor = null;
   this.myTsumIdx = -1;
+  // What this round's level-up panel says about the MyTsum's cap; nothing yet.
+  this.myTsumCapSeen = false;
   this.overloadPending = false;
   // Same reasoning as `gFever.reset()` in buildRun: the transformation belongs
   // to a round, and the round that just ended has nothing to say about this one.
@@ -775,9 +777,10 @@ Tsum.prototype.taskPlayGameQuick = function() {
     // stands it owns none: `bubbleTapBudget` already returns 0 for the aimed
     // pops, and a blind sweep that ignored that would spend the hoard the
     // skill's next activation is counting on -- Gaston's cancel bubble, or
-    // Aurora's chain.
+    // Aurora's chain. So does the fever hold, for the same reason: it has
+    // just refused the aimed pops so the bubbles are there after the fever.
     if (this.bubbleStrategy === BubbleStrategy.AllAsap && bubbleEvents >= 2
-        && !skillClaimsBubbles(this)) {
+        && !skillClaimsBubbles(this) && !this.bubblesHeldForFever()) {
       logDebug(Log.Bubble.Cleared);
       bubbleEvents = 0;
       // A popped bubble clears the area around it, which can take the chain
@@ -838,6 +841,11 @@ Tsum.prototype.taskPlayGameQuick = function() {
     medals: outcome === null ? null : outcome.medals,
     settings: statsSettingsPayload(this.roundSettings),
   });
+  // Auto Unlock MyTsum Level: the level-up panel this round ended on may have
+  // shown the MyTsum capped, and the raise goes here, between the round and
+  // whatever comes next. Before the delay below, which measures from the game
+  // being back between rounds.
+  this.raiseMyTsumLevelCapIfPending();
   // Start the wait here rather than at game over: finishRoundStats sees the
   // score screen away, so this measures from the game being back at the start
   // screen -- which is what "between rounds" means to the person who set it.

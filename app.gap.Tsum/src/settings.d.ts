@@ -149,6 +149,8 @@ declare const enum RowKey {
   BuildDate = 'buildDate',
   /** The Report button; its note box and status are inserted under this row. */
   ReportIssue = 'reportIssue',
+  /** The Detect button; the engine's answer is written under this row. */
+  DetectMyTsum = 'detectMyTsum',
 }
 
 /** One row of the settings schema (a `rows` entry of a `GroupSpec`). */
@@ -160,7 +162,7 @@ interface SettingSpec {
    * value, which is why the skill, bubble, box and round-cap vocabularies are
    * in the union too.
    */
-  key?: SettingKey | RowKey | SkillType | BubbleStrategy | BoxType | MaxRoundAction;
+  key?: SettingKey | RowKey | SkillType | BubbleStrategy | BoxType | BoxPurchaseSize | MaxRoundAction;
   /** A `UiText` key, resolved at render time -- see `src/strings.d.ts`. */
   title?: UiText;
   /**

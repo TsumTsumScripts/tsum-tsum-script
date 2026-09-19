@@ -40,6 +40,7 @@ namespace Log {
 
   /** The game app process. */
   export const enum App {
+    Build            = 'app.build',
     Off              = 'app.off',
     OffTimeout       = 'app.offTimeout',
     Restarted        = 'app.restarted',
@@ -118,7 +119,11 @@ namespace Log {
     Cleared   = 'bubble.cleared',
     Found     = 'bubble.found',
     Generated = 'bubble.generated',
+    /** A pop refused because a fever is about to end -- the fever hold. */
+    Held      = 'bubble.held',
     Popped    = 'bubble.popped',
+    /** A pop refused because every bubble sits in a hole -- too few tsums round it. */
+    Unripe    = 'bubble.unripe',
   }
 
   /** A round, start to finish. */
@@ -145,6 +150,7 @@ namespace Log {
 
   /** Which tsum is selected, off the pre-round icon. */
   export const enum Tsums {
+    Detected       = 'tsums.detected',
     Identified     = 'tsums.identified',
     LibraryLoaded  = 'tsums.libraryLoaded',
     NoBoardColors  = 'tsums.noBoardColors',
@@ -164,7 +170,13 @@ namespace Log {
     ElsaBurst             = 'skill.elsa.burst',
     ElsaDone              = 'skill.elsa.done',
     ElsaIceAlike          = 'skill.elsa.iceAlike',
+    // The 1.0 choreography's own names, so a log tells the two apart.
+    ElsaLegacyBurst       = 'skill.elsaLegacy.burst',
+    ElsaLegacyDone        = 'skill.elsaLegacy.done',
+    ElsaLegacyIceAlike    = 'skill.elsaLegacy.iceAlike',
+    ElsaLegacyPass        = 'skill.elsaLegacy.pass',
     ElsaPass              = 'skill.elsa.pass',
+    ElsaRoundOver         = 'skill.elsa.roundOver',
     FeverHoldOff          = 'skill.feverHoldOff',
     FormalBeastModeEnd    = 'skill.formalBeast.modeEnd',
     FormalBeastModeStart  = 'skill.formalBeast.modeStart',
@@ -240,11 +252,12 @@ namespace Log {
     ReceiveOneFetchedAllSoFar = 'gifts.receiveOne.fetchedAllSoFar',
     ReceiveOneHandleAd        = 'gifts.receiveOne.handleAd',
     ReceiveOneIdle            = 'gifts.receiveOne.idle',
-    ReceiveOneMedalsOnly      = 'gifts.receiveOne.medalsOnly',
     ReceiveOneOk              = 'gifts.receiveOne.ok',
     ReceiveOneProbe           = 'gifts.receiveOne.probe',
     ReceiveOneReceiveAll      = 'gifts.receiveOne.receiveAll',
     ReceiveOneSkipMedal       = 'gifts.receiveOne.skipMedal',
+    ReceiveOneSkipRuby        = 'gifts.receiveOne.skipRuby',
+    ReceiveOneSkippedOnly     = 'gifts.receiveOne.skippedOnly',
     ReceiveOneStuck           = 'gifts.receiveOne.stuck',
     ReceiveOneStuckRetry      = 'gifts.receiveOne.stuckRetry',
     ReceiveOneTimeout         = 'gifts.receiveOne.timeout',
@@ -257,6 +270,13 @@ namespace Log {
     CardsRead         = 'unlock.cardsRead',
     DialogMissing     = 'unlock.dialogMissing',
     End               = 'unlock.end',
+    /** The Auto Unlock MyTsum Level flow: one raise for the selected tsum after a round. */
+    MyTsumBackoff     = 'unlock.myTsum.backoff',
+    MyTsumCapped      = 'unlock.myTsum.capped',
+    MyTsumEnd         = 'unlock.myTsum.end',
+    MyTsumNotSelected = 'unlock.myTsum.notSelected',
+    MyTsumRead        = 'unlock.myTsum.read',
+    MyTsumStart       = 'unlock.myTsum.start',
     NextPage          = 'unlock.nextPage',
     NowQueued         = 'unlock.nowQueued',
     NowRefused        = 'unlock.nowRefused',
@@ -305,6 +325,8 @@ namespace Log {
     TabPicked        = 'box.tabPicked',
     TabNotTaken      = 'box.tabNotTaken',
     TabRead          = 'box.tabRead',
+    TenRefused       = 'box.tenRefused',
+    ToastStuck       = 'box.toastStuck',
   }
 
   /** The per-round CSV. */
@@ -321,6 +343,7 @@ namespace Log {
     ScorePageGaveUp = 'stats.scorePageGaveUp',
     ShotSaveFailed  = 'stats.shotSaveFailed',
     TallyCovered    = 'stats.tallyCovered',
+    TallySkipped    = 'stats.tallySkipped',
     TooManyGlyphs   = 'stats.tooManyGlyphs',
     UnreadableGlyph = 'stats.unreadableGlyph',
     UnreadShotSaved = 'stats.unreadShotSaved',
@@ -400,6 +423,7 @@ namespace Log {
     ClipboardReadFailed        = 'settings.clipboardReadFailed',
     ClipboardSetFailed         = 'settings.clipboardSetFailed',
     ClipboardWriteFailed       = 'settings.clipboardWriteFailed',
+    DetectMyTsumAsked          = 'settings.detectMyTsumAsked',
     Enabled                    = 'settings.enabled',
     EnableUnknown              = 'settings.enableUnknown',
     LiveApplied                = 'settings.liveApplied',

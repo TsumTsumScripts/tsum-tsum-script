@@ -78,13 +78,12 @@ const StatsGlyphPoints: Point[] = (function() {
 
 // Digit shapes, normalised to StatsGlyphW x StatsGlyphH. What `pages:stats
 // --digits` prints: the per-pixel majority of every glyph the corpus labels --
-// 275 of them, across the three sizes the game draws a number at (the orange
+// 388 of them, across the three sizes the game draws a number at (the orange
 // score ~50px, the tally rows ~20px, the dimmed level-up counter ~17px), on a
-// 540 emulator and a 1080 phone -- then the one pixel a quarter of its samples
+// 540 emulator and a 1080 phone -- then the two pixels a quarter of its samples
 // disagreed on that a '3' gains a lead by. Over that set the worst genuine
-// digit scores 0.800 with a 0.043 lead over the runner-up, and thirteen device
-// shots the set was not cut from all read. Recut the same way from fresh
-// frames if the game ever changes its typeface.
+// digit scores 0.807 with a 0.036 lead over the runner-up. Recut the same way
+// from fresh frames if the game ever changes its typeface.
 //
 // Cut from tally-size glyphs as much as score-size ones, because that is where
 // a template goes wrong: a stroke is two pixels of this grid there rather than
@@ -96,6 +95,15 @@ const StatsGlyphPoints: Point[] = (function() {
 // written blank. The tally's bonus and high-score rows are in the sample for
 // the same reason: they are the only place the corpus draws a small '6' or
 // '8', and the 1080 phone's halved '8' had read as '3' without them.
+//
+// The medals row is its own size. On the 540 emulator its glyphs come out 19px
+// tall where the coin row's are 20 -- the row sits half a pixel off, so the
+// antialiased top and bottom land at 214, just under the white floor -- and a
+// '0' cut that way has a thinner lower-left stroke than the coin row's. With
+// no such '0' in the sample it led '9' by 0.029, one thousandth under the
+// floor, and every tally with a '0' in its medal count was written blank. Two
+// of those tallies are in the sample now, and the '9' lost the two pixels of
+// its lower loop that a '0' cut short shared with it.
 const StatsDigits: {[digit: string]: string[]} = {
   '0': ['...####...',
         '..##..##..',
@@ -110,7 +118,7 @@ const StatsDigits: {[digit: string]: string[]} = {
         '.##....##.',
         '.##....##.',
         '..##..##..',
-        '...###....'],
+        '...####...'],
   '1': ['.....#####',
         '..########',
         '##########',
@@ -137,10 +145,10 @@ const StatsDigits: {[digit: string]: string[]} = {
         '..####....',
         '.###......',
         '.##.......',
-        '###.......',
+        '####......',
         '##########'],
   '3': ['..######..',
-        '.##...###.',
+        '.###..###.',
         '.##....##.',
         '.#.....##.',
         '.......##.',
@@ -151,27 +159,27 @@ const StatsDigits: {[digit: string]: string[]} = {
         '.......###',
         '##.....###',
         '##.....##.',
-        '.##...###.',
-        '...####...'],
-  '4': ['......##..',
+        '.###..###.',
+        '..#####...'],
+  '4': ['......#...',
         '.....###..',
         '....####..',
         '....####..',
         '...##.##..',
-        '..##..##..',
+        '...#..##..',
         '..##..##..',
         '.##...##..',
         '.#....##..',
-        '##...###..',
+        '##....##..',
         '##########',
-        '.....####.',
+        '.#########',
         '......##..',
         '......##..'],
   '5': ['.########.',
         '.########.',
         '.##.......',
         '.##.......',
-        '###.......',
+        '###..##...',
         '#########.',
         '###...###.',
         '.#.....###',
@@ -183,17 +191,17 @@ const StatsDigits: {[digit: string]: string[]} = {
         '..#####...'],
   '6': ['...#####..',
         '.###...##.',
-        '.##....##.',
+        '.##.....#.',
         '.##.......',
         '###.......',
         '########..',
         '###....##.',
-        '###....##.',
+        '###....###',
         '###....###',
         '###....###',
         '.##....###',
         '.##....##.',
-        '.###..###.',
+        '.###...##.',
         '...####...'],
   '7': ['##########',
         '##########',
@@ -211,7 +219,7 @@ const StatsDigits: {[digit: string]: string[]} = {
         '..##......'],
   '8': ['...####...',
         '.###..###.',
-        '.##....##.',
+        '.##...###.',
         '.##....##.',
         '.##....##.',
         '.###..###.',
@@ -221,7 +229,7 @@ const StatsDigits: {[digit: string]: string[]} = {
         '###....###',
         '###....###',
         '###....###',
-        '.###...##.',
+        '.###..###.',
         '...#####..'],
   '9': ['..######..',
         '.###..###.',
@@ -231,10 +239,10 @@ const StatsDigits: {[digit: string]: string[]} = {
         '###....###',
         '###....###',
         '.##....###',
-        '..####.###',
+        '..########',
         '.......###',
         '.......##.',
-        '.##....##.',
+        '.#.....##.',
         '.##...###.',
         '..#####...']
 };
@@ -387,14 +395,23 @@ const StatsSettleMissLimit = 6;
 // panel the game leaves up.
 const StatsScorePageMaxWaitMs = 60 * 1000;
 
-// Where `waitForScorePage` taps a screen it cannot name once the tally has
-// been seen, and how often. The spot has to be inert on everything that can be
+// Where `waitForScorePage` taps blind, and how often for each of the two things
+// it taps: the tally while it is still counting up, and a screen it cannot name
+// once the tally has been seen. One spot for both, so a re-measurement cannot
+// leave them on different pixels. It has to be inert on everything that can be
 // in front of it then: on the tally it is the panel's number rows, on the event
-// page the map art, on the new-record and rank-up panels their body, and all of
-// them keep their buttons well below it. On what it is aimed at -- an event's
-// result overlay, its card reveal -- any tap counts. The interval leaves an
-// overlay's exit animation time to finish before the next look.
-const StatsUnknownTapSpot = {x: 540, y: 1000};
+// page the map art, on the new-record, rank-up and Magical Time panels their
+// body, and all of them keep their buttons well below it. On what it is aimed
+// at -- a tally mid-count, an event's result overlay, its card reveal -- any
+// tap counts.
+//
+// The skip is retried a look or two apart: the game draws the final figures on
+// the tap itself, so the next look says whether it landed, and one that went
+// out while the panel was still sliding in is simply lost. The overlay interval
+// is longer because it has to leave an exit animation time to finish before the
+// next look.
+const StatsBlindTapSpot = {x: 540, y: 1000};
+const StatsSkipTapMs = 1000;
 const StatsUnknownTapMs = 1500;
 
 // How many failed reads of the coin counter it takes, with none having
@@ -444,10 +461,13 @@ const StatsIdColumn = 'id';
 // produced them, and the app's envelope names the app's version but not this
 // one. 'tsum' is the short name of the tsum that played the round, read off
 // the pre-round screen by identifyMyTsum(). Empty when nothing in the library
-// matched it well enough. 'medals' is the round's medal award off the tally,
-// and 0 -- not empty -- on a tally with no medals row, because that is the game
-// saying none were earned rather than a figure that could not be read.
-const StatsBaseColumns = [StatsIdColumn, 'datetime', 'script_version', 'skill_type', 'tsum', 'duration_seconds', 'score', 'base_coins', 'final_coins', 'medals'];
+// matched it well enough. 'build' is which game played it, a `GameBuild` --
+// the two are separate apps with their own events and economies, so their
+// rounds compare only with each other. 'medals' is the round's medal award off
+// the tally, and 0 -- not empty -- on a tally with no medals row, because that
+// is the game saying none were earned rather than a figure that could not be
+// read.
+const StatsBaseColumns = [StatsIdColumn, 'datetime', 'script_version', 'skill_type', 'tsum', 'build', 'duration_seconds', 'score', 'base_coins', 'final_coins', 'medals'];
 
 // One file per UTC day in tsum_record/, named for the day the round was played:
 // stats_20260825.csv. The engine cannot append, so writing a row rewrites the
@@ -484,7 +504,6 @@ function statsFileName(date: Date): string {
 // is already the second column; and the heart, mailbox and
 // app-restart chores, which do not touch what happens inside a round.
 const StatsSettingColumns: (keyof Settings)[] = [
-  SettingKey.JpVersion,
   SettingKey.BubbleStrategy,
   SettingKey.UseFan,
   SettingKey.MaxChainsPerScan,
@@ -502,7 +521,8 @@ const StatsSettingColumns: (keyof Settings)[] = [
   SettingKey.SkillWaitingTime,
   SettingKey.SkillAutoTap,
   SettingKey.LorcanaCard,
-  SettingKey.NoSkillLastFeverSec
+  SettingKey.NoSkillLastFeverSec,
+  SettingKey.HoldBubblesLastFeverSec
 ];
 
 /**
@@ -1073,6 +1093,11 @@ Tsum.prototype.readSettledStatsNumber = function(region) {
 // good and clearly ahead. A tsum that matches nothing well enough is written as
 // an empty cell -- guessing which tsum played a round would poison exactly the
 // comparison the column exists for.
+//
+// The library serves both builds of the game and carries a name per build,
+// because each prints its own: English on the global one, kana on the Japanese
+// one. Which to show is read off the focused package (`Tsum.gameBuild`), not
+// off a setting, so the banner says what the screen says.
 // ---------------------------------------------------------------------------
 
 /**
@@ -1303,20 +1328,26 @@ function myTsumLoadLibrary(): MyTsumEntry[] {
       }
       continue;
     }
-    // Three fields before the board colour was added, four after. Read
-    // leniently in both directions: a row with no colour is a tsum that falls
-    // back to sampling the button, not a row worth throwing away.
+    // Five fields: the id, the name each build prints (either may be blank),
+    // the signature, the board colour. Read leniently past the signature: a
+    // row with no colour is a tsum that falls back to sampling the button, not
+    // a row worth throwing away.
     const parts = line.split('\t');
-    const sig = parts.length >= 3 ? myTsumDecode(parts[2]) : null;
+    const sig = parts.length >= 4 ? myTsumDecode(parts[3]) : null;
     if (sig === null) {
       stale++;
       continue;
     }
+    // A build with no strip for the tsum borrows the other's name, or the id.
+    const en = parts[1] !== '' ? parts[1] : parts[2] !== '' ? parts[2] : parts[0];
+    const jp = parts[2] !== '' ? parts[2] : en;
     // Prepared once, at load: a template's vector never changes, and doing it
     // here is what makes a round's match one dot product per entry.
     lib.push({
-      short: parts[0], full: parts[1], vec: myTsumPrepare(sig),
-      board: boardOk && parts.length >= 4 ? myTsumDecodeColor(parts[3]) : null,
+      short: parts[0],
+      names: { [GameBuild.Global]: en, [GameBuild.Japan]: jp },
+      vec: myTsumPrepare(sig),
+      board: boardOk && parts.length >= 5 ? myTsumDecodeColor(parts[4]) : null,
     });
   }
   if (stale > 0) {
@@ -1416,12 +1447,12 @@ function myTsumSimilarity(a: number[], b: number[]): number {
 }
 
 /**
- * The closest library entry to one signature.
+ * The closest library entry to one signature, named as `build` prints it.
  *
  * With a single entry there is no runner-up and `margin` is the score itself:
  * nothing to beat is not the same as a tie.
  */
-function myTsumMatch(sig: number[]): MyTsumMatch | null {
+function myTsumMatch(sig: number[], build: GameBuild): MyTsumMatch | null {
   const lib = myTsumLibrary();
   const vec = myTsumPrepare(sig);
   let best = -2;
@@ -1442,7 +1473,8 @@ function myTsumMatch(sig: number[]): MyTsumMatch | null {
   }
   return {
     short: lib[winner].short,
-    full: lib[winner].full,
+    full: lib[winner].names[build],
+    build: build,
     score: best,
     // -2 is the sentinel: correlation cannot leave [-1, 1], so anything below
     // that means no second entry was scored at all.
@@ -1534,13 +1566,15 @@ Tsum.prototype.selectedTsum = function() {
     logWarn(Log.Tsums.Unreadable, 'Could not read the pre-round tsum icon');
     return null;
   }
-  const match = myTsumMatch(sig);
+  // Named as the build in front prints it.
+  const match = myTsumMatch(sig, this.gameBuild());
   if (match === null) {
     return null;
   }
   return {
     short: match.short,
     full: match.full,
+    build: match.build,
     score: match.score,
     margin: match.margin,
     confident: match.score >= MyTsumPortrait.minScore
@@ -1573,6 +1607,7 @@ Tsum.prototype.identifyMyTsum = function() {
     logInfo(Log.Tsums.Identified, {
       tsum: selected.short,
       name: selected.full,
+      build: selected.build,
       score: +selected.score.toFixed(3),
       margin: +selected.margin.toFixed(3),
     });
@@ -1593,6 +1628,73 @@ Tsum.prototype.identifyMyTsum = function() {
     });
   }
 };
+
+/**
+ * How long `detectMyTsum` waits before its capture.
+ *
+ * The host captures every window, the settings panel included. The page closes
+ * the panel before asking, but that close is a post to the UI thread while the
+ * ask comes down its own socket, so the first frame here could still be the
+ * panel. A few frames of grace.
+ */
+const DetectMyTsumSettleMs = 500;
+
+/**
+ * Reads which tsum the pre-round screen shows selected, on demand.
+ *
+ * A global for the same reason `reportIssue` is: the Debug tab's Detect button
+ * reaches it by name through `JavaScriptInterface.runScriptCallback`. It is how
+ * `selectedTsum` is tried without playing a round -- leave the game on the
+ * pre-round screen, press the button, read the banner.
+ *
+ * With no run up, a throwaway `Tsum` built on the page's settings supplies the
+ * screen geometry the capture needs, and nothing else is built. A live run is
+ * refused: closing the panel resumed it, and its loop reads this same screen on
+ * its own at every pre-round arrival (`identifyMyTsum`).
+ *
+ * The page's Eval opens the host's pause gate, so the settle sleep is a real
+ * one rather than a park.
+ *
+ * Returns JSON: the `MyTsumSelection` on a read, `{reason}` otherwise. The page
+ * words both, and the host writes the answer to the log either way.
+ */
+// noinspection JSUnusedGlobalSymbols
+function detectMyTsum(settings?: Settings): string {
+  if (gRunActive || ts !== undefined) {
+    if (ts !== undefined) {
+      ts.banner('Stop the run to test MyTsum detection here', 4000);
+    }
+    return JSON.stringify({ reason: DetectMyTsumRefusal.Run });
+  }
+  const probe = new Tsum(
+    settings !== undefined && settings.specialScreenRatio === true,
+    logStringsFor(settings !== undefined ? settings.locale : undefined));
+  sleep(DetectMyTsumSettleMs);
+  const selected = probe.selectedTsum();
+  if (selected === null) {
+    // selectedTsum has already logged the unreadable icon; the missing library
+    // was logged when it was first looked for.
+    const noLibrary = myTsumLibrary().length === 0;
+    probe.banner(noLibrary ? 'MyTsum not read: no tsum library'
+      : 'MyTsum icon unreadable: is the game on the pre-round screen?', 4000);
+    return JSON.stringify({
+      reason: noLibrary ? DetectMyTsumRefusal.Library : DetectMyTsumRefusal.Unreadable
+    });
+  }
+  // Its own event rather than `Identified`, so a reader of the log cannot take
+  // a press of the button for a round's own read.
+  logInfo(Log.Tsums.Detected, {
+    tsum: selected.short,
+    name: selected.full,
+    build: selected.build,
+    score: +selected.score.toFixed(3),
+    margin: +selected.margin.toFixed(3),
+    confident: selected.confident,
+  });
+  probe.banner((selected.confident ? 'Tsum: ' : 'Tsum? ') + selected.full
+    + ' (' + selected.score.toFixed(2) + ' / +' + selected.margin.toFixed(2) + ')', 6000);
+  return JSON.stringify(selected);
+}
 
 /**
  * The settings a round is played under, frozen at the moment it starts.
@@ -1711,6 +1813,15 @@ function statsPageTally(seen: {[page: string]: number}): string {
  * and only puts its buttons out when that finishes -- so "the score page is on
  * screen" is not yet "the score page is showing the round's score".
  *
+ * The count-up is not sat through: a tap on the tally skips it, and the game
+ * draws the final figures with the button row at once. So a look that finds the
+ * tally still counting taps it (`StatsBlindTapSpot`, inert once the row is out)
+ * and looks again, retrying every `StatsSkipTapMs` while the row stays away.
+ * Only when *this* look named the tally, never on the panels that stand over
+ * it: the new-record, rank-up and event screens are cleared by their own
+ * dismiss handlers inside `detect`, and a tally uncovered still counting is
+ * simply seen and tapped on the look after.
+ *
  * One window at a time rather than one budget for the lot. Arriving and counting
  * up are two waits for two different things, and a round whose post-round panels
  * ran long used to hand the count-up whatever the arrival had left -- often
@@ -1724,14 +1835,15 @@ function statsPageTally(seen: {[page: string]: number}): string {
  * a dismiss handler of its own, or this loop just watches it until the budget
  * runs out. The failure log below is what says which screen that was.
  *
- * The one thing tapped blind is an unreadable screen *after* the tally has been
- * seen -- something standing in front of a tally that already arrived. That is
- * an event's result overlay, drawn in the event's own colours, so there is no
- * fingerprint to keep current from one event to the next; what holds is that
- * every one so far advances on any tap. `StatsUnknownTapSpot` is inert on the
+ * The other thing tapped blind is an unreadable screen *after* the tally has
+ * been seen -- something standing in front of a tally that already arrived.
+ * That is an event's result overlay, drawn in the event's own colours, so there
+ * is no fingerprint to keep current from one event to the next; what holds is
+ * that every one so far advances on any tap. The same spot is inert on the
  * tally and on the panels that share its moment, and the window is renewed
  * while the tapping goes on, since the loop is then acting rather than
- * watching; `StatsScorePageMaxWaitMs` bounds it as before.
+ * watching; `StatsScorePageMaxWaitMs` bounds it as before. The count-up tap
+ * renews nothing: the window it runs in is the count-up's own.
  *
  * The polling also drives `record.baseCoins`, which reads the coin counter off
  * the level-up panel this loop passes through on the way.
@@ -1745,7 +1857,11 @@ Tsum.prototype.waitForScorePage = function() {
   // front of it" and "it came but never finished counting up", and those want
   // three different fixes.
   let sawTally = false;
-  // The blind taps: when the last went out, and how many, for the record.
+  // When the tally was first seen, for the record of how long its count-up ran.
+  let tallyAt = 0;
+  // The blind taps of each kind: when the last went out, and how many.
+  let lastSkipTapAt = 0;
+  let skipTaps = 0;
   let lastTapAt = 0;
   let taps = 0;
   const seen: {[page: string]: number} = {};
@@ -1755,6 +1871,7 @@ Tsum.prototype.waitForScorePage = function() {
     if (page === PageName.ScorePage) {
       if (!sawTally) {
         sawTally = true;
+        tallyAt = Date.now();
         // Arrived, so whatever the arrival cost is spent and the count-up starts
         // its own window here. Set once, not on every look: renewing it while
         // the tally is up would turn "the buttons never came" into the full
@@ -1768,10 +1885,27 @@ Tsum.prototype.waitForScorePage = function() {
       try {
         if (statsScoreButtonsReady(this, img)) {
           this.roundMedalsRow = statsScoreMedalsShown(this, img);
+          if (skipTaps > 0) {
+            // How long the row took from the tally's arrival says whether the
+            // taps cut the count-up short or it ran its course regardless.
+            logInfo(Log.Stats.TallySkipped, 'Tapped the tally through its count-up', {
+              taps: skipTaps,
+              sinceTallyMs: Date.now() - tallyAt,
+            });
+          }
           return true;
         }
       } finally {
         releaseImage(img);
+      }
+      // Still counting up, so tap it on rather than sit through it. Gated on
+      // this look having named the tally: a panel over it was cleared by its
+      // own handler inside `detect`, and the tally underneath gets its tap on
+      // the next look, once it is what the screen shows.
+      if (Date.now() - lastSkipTapAt >= StatsSkipTapMs) {
+        this.tap(StatsBlindTapSpot);
+        lastSkipTapAt = Date.now();
+        skipTaps++;
       }
     } else if (preTallyPages().indexOf(page) !== -1) {
       // The game is still working through the end of the round, so the tally is
@@ -1796,7 +1930,7 @@ Tsum.prototype.waitForScorePage = function() {
           logInfo(Log.Stats.TallyCovered,
             'A screen the table does not know is over the tally; tapping it away');
         }
-        this.tap(StatsUnknownTapSpot);
+        this.tap(StatsBlindTapSpot);
         lastTapAt = Date.now();
         taps++;
       }
@@ -1816,6 +1950,7 @@ Tsum.prototype.waitForScorePage = function() {
       // them. The second means the post-round screens kept renewing it, so the
       // fix is there rather than in the window's length.
       cappedOut: Date.now() >= hardDeadline,
+      skipTaps: skipTaps,
       blindTaps: taps,
       pagesSeen: statsPageTally(seen),
       trail: gPages.trail(8),
@@ -2357,6 +2492,7 @@ Tsum.prototype.writeRoundStats = function(date, seconds, score, baseCoins, final
     // Read on the pre-round screen, well before this row exists; see
     // identifyMyTsum(). Empty rather than guessed when nothing matched.
     tsum: this.myTsum,
+    build: this.gameBuild(),
     duration_seconds: seconds,
     score: statsCell(score),
     base_coins: statsCell(baseCoins),
