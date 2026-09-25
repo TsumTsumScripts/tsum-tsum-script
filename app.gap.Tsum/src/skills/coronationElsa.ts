@@ -105,18 +105,16 @@
 // under the fever tint on `coronation_elsa_3.mp4`, and a plain distance of
 // 15 called the second one ice -- which cost every window of that run.
 //
-// ## Which tsums are live: the paint read
+// ## Which tsums are one kind: the kind read
 //
-// Colour alone cannot tell a pale tsum from ice. The game can: with a finger
-// on a tsum it paints the other live tsums of its kind pale, and never a
-// frozen one. So when a chain's rows hold anything read as ice, the finger
-// goes down on the plan's lower end, the rows' floors are read before and
-// after (`elsaPaintChain`), and the chain is replanned over what rose --
-// ice reads included, at a higher bar (`paint.risePale`). Only when an ice
-// read shares the plan's colour cluster: real ice clusters on its own, and a
-// read on every chain cost a third of a window's chains. A read that confirms
-// no chain draws the plan anyway. A board that reads frozen out is probed from
-// a free head beside same-cluster ice reads (`elsaProbeHead`).
+// Two pale kinds can share a colour cluster -- cream Coronation Elsas and a
+// pale-pink tsum both read as skin at the centre -- and a chain mixing them
+// never links (22% of one round's chains). The game can tell: with a finger
+// on a tsum it darkens every other kind. Once a cluster has produced a dead
+// chain this round (`elsaMixed`), its chains go out with the finger resting
+// on the plan's lower end first; its members whose floor did not drop are
+// the head's kind, and the chain is replanned over those (`elsaKindChain`).
+// Ice reads stay out of it: ice does not darken either.
 //
 // The ice also eats colour slots: the board scan keeps its biggest
 // `uniqueTsumCount - 1` clusters and each ice shade takes one, so
@@ -263,25 +261,16 @@ var CoronationElsaConfig = {
   // whitelist were 1-4 tsums on one or two.
   iceAlikeMinTsums: 4,
   iceAlikeMinScans: 5,
-  // The paint read (`elsaPaintChain`): with the finger on a free head the game
-  // paints the other live tsums of its kind pale, and frozen ones never, so a
-  // circle whose floor rises by `rise` is live whatever its colour reads.
-  // Used only when the chain's rows hold an ice read in its own colour
-  // cluster (a lookalike), so ordinary chains keep full speed. `risePale` is
-  // the bar for a circle read as ice:
-  // a false call there drags onto the pile. `probeMinIced` is how many ice
-  // reads a head needs within a wide hop to be worth a probe when no row has
-  // a chain; `probes` is how many a look may spend.
-  // Off: on video the game darkens the other kinds rather than lightening
-  // the touched one, and ice stays bright too, so the read cannot separate a
-  // lookalike from ice; its chains also preceded whole-board freezes that
-  // went off within 0.35s (2026-09-25 02-17-52.mp4).
-  paint: {
-    on: false,
+  // The kind read (`elsaKindChain`): finger down on the head for `ms`, and a
+  // same-cluster member whose floor drops by `dropMax` or more is another
+  // kind. Only on clusters remembered as mixed (`elsaMixed`), matched like an
+  // ice-alike (`iceAlikeMatch`). `dropMax` is reasoned, not measured: the
+  // darkened kinds went near-black on video; `drops` on `skill.elsa.kind`.
+  kind: {
+    on: true,
     ms: 80, grid: 3, step: 2,
-    rise: 12, risePale: 20,
+    dropMax: 25,
     grabMs: 10, moveMs: 10, releaseMs: 10,
-    probeMinIced: 2, probes: 1,
   },
   // Taps spent on the pile. One is enough to set it off; the rest insure
   // against a position the read had slightly wrong.
@@ -821,157 +810,87 @@ function elsaToScreen(ts: Tsum, p: BoardPoint): Point {
   };
 }
 
-/** What a paint-read drag came to. */
-interface ElsaPaint {
+// Colour clusters that produced a dead chain this round, by cluster centre
+// (HSV as `b`/`g`/`r`): two kinds share them. Per round, like `elsaIceAlikes`.
+var elsaMixed: Color[] = [];
+var elsaMixedRound = 0;
+
+/** Whether cluster colour `c` is one remembered as mixed this round. */
+function elsaIsMixed(c: Color | undefined): boolean {
+  if (c === undefined) { return false; }
+  if (elsaMixedRound !== gLogRoundId) { elsaMixed = []; elsaMixedRound = gLogRoundId; }
+  const m = CoronationElsaConfig.iceAlikeMatch;
+  return elsaMixed.some(function(a) {
+    return Math.abs(a.b - c.b) <= m.hue && Math.abs(a.g - c.g) <= m.sat && Math.abs(a.r - c.r) <= m.val;
+  });
+}
+
+/** Remember cluster colour `c` as mixed. */
+function elsaNoteMixed(c: Color | undefined): void {
+  if (c === undefined || elsaIsMixed(c)) { return; }
+  elsaMixed.push({ b: c.b, g: c.g, r: c.r });
+}
+
+/** What a kind read came to. */
+interface ElsaKind {
   /** The chain drawn from the head, or null when the finger was lifted. */
   path: TsumPath | null;
-  /** Circles sampled, and how many of them read as ice. */
+  /** Members sampled, and how many stayed bright: the head's kind. */
   pool: number;
-  poolIced: number;
-  /** Circles that painted: live tsums of the head's kind. */
-  painted: number;
-  /** Of those, circles read as ice -- live after all. */
-  unfrozen: number;
-  /** Of those, how many the drawn chain used. */
-  unfrozenUsed: number;
-  /** The paint confirmed no chain, so the plan it was given was drawn instead. */
-  fellBack: boolean;
-  /** Each ice-read circle's rise, for tuning `risePale`. */
-  icedRises: number[];
+  kept: number;
+  /** Each member's floor drop, for tuning `kind.dropMax`. */
+  drops: number[];
   ms: number;
 }
 
 /**
- * Chain from `head` over what the game says is its kind: finger down, read
- * `pool`'s floors before and after `paint.ms`, and plan over the circles
- * that rose (`elsaStripChains` from the head, flattest clear of `obstacles`
- * less the painted ones). No chain: `fallback` is drawn from the head if
- * given, else the finger is lifted, which links nothing.
- * `iced` is the look's ice read.
+ * Chain from `head` over the members of `pool` that are its kind: finger
+ * down, read their floors before and after `kind.ms`, and keep the ones that
+ * did not darken; then the flattest chain from the head clear of `obstacles`.
+ * No chain: the finger is lifted, which links nothing.
  */
-function elsaPaintChain(ts: Tsum, head: BoardPoint, pool: BoardPoint[], iced: BoardPoint[],
-    obstacles: ElsaObstacle[], fallback: TsumPath | null): ElsaPaint {
+function elsaKindChain(ts: Tsum, head: BoardPoint, pool: BoardPoint[], obstacles: ElsaObstacle[]): ElsaKind {
   const cfg = CoronationElsaConfig;
-  const pc = cfg.paint;
+  const kc = cfg.kind;
   const from = Date.now();
-  const out: ElsaPaint = {
-    path: null, pool: pool.length, poolIced: 0, painted: 0, unfrozen: 0, unfrozenUsed: 0,
-    fellBack: false, icedRises: [], ms: 0,
-  };
+  const out: ElsaKind = { path: null, pool: pool.length, kept: 0, drops: [], ms: 0 };
   if (!ts.isRunning) { return out; }
-  const base = skillFloorRead(ts, pool, pc.grid, pc.step);
+  const base = skillFloorRead(ts, pool, kc.grid, kc.step);
   const at = elsaToScreen(ts, head);
   let finger = at;
   let down = true;
-  tapDown(at.x, at.y, pc.grabMs);
+  tapDown(at.x, at.y, kc.grabMs);
   try {
-    moveTo(at.x, at.y, pc.moveMs);
-    ts.sleep(Math.max(0, pc.ms - pc.grabMs - pc.moveMs));
-    const now = skillFloorRead(ts, pool, pc.grid, pc.step);
-    // The head first, so the search can grow from index 0. Copies share the
-    // head's colour index: the paint, not the clustering, says they are one kind.
-    const members: BoardPoint[] = [{ tsumIdx: head.tsumIdx, x: head.x, y: head.y }];
-    const live: BoardPoint[] = [];
+    moveTo(at.x, at.y, kc.moveMs);
+    ts.sleep(Math.max(0, kc.ms - kc.grabMs - kc.moveMs));
+    const now = skillFloorRead(ts, pool, kc.grid, kc.step);
+    // The head first, so the search grows from index 0.
+    const members: BoardPoint[] = [head];
     for (let k = 0; k < pool.length; k++) {
-      const p = pool[k];
-      if (p === head) { continue; }
-      const rise = now[k] - base[k];
-      const isIce = iced.indexOf(p) >= 0;
-      if (isIce) { out.poolIced++; out.icedRises.push(rise); }
-      if (rise < (isIce ? pc.risePale : pc.rise)) { continue; }
-      out.painted++;
-      if (isIce) { out.unfrozen++; live.push(p); }
-      members.push({ tsumIdx: head.tsumIdx, x: p.x, y: p.y });
+      if (pool[k] === head) { continue; }
+      const drop = base[k] - now[k];
+      out.drops.push(drop);
+      if (drop < kc.dropMax) { members.push(pool[k]); out.kept++; }
     }
-    const clear = obstacles.filter(function(o) { return live.indexOf(o as BoardPoint) < 0; });
     let path: TsumPath | null = null;
     for (let t = 0; t < cfg.maxHops.length && path === null; t++) {
-      path = elsaFlattest(elsaStripChains(members, cfg.maxHops[t], cfg.rowMaxChain, 0), clear, null);
-    }
-    if (path === null && fallback !== null) {
-      path = (fallback[0] === head ? fallback : fallback.slice().reverse()) as TsumPath;
-      out.fellBack = true;
+      path = elsaFlattest(elsaStripChains(members, cfg.maxHops[t], cfg.rowMaxChain, 0), obstacles, null);
     }
     if (path !== null) {
       for (let j = 1; j < path.length; j++) {
         finger = elsaToScreen(ts, path[j]);
-        moveTo(finger.x, finger.y, pc.moveMs);
-        for (let k = 0; k < live.length; k++) {
-          if (live[k].x === path[j].x && live[k].y === path[j].y) { out.unfrozenUsed++; break; }
-        }
+        moveTo(finger.x, finger.y, kc.moveMs);
       }
       out.path = path;
     }
     down = false;
-    tapUp(finger.x, finger.y, pc.releaseMs);
+    tapUp(finger.x, finger.y, kc.releaseMs);
   } catch (e) {
-    if (down) { tapUp(finger.x, finger.y, pc.releaseMs); }
+    if (down) { tapUp(finger.x, finger.y, kc.releaseMs); }
     throw e;
   }
   out.ms = Date.now() - from;
   return out;
-}
-
-function elsaLogPaint(p: ElsaPaint, probe: boolean, planned: number, t0: number): void {
-  logDebug(Log.Skill.ElsaPaint, {
-    atMs: Date.now() - t0,
-    probe: probe,
-    // The plan's length before the read; 0 on a probe.
-    planned: planned,
-    chainLen: p.path === null ? 0 : p.path.length,
-    pool: p.pool,
-    poolIced: p.poolIced,
-    painted: p.painted,
-    unfrozen: p.unfrozen,
-    unfrozenUsed: p.unfrozenUsed,
-    fellBack: p.fellBack,
-    icedRises: p.icedRises,
-    ms: p.ms,
-  });
-}
-
-/** `free` plus `iced` with y inside [top, bottom] -- the circles a paint read samples. */
-function elsaPaintPool(free: BoardPoint[], iced: BoardPoint[], top: number, bottom: number): BoardPoint[] {
-  const out: BoardPoint[] = [];
-  const all = free.concat(iced);
-  for (let i = 0; i < all.length; i++) {
-    if (all[i].y >= top && all[i].y <= bottom) { out.push(all[i]); }
-  }
-  return out;
-}
-
-/** `free` plus `iced` within `reach` of `head`. */
-function elsaPoolNear(head: BoardPoint, free: BoardPoint[], iced: BoardPoint[], reach: number): BoardPoint[] {
-  const out: BoardPoint[] = [];
-  const all = free.concat(iced);
-  for (let i = 0; i < all.length; i++) {
-    const dx = all[i].x - head.x, dy = all[i].y - head.y;
-    if (dx * dx + dy * dy <= reach * reach) { out.push(all[i]); }
-  }
-  return out;
-}
-
-/**
- * A head worth a probe when no row has a chain: the lowest free tsum with
- * `probeMinIced` ice reads of its own colour cluster within a wide hop --
- * lookalikes the read may have frozen. Real ice clusters on its own.
- */
-function elsaProbeHead(free: BoardPoint[], iced: BoardPoint[]): BoardPoint | null {
-  const cfg = CoronationElsaConfig;
-  const reach = cfg.maxHops[cfg.maxHops.length - 1];
-  let best: BoardPoint | null = null;
-  for (let i = 0; i < free.length; i++) {
-    const h = free[i];
-    if (best !== null && h.y <= best.y) { continue; }
-    let n = 0;
-    for (let j = 0; j < iced.length; j++) {
-      if (iced[j].tsumIdx !== h.tsumIdx) { continue; }
-      const dx = iced[j].x - h.x, dy = iced[j].y - h.y;
-      if (dx * dx + dy * dy <= reach * reach) { n++; }
-    }
-    if (n >= cfg.paint.probeMinIced) { best = h; }
-  }
-  return best;
 }
 
 /**
@@ -1132,14 +1051,11 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
   let dead: BoardPoint[] = [];
   let deadChains = 0;
   let fruitlessChains = 0;
-  // Paint reads (`elsaPaintChain`): drawn, lifted, probes, and ice reads found live.
-  let paintChains = 0;
-  let paintLifts = 0;
-  let paintFallbacks = 0;
-  let probes = 0;
-  let unfrozen = 0;
-  // Probe heads that painted no chain, left out of later probes until the next break.
-  let probed: BoardPoint[] = [];
+  // Kind reads (`elsaKindChain`): chains drawn off one, and plans lifted.
+  let kindChains = 0;
+  let kindLifts = 0;
+  // The colour cluster of the chain just drawn, remembered as mixed if it dies.
+  let drawnKind: Color | undefined = undefined;
   let bubblesPopped = 0;
   let salvos = 0;
   // One salvo a window: the sweep chains whatever it leaves.
@@ -1167,6 +1083,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
       if (failed) {
         dead = dead.concat(drawn);
         deadChains++;
+        // Its cluster holds two kinds: later chains of it get a kind read.
+        elsaNoteMixed(drawnKind);
         starvedRun++;
       } else if (froze < cfg.chainFreezeMin) {
         fruitlessChains++;
@@ -1235,22 +1153,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
         continue;
       }
     }
-    // A board that reads frozen out may be a live colour read as ice: probe
-    // the lowest free head beside it and let the paint say.
-    let paint: ElsaPaint | null = null;
-    if (pick === null && cfg.paint.on && look.iced.length > 0) {
-      for (let n = 0; n < cfg.paint.probes && paint === null; n++) {
-        const head = elsaProbeHead(elsaWithoutDead(live, probed), look.iced);
-        if (head === null) { break; }
-        probes++;
-        const reach = cfg.maxHops[cfg.maxHops.length - 1] * (cfg.rowMaxChain - 1);
-        const got = elsaPaintChain(this, head, elsaPoolNear(head, live, look.iced, reach),
-          look.iced, look.obstacles, null);
-        elsaLogPaint(got, true, 0, t0);
-        if (got.path !== null) { paint = got; } else { paintLifts++; probed.push(head); }
-      }
-    }
-    if ((pick === null && paint === null) || hidden) {
+    if (pick === null || hidden) {
       // Nothing chainable this look -- ice everywhere a row could stand, or a
       // starved read -- or a board whose ice hides the tsums a chain would hit.
       starved++;
@@ -1269,7 +1172,6 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
         starvedRun = 0;
         // The refill is a new board; a dead chain's tsums are gone with it.
         dead = [];
-        probed = [];
         continue;
       }
       // Give the board a moment and look again; the clock ends the window,
@@ -1277,36 +1179,40 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
       this.sleepUntil(Math.min(Date.now() + cfg.rescanIdleMs, chainBy));
       continue;
     }
-    // With an ice read of the chain's own colour cluster in its rows -- a
-    // lookalike, since real ice clusters on its own -- the paint says which
-    // circles are live: from the plan's lower end, so the chain stays anchored.
-    if (paint === null && pick !== null && cfg.paint.on) {
-      const pool = elsaPaintPool(live, look.iced, pick.top - cfg.rowTolerance,
-        pick.bottom + cfg.rowTolerance);
-      const kind = pick.path[0].tsumIdx;
-      if (pool.some(function(p) { return p.tsumIdx === kind && look.iced.indexOf(p) >= 0; })) {
-        const a = pick.path[0], b = pick.path[pick.path.length - 1];
-        // The plan is the fallback: a read that misses paint must not cost the chain.
-        const got = elsaPaintChain(this, b.y > a.y ? b : a, pool, look.iced, look.obstacles, pick.path);
-        elsaLogPaint(got, false, pick.path.length, t0);
-        if (got.fellBack) { paintFallbacks++; }
-        paint = got;
+    // A cluster that has had a dead chain holds two kinds: the finger rests
+    // on the plan's lower end first and the game says which members match.
+    const kindColour = this.boardClusters[+pick.path[0].tsumIdx];
+    let path: TsumPath | null = pick.path;
+    if (cfg.kind.on && elsaIsMixed(kindColour)) {
+      const a = pick.path[0], b = pick.path[pick.path.length - 1];
+      const head = b.y > a.y ? b : a;
+      const top = pick.top - cfg.rowTolerance, bottom = pick.bottom + cfg.rowTolerance;
+      const pool = live.filter(function(p) {
+        return p.tsumIdx === head.tsumIdx && p.y >= top && p.y <= bottom;
+      });
+      const got = elsaKindChain(this, head, pool, look.obstacles);
+      logDebug(Log.Skill.ElsaKind, {
+        atMs: Date.now() - t0, planned: pick.path.length,
+        chainLen: got.path === null ? 0 : got.path.length,
+        pool: got.pool, kept: got.kept, drops: got.drops, ms: got.ms,
+      });
+      if (got.path === null) {
+        // The head's kind has no chain here: its plan is dead, no ice to wait for.
+        kindLifts++;
+        dead = dead.concat(pick.path);
+        continue;
       }
+      kindChains++;
+      path = got.path;
+    } else {
+      // `linkTsums` and not `link`: its bubble pop and its skill check both
+      // belong to the play loop, and the second would nest a window in this one.
+      this.linkTsums(pick.path);
     }
     // `starvedRun` is settled by the next look's judgement of this chain.
-    // `linkTsums` and not `link`: its bubble pop and its skill check both
-    // belong to the play loop, and the second would nest a window in this one.
-    if (paint !== null && paint.path !== null) {
-      drawn = paint.path;
-      paintChains++;
-      unfrozen += paint.unfrozenUsed;
-      // Live tsums read as ice leave with the chain; not a thaw of the pile.
-      drawnOverIced = look.iced.length - paint.unfrozenUsed;
-    } else if (pick !== null) {
-      this.linkTsums(pick.path);
-      drawn = pick.path;
-      drawnOverIced = look.iced.length;
-    }
+    drawn = path;
+    drawnKind = kindColour;
+    drawnOverIced = look.iced.length;
     chains++;
     // Let the band form before the next look reads it.
     this.sleep(cfg.iceFormMs);
@@ -1366,14 +1272,9 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     salvoOn: cfg.salvo,
     salvos: salvos,
     salvoChains: salvoChains,
-    // Chains drawn off a paint read, of those the plan drawn because the
-    // paint did not confirm one, probes that drew nothing, all probes, and
-    // ice reads chained live.
-    paintChains: paintChains,
-    paintFallbacks: paintFallbacks,
-    paintLifts: paintLifts,
-    probes: probes,
-    unfrozen: unfrozen,
+    // Chains drawn off a kind read, and plans it lifted (`elsaKindChain`).
+    kindChains: kindChains,
+    kindLifts: kindLifts,
     totalMs: Date.now() - t0,
   });
 };

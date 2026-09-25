@@ -183,7 +183,7 @@ namespace Log {
     ElsaLegacyDone        = 'skill.elsaLegacy.done',
     ElsaLegacyIceAlike    = 'skill.elsaLegacy.iceAlike',
     ElsaLegacyPass        = 'skill.elsaLegacy.pass',
-    ElsaPaint             = 'skill.elsa.paint',
+    ElsaKind              = 'skill.elsa.kind',
     ElsaPass              = 'skill.elsa.pass',
     ElsaSalvo             = 'skill.elsa.salvo',
     ElsaRoundOver         = 'skill.elsa.roundOver',

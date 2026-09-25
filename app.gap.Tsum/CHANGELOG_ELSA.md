@@ -11,7 +11,7 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Summary
 
-- Coronation Day Elsa skill improved: the ice breaks early less often, bubbles are popped all through the freeze window, chains are placed so their ice overlaps, the whole freeze window is used, and the tap sweep at its end is gone.
+- Coronation Day Elsa skill improved: the ice breaks early less often, bubbles are popped all through the freeze window, chains are placed so their ice overlaps, lookalike tsums are chained less often by mistake, the whole freeze window is used, and the tap sweep at its end is gone.
 
 ### Added
 
@@ -47,20 +47,18 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
   since the last freeze, so fewer, bigger bands were tested (`chainGapMs`
   and a Debug setting): a 1.5s gap scored 3.7M against 16.0M at no gap.
   Overlap on scored 15.2M at TIME UP against 13.7M off, one game each.
-- **Elsa asks the game which tsums are live.** When a chain's rows hold ice
-  reads, the finger rests on the head and the circles the game paints pale
-  (never frozen ones) are the chain's kind; the chain is replanned over them,
-  ice reads included (`paint` in `CoronationElsaConfig`). Only when an ice
-  read shares the chain's colour cluster, and a read that confirms no chain
-  draws the plan anyway: reading on every chain beside ice and lifting
-  unconfirmed plans cost ~4 chains a window (15.5 -> 11.9) for ~1 lookalike
-  rescued. A board that reads frozen out is probed from beside same-cluster
-  ice reads. `skill.elsa.paint` logs each read; `skill.elsa.done` counts them.
-- **The paint read is off** (`paint.on` false). On video the game darkens
-  the other kinds instead of lightening the touched one, and ice stays
-  bright, so the read cannot tell a lookalike from ice (0 rescued in a
-  round); each read chain was followed by a 25-57 tsum freeze that went off
-  within 0.35s. Code kept until the next recording rules on it.
+- **The ice-lookalike paint read was tried and removed.** It rested the
+  finger on a head and took circles that lightened as live, to rescue pale
+  tsums read as ice. On video the game darkens the *other* kinds instead and
+  ice stays bright too, so it could not tell a lookalike from ice (0 rescued
+  in a round) and its reads cost ~4 chains a window.
+- **Elsa reads which tsums are one kind where two share a colour** (`kind`,
+  `elsaKindChain`). A cluster that produced a dead chain this round
+  (`elsaMixed`) gets its later chains a finger-down read on the head; members
+  that darken are another kind, and the chain is replanned over the rest. In
+  one round cream Coronation Elsas and pale-pink tsums shared a cluster and
+  22% of chains never linked. `skill.elsa.kind`; `kindChains`/`kindLifts` on
+  `skill.elsa.done`.
 - **A board whose ice hides its tsums is broken, not chained.** Frozen tsums
   drop out of the scan, so a look reading under 80% of the board with 15 or
   fewer free (`hiddenIceFraction`, `hiddenIceFreeMax`) drew chains over
