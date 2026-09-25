@@ -242,8 +242,12 @@ var CoronationElsaConfig = {
   // a false call there drags onto the pile. `probeMinIced` is how many ice
   // reads a head needs within a wide hop to be worth a probe when no row has
   // a chain; `probes` is how many a look may spend.
+  // Off: on video the game darkens the other kinds rather than lightening
+  // the touched one, and ice stays bright too, so the read cannot separate a
+  // lookalike from ice; its chains also preceded whole-board freezes that
+  // went off within 0.35s (2026-09-25 02-17-52.mp4).
   paint: {
-    on: true,
+    on: false,
     ms: 80, grid: 3, step: 2,
     rise: 12, risePale: 20,
     grabMs: 10, moveMs: 10, releaseMs: 10,
