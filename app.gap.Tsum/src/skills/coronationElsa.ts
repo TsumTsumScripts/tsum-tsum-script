@@ -171,6 +171,11 @@ var CoronationElsaConfig = {
   // Debug tab's "Elsa overlap bands".
   overlap: true,
   overlapBandPx: 18,
+  // A chain earns its overlap only if its drag keeps this far from read ice
+  // and bubbles (a tsum width, vs `dragClearance` 13): scored chains hug the
+  // ice they line up with, the scan misses frozen tsums, and 16 of 164 were
+  // followed by an early break against 2 of 90 unscored (2026-09-25).
+  overlapClearPx: 25,
   // The salvo (`elsaSalvo`): once per window, on its first look with no ice
   // to touch (up to `salvoMaxIced` reads), draw up to `salvoChains` of the
   // play loop's own chains (`calculatePaths`, at most `salvoMaxChain` long,
@@ -705,7 +710,7 @@ function elsaRowChain(free: BoardPoint[], obstacles: ElsaObstacle[], iced: Board
         let tied: TsumPath[] = [];
         for (let i = 0; i < paths.length; i++) {
           if (elsaFlattest([paths[i]], obstacles, floor) === null) { continue; }
-          const n = elsaOverlap(paths[i], iced);
+          const n = elsaPathIsClear(paths[i], obstacles, cfg.overlapClearPx) ? elsaOverlap(paths[i], iced) : 0;
           if (n > most) { most = n; tied = [paths[i]]; } else if (n === most) { tied.push(paths[i]); }
         }
         best = elsaFlattest(tied, obstacles, floor);

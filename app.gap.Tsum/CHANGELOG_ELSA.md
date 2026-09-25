@@ -33,6 +33,11 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
   1.5-11.5s, so its first chain could land under the animation and the last
   0.7s went to the play loop. `leadInMs` 1800, `durationMs` +300 (10300 at
   level 6).
+- **Overlap needs room** (`overlapClearPx` 25): only a chain whose drag keeps
+  a tsum width from read ice earns its overlap. With salvo and overlap on,
+  16 of 164 scored chains were followed by an early break, 2 of 90 unscored.
+  Ice broken per window was ~109-130 (game's shatter counts) against ~63-89
+  in earlier games.
 - **Elsa places bands over standing ice.** With ice read, every row is
   planned and the chain whose band line crosses the most ice wins
   (`overlap`, `overlapBandPx` 18), lowest row breaking ties; ice-free boards
