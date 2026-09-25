@@ -182,6 +182,10 @@ declare const enum UiText {
   SettingCollectUnknownScreensHelp = 'setting.collectUnknownScreens.help',
   SettingPageHistoryDepth = 'setting.pageHistoryDepth',
   SettingPageHistoryDepthHelp = 'setting.pageHistoryDepth.help',
+  SettingElsaChainGap = 'setting.elsaChainGap',
+  SettingElsaChainGapHelp = 'setting.elsaChainGap.help',
+  SettingElsaOverlap = 'setting.elsaOverlap',
+  SettingElsaOverlapHelp = 'setting.elsaOverlap.help',
   SettingReportIssue = 'setting.reportIssue',
   SettingReportIssueHelp = 'setting.reportIssue.help',
   /** The note box under the Report row, and what it says once one is written. */

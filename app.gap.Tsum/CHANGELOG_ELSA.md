@@ -11,10 +11,24 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Summary
 
-- Coronation Day Elsa skill improved: tsums that look like her ice are no longer mistaken for it, and bubbles are popped all through the freeze window, so more chains are found and the ice forms without holes.
+- Coronation Day Elsa skill improved: the ice breaks early less often, bubbles are popped all through the freeze window, and chains are placed so their ice overlaps.
+
+### Added
+
+- **Two Coronation Elsa test settings on the Debug tab**, read at run start:
+  "Elsa overlap bands" (`elsaOverlap`, on) and "Elsa chain gap (ms)"
+  (`elsaChainGapMs`, 0). Temporary, for A/B games; see `BACKLOG.md`.
 
 ### Changed
 
+- **Elsa places bands over standing ice.** With ice read, every row is
+  planned and the chain whose band line crosses the most ice wins
+  (`overlap`, `overlapBandPx` 18), lowest row breaking ties; ice-free boards
+  pick as before. An overlapping band doubles ice without spending the free
+  tsums later chains need. `overlap` on `skill.elsa.pass`.
+- **Elsa's chains can be paced** (`chainGapMs`): a band grows with the time
+  since the last freeze, and a window's first chains after the ~3s gap froze
+  the bottom two-thirds in 0.5s. Untested whether fewer, bigger bands win.
 - **Elsa asks the game which tsums are live.** When a chain's rows hold ice
   reads, the finger rests on the head and the circles the game paints pale
   (never frozen ones) are the chain's kind; the chain is replanned over them,

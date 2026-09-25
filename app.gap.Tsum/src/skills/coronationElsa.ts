@@ -162,6 +162,17 @@ var CoronationElsaConfig = {
   // The activation animation, and where the window's clock starts: no look
   // before this. Seen at ~1.4s on `coronation_elsa_3.mp4`.
   leadInMs: 1500,
+  // Prefer the chain whose band crosses the most read ice (`elsaRowChain`),
+  // and how far from its end line, in play-square px, a tsum counts as on
+  // it -- the band is one to two tsums (25) thick. Set per run from the
+  // Debug tab's "Elsa overlap bands".
+  overlap: true,
+  overlapBandPx: 18,
+  // The least time between chains inside a window, in ms; 0 chains as fast
+  // as the ice forms. A band grows with the time since the last freeze, so
+  // this tests whether fewer, bigger bands beat many small ones. Set per
+  // run from the Debug tab's "Elsa chain gap".
+  chainGapMs: 0,
   // Waited out after each chain before the next look, so the look reads the
   // band the chain just froze: the slash follows the release by ~100ms and the
   // crystals have settled by 250-300ms (`coronation_elsa_2.mp4`, 60fps). The
@@ -645,16 +656,24 @@ function elsaFlattest(paths: TsumPath[], obstacles: ElsaObstacle[], floor: numbe
  * and the wider one only when no row has a chain at all. The planner is
  * microseconds, so the widening happens on one capture, not across looks.
  *
+ * With `overlap` on and ice read, every row is planned and the chain whose
+ * band line crosses the most ice wins (`elsaOverlap`), the lowest row
+ * breaking ties: a band laid over ice doubles it without spending the free
+ * tsums the next chains need, so the pile lasts more chains before it has
+ * to be broken. With no ice every score is 0 and it is the lowest row.
+ *
  * Returns the chain, the index of the row it is anchored in, the hop limit
- * that found it and the y span of the rows it was planned over, or null when
- * no row can be chained -- the board is played out.
+ * that found it, the y span of the rows it was planned over and the ice its
+ * line crosses, or null when no row can be chained -- the board is played out.
  */
-function elsaRowChain(free: BoardPoint[], obstacles: ElsaObstacle[]):
-    { path: TsumPath, row: number, hop: number, top: number, bottom: number } | null {
+function elsaRowChain(free: BoardPoint[], obstacles: ElsaObstacle[], iced: BoardPoint[]):
+    { path: TsumPath, row: number, hop: number, top: number, bottom: number, overlap: number } | null {
   const cfg = CoronationElsaConfig;
   const rows = elsaRows(free);
+  const scored = cfg.overlap && iced.length > 0;
   for (let t = 0; t < cfg.maxHops.length; t++) {
     const maxHop = cfg.maxHops[t];
+    let found: { path: TsumPath, row: number, hop: number, top: number, bottom: number, overlap: number } | null = null;
     for (let r = 0; r < rows.length; r++) {
       let strip: BoardPoint[] = [];
       for (let k = 0; k < cfg.rowSpan && r + k < rows.length; k++) {
@@ -667,15 +686,51 @@ function elsaRowChain(free: BoardPoint[], obstacles: ElsaObstacle[]):
       // and a band a little slanted is only a little thicker -- which, for
       // the band the final chain doubles, is no loss at all.
       const floor = rows[r][0].y - cfg.rowTolerance;
-      const best = elsaFlattest(elsaStripChains(strip, maxHop, cfg.rowMaxChain), obstacles, floor);
-      if (best !== null) {
-        let top = rows[r][0].y;
-        for (let i = 0; i < strip.length; i++) { top = Math.min(top, strip[i].y); }
-        return {path: best, row: r, hop: maxHop, top: top, bottom: rows[r][0].y};
+      const paths = elsaStripChains(strip, maxHop, cfg.rowMaxChain);
+      let best: TsumPath | null = null;
+      let over = 0;
+      if (scored) {
+        // Most ice crossed; between equals, `elsaFlattest`'s choice.
+        let most = -1;
+        let tied: TsumPath[] = [];
+        for (let i = 0; i < paths.length; i++) {
+          if (elsaFlattest([paths[i]], obstacles, floor) === null) { continue; }
+          const n = elsaOverlap(paths[i], iced);
+          if (n > most) { most = n; tied = [paths[i]]; } else if (n === most) { tied.push(paths[i]); }
+        }
+        best = elsaFlattest(tied, obstacles, floor);
+        over = Math.max(0, most);
+      } else {
+        best = elsaFlattest(paths, obstacles, floor);
       }
+      if (best === null || (found !== null && over <= found.overlap)) { continue; }
+      let top = rows[r][0].y;
+      for (let i = 0; i < strip.length; i++) { top = Math.min(top, strip[i].y); }
+      found = {path: best, row: r, hop: maxHop, top: top, bottom: rows[r][0].y, overlap: over};
+      if (!scored) { break; }
     }
+    if (found !== null) { return found; }
   }
   return null;
+}
+
+/**
+ * How many of `iced` lie on the band `path` would freeze: within
+ * `overlapBandPx` of the line through its ends, which the band follows to
+ * both edges of the board.
+ */
+function elsaOverlap(path: TsumPath, iced: BoardPoint[]): number {
+  const a = path[0], b = path[path.length - 1];
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len === 0) { return 0; }
+  const band = CoronationElsaConfig.overlapBandPx;
+  let n = 0;
+  for (let i = 0; i < iced.length; i++) {
+    const d = Math.abs((iced[i].x - a.x) * dy - (iced[i].y - a.y) * dx) / len;
+    if (d <= band) { n++; }
+  }
+  return n;
 }
 
 /**
@@ -1093,7 +1148,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
       drawn = null;
     }
     const live = elsaWithoutDead(look.free, dead);
-    const pick = elsaRowChain(live, look.obstacles);
+    const pick = elsaRowChain(live, look.obstacles, look.iced);
     const hidden = pick !== null && look.iced.length >= cfg.refreezeMinIced
       && read < cfg.hiddenIceFraction * expected && look.free.length <= cfg.hiddenIceFreeMax;
     logDebug(Log.Skill.ElsaPass, {
@@ -1113,6 +1168,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
       hop: pick === null ? 0 : pick.hop,
       // Frozen out by what the scan cannot see (`hiddenIceFraction`): not drawn.
       hidden: hidden,
+      // Read ice on the chosen chain's band line (`overlap`).
+      overlap: pick === null ? 0 : pick.overlap,
     });
     // A finished round reads like a starved board -- few circles, chains that
     // clear nothing -- so those looks are the ones that ask whether it is one.
@@ -1200,7 +1257,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     }
     chains++;
     // Let the band form before the next look reads it.
-    this.sleep(cfg.iceFormMs);
+    this.sleep(Math.max(cfg.iceFormMs, cfg.chainGapMs));
   }
   // One more look at the HUD before the break: the round can end in the last
   // seconds of the window, past the looks above, and the break's grid and its
