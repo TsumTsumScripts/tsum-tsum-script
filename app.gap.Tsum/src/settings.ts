@@ -767,6 +767,13 @@ var tabs: TabSpec[] = [
                         help: UiText.SettingElsaOverlapHelp,
                         default: true,
                         neverShared: true
+                    },
+                    {
+                        key: SettingKey.ElsaSalvo,
+                        title: UiText.SettingElsaSalvo,
+                        help: UiText.SettingElsaSalvoHelp,
+                        default: true,
+                        neverShared: true
                     }
                 ]
             }

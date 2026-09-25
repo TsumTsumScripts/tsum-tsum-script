@@ -11,16 +11,26 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Summary
 
-- Coronation Day Elsa skill improved: the ice breaks early less often, bubbles are popped all through the freeze window, and chains are placed so their ice overlaps.
+- Coronation Day Elsa skill improved: the ice breaks early less often, bubbles are popped all through the freeze window, chains are placed so their ice overlaps, and the whole freeze window is used.
 
 ### Added
 
-- **A Coronation Elsa test setting on the Debug tab**, read at run start:
-  "Elsa overlap bands" (`elsaOverlap`, on). Temporary, for A/B games; see
-  `BACKLOG.md`.
+- **Coronation Elsa test settings on the Debug tab**, read at run start:
+  "Elsa overlap bands" (`elsaOverlap`, on) and "Elsa salvo" (`elsaSalvo`,
+  on). Temporary, for A/B games; see `BACKLOG.md`.
+- **The salvo** (`elsaSalvo()`, `salvo*`): on a look with no ice to touch,
+  up to 4 of the play loop's own chains (`calculatePaths`, max 5, full
+  reach) back to back. At 0:55 of `02-41-53.mp4` four such chains froze a
+  fresh board whole in 0.3s for a count of 72. `skill.elsa.salvo`;
+  `salvos`/`salvoChains` on `skill.elsa.done`.
 
 ### Changed
 
+- **Elsa's window matches the game's.** On video the background is light
+  blue from tap + 1.77s to tap + 12.18s (32 windows); the script ran
+  1.5-11.5s, so its first chain could land under the animation and the last
+  0.7s went to the play loop. `leadInMs` 1800, `durationMs` +300 (10300 at
+  level 6).
 - **Elsa places bands over standing ice.** With ice read, every row is
   planned and the chain whose band line crosses the most ice wins
   (`overlap`, `overlapBandPx` 18), lowest row breaking ties; ice-free boards

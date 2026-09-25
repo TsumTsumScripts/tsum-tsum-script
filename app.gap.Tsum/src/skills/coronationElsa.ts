@@ -30,8 +30,9 @@
 // board whose ice is where the game put it.
 //
 // The window runs from the end of the activation animation, not the tap:
-// chains 12.0s after a tap still froze in `coronation_elsa_5.mp4`, and the
-// animation covers the board for ~1.5s. So the clock in here starts at
+// on video the background turns light blue at tap + 1.77s and back at tap +
+// 12.18s (32 windows), and chains inside that froze. A clock that closed at
+// 11.5s handed the last 0.7s to the play loop. So the clock in here starts at
 // `t0 + leadInMs`, and the first chain is not drawn before that either -- a
 // chain under the animation is ignored.
 //
@@ -155,19 +156,34 @@
 // it; learned before the first window, their clusters are never ice.
 var CoronationElsaConfig = {
   // How long the freeze window stays open, by skill level 1-6, in ms, counted
-  // from the end of the activation animation (`leadInMs`). Level 6 is the
-  // user's own figure for the skill; the lower levels are the usual one
-  // second a level and have not been seen.
-  durationMs: [5000, 6000, 7000, 8000, 9000, 10000],
+  // from the end of the activation animation (`leadInMs`). Level 6 measured:
+  // the window's light-blue background closes at tap + 12.18s (median of 32
+  // windows, 2026-09-25); 10300 ends just inside that. The lower levels
+  // assume the same one second a level and have not been seen.
+  durationMs: [5300, 6300, 7300, 8300, 9300, 10300],
   // The activation animation, and where the window's clock starts: no look
-  // before this. Seen at ~1.4s on `coronation_elsa_3.mp4`.
-  leadInMs: 1500,
+  // before this. The background turns light blue at tap + 1.77s (1.67-1.87);
+  // a chain drawn under the animation is ignored.
+  leadInMs: 1800,
   // Prefer the chain whose band crosses the most read ice (`elsaRowChain`),
   // and how far from its end line, in play-square px, a tsum counts as on
   // it -- the band is one to two tsums (25) thick. Set per run from the
   // Debug tab's "Elsa overlap bands".
   overlap: true,
   overlapBandPx: 18,
+  // The salvo (`elsaSalvo`): on a look with no ice to touch -- a window's
+  // start, or just after a break (up to `salvoMaxIced` shard reads) -- draw
+  // up to `salvoChains` of the play loop's own chains (`calculatePaths`, at
+  // most `salvoMaxChain` long, full link reach) back to back, no look between.
+  // On video four such chains froze a fresh board whole in 0.3s and broke
+  // for a count of 72, against ~45 for the careful sweep. Set per run from
+  // the Debug tab's "Elsa salvo".
+  salvo: true,
+  salvoChains: 4,
+  salvoMaxChain: 5,
+  salvoMaxIced: 4,
+  // Window left for a salvo to be worth starting: its chains and the band.
+  salvoMinLeftMs: 1500,
   // Waited out after each chain before the next look, so the look reads the
   // band the chain just froze: the slash follows the release by ~100ms and the
   // crystals have settled by 250-300ms (`coronation_elsa_2.mp4`, 60fps). The
@@ -775,6 +791,26 @@ function elsaPoppable(bubbles: GameBubble[], iced: BoardPoint[]): GameBubble[] {
   });
 }
 
+/**
+ * The salvo's chains off one look: the play loop's own search, longest first,
+ * each clear of read ice and bubbles and sharing no tsum with one already
+ * taken. Empty when fewer than two qualify -- one chain is the sweep's job.
+ */
+function elsaSalvo(free: BoardPoint[], obstacles: ElsaObstacle[]): TsumPath[] {
+  const cfg = CoronationElsaConfig;
+  const paths = calculatePaths(free, -1, false, cfg.salvoMaxChain);
+  const out: TsumPath[] = [];
+  const used: BoardPoint[] = [];
+  for (let i = 0; i < paths.length && out.length < cfg.salvoChains; i++) {
+    const p = paths[i];
+    if (p.length < 3 || !elsaPathIsClear(p, obstacles, cfg.dragClearance)) { continue; }
+    if (p.some(function(t) { return used.indexOf(t) >= 0; })) { continue; }
+    out.push(p);
+    for (let k = 0; k < p.length; k++) { used.push(p[k]); }
+  }
+  return out.length >= 2 ? out : [];
+}
+
 /** A board point's centre on screen, as `linkTsums` converts it. */
 function elsaToScreen(ts: Tsum, p: BoardPoint): Point {
   return {
@@ -1113,6 +1149,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
   // Probe heads that painted no chain, left out of later probes until the next break.
   let probed: BoardPoint[] = [];
   let bubblesPopped = 0;
+  let salvos = 0;
+  let salvoChains = 0;
   // The round ending under the window; nothing is tapped once it has.
   let roundOver = false;
   let roundCheckedAt = 0;
@@ -1178,6 +1216,28 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
         logInfo(Log.Skill.ElsaRoundOver, { atMs: Date.now() - t0, looks: looks });
         roundOver = true;
         break;
+      }
+    }
+    // A board with no ice to touch gets the salvo first: long chains back to
+    // back, the way the play loop froze a fresh board whole.
+    if (cfg.salvo && look.iced.length <= cfg.salvoMaxIced
+        && chainBy - Date.now() > cfg.salvoMinLeftMs) {
+      const salvo = elsaSalvo(live, look.obstacles);
+      if (salvo.length > 0) {
+        for (let k = 0; k < salvo.length; k++) { this.linkTsums(salvo[k]); }
+        logDebug(Log.Skill.ElsaSalvo, {
+          atMs: Date.now() - t0,
+          iced: look.iced.length,
+          chains: salvo.map(function(p) { return p.length; }),
+        });
+        salvos++;
+        salvoChains += salvo.length;
+        chains += salvo.length;
+        // Judged by the ice it leaves, not tsum by tsum.
+        drawn = null;
+        starvedRun = 0;
+        this.sleep(cfg.iceFormMs);
+        continue;
       }
     }
     // A board that reads frozen out may be a live colour read as ice: probe
@@ -1307,6 +1367,9 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     roundOver: roundOver,
     // Bubbles tapped by the looks (the breaks' own taps not counted).
     bubblesPopped: bubblesPopped,
+    // Salvos drawn on ice-free looks, and the chains in them.
+    salvos: salvos,
+    salvoChains: salvoChains,
     // Chains drawn off a paint read, of those the plan drawn because the
     // paint did not confirm one, probes that drew nothing, all probes, and
     // ice reads chained live.

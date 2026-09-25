@@ -251,6 +251,9 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   if (typeof settings.elsaOverlap === 'boolean') {
     CoronationElsaConfig.overlap = settings.elsaOverlap;
   }
+  if (typeof settings.elsaSalvo === 'boolean') {
+    CoronationElsaConfig.salvo = settings.elsaSalvo;
+  }
   if (typeof settings.deviceFps === 'number' && settings.deviceFps > 0) {
     gPages.fps = settings.deviceFps;
   }

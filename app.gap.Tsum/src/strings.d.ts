@@ -184,6 +184,8 @@ declare const enum UiText {
   SettingPageHistoryDepthHelp = 'setting.pageHistoryDepth.help',
   SettingElsaOverlap = 'setting.elsaOverlap',
   SettingElsaOverlapHelp = 'setting.elsaOverlap.help',
+  SettingElsaSalvo = 'setting.elsaSalvo',
+  SettingElsaSalvoHelp = 'setting.elsaSalvo.help',
   SettingReportIssue = 'setting.reportIssue',
   SettingReportIssueHelp = 'setting.reportIssue.help',
   /** The note box under the Report row, and what it says once one is written. */
