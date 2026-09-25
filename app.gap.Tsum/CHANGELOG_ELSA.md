@@ -7,6 +7,23 @@ per version, so the day she ships her Summary lines fold back into that
 file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 `CHANGELOG_0.x.md` with everything else of that time.
 
+## [3.0b4]
+
+### Summary
+
+- Coronation Day Elsa skill improved: tsums that look like her ice are no longer mistaken for it, so more chains are found in the freeze window.
+
+### Changed
+
+- **Elsa asks the game which tsums are live.** When a chain's rows hold ice
+  reads, the finger rests on the head and the circles the game paints pale
+  (never frozen ones) are the chain's kind; the chain is replanned over them,
+  ice reads included (`paint` in `CoronationElsaConfig`). A plan that does not
+  paint is lifted; a board that reads frozen out is probed first.
+  `skill.elsa.paint` logs each read; `skill.elsa.done` counts them.
+- **The paint floor read is shared** (`skillFloorRead`, `skillMedian` in
+  `skillCore.ts`); Gaston calls it unchanged.
+
 ## [2.0]
 
 ### Summary

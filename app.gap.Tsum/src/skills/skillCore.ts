@@ -293,6 +293,51 @@ function skillOrderPaths(ts: Tsum, paths: TsumPath[], board: BoardPoint[]): Tsum
   return handler.orderPaths(ts, paths, board);
 }
 
+/** The lower median of `values`. */
+function skillMedian(values: number[]): number {
+  const sorted = values.slice().sort(function(a, b) { return a - b; });
+  return sorted[(sorted.length - 1) >> 1];
+}
+
+/**
+ * Each circle's floor: the median darkest channel over a (2*grid+1)^2 grid
+ * `step` px apart round its centre, from one play-square capture. With a
+ * finger on a tsum the game paints the other tsums of its kind pale, which
+ * lifts their floor; a read before the grab and one after gives the rise.
+ */
+function skillFloorRead(ts: Tsum, board: BoardPoint[], grid: number, step: number): number[] {
+  const half = Config.tsumWidth / 2;
+  const pts: Point[] = [];
+  for (let c = 0; c < board.length; c++) {
+    for (let i = -grid; i <= grid; i++) {
+      for (let j = -grid; j <= grid; j++) {
+        pts.push({
+          x: Math.round(board[c].x + half + i * step),
+          y: Math.round(board[c].y + half + j * step),
+        });
+      }
+    }
+  }
+  const img = ts.playScreenshotSquare();
+  let colors: Color[];
+  try {
+    colors = getImageColors(img, pts);
+  } finally {
+    releaseImage(img);
+  }
+  const per = (2 * grid + 1) * (2 * grid + 1);
+  const out: number[] = [];
+  for (let c = 0; c < board.length; c++) {
+    const floors: number[] = [];
+    for (let k = 0; k < per; k++) {
+      const col = colors[c * per + k];
+      floors.push(Math.min(col.r, col.g, col.b));
+    }
+    out.push(skillMedian(floors));
+  }
+  return out;
+}
+
 // The skill button reads one of these colors while the gauge is not yet full.
 // Don't know the reason why these are checked instead of the "active skill"
 // colors, but hopefully for a good reason.

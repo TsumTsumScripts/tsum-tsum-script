@@ -1035,49 +1035,9 @@ interface GastonOracle {
   strayBelow: number;
 }
 
-/** The lower median of `values`. */
-function gastonMedian(values: number[]): number {
-  const sorted = values.slice().sort(function(a, b) { return a - b; });
-  return sorted[(sorted.length - 1) >> 1];
-}
-
-/**
- * Each circle's floor: the median darkest channel over a grid around its
- * centre, from one play-square capture. The pale paint on a live chain's
- * Gastons lifts it, while the sprite's own colours barely do (`paintRise`).
- */
+/** Each circle's floor over Gaston's paint grid (`skillFloorRead`). */
 function gastonFloorRead(ts: Tsum, board: BoardPoint[]): number[] {
-  const cfg = GastonConfig;
-  const half = Config.tsumWidth / 2;
-  const pts: Point[] = [];
-  for (let c = 0; c < board.length; c++) {
-    for (let i = -cfg.paintGrid; i <= cfg.paintGrid; i++) {
-      for (let j = -cfg.paintGrid; j <= cfg.paintGrid; j++) {
-        pts.push({
-          x: Math.round(board[c].x + half + i * cfg.paintStep),
-          y: Math.round(board[c].y + half + j * cfg.paintStep),
-        });
-      }
-    }
-  }
-  const img = ts.playScreenshotSquare();
-  let colors: Color[];
-  try {
-    colors = getImageColors(img, pts);
-  } finally {
-    releaseImage(img);
-  }
-  const per = (2 * cfg.paintGrid + 1) * (2 * cfg.paintGrid + 1);
-  const out: number[] = [];
-  for (let c = 0; c < board.length; c++) {
-    const floors: number[] = [];
-    for (let k = 0; k < per; k++) {
-      const col = colors[c * per + k];
-      floors.push(Math.min(col.r, col.g, col.b));
-    }
-    out.push(gastonMedian(floors));
-  }
-  return out;
+  return skillFloorRead(ts, board, GastonConfig.paintGrid, GastonConfig.paintStep);
 }
 
 /** Red brightest and over 0.82, saturation over 0.5, hue 36-60: the game's gold. */
@@ -1233,7 +1193,7 @@ function gastonLinkChain(ts: Tsum, path: TsumPath, holds: (headAt: number, chain
         }
       }
       drag.gastons = gastons;
-      drag.rise = gastonMedian(rises.length > 0 ? rises : all);
+      drag.rise = skillMedian(rises.length > 0 ? rises : all);
       drag.rises = all;
       const stray = gastons.length + 1 < oracle.strayBelow;
       const planned = !stray && gastons.length + 1 >= cfg.minChain ? oracle.plan(path[0], gastons) : null;

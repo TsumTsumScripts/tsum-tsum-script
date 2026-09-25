@@ -103,6 +103,17 @@
 // under the fever tint on `coronation_elsa_3.mp4`, and a plain distance of
 // 15 called the second one ice -- which cost every window of that run.
 //
+// ## Which tsums are live: the paint read
+//
+// Colour alone cannot tell a pale tsum from ice. The game can: with a finger
+// on a tsum it paints the other live tsums of its kind pale, and never a
+// frozen one. So when a chain's rows hold anything read as ice, the finger
+// goes down on the plan's lower end, the rows' floors are read before and
+// after (`elsaPaintChain`), and the chain is replanned over what rose --
+// ice reads included, at a higher bar (`paint.risePale`). A plan whose tsums
+// do not paint is a merged cluster: lifted and left out. A board that reads
+// frozen out is probed from a free head beside the ice (`elsaProbeHead`).
+//
 // The ice also eats colour slots: the board scan keeps its biggest
 // `uniqueTsumCount - 1` clusters and each ice shade takes one, so
 // `extraClusterSlots` on the declaration makes room for them -- a tsum in a
@@ -219,6 +230,21 @@ var CoronationElsaConfig = {
   // whitelist were 1-4 tsums on one or two.
   iceAlikeMinTsums: 4,
   iceAlikeMinScans: 5,
+  // The paint read (`elsaPaintChain`): with the finger on a free head the game
+  // paints the other live tsums of its kind pale, and frozen ones never, so a
+  // circle whose floor rises by `rise` is live whatever its colour reads.
+  // Used only when the chain's rows hold something read as ice, so ice-free
+  // boards keep full speed. `risePale` is the bar for a circle read as ice:
+  // a false call there drags onto the pile. `probeMinIced` is how many ice
+  // reads a head needs within a wide hop to be worth a probe when no row has
+  // a chain; `probes` is how many a look may spend.
+  paint: {
+    on: true,
+    ms: 80, grid: 3, step: 2,
+    rise: 12, risePale: 20,
+    grabMs: 10, moveMs: 10, releaseMs: 10,
+    probeMinIced: 2, probes: 1,
+  },
   // Taps spent on the pile. One is enough to set it off; the rest insure
   // against a position the read had slightly wrong.
   burstTaps: 3,
@@ -532,7 +558,7 @@ function elsaSlant(path: TsumPath): number {
  * that returns one longest chain per colour component, with its hops at the
  * search's full reach, and the ends wherever the DFS left them.
  */
-function elsaStripChains(strip: BoardPoint[], maxHop: number, maxLen: number): TsumPath[] {
+function elsaStripChains(strip: BoardPoint[], maxHop: number, maxLen: number, from?: number): TsumPath[] {
   const out: TsumPath[] = [];
   const neighbors = buildTsumNeighbors(strip, maxHop * maxHop);
   const inPath: boolean[] = [];
@@ -557,8 +583,35 @@ function elsaStripChains(strip: BoardPoint[], maxHop: number, maxLen: number): T
     path.pop();
     inPath[at] = false;
   };
-  for (let s = 0; s < strip.length; s++) { grow(s); }
+  if (from !== undefined) {
+    grow(from);
+  } else {
+    for (let s = 0; s < strip.length; s++) { grow(s); }
+  }
   return out;
+}
+
+/**
+ * The flattest of `paths` whose drag keeps clear of `obstacles` and, when
+ * `floor` is given, has an end below it; between equals the shorter, which
+ * wanders less. Null when none qualifies.
+ */
+function elsaFlattest(paths: TsumPath[], obstacles: ElsaObstacle[], floor: number | null): TsumPath | null {
+  const cfg = CoronationElsaConfig;
+  let best: TsumPath | null = null;
+  let bestSlant = Infinity;
+  for (let i = 0; i < paths.length; i++) {
+    const p = paths[i];
+    const a = p[0], b = p[p.length - 1];
+    if (floor !== null && a.y < floor && b.y < floor) { continue; }
+    if (!elsaPathIsClear(p, obstacles, cfg.dragClearance)) { continue; }
+    const slant = elsaSlant(p);
+    if (best === null || slant < bestSlant || (slant === bestSlant && p.length < best.length)) {
+      best = p;
+      bestSlant = slant;
+    }
+  }
+  return best;
 }
 
 /**
@@ -574,12 +627,12 @@ function elsaStripChains(strip: BoardPoint[], maxHop: number, maxLen: number): T
  * and the wider one only when no row has a chain at all. The planner is
  * microseconds, so the widening happens on one capture, not across looks.
  *
- * Returns the chain, the index of the row it is anchored in and the hop limit
- * that found it, or null when no row can be chained -- the board is played
- * out.
+ * Returns the chain, the index of the row it is anchored in, the hop limit
+ * that found it and the y span of the rows it was planned over, or null when
+ * no row can be chained -- the board is played out.
  */
 function elsaRowChain(free: BoardPoint[], obstacles: ElsaObstacle[]):
-    { path: TsumPath, row: number, hop: number } | null {
+    { path: TsumPath, row: number, hop: number, top: number, bottom: number } | null {
   const cfg = CoronationElsaConfig;
   const rows = elsaRows(free);
   for (let t = 0; t < cfg.maxHops.length; t++) {
@@ -596,22 +649,12 @@ function elsaRowChain(free: BoardPoint[], obstacles: ElsaObstacle[]):
       // and a band a little slanted is only a little thicker -- which, for
       // the band the final chain doubles, is no loss at all.
       const floor = rows[r][0].y - cfg.rowTolerance;
-      const paths = elsaStripChains(strip, maxHop, cfg.rowMaxChain);
-      let best: TsumPath | null = null;
-      let bestSlant = Infinity;
-      for (let i = 0; i < paths.length; i++) {
-        const p = paths[i];
-        const a = p[0], b = p[p.length - 1];
-        if (a.y < floor && b.y < floor) { continue; }
-        if (!elsaPathIsClear(p, obstacles, cfg.dragClearance)) { continue; }
-        const slant = elsaSlant(p);
-        // Flattest wins; between equals, the shorter chain wanders less.
-        if (best === null || slant < bestSlant || (slant === bestSlant && p.length < best.length)) {
-          best = p;
-          bestSlant = slant;
-        }
+      const best = elsaFlattest(elsaStripChains(strip, maxHop, cfg.rowMaxChain), obstacles, floor);
+      if (best !== null) {
+        let top = rows[r][0].y;
+        for (let i = 0; i < strip.length; i++) { top = Math.min(top, strip[i].y); }
+        return {path: best, row: r, hop: maxHop, top: top, bottom: rows[r][0].y};
       }
-      if (best !== null) { return {path: best, row: r, hop: maxHop}; }
     }
   }
   return null;
@@ -647,6 +690,158 @@ function elsaWithoutDead(free: BoardPoint[], dead: BoardPoint[]): BoardPoint[] {
     if (!on) { out.push(free[i]); }
   }
   return out;
+}
+
+/** A board point's centre on screen, as `linkTsums` converts it. */
+function elsaToScreen(ts: Tsum, p: BoardPoint): Point {
+  return {
+    x: Math.floor(ts.playOffsetX + (p.x + Config.tsumWidth / 2) * ts.playWidth / ts.playResizeWidth),
+    y: Math.floor(ts.playOffsetY + (p.y + Config.tsumWidth / 2) * ts.playHeight / ts.playResizeHeight),
+  };
+}
+
+/** What a paint-read drag came to. */
+interface ElsaPaint {
+  /** The chain drawn from the head, or null when the finger was lifted. */
+  path: TsumPath | null;
+  /** Circles sampled, and how many of them read as ice. */
+  pool: number;
+  poolIced: number;
+  /** Circles that painted: live tsums of the head's kind. */
+  painted: number;
+  /** Of those, circles read as ice -- live after all. */
+  unfrozen: number;
+  /** Of those, how many the drawn chain used. */
+  unfrozenUsed: number;
+  /** Each ice-read circle's rise, for tuning `risePale`. */
+  icedRises: number[];
+  ms: number;
+}
+
+/**
+ * Chain from `head` over what the game says is its kind: finger down, read
+ * `pool`'s floors before and after `paint.ms`, and plan over the circles
+ * that rose (`elsaStripChains` from the head, flattest clear of `obstacles`
+ * less the painted ones). No chain: the finger is lifted, which links nothing.
+ * `iced` is the look's ice read.
+ */
+function elsaPaintChain(ts: Tsum, head: BoardPoint, pool: BoardPoint[], iced: BoardPoint[],
+    obstacles: ElsaObstacle[]): ElsaPaint {
+  const cfg = CoronationElsaConfig;
+  const pc = cfg.paint;
+  const from = Date.now();
+  const out: ElsaPaint = {
+    path: null, pool: pool.length, poolIced: 0, painted: 0, unfrozen: 0, unfrozenUsed: 0,
+    icedRises: [], ms: 0,
+  };
+  if (!ts.isRunning) { return out; }
+  const base = skillFloorRead(ts, pool, pc.grid, pc.step);
+  const at = elsaToScreen(ts, head);
+  let finger = at;
+  let down = true;
+  tapDown(at.x, at.y, pc.grabMs);
+  try {
+    moveTo(at.x, at.y, pc.moveMs);
+    ts.sleep(Math.max(0, pc.ms - pc.grabMs - pc.moveMs));
+    const now = skillFloorRead(ts, pool, pc.grid, pc.step);
+    // The head first, so the search can grow from index 0. Copies share the
+    // head's colour index: the paint, not the clustering, says they are one kind.
+    const members: BoardPoint[] = [{ tsumIdx: head.tsumIdx, x: head.x, y: head.y }];
+    const live: BoardPoint[] = [];
+    for (let k = 0; k < pool.length; k++) {
+      const p = pool[k];
+      if (p === head) { continue; }
+      const rise = now[k] - base[k];
+      const isIce = iced.indexOf(p) >= 0;
+      if (isIce) { out.poolIced++; out.icedRises.push(rise); }
+      if (rise < (isIce ? pc.risePale : pc.rise)) { continue; }
+      out.painted++;
+      if (isIce) { out.unfrozen++; live.push(p); }
+      members.push({ tsumIdx: head.tsumIdx, x: p.x, y: p.y });
+    }
+    const clear = obstacles.filter(function(o) { return live.indexOf(o as BoardPoint) < 0; });
+    let path: TsumPath | null = null;
+    for (let t = 0; t < cfg.maxHops.length && path === null; t++) {
+      path = elsaFlattest(elsaStripChains(members, cfg.maxHops[t], cfg.rowMaxChain, 0), clear, null);
+    }
+    if (path !== null) {
+      for (let j = 1; j < path.length; j++) {
+        finger = elsaToScreen(ts, path[j]);
+        moveTo(finger.x, finger.y, pc.moveMs);
+        for (let k = 0; k < live.length; k++) {
+          if (live[k].x === path[j].x && live[k].y === path[j].y) { out.unfrozenUsed++; break; }
+        }
+      }
+      out.path = path;
+    }
+    down = false;
+    tapUp(finger.x, finger.y, pc.releaseMs);
+  } catch (e) {
+    if (down) { tapUp(finger.x, finger.y, pc.releaseMs); }
+    throw e;
+  }
+  out.ms = Date.now() - from;
+  return out;
+}
+
+function elsaLogPaint(p: ElsaPaint, probe: boolean, planned: number, t0: number): void {
+  logDebug(Log.Skill.ElsaPaint, {
+    atMs: Date.now() - t0,
+    probe: probe,
+    // The plan's length before the read; 0 on a probe.
+    planned: planned,
+    chainLen: p.path === null ? 0 : p.path.length,
+    pool: p.pool,
+    poolIced: p.poolIced,
+    painted: p.painted,
+    unfrozen: p.unfrozen,
+    unfrozenUsed: p.unfrozenUsed,
+    icedRises: p.icedRises,
+    ms: p.ms,
+  });
+}
+
+/** `free` plus `iced` with y inside [top, bottom] -- the circles a paint read samples. */
+function elsaPaintPool(free: BoardPoint[], iced: BoardPoint[], top: number, bottom: number): BoardPoint[] {
+  const out: BoardPoint[] = [];
+  const all = free.concat(iced);
+  for (let i = 0; i < all.length; i++) {
+    if (all[i].y >= top && all[i].y <= bottom) { out.push(all[i]); }
+  }
+  return out;
+}
+
+/** `free` plus `iced` within `reach` of `head`. */
+function elsaPoolNear(head: BoardPoint, free: BoardPoint[], iced: BoardPoint[], reach: number): BoardPoint[] {
+  const out: BoardPoint[] = [];
+  const all = free.concat(iced);
+  for (let i = 0; i < all.length; i++) {
+    const dx = all[i].x - head.x, dy = all[i].y - head.y;
+    if (dx * dx + dy * dy <= reach * reach) { out.push(all[i]); }
+  }
+  return out;
+}
+
+/**
+ * A head worth a probe when no row has a chain: the lowest free tsum with
+ * `probeMinIced` ice reads within a wide hop -- a cluster the read may have
+ * frozen that is really its own kind.
+ */
+function elsaProbeHead(free: BoardPoint[], iced: BoardPoint[]): BoardPoint | null {
+  const cfg = CoronationElsaConfig;
+  const reach = cfg.maxHops[cfg.maxHops.length - 1];
+  let best: BoardPoint | null = null;
+  for (let i = 0; i < free.length; i++) {
+    const h = free[i];
+    if (best !== null && h.y <= best.y) { continue; }
+    let n = 0;
+    for (let j = 0; j < iced.length; j++) {
+      const dx = iced[j].x - h.x, dy = iced[j].y - h.y;
+      if (dx * dx + dy * dy <= reach * reach) { n++; }
+    }
+    if (n >= cfg.paint.probeMinIced) { best = h; }
+  }
+  return best;
 }
 
 /**
@@ -814,6 +1009,13 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
   let dead: BoardPoint[] = [];
   let deadChains = 0;
   let fruitlessChains = 0;
+  // Paint reads (`elsaPaintChain`): drawn, lifted, probes, and ice reads found live.
+  let paintChains = 0;
+  let paintLifts = 0;
+  let probes = 0;
+  let unfrozen = 0;
+  // Probe heads that painted no chain, left out of later probes until the next break.
+  let probed: BoardPoint[] = [];
   // Whether this look follows a break, so it may pop over a shard read.
   let afterBurst = false;
   // The round ending under the window; nothing is tapped once it has.
@@ -848,7 +1050,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
       }
       drawn = null;
     }
-    const pick = elsaRowChain(elsaWithoutDead(look.free, dead), look.obstacles);
+    const live = elsaWithoutDead(look.free, dead);
+    const pick = elsaRowChain(live, look.obstacles);
     logDebug(Log.Skill.ElsaPass, {
       atMs: Date.now() - t0,
       free: look.free.length,
@@ -874,7 +1077,22 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
         break;
       }
     }
-    if (pick === null) {
+    // A board that reads frozen out may be a live colour read as ice: probe
+    // the lowest free head beside it and let the paint say.
+    let paint: ElsaPaint | null = null;
+    if (pick === null && cfg.paint.on && look.iced.length > 0) {
+      for (let n = 0; n < cfg.paint.probes && paint === null; n++) {
+        const head = elsaProbeHead(elsaWithoutDead(live, probed), look.iced);
+        if (head === null) { break; }
+        probes++;
+        const reach = cfg.maxHops[cfg.maxHops.length - 1] * (cfg.rowMaxChain - 1);
+        const got = elsaPaintChain(this, head, elsaPoolNear(head, live, look.iced, reach),
+          look.iced, look.obstacles);
+        elsaLogPaint(got, true, 0, t0);
+        if (got.path !== null) { paint = got; } else { probed.push(head); }
+      }
+    }
+    if (pick === null && paint === null) {
       // Nothing chainable this look -- ice everywhere a row could stand, or a
       // starved read.
       starved++;
@@ -894,6 +1112,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
         starvedRun = 0;
         // The refill is a new board; a dead chain's tsums are gone with it.
         dead = [];
+        probed = [];
         continue;
       }
       // Give the board a moment and look again; the clock ends the window,
@@ -901,13 +1120,39 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
       this.sleepUntil(Math.min(Date.now() + cfg.rescanIdleMs, chainBy));
       continue;
     }
+    // With ice in the chain's rows, the paint says which circles are live:
+    // from the plan's lower end, so any chain from it stays anchored.
+    if (paint === null && pick !== null && cfg.paint.on) {
+      const pool = elsaPaintPool(live, look.iced, pick.top - cfg.rowTolerance,
+        pick.bottom + cfg.rowTolerance);
+      if (pool.some(function(p) { return look.iced.indexOf(p) >= 0; })) {
+        const a = pick.path[0], b = pick.path[pick.path.length - 1];
+        const got = elsaPaintChain(this, b.y > a.y ? b : a, pool, look.iced, look.obstacles);
+        elsaLogPaint(got, false, pick.path.length, t0);
+        if (got.path === null) {
+          // Its tsums did not paint as one kind: a merged cluster.
+          paintLifts++;
+          dead = dead.concat(pick.path);
+          continue;
+        }
+        paint = got;
+      }
+    }
     // `starvedRun` is settled by the next look's judgement of this chain.
     // `linkTsums` and not `link`: its bubble pop and its skill check both
     // belong to the play loop, and the second would nest a window in this one.
-    this.linkTsums(pick.path);
+    if (paint !== null && paint.path !== null) {
+      drawn = paint.path;
+      paintChains++;
+      unfrozen += paint.unfrozenUsed;
+      // Live tsums read as ice leave with the chain; not a thaw of the pile.
+      drawnOverIced = look.iced.length - paint.unfrozenUsed;
+    } else if (pick !== null) {
+      this.linkTsums(pick.path);
+      drawn = pick.path;
+      drawnOverIced = look.iced.length;
+    }
     chains++;
-    drawn = pick.path;
-    drawnOverIced = look.iced.length;
     // Let the band form before the next look reads it.
     this.sleep(cfg.iceFormMs);
   }
@@ -960,6 +1205,12 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     aimedTaps: aimedTaps,
     // The round ended under the window: no closing break, no pops.
     roundOver: roundOver,
+    // Chains drawn off a paint read, plans lifted because their tsums did not
+    // paint, probes of a board that read frozen out, and ice reads chained live.
+    paintChains: paintChains,
+    paintLifts: paintLifts,
+    probes: probes,
+    unfrozen: unfrozen,
     totalMs: Date.now() - t0,
   });
 };
