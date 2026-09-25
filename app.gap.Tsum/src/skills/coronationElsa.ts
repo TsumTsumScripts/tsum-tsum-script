@@ -165,9 +165,8 @@ var CoronationElsaConfig = {
   leadInMs: 1800,
   // Prefer the chain whose band crosses the most read ice (`elsaRowChain`),
   // and how far from its end line, in play-square px, a tsum counts as on
-  // it -- the band is one to two tsums (25) thick. Set per run from the
-  // Debug tab's "Elsa overlap bands".
-  overlap: true,
+  // it -- the band is one to two tsums (25) thick. On the game's shatter
+  // counts it broke ~89 ice a window against ~63 without (2026-09-25).
   overlapBandPx: 18,
   // A chain earns its overlap only if its drag keeps this far from read ice
   // and bubbles (a tsum width, vs `dragClearance` 13): scored chains hug the
@@ -180,9 +179,8 @@ var CoronationElsaConfig = {
   // full link reach) back to back, no look between; the careful sweep then
   // chains what it left. On video four such chains froze a fresh board whole
   // in 0.3s for a count of 72. Firing on every ice-free look made ~5 salvos
-  // a window, and 9 of 16 early breaks followed one. Set per run from the
-  // Debug tab's "Elsa salvo".
-  salvo: true,
+  // a window, and 9 of 16 early breaks followed one. With it chains per
+  // window rose from ~17 to ~23 and dead chains fell from 6-22% to 3%.
   salvoChains: 4,
   salvoMaxChain: 5,
   salvoMaxIced: 4,
@@ -350,7 +348,14 @@ var CoronationElsaConfig = {
   // How often, at most, a starved look checks the round is still on (see the
   // header: a window opened in the round's last seconds outlives it). One
   // capture a second, and only on the looks a finished round produces.
-  roundCheckMs: 1000
+  roundCheckMs: 1000,
+  // TIME UP dims the board, and `elsaRoundOver` does not see it (no page).
+  // Two looks in a row whose scan averages under this value (cluster value
+  // weighted by size, at least `dimMinTsums` read) end the window with no
+  // more taps. In-window scans across 16 rounds: never two in a row under
+  // 100 during play; every window open at TIME UP read 48-92 (2026-09-25).
+  dimValueMax: 100,
+  dimMinTsums: 10
 };
 
 /**
@@ -660,7 +665,7 @@ function elsaFlattest(paths: TsumPath[], obstacles: ElsaObstacle[], floor: numbe
  * and the wider one only when no row has a chain at all. The planner is
  * microseconds, so the widening happens on one capture, not across looks.
  *
- * With `overlap` on and ice read, every row is planned and the chain whose
+ * With ice read, every row is planned and the chain whose
  * band line crosses the most ice wins (`elsaOverlap`), the lowest row
  * breaking ties: a band laid over ice doubles it without spending the free
  * tsums the next chains need, so the pile lasts more chains before it has
@@ -674,7 +679,7 @@ function elsaRowChain(free: BoardPoint[], obstacles: ElsaObstacle[], iced: Board
     { path: TsumPath, row: number, hop: number, top: number, bottom: number, overlap: number } | null {
   const cfg = CoronationElsaConfig;
   const rows = elsaRows(free);
-  const scored = cfg.overlap && iced.length > 0;
+  const scored = iced.length > 0;
   for (let t = 0; t < cfg.maxHops.length; t++) {
     const maxHop = cfg.maxHops[t];
     let found: { path: TsumPath, row: number, hop: number, top: number, bottom: number, overlap: number } | null = null;
@@ -800,6 +805,17 @@ function elsaSalvo(free: BoardPoint[], obstacles: ElsaObstacle[]): TsumPath[] {
     for (let k = 0; k < p.length; k++) { used.push(p[k]); }
   }
   return out.length >= 2 ? out : [];
+}
+
+/**
+ * The last scan's mean cluster value (HSV value, weighted by cluster size),
+ * or null when it read under `dimMinTsums` -- too few to say.
+ */
+function elsaBoardValue(ts: Tsum): number | null {
+  const c = ts.boardClusters, n = ts.boardClusterSizes;
+  let sum = 0, count = 0;
+  for (let i = 0; i < c.length && i < n.length; i++) { sum += c[i].r * n[i]; count += n[i]; }
+  return count >= CoronationElsaConfig.dimMinTsums ? sum / count : null;
 }
 
 /** A board point's centre on screen, as `linkTsums` converts it. */
@@ -1064,6 +1080,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
   // The round ending under the window; nothing is tapped once it has.
   let roundOver = false;
   let roundCheckedAt = 0;
+  // Consecutive looks whose scan read dim (`dimValueMax`).
+  let dimRun = 0;
   while (this.isRunning && Date.now() < chainBy) {
     const look = this.elsaLook(chainBy, expected);
     looks++;
@@ -1118,6 +1136,14 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
       // Read ice on the chosen chain's band line (`overlap`).
       overlap: pick === null ? 0 : pick.overlap,
     });
+    // TIME UP dims the board: two dim looks in a row and the round is over.
+    const value = elsaBoardValue(this);
+    dimRun = value !== null && value < cfg.dimValueMax ? dimRun + 1 : 0;
+    if (dimRun >= 2) {
+      logInfo(Log.Skill.ElsaRoundOver, { atMs: Date.now() - t0, looks: looks, dim: Math.round(value as number) });
+      roundOver = true;
+      break;
+    }
     // A finished round reads like a starved board -- few circles, chains that
     // clear nothing -- so those looks are the ones that ask whether it is one.
     // Rate-limited: a board genuinely frozen out reads the same way.
@@ -1132,7 +1158,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     }
     // A board with no ice to touch gets the salvo first: long chains back to
     // back, the way the play loop froze a fresh board whole.
-    if (cfg.salvo && !salvoDone && look.iced.length <= cfg.salvoMaxIced
+    if (!salvoDone && look.iced.length <= cfg.salvoMaxIced
         && chainBy - Date.now() > cfg.salvoMinLeftMs) {
       const salvo = elsaSalvo(live, look.obstacles);
       if (salvo.length > 0) {
@@ -1266,10 +1292,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     roundOver: roundOver,
     // Bubbles tapped by the looks (the breaks' own taps not counted).
     bubblesPopped: bubblesPopped,
-    // The Debug-tab test settings in force, then the salvo drawn (0 or 1)
-    // and its chains.
-    overlapOn: cfg.overlap,
-    salvoOn: cfg.salvo,
+    // The salvo drawn (0 or 1) and its chains.
     salvos: salvos,
     salvoChains: salvoChains,
     // Chains drawn off a kind read, and plans it lifted (`elsaKindChain`).

@@ -759,21 +759,6 @@ var tabs: TabSpec[] = [
                         max: 100,
                         min: 0,
                         neverShared: true
-                    },
-                    {
-                        // Coronation Elsa A/B knob; read once at run start.
-                        key: SettingKey.ElsaOverlap,
-                        title: UiText.SettingElsaOverlap,
-                        help: UiText.SettingElsaOverlapHelp,
-                        default: true,
-                        neverShared: true
-                    },
-                    {
-                        key: SettingKey.ElsaSalvo,
-                        title: UiText.SettingElsaSalvo,
-                        help: UiText.SettingElsaSalvoHelp,
-                        default: true,
-                        neverShared: true
                     }
                 ]
             }

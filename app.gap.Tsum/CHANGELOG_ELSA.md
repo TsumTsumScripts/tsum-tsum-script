@@ -11,13 +11,10 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Summary
 
-- Coronation Day Elsa skill improved: the ice breaks early less often, bubbles are popped all through the freeze window, chains are placed so their ice overlaps, lookalike tsums are chained less often by mistake, the whole freeze window is used, and the tap sweep at its end is gone.
+- Coronation Day Elsa skill improved: each freeze window opens with a burst of long chains, chains are placed so their ice overlaps, the ice breaks early less often, bubbles are popped all through the window, lookalike tsums are chained less often by mistake, the whole window is used, and the tap sweep at its end and chains after TIME UP are gone.
 
 ### Added
 
-- **Coronation Elsa test settings on the Debug tab**, read at run start:
-  "Elsa overlap bands" (`elsaOverlap`, on) and "Elsa salvo" (`elsaSalvo`,
-  on). Temporary, for A/B games; see `BACKLOG.md`.
 - **The salvo** (`elsaSalvo()`, `salvo*`): once per window, on its first
   look with no ice to touch, up to 4 of the play loop's own chains
   (`calculatePaths`, max 5, full reach) back to back; the careful sweep then
@@ -28,6 +25,9 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Changed
 
+- **Overlap scoring and the salvo are always on.** Both were A/B tested
+  behind temporary Debug-tab settings (`elsaOverlap`, `elsaSalvo`), now
+  removed with their strings and flags.
 - **Elsa's window matches the game's.** On video the background is light
   blue from tap + 1.77s to tap + 12.18s (32 windows); the script ran
   1.5-11.5s, so its first chain could land under the animation and the last
@@ -77,6 +77,18 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 - **The paint floor read is shared** (`skillFloorRead`, `skillMedian` in
   `skillCore.ts`); Gaston calls it unchanged.
 
+### Fixed
+
+- **Elsa stops at TIME UP.** The game dims the board and no page marks it,
+  so two looks in a row whose scan averages under value 100
+  (`dimValueMax`, `elsaBoardValue`) end the window with no more taps. Never
+  two in a row during play across 2,781 in-window scans; caught 4 of 4
+  windows open at TIME UP. `dim` on `skill.elsa.roundOver`.
+- **Elsa's closing break no longer sweeps the board.** With under 8 ice read
+  it added a blind grid of ~25 taps (1.4s), which the user saw as a bubble
+  sweep and which pushed 7 of 25 closing breaks past the window's end. Every
+  break is aimed taps only; `blindStep` is gone.
+
 ## [2.0]
 
 ### Summary
@@ -99,10 +111,6 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Fixed
 
-- **Elsa's closing break no longer sweeps the board.** With under 8 ice read
-  it added a blind grid of ~25 taps (1.4s), which the user saw as a bubble
-  sweep and which pushed 7 of 25 closing breaks past the window's end. Every
-  break is aimed taps only; `blindStep` is gone.
 - **Elsa's closing break no longer lands on the score tally.** Windows chain
   back to back (the break refills the gauge), so one opened in the round's last
   seconds outlives it, and the choreography checked only its clock. On
