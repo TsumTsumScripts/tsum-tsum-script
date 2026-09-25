@@ -17,9 +17,10 @@
 // flat chains, one after another, each on the lowest row still free, so that
 // each new band lies just above the last and overlaps it; the pile is broken
 // when the window is nearly out; and the bomb the break spawns is popped.
-// Nothing else is tapped while ice stands -- with one exception: a board
-// frozen out with window to spare is broken on the spot and the refill swept
-// again (`refreezeStarvedLooks`), because the sweep freezes a whole board in
+// Bubbles are popped on every look, ice or not: a pop never sets the pile
+// off (the user, 2026-09-25), and a bubble left holes the next band. The
+// pile itself is left alone -- with one exception: a board frozen out with
+// window to spare is broken on the spot and the refill swept again (`refreezeStarvedLooks`), because the sweep freezes a whole board in
 // three to four seconds and a 10s window has room for two piles.
 //
 // The loop is: capture and read which tsums are ice (`elsaLook`); draw the
@@ -252,6 +253,13 @@ var CoronationElsaConfig = {
   // Waited out after a look pops bubbles, before the board is re-captured:
   // tsums slide into the space a popped bubble leaves.
   bubbleSettleMs: 200,
+  // Pop rounds a look may spend before it plans, each followed by the settle
+  // and a fresh capture: a pop's blast drops tsums, and bubbles under them.
+  bubblePopRounds: 3,
+  // A bubble centred this close to an ice read, in tsum widths, may be frozen
+  // itself (or a phantom read on the ice), and a tap on it is a tap on the
+  // pile. A free bubble beside ice sits ~1.2 widths from its centre.
+  bubbleIceGap: 0.6,
   // An ice-free look that reads fewer than this fraction of the tsums the
   // board is known to hold is a board mid-fall -- the window opening on the
   // previous batch's refill, a pop's slide, a burst's refill -- and is waited
@@ -305,11 +313,6 @@ var CoronationElsaConfig = {
   // (`coronation_elsa_9.mp4`: 8s on one three-tsum chain).
   chainStayPx: 8,
   chainStaysMin: 2,
-  // The look after a break may pop the bubbles it finds over this much ice
-  // read: no real ice stands then, only shards in flight, and a bubble left
-  // is frozen over by the next chain (131 post-break looks in the logs, 4
-  // read clean).
-  postBurstPopMaxIced: 4,
   // The fallback when the closing burst has no ice read to aim at: a blind
   // grid over the play area, in logical px. A tap on an ordinary tsum is not a
   // drag, so the game ignores it.
@@ -692,6 +695,19 @@ function elsaWithoutDead(free: BoardPoint[], dead: BoardPoint[]): BoardPoint[] {
   return out;
 }
 
+/** `bubbles` less any centred within `bubbleIceGap` of an ice read: those may be frozen. */
+function elsaPoppable(bubbles: GameBubble[], iced: BoardPoint[]): GameBubble[] {
+  const half = Config.tsumWidth / 2;
+  const gap = Config.tsumWidth * CoronationElsaConfig.bubbleIceGap;
+  return bubbles.filter(function(b) {
+    for (let i = 0; i < iced.length; i++) {
+      const dx = iced[i].x + half - b.x, dy = iced[i].y + half - b.y;
+      if (dx * dx + dy * dy < gap * gap) { return false; }
+    }
+    return true;
+  });
+}
+
 /** A board point's centre on screen, as `linkTsums` converts it. */
 function elsaToScreen(ts: Tsum, p: BoardPoint): Point {
   return {
@@ -912,7 +928,7 @@ Tsum.prototype.elsaBurstFrozen = function(frozen, grid) {
  * and hand back what a drag must keep away from.
  *
  * Two things send it back for another capture, each a bounded number of
- * times, and only ever on an ice-free read:
+ * times:
  *
  *   - **a board mid-fall.** The board moves at exactly three moments -- the
  *     window opening on the previous batch's refill, a pop's slide, a burst's
@@ -922,20 +938,18 @@ Tsum.prototype.elsaBurstFrozen = function(frozen, grid) {
  *   - **bubbles.** A bubble holes every band drawn through it and pops under
  *     any drag across it, and the break's bomb is a bubble too. The capture
  *     already knows where they are, so they are popped aimed and the board
- *     looked at again after the fall.
- *
- * Ice-free only, both: a tap is what sets a pile off, so while ice stands the
- * bubbles stay and become drag obstacles instead. The one exception is the
- * look after a break (`popIcedMax`, see `postBurstPopMaxIced`).
+ *     looked at again after the fall -- with ice standing too, since a pop
+ *     does not set the pile off. Only a bubble on an ice read is left
+ *     (`elsaPoppable`); it and any the rounds ran out on become obstacles.
  */
-Tsum.prototype.elsaLook = function(closesAt, expected, popIcedMax) {
+Tsum.prototype.elsaLook = function(closesAt, expected) {
   const cfg = CoronationElsaConfig;
   const expect = expected || 0;
-  const popOver = popIcedMax || 0;
   let free: BoardPoint[] = [];
   let iced: BoardPoint[] = [];
   let waits = 0;
   let pops = 0;
+  let popped = 0;
   for (;;) {
     const split = elsaSplitIce(this, this.scanBoardQuick());
     free = split.free;
@@ -947,10 +961,15 @@ Tsum.prototype.elsaLook = function(closesAt, expected, popIcedMax) {
       this.sleep(cfg.settleRetryMs);
       continue;
     }
-    if (iced.length <= popOver && pops < 2 && this.gameBubbles.length > 0
+    const poppable = elsaPoppable(this.gameBubbles, iced);
+    if (poppable.length > 0 && pops < cfg.bubblePopRounds
         && Date.now() + cfg.bubbleSettleMs < closesAt) {
       pops++;
-      this.popGameBubbles(this.gameBubbles.length);
+      popped += poppable.length;
+      // `popGameBubbles` taps the whole list and then clears it; the next
+      // capture reads whatever is left.
+      this.gameBubbles = poppable;
+      this.popGameBubbles(poppable.length);
       this.sleep(cfg.bubbleSettleMs);
       continue;
     }
@@ -965,7 +984,7 @@ Tsum.prototype.elsaLook = function(closesAt, expected, popIcedMax) {
       pad: Math.max(0, b.r - Config.tsumWidth / 2),
     });
   }
-  return { free: free, iced: iced, obstacles: obstacles, waits: waits, pops: pops };
+  return { free: free, iced: iced, obstacles: obstacles, waits: waits, pops: pops, popped: popped };
 };
 
 /**
@@ -1016,16 +1035,14 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
   let unfrozen = 0;
   // Probe heads that painted no chain, left out of later probes until the next break.
   let probed: BoardPoint[] = [];
-  // Whether this look follows a break, so it may pop over a shard read.
-  let afterBurst = false;
+  let bubblesPopped = 0;
   // The round ending under the window; nothing is tapped once it has.
   let roundOver = false;
   let roundCheckedAt = 0;
   while (this.isRunning && Date.now() < chainBy) {
-    const look = this.elsaLook(chainBy, expected,
-      afterBurst ? cfg.postBurstPopMaxIced : 0);
-    afterBurst = false;
+    const look = this.elsaLook(chainBy, expected);
     looks++;
+    bubblesPopped += look.popped;
     const read = look.free.length + look.iced.length;
     if (read > expected) { expected = read; }
     if (look.iced.length > 0) { iced = look.iced; }
@@ -1058,6 +1075,9 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
       iced: look.iced.length,
       waits: look.waits,
       pops: look.pops,
+      popped: look.popped,
+      // Bubbles left standing: on ice, or past the pop rounds.
+      bubbles: this.gameBubbles.length,
       // The previous chain left its tsums standing.
       failed: failed,
       row: pick === null ? -1 : pick.row,
@@ -1107,7 +1127,6 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
         aimedTaps += this.elsaBurstFrozen(look.iced, false);
         bursts++;
         this.sleep(elsaPostBurstSettleMs(look.iced.length));
-        afterBurst = true;
         iced = [];
         starvedRun = 0;
         // The refill is a new board; a dead chain's tsums are gone with it.
@@ -1207,6 +1226,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     roundOver: roundOver,
     // Chains drawn off a paint read, plans lifted because their tsums did not
     // paint, probes of a board that read frozen out, and ice reads chained live.
+    // Bubbles tapped by the looks (the breaks' own taps not counted).
+    bubblesPopped: bubblesPopped,
     paintChains: paintChains,
     paintLifts: paintLifts,
     probes: probes,

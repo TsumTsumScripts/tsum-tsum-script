@@ -1624,9 +1624,9 @@ interface Tsum {
    * bounded number of times), split into free tsums and ice, plus what a drag
    * must keep away from. `expected` is the settle gate's board population.
    */
-  elsaLook(closesAt: number, expected?: number, popIcedMax?: number):
+  elsaLook(closesAt: number, expected?: number):
     { free: BoardPoint[], iced: BoardPoint[], obstacles: {x: number, y: number, pad?: number}[],
-      waits: number, pops: number };
+      waits: number, pops: number, popped: number };
   /**
    * Play the freeze window as a sweep: chain after chain on the lowest free
    * row, one look per chain, until the window is nearly out; then one break
