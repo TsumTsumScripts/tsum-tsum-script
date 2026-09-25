@@ -171,13 +171,14 @@ var CoronationElsaConfig = {
   // Debug tab's "Elsa overlap bands".
   overlap: true,
   overlapBandPx: 18,
-  // The salvo (`elsaSalvo`): on a look with no ice to touch -- a window's
-  // start, or just after a break (up to `salvoMaxIced` shard reads) -- draw
-  // up to `salvoChains` of the play loop's own chains (`calculatePaths`, at
-  // most `salvoMaxChain` long, full link reach) back to back, no look between.
-  // On video four such chains froze a fresh board whole in 0.3s and broke
-  // for a count of 72, against ~45 for the careful sweep. Set per run from
-  // the Debug tab's "Elsa salvo".
+  // The salvo (`elsaSalvo`): once per window, on its first look with no ice
+  // to touch (up to `salvoMaxIced` reads), draw up to `salvoChains` of the
+  // play loop's own chains (`calculatePaths`, at most `salvoMaxChain` long,
+  // full link reach) back to back, no look between; the careful sweep then
+  // chains what it left. On video four such chains froze a fresh board whole
+  // in 0.3s for a count of 72. Firing on every ice-free look made ~5 salvos
+  // a window, and 9 of 16 early breaks followed one. Set per run from the
+  // Debug tab's "Elsa salvo".
   salvo: true,
   salvoChains: 4,
   salvoMaxChain: 5,
@@ -339,7 +340,7 @@ var CoronationElsaConfig = {
   // at 13-14, the pile standing 2s longer than it needed to.
   chainFreezeMin: 2,
   // Leftover ice read between windows this big or bigger is a burst that
-  // missed, and is spent (grid and all). Smaller is a band left standing on
+  // missed, and is spent. Smaller is a band left standing on
   // purpose: it doubles under the next window's bands.
   leftoverBurstMin: 8,
   // A chain the game took clears its tsums; one it did not leaves them where
@@ -352,10 +353,6 @@ var CoronationElsaConfig = {
   // (`coronation_elsa_9.mp4`: 8s on one three-tsum chain).
   chainStayPx: 8,
   chainStaysMin: 2,
-  // The fallback when the closing burst has no ice read to aim at: a blind
-  // grid over the play area, in logical px. A tap on an ordinary tsum is not a
-  // drag, so the game ignores it.
-  blindStep: 220,
   // How often, at most, a starved look checks the round is still on (see the
   // header: a window opened in the round's last seconds outlives it). One
   // capture a second, and only on the looks a finished round produces.
@@ -986,13 +983,11 @@ function elsaPostBurstSettleMs(pile: number): number {
 /**
  * Set off the pile, and say how many tsums it was aimed at.
  *
- * Aimed taps first, top of the board down and spread evenly down the pile, so
- * a pile the read has slightly wrong is still covered. Then, only when `grid`
- * says so, the blind sweep -- ~25 taps at ~50ms each, so 1.3s: a closing
- * burst with no pile read to aim at, and a leftover pile between windows,
- * where the time is the round's. Never inside the window: a mid-window
- * pile came off a fresh capture, and the grid would spend a quarter of the
- * time left.
+ * Aimed taps, top of the board down and spread evenly down the pile, so a
+ * pile the read has slightly wrong is still covered. No blind sweep: its ~25
+ * taps took 1.4s and pushed closing breaks past the window's end (user saw it
+ * as a bubble sweep, 2026-09-25); a pile the taps miss is spent as leftover
+ * by the next scan.
  *
  * Then the bubbles the same capture found, one tap each: a bubble inside the
  * pile survives the break otherwise (`coronation_elsa_10.mp4` at 0:10, two
@@ -1001,7 +996,7 @@ function elsaPostBurstSettleMs(pile: number): number {
  * A tap is not a drag, so one that lands on an ordinary tsum links nothing and
  * the game ignores it.
  */
-Tsum.prototype.elsaBurstFrozen = function(frozen, grid) {
+Tsum.prototype.elsaBurstFrozen = function(frozen) {
   // Raw taps below bypass `ts.tap`, so the stopped-run rule is applied here.
   if (!this.isRunning) { return 0; }
   const cfg = CoronationElsaConfig;
@@ -1022,16 +1017,8 @@ Tsum.prototype.elsaBurstFrozen = function(frozen, grid) {
       + (p.y + Config.tsumWidth / 2) * this.playHeight / this.playResizeHeight);
     tap(x, y, cfg.burstTapDuring);
   }
-  // Rows top-down as well, for the same reason.
-  if (grid) {
-    for (let y = Button.gameBubblesFrom.y; y <= Button.gameBubblesTo.y; y += cfg.blindStep) {
-      for (let x = Button.gameBubblesFrom.x; x <= Button.gameBubblesTo.x; x += cfg.blindStep) {
-        this.tap({x: x, y: y}, cfg.burstTapDuring);
-      }
-    }
-  }
   this.popGameBubbles(this.gameBubbles.length);
-  logDebug(Log.Skill.ElsaBurst, { aimedAt: taps, read: frozen.length, grid: grid });
+  logDebug(Log.Skill.ElsaBurst, { aimedAt: taps, read: frozen.length });
   return taps;
 };
 
@@ -1150,6 +1137,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
   let probed: BoardPoint[] = [];
   let bubblesPopped = 0;
   let salvos = 0;
+  // One salvo a window: the sweep chains whatever it leaves.
+  let salvoDone = false;
   let salvoChains = 0;
   // The round ending under the window; nothing is tapped once it has.
   let roundOver = false;
@@ -1220,7 +1209,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     }
     // A board with no ice to touch gets the salvo first: long chains back to
     // back, the way the play loop froze a fresh board whole.
-    if (cfg.salvo && look.iced.length <= cfg.salvoMaxIced
+    if (cfg.salvo && !salvoDone && look.iced.length <= cfg.salvoMaxIced
         && chainBy - Date.now() > cfg.salvoMinLeftMs) {
       const salvo = elsaSalvo(live, look.obstacles);
       if (salvo.length > 0) {
@@ -1231,6 +1220,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
           chains: salvo.map(function(p) { return p.length; }),
         });
         salvos++;
+        salvoDone = true;
         salvoChains += salvo.length;
         chains += salvo.length;
         // Judged by the ice it leaves, not tsum by tsum.
@@ -1267,7 +1257,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
         // ~1.3s of window (`coronation_elsa_8.mp4`: 1.4s a break, three a
         // window). The break taps the bubbles it read too, and the next
         // look pops the bomb the break leaves before chaining.
-        aimedTaps += this.elsaBurstFrozen(look.iced, false);
+        aimedTaps += this.elsaBurstFrozen(look.iced);
         bursts++;
         this.sleep(elsaPostBurstSettleMs(look.iced.length));
         iced = [];
@@ -1329,11 +1319,9 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     const last = this.elsaLook(Date.now(), expected);
     looks++;
     if (last.iced.length > 0) { iced = last.iced; }
-    // The grid only when there is no pile read to aim at: a pile the aimed
-    // taps miss is read as leftover by the next scan and spent, grid and all
-    // (`leftoverBurstMin`), while the grid here holds the bomb pop and the
-    // play loop ~1.3s every window.
-    aimedTaps += this.elsaBurstFrozen(iced, iced.length < cfg.leftoverBurstMin);
+    // A pile the aimed taps miss is read as leftover by the next scan and
+    // spent (`leftoverBurstMin`).
+    aimedTaps += this.elsaBurstFrozen(iced);
     bursts++;
     // The break is a large clear; let it settle, then one look for the bomb it
     // spawned (where the clear count was shown) and pop it aimed. The play
@@ -1367,7 +1355,10 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     roundOver: roundOver,
     // Bubbles tapped by the looks (the breaks' own taps not counted).
     bubblesPopped: bubblesPopped,
-    // Salvos drawn on ice-free looks, and the chains in them.
+    // The Debug-tab test settings in force, then the salvo drawn (0 or 1)
+    // and its chains.
+    overlapOn: cfg.overlap,
+    salvoOn: cfg.salvo,
     salvos: salvos,
     salvoChains: salvoChains,
     // Chains drawn off a paint read, of those the plan drawn because the
@@ -1419,7 +1410,7 @@ registerSkill({
       // Aimed only. A leftover read is as often a pale colour or crystal
       // debris as ice, and the grid behind the aimed taps was 1.3s of the
       // gap between windows, three times over on `coronation_elsa_10.mp4`.
-      ts.elsaBurstFrozen(leftover, false);
+      ts.elsaBurstFrozen(leftover);
     }
     // Beyond that, only ever a filter: the ordering `calculatePaths` produced
     // is already longest-first, which is what this skill wants too.

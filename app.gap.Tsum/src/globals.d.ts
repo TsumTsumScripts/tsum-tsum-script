@@ -1613,12 +1613,8 @@ interface Tsum {
   useCptLySkill(activatedAt?: number, timing?: CptLyTiming): void;
 
   // --- skills/coronationElsa.ts ----------------------------------------
-  /**
-   * Set off the pile: aimed taps down the sorted pile, then -- only when
-   * `grid` says so -- the blind sweep. The closing burst passes true; a
-   * mid-window burst must not, or the grid taps ice the read never claimed.
-   */
-  elsaBurstFrozen(frozen: BoardPoint[], grid: boolean): number;
+  /** Set off the pile: aimed taps down the sorted pile, then its bubbles. */
+  elsaBurstFrozen(frozen: BoardPoint[]): number;
   /**
    * One settled capture (a mid-fall or bubbled ice-free look is retaken, a
    * bounded number of times), split into free tsums and ice, plus what a drag

@@ -11,16 +11,18 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Summary
 
-- Coronation Day Elsa skill improved: the ice breaks early less often, bubbles are popped all through the freeze window, chains are placed so their ice overlaps, and the whole freeze window is used.
+- Coronation Day Elsa skill improved: the ice breaks early less often, bubbles are popped all through the freeze window, chains are placed so their ice overlaps, the whole freeze window is used, and the tap sweep at its end is gone.
 
 ### Added
 
 - **Coronation Elsa test settings on the Debug tab**, read at run start:
   "Elsa overlap bands" (`elsaOverlap`, on) and "Elsa salvo" (`elsaSalvo`,
   on). Temporary, for A/B games; see `BACKLOG.md`.
-- **The salvo** (`elsaSalvo()`, `salvo*`): on a look with no ice to touch,
-  up to 4 of the play loop's own chains (`calculatePaths`, max 5, full
-  reach) back to back. At 0:55 of `02-41-53.mp4` four such chains froze a
+- **The salvo** (`elsaSalvo()`, `salvo*`): once per window, on its first
+  look with no ice to touch, up to 4 of the play loop's own chains
+  (`calculatePaths`, max 5, full reach) back to back; the careful sweep then
+  chains what it left. Firing on every ice-free look made ~5 salvos a window
+  and 9 of 16 early breaks followed one. At 0:55 of `02-41-53.mp4` four such chains froze a
   fresh board whole in 0.3s for a count of 72. `skill.elsa.salvo`;
   `salvos`/`salvoChains` on `skill.elsa.done`.
 
@@ -94,6 +96,10 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Fixed
 
+- **Elsa's closing break no longer sweeps the board.** With under 8 ice read
+  it added a blind grid of ~25 taps (1.4s), which the user saw as a bubble
+  sweep and which pushed 7 of 25 closing breaks past the window's end. Every
+  break is aimed taps only; `blindStep` is gone.
 - **Elsa's closing break no longer lands on the score tally.** Windows chain
   back to back (the break refills the gauge), so one opened in the round's last
   seconds outlives it, and the choreography checked only its clock. On
