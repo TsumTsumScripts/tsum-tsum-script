@@ -182,8 +182,6 @@ declare const enum UiText {
   SettingCollectUnknownScreensHelp = 'setting.collectUnknownScreens.help',
   SettingPageHistoryDepth = 'setting.pageHistoryDepth',
   SettingPageHistoryDepthHelp = 'setting.pageHistoryDepth.help',
-  SettingElsaChainGap = 'setting.elsaChainGap',
-  SettingElsaChainGapHelp = 'setting.elsaChainGap.help',
   SettingElsaOverlap = 'setting.elsaOverlap',
   SettingElsaOverlapHelp = 'setting.elsaOverlap.help',
   SettingReportIssue = 'setting.reportIssue',

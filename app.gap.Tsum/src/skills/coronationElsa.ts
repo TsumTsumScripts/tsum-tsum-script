@@ -168,16 +168,13 @@ var CoronationElsaConfig = {
   // Debug tab's "Elsa overlap bands".
   overlap: true,
   overlapBandPx: 18,
-  // The least time between chains inside a window, in ms; 0 chains as fast
-  // as the ice forms. A band grows with the time since the last freeze, so
-  // this tests whether fewer, bigger bands beat many small ones. Set per
-  // run from the Debug tab's "Elsa chain gap".
-  chainGapMs: 0,
   // Waited out after each chain before the next look, so the look reads the
   // band the chain just froze: the slash follows the release by ~100ms and the
   // crystals have settled by 250-300ms (`coronation_elsa_2.mp4`, 60fps). The
-  // capture lands ~60ms after this, so the read is at ~335ms. How fast the
-  // chains come has no bearing on the ice (the user), so this is the floor.
+  // capture lands ~60ms after this, so the read is at ~335ms. Pacing chains
+  // wider lost: a 1.5s gap scored 3.7M against 16.0M (2026-09-25), because
+  // a band's growth with time does not make up for the chains given up. So
+  // this is the floor and the ceiling.
   iceFormMs: 275,
   // The slice of the window kept for the closing break: the last band forming,
   // the read it is aimed off, and the taps. No chain goes out with less than
@@ -1257,7 +1254,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     }
     chains++;
     // Let the band form before the next look reads it.
-    this.sleep(Math.max(cfg.iceFormMs, cfg.chainGapMs));
+    this.sleep(cfg.iceFormMs);
   }
   // One more look at the HUD before the break: the round can end in the last
   // seconds of the window, past the looks above, and the break's grid and its

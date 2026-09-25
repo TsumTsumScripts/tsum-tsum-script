@@ -761,17 +761,7 @@ var tabs: TabSpec[] = [
                         neverShared: true
                     },
                     {
-                        // Coronation Elsa A/B knobs; read once at run start.
-                        key: SettingKey.ElsaChainGapMs,
-                        title: UiText.SettingElsaChainGap,
-                        help: UiText.SettingElsaChainGapHelp,
-                        default: 0,
-                        step: 250,
-                        max: 3000,
-                        min: 0,
-                        neverShared: true
-                    },
-                    {
+                        // Coronation Elsa A/B knob; read once at run start.
                         key: SettingKey.ElsaOverlap,
                         title: UiText.SettingElsaOverlap,
                         help: UiText.SettingElsaOverlapHelp,

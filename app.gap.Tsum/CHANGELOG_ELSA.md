@@ -15,9 +15,9 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Added
 
-- **Two Coronation Elsa test settings on the Debug tab**, read at run start:
-  "Elsa overlap bands" (`elsaOverlap`, on) and "Elsa chain gap (ms)"
-  (`elsaChainGapMs`, 0). Temporary, for A/B games; see `BACKLOG.md`.
+- **A Coronation Elsa test setting on the Debug tab**, read at run start:
+  "Elsa overlap bands" (`elsaOverlap`, on). Temporary, for A/B games; see
+  `BACKLOG.md`.
 
 ### Changed
 
@@ -26,9 +26,10 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
   (`overlap`, `overlapBandPx` 18), lowest row breaking ties; ice-free boards
   pick as before. An overlapping band doubles ice without spending the free
   tsums later chains need. `overlap` on `skill.elsa.pass`.
-- **Elsa's chains can be paced** (`chainGapMs`): a band grows with the time
-  since the last freeze, and a window's first chains after the ~3s gap froze
-  the bottom two-thirds in 0.5s. Untested whether fewer, bigger bands win.
+- **Pacing Elsa's chains was tried and dropped.** A band grows with the time
+  since the last freeze, so fewer, bigger bands were tested (`chainGapMs`
+  and a Debug setting): a 1.5s gap scored 3.7M against 16.0M at no gap.
+  Overlap on scored 15.2M at TIME UP against 13.7M off, one game each.
 - **Elsa asks the game which tsums are live.** When a chain's rows hold ice
   reads, the finger rests on the head and the circles the game paints pale
   (never frozen ones) are the chain's kind; the chain is replanned over them,

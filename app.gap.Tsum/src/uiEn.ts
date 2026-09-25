@@ -161,8 +161,6 @@ i18nRegister(Locale.English, 'English', {
     [UiText.SettingCollectUnknownScreens]: 'Collect unknown screens (tsum_record/corpus)',
     [UiText.SettingCollectUnknownScreensHelp]: 'Saves any screen the script cannot place, so it can be sent in and turned into a fix.',
     [UiText.SettingPageHistoryDepth]: 'Page history depth',
-    [UiText.SettingElsaChainGap]: 'Elsa chain gap (ms)',
-    [UiText.SettingElsaChainGapHelp]: 'Test: least time between Coronation Day Elsa chains in a freeze window. 0 chains as fast as the ice forms; higher makes fewer, bigger bands.',
     [UiText.SettingElsaOverlap]: 'Elsa overlap bands',
     [UiText.SettingElsaOverlapHelp]: 'Test: Coronation Day Elsa picks the chain whose ice band crosses the most ice already standing, instead of the lowest free row.',
     [UiText.SettingPageHistoryDepthHelp]: 'Screens remembered. Debug game keeps a picture of every one of them; without it the last few are kept, which is what a report sends.',

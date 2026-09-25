@@ -278,7 +278,6 @@ declare const enum SettingKey {
   SpecialScreenRatio = 'specialScreenRatio',
   DeviceFps = 'deviceFps',
   PageHistoryDepth = 'pageHistoryDepth',
-  ElsaChainGapMs = 'elsaChainGapMs',
   ElsaOverlap = 'elsaOverlap',
   Locale = 'locale',
   AutoLaunchApp = 'autoLaunchApp',
@@ -364,8 +363,7 @@ interface Settings {
   [SettingKey.DeviceFps]: number;
   /** How many page visits `gPages` keeps, and how many frames it writes in debug. */
   [SettingKey.PageHistoryDepth]: number;
-  /** Coronation Elsa test knobs: least ms between window chains, and overlap scoring. */
-  [SettingKey.ElsaChainGapMs]: number;
+  /** Coronation Elsa test knob: overlap-scored chain choice. */
   [SettingKey.ElsaOverlap]: boolean;
   /**
    * The language the run writes its log sentences in. Not a schema entry --
