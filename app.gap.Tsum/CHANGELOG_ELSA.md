@@ -18,9 +18,12 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 - **Elsa asks the game which tsums are live.** When a chain's rows hold ice
   reads, the finger rests on the head and the circles the game paints pale
   (never frozen ones) are the chain's kind; the chain is replanned over them,
-  ice reads included (`paint` in `CoronationElsaConfig`). A plan that does not
-  paint is lifted; a board that reads frozen out is probed first.
-  `skill.elsa.paint` logs each read; `skill.elsa.done` counts them.
+  ice reads included (`paint` in `CoronationElsaConfig`). Only when an ice
+  read shares the chain's colour cluster, and a read that confirms no chain
+  draws the plan anyway: reading on every chain beside ice and lifting
+  unconfirmed plans cost ~4 chains a window (15.5 -> 11.9) for ~1 lookalike
+  rescued. A board that reads frozen out is probed from beside same-cluster
+  ice reads. `skill.elsa.paint` logs each read; `skill.elsa.done` counts them.
 - **Bubbles are popped on every look, ice or not** (up to `bubblePopRounds` 3
   pop-and-recapture rounds). They were popped only on an ice-free look, so
   after a window's first chain -- or from its start, over a leftover band --
