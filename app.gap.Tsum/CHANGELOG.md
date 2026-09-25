@@ -39,12 +39,10 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
-## [3.0b2]
+## [3.0b3]
 
 ### Summary
 
-- The next round starts about 3 seconds sooner after the score tally, and the tally's count-up is now skipped with round stats off too.
-- Gaston skill improved and moved to Beta.
 - Fixed Unlock Level and Box Buying repeating back to back instead of waiting their set hours, and Unlock Level missing capped Tsums when the collection opened past its first page.
 
 ### Fixed
@@ -56,6 +54,16 @@ release note; they fold back in here when she ships.
   shows placeholder cards for ~0.5s with no left chevron, so the first-page
   check said yes on any page and the sweep read nothing capped.
   `awaitCollectionLoaded` polls `CollectionGrid.loading*` before rewinding.
+
+## [3.0b2]
+
+### Summary
+
+- The next round starts about 3 seconds sooner after the score tally, and the tally's count-up is now skipped with round stats off too.
+- Gaston skill improved and moved to Beta.
+- Fixed Unlock Level and Box Buying repeating back to back instead of waiting their set hours, and Unlock Level missing capped Tsums when the collection opened past its first page.
+
+### Fixed
 
 - **The play job is due again as soon as a round ends.** The scheduler stamps
   `lastRunTime` after a job returns, so the play job's 3s interval kept the
