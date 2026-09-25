@@ -299,6 +299,14 @@ var CoronationElsaConfig = {
   // the closing break (`coronation_elsa_10.mp4`, three windows), and standing
   // ice buys nothing. The break itself is ~550ms of taps and settle.
   refreezeMinWindowLeftMs: 600,
+  // A look that reads under this share of the board's circles, no more than
+  // `hiddenIceFreeMax` of them free, and a real pile, is frozen out too: the
+  // missing circles are frozen tsums the scan cannot see through the ice,
+  // and a chain drawn there lands on them. It breaks at once. On video every
+  // unplanned break followed such a look (23-39 circles of ~48, 7-19 free);
+  // 0.8 and 15 caught 8 of 11 and stopped 3 of 231 safe chains.
+  hiddenIceFraction: 0.8,
+  hiddenIceFreeMax: 15,
   // A chain the game took (its tsums gone) that froze fewer new tsums than
   // this is fruitless: the board is one the bands cannot reach any more --
   // ice above holding the refill off, the free tsums left in a corner the
@@ -1086,6 +1094,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     }
     const live = elsaWithoutDead(look.free, dead);
     const pick = elsaRowChain(live, look.obstacles);
+    const hidden = pick !== null && look.iced.length >= cfg.refreezeMinIced
+      && read < cfg.hiddenIceFraction * expected && look.free.length <= cfg.hiddenIceFreeMax;
     logDebug(Log.Skill.ElsaPass, {
       atMs: Date.now() - t0,
       free: look.free.length,
@@ -1101,6 +1111,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
       chainLen: pick === null ? 0 : pick.path.length,
       // The hop tier that found it: the wide one on a board frozen nearly out.
       hop: pick === null ? 0 : pick.hop,
+      // Frozen out by what the scan cannot see (`hiddenIceFraction`): not drawn.
+      hidden: hidden,
     });
     // A finished round reads like a starved board -- few circles, chains that
     // clear nothing -- so those looks are the ones that ask whether it is one.
@@ -1129,11 +1141,11 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
         if (got.path !== null) { paint = got; } else { paintLifts++; probed.push(head); }
       }
     }
-    if (pick === null && paint === null) {
+    if ((pick === null && paint === null) || hidden) {
       // Nothing chainable this look -- ice everywhere a row could stand, or a
-      // starved read.
+      // starved read -- or a board whose ice hides the tsums a chain would hit.
       starved++;
-      starvedRun++;
+      starvedRun = hidden ? Math.max(starvedRun + 1, cfg.refreezeStarvedLooks) : starvedRun + 1;
       if (starvedRun >= cfg.refreezeStarvedLooks && look.iced.length >= cfg.refreezeMinIced
           && chainBy - Date.now() > cfg.refreezeMinWindowLeftMs) {
         // The board is frozen out with window to spare: spend the pile now

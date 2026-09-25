@@ -29,6 +29,12 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
   bright, so the read cannot tell a lookalike from ice (0 rescued in a
   round); each read chain was followed by a 25-57 tsum freeze that went off
   within 0.35s. Code kept until the next recording rules on it.
+- **A board whose ice hides its tsums is broken, not chained.** Frozen tsums
+  drop out of the scan, so a look reading under 80% of the board with 15 or
+  fewer free (`hiddenIceFraction`, `hiddenIceFreeMax`) drew chains over
+  unseen ice: all 11 traceable unplanned breaks in run mugrir5i9h followed
+  one. It now breaks the pile as a frozen-out board; `hidden` on
+  `skill.elsa.pass`.
 - **No leftover breaks before a round's first window.** No ice can exist
   then, but pale tsums read as ice fired six aimed breaks at nothing in
   one round and were left out of the play loop's chains.
