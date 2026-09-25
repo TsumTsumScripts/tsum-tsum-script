@@ -29,6 +29,9 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
   bright, so the read cannot tell a lookalike from ice (0 rescued in a
   round); each read chain was followed by a 25-57 tsum freeze that went off
   within 0.35s. Code kept until the next recording rules on it.
+- **No leftover breaks before a round's first window.** No ice can exist
+  then, but pale tsums read as ice fired six aimed breaks at nothing in
+  one round and were left out of the play loop's chains.
 - **Bubbles are popped on every look, ice or not** (up to `bubblePopRounds` 3
   pop-and-recapture rounds). They were popped only on an ice-free look, so
   after a window's first chain -- or from its start, over a leftover band --

@@ -1282,8 +1282,10 @@ registerSkill({
     // that missed, and is spent -- out here there is no fresh pile for a
     // stray tap to cost. A smaller one is a band left standing on purpose:
     // it doubles under the next window's bands, so it is kept and only
-    // chained around.
-    const leftover = elsaSplitIce(ts, board).iced;
+    // chained around. Before the round's first window there is no ice, so
+    // nothing is: an ice read then is a pale colour, and treating it as ice
+    // fired six empty breaks and kept it out of chains (mugrabhyw).
+    const leftover = elsaWindowRound === gLogRoundId ? elsaSplitIce(ts, board).iced : [];
     if (leftover.length >= CoronationElsaConfig.leftoverBurstMin) {
       // Aimed only. A leftover read is as often a pale colour or crystal
       // debris as ice, and the grid behind the aimed taps was 1.3s of the
