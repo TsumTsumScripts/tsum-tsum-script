@@ -45,8 +45,17 @@ release note; they fold back in here when she ships.
 
 - The next round starts about 3 seconds sooner after the score tally, and the tally's count-up is now skipped with round stats off too.
 - Gaston skill improved and moved to Beta.
+- Fixed Unlock Level and Box Buying repeating back to back instead of waiting their set hours, and Unlock Level missing capped Tsums when the collection opened past its first page.
 
 ### Fixed
+
+- **Unlock Level and Box Buying no longer loop.** Their `true` ("ran" for the
+  Now queue) reached the scheduler as "due again next pass"; `taskBody` now
+  drops it. A device ran the sweep every ~7s for hours.
+- **The level-cap rewind waits for the grid to load.** After a re-sort the grid
+  shows placeholder cards for ~0.5s with no left chevron, so the first-page
+  check said yes on any page and the sweep read nothing capped.
+  `awaitCollectionLoaded` polls `CollectionGrid.loading*` before rewinding.
 
 - **The play job is due again as soon as a round ends.** The scheduler stamps
   `lastRunTime` after a job returns, so the play job's 3s interval kept the

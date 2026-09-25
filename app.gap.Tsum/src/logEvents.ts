@@ -282,6 +282,8 @@ namespace Log {
     CardsRead         = 'unlock.cardsRead',
     DialogMissing     = 'unlock.dialogMissing',
     End               = 'unlock.end',
+    GridLoaded        = 'unlock.gridLoaded',
+    GridStillLoading  = 'unlock.gridStillLoading',
     /** The Auto Unlock MyTsum Level flow: one raise for the selected tsum after a round. */
     MyTsumBackoff     = 'unlock.myTsum.backoff',
     MyTsumCapped      = 'unlock.myTsum.capped',

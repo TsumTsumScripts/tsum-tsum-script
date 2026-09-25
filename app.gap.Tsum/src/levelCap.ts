@@ -21,9 +21,8 @@
 //   RaiseLevelCap   -- OK, which spends the coins -> LevelCapRaised
 //   LevelCapRaised  -- a tap anywhere             -> TsumsPage
 //
-// The collection is left in Level Lock order rather than put back the way it
-// was. Nothing else in the script reads that order, and leaving it is what makes
-// the next run's first card the next capped tsum.
+// The player's own order is read off the dialog first and put back afterwards
+// (`restoreCollectionSort`).
 //
 // `awaitPage` is the wait every one of those hops goes through, and boxes.ts
 // borrows it -- hence its `event` parameter, so a Box Buying timeout is not
@@ -68,6 +67,8 @@ const UnlockDialogWaitMs = 4000;
 const UnlockConfirmWaitMs = 8000;
 /** How long the collection gets to redraw after the toast is dismissed. */
 const UnlockReturnWaitMs = 6000;
+/** How long the grid gets to swap its placeholder cards for real ones. */
+const UnlockGridLoadMs = 5000;
 /** Rest between polls while waiting for a screen. */
 const UnlockPollRestMs = 300;
 /** Taps the order gets before the sweep gives up on it -- the first can be swallowed. */
@@ -300,6 +301,63 @@ Tsum.prototype.collectionAtFirstPage = function() {
   return votes < CollectionGrid.prevPageVotes;
 }
 
+/** How many of the eight cards are still loading placeholders. */
+Tsum.prototype.collectionLoadingCards = function() {
+  const cells = CollectionGrid.cells;
+  const samples = CollectionGrid.loadingSamples;
+  const points: Coord[] = [];
+  for (let i = 0; i < cells.length; i++) {
+    for (let j = 0; j < samples.length; j++) {
+      points.push({x: cells[i].x + samples[j].dx, y: cells[i].y + samples[j].dy});
+    }
+  }
+  let loading = 0;
+  const img = this.screenshot();
+  try {
+    const read = this.getColors(img, points);
+    for (let i = 0; i < cells.length; i++) {
+      let hits = 0;
+      for (let j = 0; j < samples.length; j++) {
+        if (isSameColor(CollectionGrid.loadingColor, read[i * samples.length + j],
+                        CollectionGrid.loadingDiff)) {
+          hits++;
+        }
+      }
+      if (hits === samples.length) {
+        loading++;
+      }
+    }
+  } finally {
+    releaseImage(img);
+  }
+  return loading;
+}
+
+/**
+ * Wait for the grid's placeholder cards to be replaced by real ones.
+ *
+ * A loading grid draws no left chevron, so reading it for "first page" says yes
+ * whatever page it is on, and its padlock read finds nothing. `settleScreen`
+ * cannot catch it: the placeholders hold still. Gives up after
+ * `UnlockGridLoadMs` and carries on -- the caller's reads are no worse than
+ * without the wait.
+ */
+Tsum.prototype.awaitCollectionLoaded = function() {
+  const startedAt = Date.now();
+  let loading = this.collectionLoadingCards();
+  while (this.isRunning && loading >= CollectionGrid.loadingCards) {
+    if (Date.now() - startedAt >= UnlockGridLoadMs) {
+      logWarn(Log.Unlock.GridStillLoading, 'The collection was still loading its cards',
+        {loading: loading, waitedMs: Date.now() - startedAt});
+      return false;
+    }
+    this.sleep(UnlockPollRestMs);
+    loading = this.collectionLoadingCards();
+  }
+  logDebug(Log.Unlock.GridLoaded, {ms: Date.now() - startedAt});
+  return true;
+}
+
 /**
  * Walk the collection back to its first page.
  *
@@ -318,11 +376,12 @@ Tsum.prototype.collectionAtFirstPage = function() {
  * counts taps rather than pages and is set well above the length of the list.
  */
 Tsum.prototype.rewindCollection = function() {
+  this.awaitCollectionLoaded();
   let turned = 0;
   while (this.isRunning && turned <= UnlockRewindMaxPages) {
     // Every reading past the first is taken after the settle at the bottom of
-    // the loop, so the grid it reads has stopped moving. On the first pass
-    // nothing has moved yet, so there is nothing to wait out.
+    // the loop, so the grid it reads has stopped moving. The first waited for
+    // the cards to load above -- a loading grid hides the left chevron.
     if (this.collectionAtFirstPage()) {
       logDebug(Log.Unlock.Rewound, {pages: turned});
       return true;

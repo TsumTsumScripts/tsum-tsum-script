@@ -2575,6 +2575,17 @@ var CollectionGrid = {
   prevPageDiff: 60,
   prevPageVotes: 3,
   /**
+   * A card still loading: flat blue with a spinner where the tsum art goes. The
+   * grid shows these for ~0.5s after a re-sort, with the right chevron drawn but
+   * not the left, so the first-page check must wait them out. Three points on
+   * the card body, all three blue, makes a placeholder; `loadingCards` of them
+   * makes the grid loading. Measured: 8 of 8 on a loading grid, 0 on loaded ones.
+   */
+  loadingSamples: [{dx: 0, dy: -40}, {dx: -30, dy: 0}, {dx: 0, dy: 0}],
+  loadingColor: {r: 35, g: 112, b: 207},
+  loadingDiff: 40,
+  loadingCards: 5,
+  /**
    * The "MyTsum Set" button under the grid, which the game greys out while the
    * selected card is already the MyTsum -- the cheapest proof that the detail
    * panel above shows the MyTsum rather than whatever card was tapped last.

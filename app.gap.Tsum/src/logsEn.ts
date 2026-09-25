@@ -102,7 +102,7 @@ var LogsEn = {
   [Log.Unlock.NowYielded]: 'Yielding to level-cap sweep',
   [Log.Unlock.Start]: 'Looking for capped Tsums',
   [Log.Unlock.Raised]: 'Raised a Tsum\'s level cap',
-  [Log.Unlock.NextPage]: 'All eight capped; next collection page',
+  [Log.Unlock.NextPage]: 'No capped Tsums on this page; next collection page',
   [Log.Unlock.SortFailed]: 'Could not re-sort the collection',
   [Log.Unlock.SortRestored]: 'Collection order restored',
   [Log.Unlock.RaiseNotConfirmed]: 'Level cap not raised; out of coins?',

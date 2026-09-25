@@ -1086,7 +1086,10 @@ type TaskBody = () => boolean | void;
 
 interface Task {
   name: string;
-  /** Returns true to be due again on the next pass rather than after `interval`. */
+  /**
+   * Returns true to be due again on the next pass rather than after `interval`.
+   * A body whose boolean means something else must not pass it through.
+   */
   run: TaskBody;
   interval: number;
   runTimes: number;
@@ -1424,6 +1427,10 @@ interface Tsum {
   raiseCappedCards(): LogFields | null;
   /** Is the collection showing its first eight cards? By the left chevron's absence. */
   collectionAtFirstPage(): boolean;
+  /** How many of the eight cards are still loading placeholders. */
+  collectionLoadingCards(): number;
+  /** Wait for the grid's placeholder cards to load; false when they did not in time. */
+  awaitCollectionLoaded(): boolean;
   /** Tap the left arrow until the collection is back on its first page. */
   rewindCollection(): boolean;
   /** Which of the eight cards on this collection page are at their level cap. */

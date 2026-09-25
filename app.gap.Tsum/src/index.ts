@@ -323,8 +323,11 @@ function taskBody(run: Tsum, name: TaskName): TaskBody {
     case TaskName.SendHearts: return run.taskSendHearts.bind(run);
     case TaskName.AppRestart: return run.taskTsumAppRestart.bind(run);
     case TaskName.ClickAssist: return run.taskClickAssist.bind(run);
-    case TaskName.UnlockLevel: return run.taskAutoUnlockLevel.bind(run);
-    case TaskName.BuyBoxes: return run.taskBuyBoxes.bind(run);
+    // These two return "ran, or stood aside" for the Now queue. The controller
+    // reads `true` as "due again next pass", so the result stops here -- passing
+    // it through looped the sweep back to back instead of every N hours.
+    case TaskName.UnlockLevel: return () => { run.taskAutoUnlockLevel(); };
+    case TaskName.BuyBoxes: return () => { run.taskBuyBoxes(); };
     case TaskName.PlayRound: return run.taskPlayGameQuick.bind(run);
   }
 }

@@ -100,7 +100,7 @@ var LogsZhTw: LogCataloguePartial = {
   [Log.Unlock.NowYielded]: '先讓給提升等級上限',
   [Log.Unlock.Start]: '尋找已達等級上限的 Tsum',
   [Log.Unlock.Raised]: '已提升 Tsum 等級上限',
-  [Log.Unlock.NextPage]: '八隻都已達上限，下一頁',
+  [Log.Unlock.NextPage]: '此頁沒有達上限的角色，下一頁',
   [Log.Unlock.SortFailed]: '無法變更收藏排序',
   [Log.Unlock.SortRestored]: '已恢復收藏排序',
   [Log.Unlock.RaiseNotConfirmed]: '等級上限未提升，金幣不足？',
