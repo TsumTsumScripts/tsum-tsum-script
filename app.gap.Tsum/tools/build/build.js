@@ -35,7 +35,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { spawn } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
 
 const { projectDir, loadConfig, resolveChannel, archiveName } = require('../release/config');
 const { runSteps, defaultJobs } = require('./schedule');
@@ -299,15 +299,26 @@ async function main() {
   console.log(`[build] done in ${elapsed}s`);
 
   if (has('adb')) {
-    const device = valueOf('device');
-    const target = device ? ['-s', device] : ['-s', 'emulator-5554'];
-    console.log(`[build] pushing to ${device || 'the connected device'}...`);
+    const device = valueOf('device') || firstEmulator();
+    console.log(`[build] pushing to ${device}...`);
     await sh((text) => process.stdout.write(text), 'adb', [
-      ...target, 'push',
+      '-s', device, 'push',
       'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
       DEPLOY_DIR,
     ]);
   }
+}
+
+// First emulator in `adb devices`: `emulator-NNNN`, or a local TCP serial such
+// as BlueStacks' `127.0.0.1:5555`. Physical devices and offline entries are skipped.
+function firstEmulator() {
+  const out = execFileSync('adb', ['devices'], { encoding: 'utf8' });
+  for (const line of out.split('\n').slice(1)) {
+    const [serial, state] = line.trim().split(/\s+/);
+    if (state !== 'device') continue;
+    if (/^emulator-\d+$/.test(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) return serial;
+  }
+  throw new Error('no emulator listed in `adb devices`; pass --device SERIAL');
 }
 
 main().catch((err) => {
