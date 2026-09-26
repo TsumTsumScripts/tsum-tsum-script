@@ -852,7 +852,8 @@ function readSettingValue(setting: SettingSpec): SettingValue | undefined {
     if (typeof setting.default === 'boolean') {
         return control !== null ? control.checked === true : setting.default;
     } else if (typeof setting.default === 'number') {
-        return control !== null ? +control.value : setting.default;
+        // The field shows the value divided by `scale`; hand back stored units.
+        return control !== null ? Math.round(+control.value * (setting.scale || 1)) : setting.default;
     } else if (typeof setting.default === 'string') {
         return control !== null ? String(control.value) : setting.default;
     }
