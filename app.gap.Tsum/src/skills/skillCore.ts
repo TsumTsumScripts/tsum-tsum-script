@@ -183,7 +183,13 @@ function skillSweepsBubbles(skillType: SkillType): boolean {
 
 // Whether the skill's last activation is still running, so a tap would be
 // wasted. See `SkillHandler.stillRunning`; every other skill is never running.
+// The "Delay Skill ReActivation" setting holds any skill the same way for that
+// long after `useSkill`'s last tap.
 function skillStillRunning(ts: Tsum): boolean {
+  if (ts.skillReactivationMs > 0 && ts.skillActivatedAt > 0
+      && Date.now() - ts.skillActivatedAt < ts.skillReactivationMs) {
+    return true;
+  }
   const handler = SkillHandlers[ts.skillType];
   return !!(handler && handler.stillRunning && handler.stillRunning(ts));
 }
@@ -457,8 +463,10 @@ Tsum.prototype.maybeAutoTapSkill = function(board) {
   // while the gauge isn't full -- skip the screenshots entirely. Not with a
   // "Wait for Settle" set: a blind tap cannot wait for the board, since nothing
   // knows whether it fired, so those skills take the gauge read and `useSkill`
-  // below instead, where the settle wait sits before the tap.
-  if (skillBareTapActivates(this.skillType) && this.skillSettleMs <= 0) {
+  // below instead, where the settle wait sits before the tap. Same for "Delay
+  // Skill ReActivation": the delay runs from a tap known to have fired.
+  if (skillBareTapActivates(this.skillType) && this.skillSettleMs <= 0
+      && this.skillReactivationMs <= 0) {
     this.tap(Button.gameSkill1, 10);
     // Did that one take? Nothing else here knows, and the Bubble Strategy's
     // next pop would land in the hole the burst is about to leave. One ~2.4ms
@@ -673,6 +681,7 @@ Tsum.prototype.useSkill = function(board, fast) {
   // everything the handler spends before its first timed tap, including this
   // tap's own hold and the settle below, comes out of its own budget.
   const activatedAt = Date.now();
+  this.skillActivatedAt = activatedAt;
   // No Bubble Strategy pop for a while from here: the burst is about to empty
   // the board round every bubble on it. See `holdBubblesAfterSkill`.
   this.holdBubblesAfterSkill(activatedAt);

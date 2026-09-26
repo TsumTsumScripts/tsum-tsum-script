@@ -101,6 +101,10 @@ class Tsum {
   skillInterval: number;
   /** The "Wait for Settle" setting: the most ms the board is watched before the activation tap; 0 fires at once. */
   skillSettleMs: number;
+  /** "Delay Skill ReActivation" in ms: no activation this soon after the last one; 0 is off. */
+  skillReactivationMs: number;
+  /** When `useSkill` last tapped the skill button; 0 before the first. */
+  skillActivatedAt: number;
   skillLevel: number;
   /** `SkillType.Unset` until start() reads the setting. */
   skillType: SkillType;
@@ -338,6 +342,8 @@ class Tsum {
     this.sentToZero = false;
     this.skillInterval = 3000;
     this.skillSettleMs = 0;
+    this.skillReactivationMs = 0;
+    this.skillActivatedAt = 0;
     this.skillLevel = 3;
     this.skillType = SkillType.Unset;
     // Bubble positions from the last board scan, tapped after a long chain.

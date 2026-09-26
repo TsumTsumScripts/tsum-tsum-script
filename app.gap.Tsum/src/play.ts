@@ -548,6 +548,8 @@ Tsum.prototype.taskPlayGameQuick = function() {
   // ahead of the tap so `round.start` lands with the items in frame, and
   // `duration_seconds` must still measure play rather than the walk in.
   this.roundStartedAt = Date.now();
+  // A new round's first activation is never held by the last round's.
+  this.skillActivatedAt = 0;
   this.runTimes = 0;
   // Re-resolved on the first board scan of each game: the player may have
   // changed which tsum is selected, and `identifyMyTsum` has just re-read it.

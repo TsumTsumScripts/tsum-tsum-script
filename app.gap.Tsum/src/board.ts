@@ -402,7 +402,9 @@ Tsum.prototype.scanBoardQuick = function() {
     // releases it.
     if (this.overloadPending) {
       this.overloadPending = false;
-      this.tap(Button.gameSkill1, 10);
+      if (!skillStillRunning(this)) {
+        this.tap(Button.gameSkill1, 10);
+      }
     }
     // Both circle passes want the same grayscale, blurred copy of the board, so
     // it is built once here and handed to each. They used to build one apiece:

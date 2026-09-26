@@ -302,6 +302,7 @@ declare const enum SettingKey {
   BonusCombo = 'bonusCombo',
   SkillWaitingTime = 'skillWaitingTime',
   SkillSettleMs = 'skillSettleMs',
+  SkillReactivationTenths = 'skillReactivationTenths',
   SkillLevel = 'skillLevel',
   SkillType = 'skillType',
   SkillAutoTap = 'skillAutoTap',
@@ -419,6 +420,13 @@ interface Settings {
    * fires at once.
    */
   [SettingKey.SkillSettleMs]: number;
+  /**
+   * "Delay Skill ReActivation": after an activation, a full gauge is not fired
+   * again for this long, so a skill with a duration is not restarted while it
+   * still runs. Tenths of a second, because a share code carries whole numbers
+   * only; the page shows it as seconds. 0 is off.
+   */
+  [SettingKey.SkillReactivationTenths]?: number;
   [SettingKey.SkillLevel]: number;
   [SettingKey.SkillType]: SkillType;
   [SettingKey.SkillAutoTap]: boolean;

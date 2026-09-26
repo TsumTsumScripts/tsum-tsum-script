@@ -144,6 +144,8 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   // Same default, same reason: a stored form from before the row existed.
   ts.skillSettleMs = typeof settings.skillSettleMs === 'number' && settings.skillSettleMs > 0
     ? settings.skillSettleMs : 0;
+  ts.skillReactivationMs = typeof settings.skillReactivationTenths === 'number'
+    && settings.skillReactivationTenths > 0 ? settings.skillReactivationTenths * 100 : 0;
   ts.skillLevel = settings.skillLevel;
   ts.skillType = settings.skillType;
   ts.trackRoundStats = settings.trackRoundStats;

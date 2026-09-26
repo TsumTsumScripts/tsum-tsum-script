@@ -396,6 +396,18 @@ var tabs: TabSpec[] = [
                         min: 0
                     },
                     {
+                        // Stored in tenths, shown as seconds (`scale`).
+                        key: SettingKey.SkillReactivationTenths,
+                        title: UiText.SettingSkillReactivation,
+                        help: UiText.SettingSkillReactivationHelp,
+                        default: 0,
+                        step: 5,
+                        max: 300,
+                        min: 0,
+                        scale: 10,
+                        status: ReleaseStatus.Alpha
+                    },
+                    {
                         // Not part of the skill above it: every Lorcana tsum
                         // transforms the same way whatever its own skill is, so
                         // this is its own switch rather than something a
@@ -1431,6 +1443,7 @@ var SHARE_SLOTS: (SettingKey | '')[] = [
     SettingKey.BubbleStrategy,
     SettingKey.HoldBubblesLastFeverSec,
     SettingKey.SkillSettleMs,
+    SettingKey.SkillReactivationTenths,
 ];
 
 /**
@@ -1885,7 +1898,7 @@ function applySettingValue(setting: SettingSpec, value: SettingValue): boolean {
         }
         setting.default = num;
         if (control !== null) {
-            control.value = String(num);
+            control.value = shownNumber(setting, num);
         }
         return true;
     }
@@ -3690,13 +3703,14 @@ function buildStepper(setting: SettingSpec): HTMLElement {
     var step = setting.step || 1;
 
     input.id = controlElementId(setting.key);
-    input.value = String(setting.default);
-    input.step = String(step);
+    var scale = setting.scale || 1;
+    input.value = shownNumber(setting, setting.default as number);
+    input.step = String(step / scale);
     if (setting.min !== undefined) {
-        input.min = String(setting.min);
+        input.min = String(setting.min / scale);
     }
     if (setting.max !== undefined) {
-        input.max = String(setting.max);
+        input.max = String(setting.max / scale);
     }
 
     var steps = stepper.querySelectorAll('.step');
@@ -3710,16 +3724,16 @@ function buildStepper(setting: SettingSpec): HTMLElement {
         }
         var by = coarse !== null ? +coarse * step : +fine!;
         // A real minus sign: the hyphen reads as a dash next to the digits.
-        button.textContent = (by > 0 ? '+' : '−') + Math.abs(by);
+        button.textContent = (by > 0 ? '+' : '−') + Math.abs(by) / scale;
         button.addEventListener('click', (function (by) {
             return function () {
-                setNumberValue(setting, input, (+input.value) + by);
+                setNumberValue(setting, input, (+input.value) * scale + by);
             };
         })(by));
     }
 
     input.addEventListener('change', function () {
-        setNumberValue(setting, input, +input.value);
+        setNumberValue(setting, input, (+input.value) * scale);
     });
 
     // A number row may also carry an action -- "Now", beside the between-rounds
@@ -3748,9 +3762,14 @@ function setNumberValue(setting: SettingSpec, input: HTMLInputElement, value: nu
     if (setting.min !== undefined) {
         next = Math.max(next, setting.min);
     }
-    input.value = String(next);
+    input.value = shownNumber(setting, next);
     setting.default = next;
     saveSettings(settings);
+}
+
+/** A number row's stored value as its field shows it -- see `SettingSpec.scale`. */
+function shownNumber(setting: SettingSpec, value: number): string {
+    return String(value / (setting.scale || 1));
 }
 
 function buildText(setting: SettingSpec): HTMLElement {

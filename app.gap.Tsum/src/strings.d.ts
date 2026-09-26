@@ -136,6 +136,8 @@ declare const enum UiText {
   SettingSkillWaitingTimeHelp = 'setting.skillWaitingTime.help',
   SettingSkillSettle = 'setting.skillSettle',
   SettingSkillSettleHelp = 'setting.skillSettle.help',
+  SettingSkillReactivation = 'setting.skillReactivation',
+  SettingSkillReactivationHelp = 'setting.skillReactivation.help',
   SettingNoSkillLastFever = 'setting.noSkillLastFever',
   SettingNoSkillLastFeverHelp = 'setting.noSkillLastFever.help',
   SettingSkillAutoTap = 'setting.skillAutoTap',

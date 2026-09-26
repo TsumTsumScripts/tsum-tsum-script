@@ -87,6 +87,7 @@ repository beside this one — `DEVELOPMENT.md` § The development toolkit.
 | When something changed, and why | `CHANGELOG.md` — 1.0 on; `CHANGELOG_0.x.md` before that; `CHANGELOG_ELSA.md` for Coronation Day Elsa while she is off the production build |
 | How a release is cut, what it publishes, and where | `DEVELOPMENT.md` § Releasing, then `tools/release/` |
 | Known bugs, wanted features | `BACKLOG.md` |
+| Settings, skills and fields added for work in progress, and which are still used — the cleanup list | `ADDITIONS.md` |
 | What a host native actually does | `../game-automation-app/CODEMAP.md`, then its `../game-automation-app/docs/API.md` and `app/src/main/cpp/` |
 
 ## Source map — `src/`
@@ -166,7 +167,7 @@ hundred lines and more.
 
 | File | `SkillType` | Note |
 |:--|:--|:--|
-| `src/skills/skillCore.ts` | — | The registry and everything shared: gauge read, fever hold-off, activation taps, `useSkill` dispatch, auto-tap, and the declarations a skill makes about the play loop — `sweepsBubbles`, the `claimsBubbles`/`popBubblesAfterChain` pair, `stillRunning` (a full gauge waits while the last activation runs), `chainLimits`, `extraClusterSlots` and `readsChainCounter` (each may be a function of `ts`, for a skill whose board changes shape mid-round or whose rules start at its first activation) and `setMyTsumPriority`. Also the paint read's floor sample (`skillFloorRead`), shared by Gaston and Elsa. Each of those is a **hold** over a setting rather than a write, so the player's own value is untouched and lifting it restores exactly that |
+| `src/skills/skillCore.ts` | — | The registry and everything shared: gauge read, fever hold-off, activation taps, `useSkill` dispatch, auto-tap, and the declarations a skill makes about the play loop — `sweepsBubbles`, the `claimsBubbles`/`popBubblesAfterChain` pair, `stillRunning` (a full gauge waits while the last activation runs, and for the Delay Skill ReActivation setting after any activation), `chainLimits`, `extraClusterSlots` and `readsChainCounter` (each may be a function of `ts`, for a skill whose board changes shape mid-round or whose rules start at its first activation) and `setMyTsumPriority`. Also the paint read's floor sample (`skillFloorRead`), shared by Gaston and Elsa. Each of those is a **hold** over a setting rather than a write, so the player's own value is untouched and lifting it restores exactly that |
 | `src/skills/burst.ts` | `SkillType.Burst`, `SkillType.BurstBubbles` | A bare tap activates, so the play loop may fire these blind between chains |
 | `src/skills/pairTsum.ts` | `SkillType.PairTsum` | Two-button activation |
 | `src/skills/donald.ts` | `SkillType.Donald`, `SkillType.HolidayDonald` | |
