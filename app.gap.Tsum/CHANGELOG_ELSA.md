@@ -11,7 +11,7 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Summary
 
-- Coronation Day Elsa skill improved: each freeze window opens with a burst of long chains, chains are placed so their ice overlaps, the ice breaks early less often, bubbles are popped all through the window, lookalike tsums are chained less often by mistake and ice-coloured tsums like Dumbo are no longer tapped as ice, the whole window is used, and the tap sweep at its end and chains after TIME UP are gone.
+- Coronation Day Elsa skill improved: each freeze window opens with a burst of long chains, chains are placed so their ice overlaps, the ice breaks early less often, bubbles are popped all through the window, lookalike tsums are chained less often by mistake and ice-coloured tsums like Dumbo or light-blue tsums are no longer tapped as ice, the whole window is used, and the tap sweep at its end and chains after TIME UP are gone.
 
 ### Added
 
@@ -29,6 +29,18 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Changed
 
+- **Ice-alikes match the range they were learned over** (`iceAlikeMatch`),
+  not their first read, and only +5 brighter (`valUp`). A light-blue live
+  tsum learned at s 100 read s 60-98 in play and was taken for ice on 44 of
+  160 scans between windows: 19 leftover breaks tapped live tsums. Replayed
+  over six rounds: 318 vs 264 of 432 live reads matched, no ice-like
+  cluster (v >= 220, s <= 75) whitelisted. `skill.elsa.iceAlike` logs the
+  range.
+- **A kind read that darkens nothing clears its colour** (`elsaKindVerdict`).
+  A dead chain now only nominates a colour as mixed; its next kind read
+  confirms or clears it, and a chain drawn off a kind read no longer
+  nominates. 251 of 436 kind reads darkened nothing, and their chains died
+  14% of the time against ~9% for sweep chains -- a hop, not a kind.
 - **Overlap scoring and the salvo are always on.** Both were A/B tested
   behind temporary Debug-tab settings (`elsaOverlap`, `elsaSalvo`), now
   removed with their strings and flags.

@@ -114,7 +114,9 @@
 // chain this round (`elsaMixed`), its chains go out with the finger resting
 // on the plan's lower end first; its members whose floor did not drop are
 // the head's kind, and the chain is replanned over those (`elsaKindChain`).
-// Ice reads stay out of it: ice does not darken either.
+// A first read where nothing darkens clears the cluster again: that chain
+// died of a hop, not a kind. Ice reads stay out of it: ice does not darken
+// either.
 //
 // The ice also eats colour slots: the board scan keeps its biggest
 // `uniqueTsumCount - 1` clusters and each ice shade takes one, so
@@ -257,7 +259,15 @@ var CoronationElsaConfig = {
   // and 18 in saturation from a known ice-alike, so 12 and 15 keep it out.
   // Value moves with the fever tint -- one live blue read 185 and 208 in the
   // same round -- so it gets the room it needs.
-  iceAlikeMatch: {hue: 12, sat: 15, val: 40},
+  //
+  // Measured from the range of reads the colour was learned over, not its
+  // first read: a light-blue live tsum read saturation 78-137 before its
+  // first window and 60-98 in play (mui0gs7xco), so a first read of 100 missed
+  // it on 44 of 160 scans between windows -- 19 breaks tapped at live tsums.
+  // Brighter than the range gets only `valUp`: ice read as the live colour
+  // is always brighter than it (v 220-232 against a range topping out at
+  // 202-216), and 5 whitelisted none of 459 such clusters across six rounds.
+  iceAlikeMatch: {hue: 12, sat: 15, val: 40, valUp: 5},
   // What it takes for a colour in the box to count as live rather than a
   // transient: a cluster this big, on this many scans of the round before its
   // first window. A live colour is 7-16 tsums on every one of the ~50 scans
@@ -375,14 +385,16 @@ function elsaRoundOver(): boolean {
 }
 
 // Live colours seen inside the frozen box on scans where ice was impossible,
-// in cluster HSV (`b`/`g`/`r` = hue/saturation/value), with how many scans
-// each has been seen on and the brightest centre any of its tsums read
-// (`sureValMin`'s ceiling). Per round: the colour lineup changes between
+// as the range of cluster HSV it has read at (`b`/`g`/`r` = hue/saturation/
+// value), with how many scans each has been seen on and the brightest centre
+// any of its tsums read (`sureValMin`'s ceiling). Per round: the colour lineup changes between
 // rounds. `elsaWindowRound` is the last round a freeze window ran in -- while
 // it differs from the current round, no ice can exist, which is what makes a
 // scan safe to learn from. Rounds are `logRoundKey`s, so a new run's round 1
 // does not inherit the last run's state.
-interface ElsaIceAlike extends Color {
+interface ElsaIceAlike {
+  lo: Color;
+  hi: Color;
   seen: number;
   brightest: number;
 }
@@ -390,13 +402,14 @@ var elsaIceAlikes: ElsaIceAlike[] = [];
 var elsaIceAlikeRound = '';
 var elsaWindowRound = '';
 
-/** The remembered ice-alike `c` is a re-read of, if any. */
+/** The remembered ice-alike `c` is a re-read of, if any: inside its range plus `iceAlikeMatch`. */
 function elsaIceAlikeMatch(c: Color): ElsaIceAlike | null {
   const m = CoronationElsaConfig.iceAlikeMatch;
   for (let i = 0; i < elsaIceAlikes.length; i++) {
     const a = elsaIceAlikes[i];
-    if (Math.abs(a.b - c.b) <= m.hue && Math.abs(a.g - c.g) <= m.sat
-        && Math.abs(a.r - c.r) <= m.val) {
+    if (c.b >= a.lo.b - m.hue && c.b <= a.hi.b + m.hue
+        && c.g >= a.lo.g - m.sat && c.g <= a.hi.g + m.sat
+        && c.r >= a.lo.r - m.val && c.r <= a.hi.r + m.valUp) {
       return a;
     }
   }
@@ -463,13 +476,20 @@ function elsaNoteIceAlikes(ts: Tsum, board: BoardPoint[]): void {
     if (known !== null) {
       known.seen++;
       if (bright[i] > known.brightest) { known.brightest = bright[i]; }
+      // Widen the range to this read: no ice exists yet, so it is live.
+      known.lo = { b: Math.min(known.lo.b, c.b), g: Math.min(known.lo.g, c.g), r: Math.min(known.lo.r, c.r) };
+      known.hi = { b: Math.max(known.hi.b, c.b), g: Math.max(known.hi.g, c.g), r: Math.max(known.hi.r, c.r) };
       if (known.seen === cfg.iceAlikeMinScans) {
         logDebug(Log.Skill.ElsaIceAlike, {
-          hue: known.b, sat: known.g, val: known.r, tsums: sizes[i], brightest: known.brightest,
+          // The range so far, [lo, hi]; it keeps widening until the first window.
+          hue: [known.lo.b, known.hi.b], sat: [known.lo.g, known.hi.g], val: [known.lo.r, known.hi.r],
+          tsums: sizes[i], brightest: known.brightest,
         });
       }
     } else {
-      elsaIceAlikes.push({b: c.b, g: c.g, r: c.r, seen: 1, brightest: bright[i]});
+      elsaIceAlikes.push({
+        lo: { b: c.b, g: c.g, r: c.r }, hi: { b: c.b, g: c.g, r: c.r }, seen: 1, brightest: bright[i],
+      });
     }
   }
 }
@@ -833,25 +853,48 @@ function elsaToScreen(ts: Tsum, p: BoardPoint): Point {
   };
 }
 
-// Colour clusters that produced a dead chain this round, by cluster centre
-// (HSV as `b`/`g`/`r`): two kinds share them. Per round, like `elsaIceAlikes`.
-var elsaMixed: Color[] = [];
+// Colour clusters that may hold two kinds this round, by cluster centre (HSV
+// as `b`/`g`/`r`). A dead chain nominates its colour; the colour's next kind
+// read confirms it (a member darkened) or clears it (none did -- the chain
+// died of a hop, not a kind). In mui0gs7xco and the rounds after, 251 of 436
+// kind reads darkened nothing, and chains drawn off them still died 14% of
+// the time. Per round, like `elsaIceAlikes`.
+interface ElsaMixedColour extends Color {
+  confirmed: boolean;
+}
+var elsaMixed: ElsaMixedColour[] = [];
 var elsaMixedRound = '';
 
-/** Whether cluster colour `c` is one remembered as mixed this round. */
-function elsaIsMixed(c: Color | undefined): boolean {
-  if (c === undefined) { return false; }
+/** The mixed colour `c` is a re-read of, if any. */
+function elsaMixedMatch(c: Color | undefined): ElsaMixedColour | null {
+  if (c === undefined) { return null; }
   if (elsaMixedRound !== logRoundKey()) { elsaMixed = []; elsaMixedRound = logRoundKey(); }
   const m = CoronationElsaConfig.iceAlikeMatch;
-  return elsaMixed.some(function(a) {
-    return Math.abs(a.b - c.b) <= m.hue && Math.abs(a.g - c.g) <= m.sat && Math.abs(a.r - c.r) <= m.val;
-  });
+  for (let i = 0; i < elsaMixed.length; i++) {
+    const a = elsaMixed[i];
+    if (Math.abs(a.b - c.b) <= m.hue && Math.abs(a.g - c.g) <= m.sat && Math.abs(a.r - c.r) <= m.val) {
+      return a;
+    }
+  }
+  return null;
 }
 
-/** Remember cluster colour `c` as mixed. */
+/** Whether cluster colour `c` is nominated or confirmed as mixed this round. */
+function elsaIsMixed(c: Color | undefined): boolean {
+  return elsaMixedMatch(c) !== null;
+}
+
+/** Nominate cluster colour `c` as mixed. */
 function elsaNoteMixed(c: Color | undefined): void {
   if (c === undefined || elsaIsMixed(c)) { return; }
-  elsaMixed.push({ b: c.b, g: c.g, r: c.r });
+  elsaMixed.push({ b: c.b, g: c.g, r: c.r, confirmed: false });
+}
+
+/** A kind read's verdict on colour `c`: confirm it mixed, or clear an unconfirmed nomination. */
+function elsaKindVerdict(c: Color | undefined, darkened: boolean): void {
+  const a = elsaMixedMatch(c);
+  if (a === null || a.confirmed) { return; }
+  if (darkened) { a.confirmed = true; } else { elsaMixed.splice(elsaMixed.indexOf(a), 1); }
 }
 
 /** What a kind read came to. */
@@ -1077,7 +1120,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
   // Kind reads (`elsaKindChain`): chains drawn off one, and plans lifted.
   let kindChains = 0;
   let kindLifts = 0;
-  // The colour cluster of the chain just drawn, remembered as mixed if it dies.
+  // The colour cluster of the chain just drawn, nominated as mixed if it dies;
+  // none for a chain off a kind read, which already judged it.
   let drawnKind: Color | undefined = undefined;
   let bubblesPopped = 0;
   let salvos = 0;
@@ -1217,10 +1261,12 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
       this.sleepUntil(Math.min(Date.now() + cfg.rescanIdleMs, chainBy));
       continue;
     }
-    // A cluster that has had a dead chain holds two kinds: the finger rests
+    // A cluster that has had a dead chain may hold two kinds: the finger rests
     // on the plan's lower end first and the game says which members match.
     const kindColour = this.boardClusters[+pick.path[0].tsumIdx];
     let path: TsumPath | null = pick.path;
+    // Whether this chain comes off a kind read, which already judged its colour.
+    let kindRead = false;
     if (cfg.kind.on && elsaIsMixed(kindColour)) {
       const a = pick.path[0], b = pick.path[pick.path.length - 1];
       const head = b.y > a.y ? b : a;
@@ -1234,6 +1280,9 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
         chainLen: got.path === null ? 0 : got.path.length,
         pool: got.pool, kept: got.kept, drops: got.drops, ms: got.ms,
       });
+      // `kept` counts the members that did not darken.
+      elsaKindVerdict(kindColour, got.kept < got.drops.length);
+      kindRead = true;
       if (got.path === null) {
         // The head's kind has no chain here: its plan is dead, no ice to wait for.
         kindLifts++;
@@ -1249,7 +1298,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     }
     // `starvedRun` is settled by the next look's judgement of this chain.
     drawn = path;
-    drawnKind = kindColour;
+    drawnKind = kindRead ? undefined : kindColour;
     drawnOverIced = look.iced.length;
     chains++;
     // Let the band form before the next look reads it.
