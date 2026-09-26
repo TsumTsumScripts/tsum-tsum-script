@@ -3949,10 +3949,11 @@ function onEvent(eventType: string): void {
     }
 }
 
-// function called by the host when writing logs
+// Called by the host for every script log line. Deliberately empty: echoing
+// each line through console.log sent it back to the host's main thread, ~100
+// times a second, for a copy already in logcat and script.log.
 // noinspection JSUnusedGlobalSymbols
 function onLog(message: string): void {
-    console.log(message);
 }
 
 /**
