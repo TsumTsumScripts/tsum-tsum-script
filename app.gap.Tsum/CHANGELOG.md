@@ -39,6 +39,18 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
+## [3.0b4]
+
+### Summary
+
+- Fixed Box Buying stalling on the box's reveal card while the Quick Bar is up.
+
+### Fixed
+
+- **Box reveals close under the Quick Bar.** The strip hides the reveal card's
+  foot probe, so the card read only as `ClosePage` and `clearBoxReveals` tapped
+  the blind advance forever. It now presses Close on `ClosePage` too.
+
 ## [3.0b3]
 
 ### Summary

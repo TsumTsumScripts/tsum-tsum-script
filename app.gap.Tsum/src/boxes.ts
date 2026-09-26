@@ -376,8 +376,10 @@ Tsum.prototype.clearBoxReveals = function(deadline) {
     if (name === PageName.TsumTsumStorePage) {
       return BoxReveals.Done;
     }
+    // `ClosePage` too: with the Quick Bar up, the strip hides the reveal card's
+    // foot probe and the card reads only as the generic Close catch-all.
     if (name === PageName.BoxPurchaseResult || name === PageName.BoxPurchasedPage
-        || name === PageName.EventGift) {
+        || name === PageName.EventGift || name === PageName.ClosePage) {
       this.tap(seen!.back);
       this.settleScreen(BuyBoxPanelSettleMs);
       closes++;
