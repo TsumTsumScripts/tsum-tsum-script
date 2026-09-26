@@ -15,17 +15,17 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Added
 
-- **The salvo** (`elsaSalvo()`, `salvo*`): once per window, on its first
-  look with no ice to touch, up to 4 of the play loop's own chains
+- **The salvo** (`elsaSalvo()`, `salvo*`): twice per window, the first on
+  its first look with no ice to touch, up to 4 of the play loop's own chains
   (`calculatePaths`, max 5, full reach) back to back; the careful sweep then
   chains what it left. Firing on every ice-free look made ~5 salvos a window
   and 9 of 16 early breaks followed one. At 0:55 of `02-41-53.mp4` four such chains froze a
   fresh board whole in 0.3s for a count of 72. `skill.elsa.salvo`;
   `salvos`/`salvoChains` on `skill.elsa.done`.
-- **Elsa salvos** (Debug tab, `elsaSalvos`, default 1, 0-5): how many salvos
-  a window opens with before the overlap sweep. Only the first needs an
-  ice-free look; later ones chain around its ice, and the sweep takes over
-  early if one finds nothing. `salvo` (1-based) on `skill.elsa.salvo`.
+- **Two salvos a window** (`salvos` 2). The second runs on the next look,
+  around the first one's ice, and hands over to the sweep if it finds under
+  two chains. Picked on a Debug-tab A/B (`elsaSalvos`, now removed).
+  `salvo` (1-based) on `skill.elsa.salvo`.
 
 ### Changed
 

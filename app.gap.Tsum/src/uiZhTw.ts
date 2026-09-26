@@ -164,8 +164,6 @@ i18nRegister(Locale.Taiwan, '中文', {
     [UiText.SettingCollectUnknownScreensHelp]: '存下腳本無法辨識的畫面，可以回傳給開發者做成修正。',
     [UiText.SettingPageHistoryDepth]: '畫面紀錄depth',
     [UiText.SettingPageHistoryDepthHelp]: '記住幾個畫面。開啟調試遊戲會每個都存圖；否則只留最近幾張，也就是問題回報會附上的那幾張。',
-    [UiText.SettingElsaSalvos]: 'Elsa 連發次數',
-    [UiText.SettingElsaSalvosHelp]: '測試：加冕日艾莎每次冰凍時間開始時，先連續畫幾輪長連鎖，之後才小心地讓冰帶重疊。0 表示不連發。',
     [UiText.SettingReportIssue]: '回報問題',
     [UiText.SettingReportIssueHelp]: '把目前畫面、前幾個畫面、這次執行的近期紀錄與你的設定存到 tsum_record/reports，再用 App 執行紀錄裡的分享送出。',
     [UiText.ReportNotePlaceholder]: '發生什麼問題？（可略）',

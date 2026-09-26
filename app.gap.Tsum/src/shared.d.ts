@@ -278,7 +278,6 @@ declare const enum SettingKey {
   SpecialScreenRatio = 'specialScreenRatio',
   DeviceFps = 'deviceFps',
   PageHistoryDepth = 'pageHistoryDepth',
-  ElsaSalvos = 'elsaSalvos',
   Locale = 'locale',
   AutoLaunchApp = 'autoLaunchApp',
   AutoPlayGame = 'autoPlayGame',
@@ -364,8 +363,6 @@ interface Settings {
   [SettingKey.DeviceFps]: number;
   /** How many page visits `gPages` keeps, and how many frames it writes in debug. */
   [SettingKey.PageHistoryDepth]: number;
-  /** Coronation Elsa test knob: salvos a freeze window opens with before the overlap sweep. */
-  [SettingKey.ElsaSalvos]?: number;
   /**
    * The language the run writes its log sentences in. Not a schema entry --
    * genStartCommand() derives it from localStorage.

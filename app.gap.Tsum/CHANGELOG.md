@@ -49,7 +49,7 @@ release note; they fold back in here when she ships.
 
 ### Added
 
-- **Delay Skill ReActivation** (Skills tab, Alpha). Stored as
+- **Delay Skill ReActivation** (Skills tab, Beta). Stored as
   `skillReactivationTenths`; `skillStillRunning` refuses an activation within
   it of `useSkill`'s last tap, so every activation path honours it. Live on the
   next activation; last share slot. Number rows gained `scale` so a tenths value

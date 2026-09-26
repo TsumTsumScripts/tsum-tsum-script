@@ -184,11 +184,11 @@ var CoronationElsaConfig = {
   // a window, and 9 of 16 early breaks followed one. With it chains per
   // window rose from ~17 to ~23 and dead chains fell from 6-22% to 3%.
   //
-  // `salvos` is how many run before the overlap sweep takes over; set per run
-  // from the Debug tab's "Elsa salvos". Only the first needs the ice-free
-  // look; each later one chains around the ice the last left, one look apart.
-  // 0 skips the salvo.
-  salvos: 1,
+  // `salvos` is how many run before the overlap sweep takes over. Only the
+  // first needs the ice-free look; each later one chains around the ice the
+  // last left, one look apart. 0 skips the salvo. Two, chosen on a Debug-tab
+  // A/B (2026-09-25); a second salvo that finds under two chains hands over.
+  salvos: 2,
   salvoChains: 4,
   salvoMaxChain: 5,
   salvoMaxIced: 4,
