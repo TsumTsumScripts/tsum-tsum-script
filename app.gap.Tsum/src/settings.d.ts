@@ -263,7 +263,8 @@ interface SettingSpec {
   /**
    * On a number row: the field shows the stored value divided by this, so a
    * value stored in tenths reads as 1.5 with `scale: 10`. `min`, `max` and
-   * `step` stay in stored units, which are what a share code carries.
+   * `step` stay in stored units, which are what a share code carries. A scaled
+   * row shows one decimal and its fine buttons step by 0.1.
    */
   scale?: number;
   incrementBy1?: boolean;

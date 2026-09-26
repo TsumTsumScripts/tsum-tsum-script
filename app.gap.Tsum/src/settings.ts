@@ -384,16 +384,16 @@ var tabs: TabSpec[] = [
                         min: 0
                     },
                     {
-                        // Milliseconds stepping by 200 rather than seconds by
-                        // 0.2, for the reason Link reach is a percent: a share
-                        // code carries whole numbers only.
+                        // Stored in ms (a share code carries whole numbers
+                        // only), shown as seconds (`scale`).
                         key: SettingKey.SkillSettleMs,
                         title: UiText.SettingSkillSettle,
                         help: UiText.SettingSkillSettleHelp,
                         default: 0,
                         step: 200,
                         max: 3000,
-                        min: 0
+                        min: 0,
+                        scale: 1000
                     },
                     {
                         // Stored in tenths, shown as seconds (`scale`).
@@ -3308,7 +3308,8 @@ function roundFlowChips(values: { [key: string]: SettingValue }): string[] {
         chips.push(i18nText(UiText.FlowFan));
     }
     if (values[SettingKey.SkillType] !== SkillType.NoSkill && num(SettingKey.SkillSettleMs) > 0) {
-        chips.push(i18nFormat(UiText.FlowSettleSkill, {ms: num(SettingKey.SkillSettleMs)}));
+        chips.push(i18nFormat(UiText.FlowSettleSkill,
+            {sec: (num(SettingKey.SkillSettleMs) / 1000).toFixed(1)}));
     }
     chips.push(values[SettingKey.SkillType] === SkillType.NoSkill
         ? i18nText(UiText.FlowNoSkill)
@@ -3702,9 +3703,14 @@ function buildStepper(setting: SettingSpec): HTMLElement {
     var stepper = fromTemplate('tpl-number');
     var input = pick(stepper, '.setting-number') as HTMLInputElement;
     var step = setting.step || 1;
+    var fine = fineStep(setting);
 
     input.id = controlElementId(setting.key);
     var scale = setting.scale || 1;
+    if (scale > 1) {
+        // The numeric keypad has no decimal point.
+        input.inputMode = 'decimal';
+    }
     input.value = shownNumber(setting, setting.default as number);
     input.step = String(step / scale);
     if (setting.min !== undefined) {
@@ -3718,12 +3724,12 @@ function buildStepper(setting: SettingSpec): HTMLElement {
     for (var i = 0; i < steps.length; i++) {
         var button = steps[i] as HTMLButtonElement;
         var coarse = button.getAttribute('data-coarse');
-        var fine = button.getAttribute('data-fine');
-        if (fine !== null && step === 1) {
+        var fineBy = button.getAttribute('data-fine');
+        if (fineBy !== null && step === fine) {
             button.parentNode!.removeChild(button);
             continue;
         }
-        var by = coarse !== null ? +coarse * step : +fine!;
+        var by = coarse !== null ? +coarse * step : +fineBy! * fine;
         // A real minus sign: the hyphen reads as a dash next to the digits.
         button.textContent = (by > 0 ? '+' : '−') + Math.abs(by) / scale;
         button.addEventListener('click', (function (by) {
@@ -3756,7 +3762,8 @@ function buildStepper(setting: SettingSpec): HTMLElement {
  * way in is the two agreeing.
  */
 function setNumberValue(setting: SettingSpec, input: HTMLInputElement, value: number): void {
-    var next = isFinite(value) ? Math.round(value) : (setting.default as number);
+    var fine = fineStep(setting);
+    var next = isFinite(value) ? Math.round(value / fine) * fine : (setting.default as number);
     if (setting.max !== undefined) {
         next = Math.min(next, setting.max);
     }
@@ -3770,7 +3777,14 @@ function setNumberValue(setting: SettingSpec, input: HTMLInputElement, value: nu
 
 /** A number row's stored value as its field shows it -- see `SettingSpec.scale`. */
 function shownNumber(setting: SettingSpec, value: number): string {
-    return String(value / (setting.scale || 1));
+    var scale = setting.scale || 1;
+    return scale > 1 ? (value / scale).toFixed(1) : String(value);
+}
+
+/** A number row's fine step in stored units: 1, or 0.1 shown on a scaled row. */
+function fineStep(setting: SettingSpec): number {
+    var scale = setting.scale || 1;
+    return scale > 1 ? Math.max(1, Math.round(scale / 10)) : 1;
 }
 
 function buildText(setting: SettingSpec): HTMLElement {

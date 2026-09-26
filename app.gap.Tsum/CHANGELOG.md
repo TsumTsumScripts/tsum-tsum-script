@@ -45,6 +45,7 @@ release note; they fold back in here when she ships.
 
 - Fixed Box Buying stalling on the box's reveal card while the Quick Bar is up.
 - Delay Skill ReActivation setting added: holds a full gauge for a set time after each activation so a skill with a duration is not wasted.
+- Wait for Settle is now set in seconds (0.0-3.0) instead of milliseconds.
 
 ### Added
 
@@ -53,6 +54,13 @@ release note; they fold back in here when she ships.
   it of `useSkill`'s last tap, so every activation path honours it. Live on the
   next activation; last share slot. Number rows gained `scale` so a tenths value
   shows as seconds.
+
+### Changed
+
+- **Wait for Settle shown in seconds.** Still stored as `skillSettleMs`, so
+  saved settings and share codes carry over; the row uses `scale: 1000`. Scaled
+  rows now show one decimal, step by 0.1 on the fine buttons and open a decimal
+  keypad.
 
 ### Fixed
 
