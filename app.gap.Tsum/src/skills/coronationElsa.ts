@@ -181,6 +181,12 @@ var CoronationElsaConfig = {
   // in 0.3s for a count of 72. Firing on every ice-free look made ~5 salvos
   // a window, and 9 of 16 early breaks followed one. With it chains per
   // window rose from ~17 to ~23 and dead chains fell from 6-22% to 3%.
+  //
+  // `salvos` is how many run before the overlap sweep takes over; set per run
+  // from the Debug tab's "Elsa salvos". Only the first needs the ice-free
+  // look; each later one chains around the ice the last left, one look apart.
+  // 0 skips the salvo.
+  salvos: 1,
   salvoChains: 4,
   salvoMaxChain: 5,
   salvoMaxIced: 4,
@@ -1075,8 +1081,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
   let drawnKind: Color | undefined = undefined;
   let bubblesPopped = 0;
   let salvos = 0;
-  // One salvo a window: the sweep chains whatever it leaves.
-  let salvoDone = false;
+  // `cfg.salvos` a window, then the sweep chains whatever they leave.
+  let salvoDone = cfg.salvos <= 0;
   let salvoChains = 0;
   // The round ending under the window; nothing is tapped once it has.
   let roundOver = false;
@@ -1157,20 +1163,23 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
         break;
       }
     }
-    // A board with no ice to touch gets the salvo first: long chains back to
-    // back, the way the play loop froze a fresh board whole.
-    if (!salvoDone && look.iced.length <= cfg.salvoMaxIced
+    // A board with no ice to touch gets the salvos first: long chains back to
+    // back, the way the play loop froze a fresh board whole. Later salvos
+    // skip the ice gate -- the first one's ice is what they chain around.
+    if (!salvoDone && (salvos > 0 || look.iced.length <= cfg.salvoMaxIced)
         && chainBy - Date.now() > cfg.salvoMinLeftMs) {
       const salvo = elsaSalvo(live, look.obstacles);
       if (salvo.length > 0) {
         for (let k = 0; k < salvo.length; k++) { this.linkTsums(salvo[k]); }
+        salvos++;
         logDebug(Log.Skill.ElsaSalvo, {
           atMs: Date.now() - t0,
+          // Which salvo of the window this was, from 1.
+          salvo: salvos,
           iced: look.iced.length,
           chains: salvo.map(function(p) { return p.length; }),
         });
-        salvos++;
-        salvoDone = true;
+        salvoDone = salvos >= cfg.salvos;
         salvoChains += salvo.length;
         chains += salvo.length;
         // Judged by the ice it leaves, not tsum by tsum.
@@ -1179,6 +1188,8 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
         this.sleep(cfg.iceFormMs);
         continue;
       }
+      // No room for another: the sweep takes over, not a salvo between its chains.
+      if (salvos > 0) { salvoDone = true; }
     }
     if (pick === null || hidden) {
       // Nothing chainable this look -- ice everywhere a row could stand, or a
@@ -1293,7 +1304,7 @@ Tsum.prototype.useCoronationElsaSkill = function(activatedAt, expectTsums) {
     roundOver: roundOver,
     // Bubbles tapped by the looks (the breaks' own taps not counted).
     bubblesPopped: bubblesPopped,
-    // The salvo drawn (0 or 1) and its chains.
+    // Salvos drawn (up to `cfg.salvos`) and their chains.
     salvos: salvos,
     salvoChains: salvoChains,
     // Chains drawn off a kind read, and plans it lifted (`elsaKindChain`).

@@ -22,6 +22,10 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
   and 9 of 16 early breaks followed one. At 0:55 of `02-41-53.mp4` four such chains froze a
   fresh board whole in 0.3s for a count of 72. `skill.elsa.salvo`;
   `salvos`/`salvoChains` on `skill.elsa.done`.
+- **Elsa salvos** (Debug tab, `elsaSalvos`, default 1, 0-5): how many salvos
+  a window opens with before the overlap sweep. Only the first needs an
+  ice-free look; later ones chain around its ice, and the sweep takes over
+  early if one finds nothing. `salvo` (1-based) on `skill.elsa.salvo`.
 
 ### Changed
 

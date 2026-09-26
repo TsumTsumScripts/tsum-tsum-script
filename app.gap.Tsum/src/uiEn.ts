@@ -164,6 +164,8 @@ i18nRegister(Locale.English, 'English', {
     [UiText.SettingCollectUnknownScreensHelp]: 'Saves any screen the script cannot place, so it can be sent in and turned into a fix.',
     [UiText.SettingPageHistoryDepth]: 'Page history depth',
     [UiText.SettingPageHistoryDepthHelp]: 'Screens remembered. Debug game keeps a picture of every one of them; without it the last few are kept, which is what a report sends.',
+    [UiText.SettingElsaSalvos]: 'Elsa salvos',
+    [UiText.SettingElsaSalvosHelp]: 'Test: how many bursts of long chains Coronation Day Elsa opens each freeze window with before she chains carefully to overlap her ice. 0 skips them.',
     [UiText.SettingReportIssue]: 'Report a problem',
     [UiText.SettingReportIssueHelp]: 'Saves the screen, the screens before it, this run’s recent log and your settings to tsum_record/reports. Send it with Share in Run History.',
     [UiText.ReportNotePlaceholder]: 'What went wrong? (optional)',

@@ -771,6 +771,17 @@ var tabs: TabSpec[] = [
                         max: 100,
                         min: 0,
                         neverShared: true
+                    },
+                    {
+                        // Coronation Elsa test knob; read once at run start.
+                        key: SettingKey.ElsaSalvos,
+                        title: UiText.SettingElsaSalvos,
+                        help: UiText.SettingElsaSalvosHelp,
+                        default: 1,
+                        step: 1,
+                        max: 5,
+                        min: 0,
+                        neverShared: true
                     }
                 ]
             }

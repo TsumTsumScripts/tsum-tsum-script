@@ -263,6 +263,9 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   ts.noSkillLastFeverSec = settings.noSkillLastFeverSec;
   ts.claimAllWithoutCoins = settings.claimAllWithoutCoins;
   ts.tsumAppRestartFrequency = settings.tsumAppRestartFrequency;
+  if (typeof settings.elsaSalvos === 'number' && settings.elsaSalvos >= 0) {
+    CoronationElsaConfig.salvos = settings.elsaSalvos;
+  }
 
   // The one assert worth keeping: every file in `tsconfig.json` is concatenated
   // into one script, so a bundle that did not build fully fails here with a
