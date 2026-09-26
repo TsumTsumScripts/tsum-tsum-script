@@ -231,6 +231,15 @@ function logBeginRound(): number {
   return gLogRoundId;
 }
 
+/**
+ * The current round, unique across runs. Round ids restart at 1 every run and
+ * the script's globals outlive a run, so per-round state keyed on
+ * `gLogRoundId` alone carries into the next run's round 1.
+ */
+function logRoundKey(): string {
+  return gLogRunId + '/' + gLogRoundId;
+}
+
 /** `play.gameStart` -> `play`. An event with no dot is its own component. */
 function logComponentOf(event: string): string {
   const dot = event.indexOf('.');

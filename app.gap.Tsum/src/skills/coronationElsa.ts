@@ -374,14 +374,15 @@ function elsaRoundOver(): boolean {
 // (`sureValMin`'s ceiling). Per round: the colour lineup changes between
 // rounds. `elsaWindowRound` is the last round a freeze window ran in -- while
 // it differs from the current round, no ice can exist, which is what makes a
-// scan safe to learn from.
+// scan safe to learn from. Rounds are `logRoundKey`s, so a new run's round 1
+// does not inherit the last run's state.
 interface ElsaIceAlike extends Color {
   seen: number;
   brightest: number;
 }
 var elsaIceAlikes: ElsaIceAlike[] = [];
-var elsaIceAlikeRound = 0;
-var elsaWindowRound = 0;
+var elsaIceAlikeRound = '';
+var elsaWindowRound = '';
 
 /** The remembered ice-alike `c` is a re-read of, if any. */
 function elsaIceAlikeMatch(c: Color): ElsaIceAlike | null {
@@ -427,11 +428,11 @@ function elsaSureVal(a: ElsaIceAlike): number {
  * on the cluster centre (value 155-187 there) had never learned it.
  */
 function elsaNoteIceAlikes(ts: Tsum, board: BoardPoint[]): void {
-  if (elsaIceAlikeRound !== gLogRoundId) {
+  if (elsaIceAlikeRound !== logRoundKey()) {
     elsaIceAlikes = [];
-    elsaIceAlikeRound = gLogRoundId;
+    elsaIceAlikeRound = logRoundKey();
   }
-  if (elsaWindowRound === gLogRoundId) { return; }
+  if (elsaWindowRound === logRoundKey()) { return; }
   const cfg = CoronationElsaConfig;
   const clusters = ts.boardClusters;
   const sizes = ts.boardClusterSizes;
@@ -829,12 +830,12 @@ function elsaToScreen(ts: Tsum, p: BoardPoint): Point {
 // Colour clusters that produced a dead chain this round, by cluster centre
 // (HSV as `b`/`g`/`r`): two kinds share them. Per round, like `elsaIceAlikes`.
 var elsaMixed: Color[] = [];
-var elsaMixedRound = 0;
+var elsaMixedRound = '';
 
 /** Whether cluster colour `c` is one remembered as mixed this round. */
 function elsaIsMixed(c: Color | undefined): boolean {
   if (c === undefined) { return false; }
-  if (elsaMixedRound !== gLogRoundId) { elsaMixed = []; elsaMixedRound = gLogRoundId; }
+  if (elsaMixedRound !== logRoundKey()) { elsaMixed = []; elsaMixedRound = logRoundKey(); }
   const m = CoronationElsaConfig.iceAlikeMatch;
   return elsaMixed.some(function(a) {
     return Math.abs(a.b - c.b) <= m.hue && Math.abs(a.g - c.g) <= m.sat && Math.abs(a.r - c.r) <= m.val;
@@ -1334,7 +1335,7 @@ registerSkill({
     // chained around. Before the round's first window there is no ice, so
     // nothing is: an ice read then is a pale colour, and treating it as ice
     // fired six empty breaks and kept it out of chains (mugrabhyw).
-    const leftover = elsaWindowRound === gLogRoundId ? elsaSplitIce(ts, board).iced : [];
+    const leftover = elsaWindowRound === logRoundKey() ? elsaSplitIce(ts, board).iced : [];
     if (leftover.length >= CoronationElsaConfig.leftoverBurstMin) {
       // Aimed only. A leftover read is as often a pale colour or crystal
       // debris as ice, and the grid behind the aimed taps was 1.3s of the
@@ -1354,7 +1355,7 @@ registerSkill({
   },
   afterActivate: function(ts, board, activatedAt) {
     // Ice exists in this round from here on, so the ice-alike learning stops.
-    elsaWindowRound = gLogRoundId;
+    elsaWindowRound = logRoundKey();
     // The board is the play loop's scan from before its last batch linked, so
     // its length is a full board's population -- the settle gate's seed.
     ts.useCoronationElsaSkill(activatedAt, board ? board.length : 0);

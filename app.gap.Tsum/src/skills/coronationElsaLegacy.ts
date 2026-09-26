@@ -465,8 +465,8 @@ var CoronationElsaLegacyConfig = {
 // window ran in -- while it differs from the current round, no ice can exist,
 // which is what makes a scan safe to learn from.
 var elsaLegacyIceAlikes: Color[] = [];
-var elsaLegacyIceAlikeRound = 0;
-var elsaLegacyWindowRound = 0;
+var elsaLegacyIceAlikeRound = '';
+var elsaLegacyWindowRound = '';
 
 /**
  * Whether a cluster centre matches a colour known to be alive, not ice.
@@ -494,11 +494,11 @@ function elsaLegacyIsIceAlike(c: Color): boolean {
  * the header's fourth premature pop is what one costs when believed.
  */
 function elsaLegacyNoteIceAlikes(ts: Tsum): void {
-  if (elsaLegacyIceAlikeRound !== gLogRoundId) {
+  if (elsaLegacyIceAlikeRound !== logRoundKey()) {
     elsaLegacyIceAlikes = [];
-    elsaLegacyIceAlikeRound = gLogRoundId;
+    elsaLegacyIceAlikeRound = logRoundKey();
   }
-  if (elsaLegacyWindowRound === gLogRoundId) { return; }
+  if (elsaLegacyWindowRound === logRoundKey()) { return; }
   const box = CoronationElsaLegacyConfig.frozen;
   const clusters = ts.boardClusters;
   for (let i = 0; i < clusters.length; i++) {
@@ -1133,7 +1133,7 @@ registerSkill({
   },
   afterActivate: function(ts, board, activatedAt) {
     // Ice exists in this round from here on, so the ice-alike learning stops.
-    elsaLegacyWindowRound = gLogRoundId;
+    elsaLegacyWindowRound = logRoundKey();
     // The board is the play loop's scan from before its last batch linked, so
     // its length is a full board's population -- the settle gate's seed.
     ts.useCoronationElsaLegacySkill(activatedAt, board ? board.length : 0);

@@ -11,7 +11,7 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Summary
 
-- Coronation Day Elsa skill improved: each freeze window opens with a burst of long chains, chains are placed so their ice overlaps, the ice breaks early less often, bubbles are popped all through the window, lookalike tsums are chained less often by mistake, the whole window is used, and the tap sweep at its end and chains after TIME UP are gone.
+- Coronation Day Elsa skill improved: each freeze window opens with a burst of long chains, chains are placed so their ice overlaps, the ice breaks early less often, bubbles are popped all through the window, lookalike tsums are chained less often by mistake and ice-coloured tsums like Dumbo are no longer tapped as ice, the whole window is used, and the tap sweep at its end and chains after TIME UP are gone.
 
 ### Added
 
@@ -79,6 +79,14 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 
 ### Fixed
 
+- **A second run no longer plays a lookalike tsum as ice.** Elsa's per-round
+  state (ice-alike whitelist, window flag, mixed clusters) was keyed on the
+  round number, which restarts at 1 every run while globals persist. A run's
+  round 1 kept the last run's whitelist and never learned its own, and
+  treated between-window ice reads as leftover from the start. On
+  `dumbo.mp4`, Dumbo (centre hue 86-90 against the box's 88 floor) was half
+  read as ice: 21 starved looks and 33 aimed taps in one window. Now keyed
+  on `logRoundKey()` (run id + round); Legacy too.
 - **Elsa stops at TIME UP.** The game dims the board and no page marks it,
   so two looks in a row whose scan averages under value 100
   (`dimValueMax`, `elsaBoardValue`) end the window with no more taps. Never
