@@ -15,12 +15,14 @@ This script automates the following tasks:
 
 ## Settings
 
-The settings page is split into seven tabs — **General**, **Gameplay**,
-**Chores**, **Skills**, **Hearts**, **Advanced** and **Debug** — and it opens on
-whichever one you used last. **Chores** is the jobs the script does between
-rounds: raising level caps, and buying boxes. Hearts are chores too, and have a
-tab of their own. The **Run order** card at the top of General is worth a look
-before pressing Play: it lists what your settings add up to — every job the run
+The settings page is split into seven tabs — **Skills**, **Bonuses**,
+**Hearts**, **Gameplay**, **Chores**, **General** and **Debug** — and it opens
+on whichever one you used last. The first three are the ones you will reach for
+most. **Gameplay** is how chains and bubbles are played; **Chores** is the jobs
+the script does between rounds: raising level caps, and buying boxes. **General**
+holds the device settings and how the run goes — auto launch, auto play, the
+delay between rounds, the round time limit. The **Run order** card on General is
+worth a look before pressing Play: it lists what your settings add up to — every job the run
 will do, in the order it will do them, and what one board scan looks like. The button in the top right switches between light and dark; until you
 press it, the page follows whatever your device is set to.
 
@@ -143,7 +145,7 @@ mid-round skill or preset change. And the right column decides which tasks a run
 does at all, so it can only change when a run begins.
 
 The between-rounds delay used to sit here and no longer does: **Delay between
-rounds (min)** is on the Gameplay tab, and the **Now** button beside it is what
+rounds (min)** is on the General tab, and the **Now** button beside it is what
 the old countdown's tap did.
 
 On the right it shows what this run has earned: the average **base** coins and
@@ -189,11 +191,10 @@ be put back with two taps instead of a dozen. It is exactly what a
 [settings code](#sharing-settings) carries, which is why one can be exported as
 one.
 
-That is the Gameplay and Skills tabs apart from three rows about the run rather
-than the round: **Auto Play Game**, the **wait between rounds** and **Track
-round statistics** stay as you have them, whichever preset you load. So does
-everything outside those two tabs — your language, the mailbox, the hearts, the
-chore schedules, the box buying. Those describe your account, and you should not
+That is the Skills, Bonuses and Gameplay tabs. Everything else stays as you
+have it, whichever preset you load — your language, the run settings on General
+(**Auto Play Game**, the **wait between rounds**, **Track round statistics**),
+the mailbox, the hearts, the chore schedules, the box buying. Those describe your account, and you should not
 have to re-set them to try a different setup.
 
 The controls are at the top of the settings page, next to the light/dark button:
@@ -257,7 +258,7 @@ It carries **how a round is played, and nothing else** — the chain and board
 settings, which items are set, and how the skill is used. Nothing about your
 account or about your run travels with it, and none of it is touched by applying
 one: your language, the mailbox, the hearts, the chores, the box buying and the
-developer options, and on the Gameplay tab itself **Auto Play Game**, the
+developer options, and the run settings on General: **Auto Play Game**, the
 **wait between rounds**, **Track round statistics** and **Max round duration**
 with the action beside it. Someone else's code cannot stop your script playing,
 keep it waiting, turn your statistics off, or make it stop after a few minutes.

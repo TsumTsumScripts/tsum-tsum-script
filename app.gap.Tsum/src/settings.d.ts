@@ -177,7 +177,7 @@ interface SettingSpec {
   /**
    * Kept out of share codes and presets, but shown like any other row. Every
    * toggle on the Debug tab carries it -- it replaced `dev_mode`, which also hid
-   * the row -- and so do the five Gameplay rows that shape the *run* rather
+   * the row -- and so do the five General rows that shape the *run* rather
    * than the round (`SHARE_TABS`, src/settings.ts). On a shared tab it is a
    * declaration, not just an effect: it is what stops `checkShareSlots`
    * reporting the missing slot.

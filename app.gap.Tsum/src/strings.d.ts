@@ -28,8 +28,8 @@ declare const enum UiText {
   TabGameplay = 'tab.gameplay',
   TabChores = 'tab.chores',
   TabSkills = 'tab.skills',
+  TabBonuses = 'tab.bonuses',
   TabHearts = 'tab.hearts',
-  TabAdvanced = 'tab.advanced',
   TabDebug = 'tab.debug',
 
   // --- group headings -----------------------------------------------------
@@ -38,7 +38,8 @@ declare const enum UiText {
   GroupRunOrderHelp = 'group.runOrder.help',
   GroupSettingsCode = 'group.settingsCode',
   GroupSettingsCodeHelp = 'group.settingsCode.help',
-  GroupPlaying = 'group.playing',
+  GroupRun = 'group.run',
+  GroupChains = 'group.chains',
   GroupBoardHelpers = 'group.boardHelpers',
   GroupItems = 'group.items',
   GroupItemsHelp = 'group.items.help',

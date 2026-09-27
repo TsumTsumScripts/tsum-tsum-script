@@ -49,256 +49,104 @@ var SETTINGS_KEY = StorageKey.Settings;
  */
 var tabs: TabSpec[] = [
     {
-        id: 'general',
-        title: UiText.TabGeneral,
+        // First tab, with Bonuses and Hearts beside it: the three things a
+        // player changes most, so each is one tap from opening the page.
+        id: 'skills',
+        title: UiText.TabSkills,
         groups: [
             {
-                title: UiText.GroupDevice,
+                title: UiText.GroupSkill,
                 rows: [
                     {
-                        title: UiText.SettingLanguage,
-                        help: UiText.SettingLanguageHelp,
-                        // Drawn from the registered catalogues rather than
-                        // written out, so a new language file is a new button
-                        // with nothing here to edit.
-                        buttons: localeButtons()
+                        key: SettingKey.SkillType,
+                        title: UiText.SettingSkillType,
+                        help: UiText.SettingSkillTypeHelp,
+                        default: SkillType.Burst as SkillType,
+                        // One list, in src/skillOptions.ts, because the Quick
+                        // Bar offers the same skills from its own compilation.
+                        dropdown: SkillOptions
                     },
                     {
-                        key: SettingKey.SpecialScreenRatio,
-                        title: UiText.SettingSpecialScreenRatio,
-                        help: UiText.SettingSpecialScreenRatioHelp,
-                        default: false
+                        key: SettingKey.SkillLevel,
+                        title: UiText.SettingSkillLevel,
+                        help: UiText.SettingSkillLevelHelp,
+                        default: 6,
+                        step: 1,
+                        max: 6,
+                        min: 1
                     },
-                    // {
-                    //     // The game runs its self-dismissing screens off a frame
-                    //     // counter, so the durations in PageProfiles are quoted at
-                    //     // 60fps and scaled by this. Set it to the emulator's frame
-                    //     // rate; leaving it at 60 is what the script did before this
-                    //     // existed.
-                    //     key: SettingKey.DeviceFps,
-                    //     title: UiText.SettingDeviceFps,
-                    //     help: UiText.SettingDeviceFpsHelp,
-                    //     default: 60,
-                    //     step: 10,
-                    //     max: 240,
-                    //     min: 20
-                    // },
                     {
-                        key: SettingKey.AutoLaunchApp,
-                        title: UiText.SettingAutoLaunchApp,
-                        help: UiText.SettingAutoLaunchAppHelp,
+                        // Not part of the skill above it: every Lorcana tsum
+                        // transforms the same way whatever its own skill is, so
+                        // this is its own switch rather than something a
+                        // SkillType implies.
+                        key: SettingKey.LorcanaCard,
+                        title: UiText.SettingLorcanaCard,
+                        help: UiText.SettingLorcanaCardHelp,
                         default: false
                     }
                 ]
             },
             {
-                title: UiText.GroupRunOrder,
-                help: UiText.GroupRunOrderHelp,
+                // In the order they act: before firing, then after it.
+                title: UiText.GroupTiming,
                 rows: [
                     {
-                        key: RowKey.RunOrder,
-                        // No `default`, so it holds no value: nothing to save,
-                        // nothing to share, no share slot to keep.
-                        build: buildRunOrder
-                    }
-                ]
-            },
-            {
-                title: UiText.GroupSettingsCode,
-                help: UiText.GroupSettingsCodeHelp,
-                rows: [
-                    {
-                        key: RowKey.ShareSettings,
-                        title: UiText.SettingShareSettings,
-                        buttons: [
-                            {text: i18nThunk(UiText.ButtonCopy), onClick: function () { copySettingsCode(); }},
-                            {text: i18nThunk(UiText.ButtonPaste), onClick: function () { pasteSettingsCode(); }}
-                        ]
+                        key: SettingKey.SkillAutoTap,
+                        title: UiText.SettingSkillAutoTap,
+                        help: UiText.SettingSkillAutoTapHelp,
+                        default: true
                     },
                     {
-                        // Beside the share code because it is the same errand --
-                        // getting a configuration off this device -- and unlike
-                        // a code it carries every row, so the two are not
-                        // alternatives. See `presetsExportText`, src/presets.ts.
-                        key: RowKey.ExportPresets,
-                        title: UiText.SettingExportPresets,
-                        help: UiText.SettingExportPresetsHelp,
-                        buttons: [
-                            {text: i18nThunk(UiText.ButtonCopy), onClick: function () { copyPresetsExport(); }},
-                            {text: i18nThunk(UiText.ButtonSaveFile), onClick: function () { savePresetsFile(); }}
-                        ]
+                        // Stored in ms (a share code carries whole numbers
+                        // only), shown as seconds (`scale`).
+                        key: SettingKey.SkillSettleMs,
+                        title: UiText.SettingSkillSettle,
+                        help: UiText.SettingSkillSettleHelp,
+                        default: 0,
+                        step: 200,
+                        max: 3000,
+                        min: 0,
+                        scale: 1000
+                    },
+                    {
+                        key: SettingKey.NoSkillLastFeverSec,
+                        title: UiText.SettingNoSkillLastFever,
+                        help: UiText.SettingNoSkillLastFeverHelp,
+                        default: 0,
+                        step: 1,
+                        max: 10,
+                        min: 0
+                    },
+                    {
+                        key: SettingKey.SkillWaitingTime,
+                        title: UiText.SettingSkillWaitingTime,
+                        help: UiText.SettingSkillWaitingTimeHelp,
+                        default: 0,
+                        step: 1,
+                        max: 15,
+                        min: 0
+                    },
+                    {
+                        // Stored in tenths, shown as seconds (`scale`).
+                        key: SettingKey.SkillReactivationTenths,
+                        title: UiText.SettingSkillReactivation,
+                        help: UiText.SettingSkillReactivationHelp,
+                        default: 0,
+                        step: 5,
+                        max: 300,
+                        min: 0,
+                        scale: 10,
+                        status: ReleaseStatus.Beta
                     }
                 ]
             }
         ]
     },
     {
-        id: 'gameplay',
-        title: UiText.TabGameplay,
+        id: 'bonuses',
+        title: UiText.TabBonuses,
         groups: [
-            {
-                title: UiText.GroupPlaying,
-                rows: [
-                    {
-                        key: SettingKey.AutoPlayGame,
-                        title: UiText.SettingAutoPlayGame,
-                        help: UiText.SettingAutoPlayGameHelp,
-                        default: true,
-                        // Whether rounds are played at all, not how one is
-                        // played -- see SHARE_TABS.
-                        neverShared: true
-                    },
-                    // {
-                    //     key: SettingKey.ClickAssist,
-                    //     title: UiText.SettingClickAssist,
-                    //     help: UiText.SettingClickAssistHelp,
-                    //     default: false
-                    // },
-                    {
-                        // Held by the play loop, not by the task's interval --
-                        // see `taskPlayGameQuick`. The button beside the number
-                        // ends a wait that is *already running*; the setting
-                        // itself is untouched, so the round after it waits
-                        // again.
-                        key: SettingKey.RoundDelayMinutes,
-                        title: UiText.SettingRoundDelay,
-                        help: UiText.SettingRoundDelayHelp,
-                        default: 0,
-                        step: 1,
-                        max: 120,
-                        min: 0,
-                        buttons: [
-                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { skipRoundDelay(); }}
-                        ],
-                        // The gap *between* rounds -- see SHARE_TABS.
-                        neverShared: true
-                    },
-                    {
-                        // The clock saying a round will not end -- see the Max
-                        // Round Duration block in `src/play.ts`. Measured from
-                        // the board coming up, so the walk in is not counted.
-                        key: SettingKey.MaxRoundMinutes,
-                        title: UiText.SettingMaxRound,
-                        help: UiText.SettingMaxRoundHelp,
-                        default: 0,
-                        step: 1,
-                        max: 60,
-                        min: 0,
-                        // How long the *run* will spend on one round before
-                        // giving up on it, not a rule the round is played under
-                        // -- the same reason the row above stays home. See
-                        // SHARE_TABS.
-                        neverShared: true
-                    },
-                    {
-                        key: SettingKey.MaxRoundAction,
-                        title: UiText.SettingMaxRoundAction,
-                        help: UiText.SettingMaxRoundActionHelp,
-                        default: MaxRoundAction.Coast as MaxRoundAction,
-                        // No `share` ids on the entries, unlike every other
-                        // dropdown: the row is `neverShared`, so no code and no
-                        // preset ever writes one. `satisfies` for the reason the
-                        // skill and bubble dropdowns have it -- a key that is
-                        // not a MaxRoundAction would compile, match no branch in
-                        // the play loop and quietly play the round out.
-                        dropdown: ([
-                            {key: MaxRoundAction.Coast, title: UiText.MaxRoundCoast},
-                            {key: MaxRoundAction.Stop, title: UiText.MaxRoundStop}
-                        ] satisfies { key: MaxRoundAction; title: UiText }[]),
-                        // Meaningless on its own -- it is what the cap above
-                        // does, and that row is not shared either.
-                        neverShared: true
-                    },
-                    {
-                        key: SettingKey.MaxChainsPerScan,
-                        title: UiText.SettingMaxChainsPerScan,
-                        help: UiText.SettingMaxChainsPerScanHelp,
-                        default: 6,
-                        step: 1,
-                        max: 12,
-                        min: 1
-                    },
-                    {
-                        key: SettingKey.MaxChain,
-                        title: UiText.SettingMaxChain,
-                        help: UiText.SettingMaxChainHelp,
-                        default: 4,
-                        step: 1,
-                        max: 15,
-                        min: 3
-                    },
-                    {
-                        // Percent rather than a multiplier because a share code
-                        // carries a number as `Math.round(n).toString(36)` -- 2.2
-                        // would travel as 2.
-                        key: SettingKey.LinkReachPercent,
-                        title: UiText.SettingLinkReach,
-                        help: UiText.SettingLinkReachHelp,
-                        default: 190,
-                        step: 10,
-                        max: 350,
-                        min: 150
-                    },
-                    {
-                        key: SettingKey.PrioritizeMyTsum,
-                        title: UiText.SettingPrioritizeMyTsum,
-                        help: UiText.SettingPrioritizeMyTsumHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.TrackRoundStats,
-                        title: UiText.SettingTrackRoundStats,
-                        help: UiText.SettingTrackRoundStatsHelp,
-                        default: true,
-                        // Bookkeeping about rounds, not a rule one is played
-                        // under -- see SHARE_TABS.
-                        neverShared: true
-                    }
-                ]
-            },
-            {
-                title: UiText.GroupBoardHelpers,
-                rows: [
-                    {
-                        key: SettingKey.BubbleStrategy,
-                        title: UiText.SettingBubbleStrategy,
-                        help: UiText.SettingBubbleStrategyHelp,
-                        default: BubbleStrategy.OneMidChain as BubbleStrategy,
-                        // `src/bubbleOptions.ts`, as the skill row reads
-                        // `SkillOptions`: the Quick Bar offers this list too, and
-                        // it is a separate compilation, so the entries are shared
-                        // rather than written here and copied there. The typing
-                        // that used to be a `satisfies` on this literal is the
-                        // `BubbleOption` interface now -- a key that is not a
-                        // BubbleStrategy would otherwise compile, fall through
-                        // every comparison in the play loop and play as the
-                        // stingiest option without reporting it.
-                        //
-                        // Skills that clear bubbles themselves are unaffected by
-                        // any of these -- they declare `sweepsBubbles` and call
-                        // `clearAllBubbles` outright.
-                        dropdown: BubbleOptions
-                    },
-                    {
-                        // A hold over the strategy above rather than an entry in
-                        // it, so it combines with all three. The same shape as
-                        // "No skill last fever seconds" on the Skills tab.
-                        key: SettingKey.HoldBubblesLastFeverSec,
-                        title: UiText.SettingHoldBubblesLastFever,
-                        help: UiText.SettingHoldBubblesLastFeverHelp,
-                        default: 0,
-                        step: 1,
-                        max: 10,
-                        min: 0,
-                    },
-                    {
-                        key: SettingKey.UseFan,
-                        title: UiText.SettingUseFan,
-                        help: UiText.SettingUseFanHelp,
-                        default: false
-                    }
-                ]
-            },
             {
                 title: UiText.GroupItems,
                 help: UiText.GroupItemsHelp,
@@ -346,98 +194,6 @@ var tabs: TabSpec[] = [
                         default: false
                     }
                 ]
-            },
-        ]
-    },
-    {
-        id: 'skills',
-        title: UiText.TabSkills,
-        groups: [
-            {
-                title: UiText.GroupSkill,
-                rows: [
-                    {
-                        key: SettingKey.SkillType,
-                        title: UiText.SettingSkillType,
-                        help: UiText.SettingSkillTypeHelp,
-                        default: SkillType.Burst as SkillType,
-                        // One list, in src/skillOptions.ts, because the Quick
-                        // Bar offers the same skills from its own compilation.
-                        dropdown: SkillOptions
-                    },
-                    {
-                        key: SettingKey.SkillLevel,
-                        title: UiText.SettingSkillLevel,
-                        help: UiText.SettingSkillLevelHelp,
-                        default: 6,
-                        step: 1,
-                        max: 6,
-                        min: 1
-                    },
-                    {
-                        key: SettingKey.SkillWaitingTime,
-                        title: UiText.SettingSkillWaitingTime,
-                        help: UiText.SettingSkillWaitingTimeHelp,
-                        default: 0,
-                        step: 1,
-                        max: 15,
-                        min: 0
-                    },
-                    {
-                        // Stored in ms (a share code carries whole numbers
-                        // only), shown as seconds (`scale`).
-                        key: SettingKey.SkillSettleMs,
-                        title: UiText.SettingSkillSettle,
-                        help: UiText.SettingSkillSettleHelp,
-                        default: 0,
-                        step: 200,
-                        max: 3000,
-                        min: 0,
-                        scale: 1000
-                    },
-                    {
-                        // Stored in tenths, shown as seconds (`scale`).
-                        key: SettingKey.SkillReactivationTenths,
-                        title: UiText.SettingSkillReactivation,
-                        help: UiText.SettingSkillReactivationHelp,
-                        default: 0,
-                        step: 5,
-                        max: 300,
-                        min: 0,
-                        scale: 10,
-                        status: ReleaseStatus.Beta
-                    },
-                    {
-                        // Not part of the skill above it: every Lorcana tsum
-                        // transforms the same way whatever its own skill is, so
-                        // this is its own switch rather than something a
-                        // SkillType implies.
-                        key: SettingKey.LorcanaCard,
-                        title: UiText.SettingLorcanaCard,
-                        help: UiText.SettingLorcanaCardHelp,
-                        default: false
-                    }
-                ]
-            },
-            {
-                title: UiText.GroupTiming,
-                rows: [
-                    {
-                        key: SettingKey.NoSkillLastFeverSec,
-                        title: UiText.SettingNoSkillLastFever,
-                        help: UiText.SettingNoSkillLastFeverHelp,
-                        default: 0,
-                        step: 1,
-                        max: 10,
-                        min: 0
-                    },
-                    {
-                        key: SettingKey.SkillAutoTap,
-                        title: UiText.SettingSkillAutoTap,
-                        help: UiText.SettingSkillAutoTapHelp,
-                        default: true
-                    }
-                ]
             }
         ]
     },
@@ -464,6 +220,41 @@ var tabs: TabSpec[] = [
                         step: 5,
                         max: 60,
                         min: 5
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupSendHearts,
+                rows: [
+                    {
+                        key: SettingKey.SendHeartsAuto,
+                        title: UiText.SettingSendHeartsAuto,
+                        help: UiText.SettingSendHeartsAutoHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.SendHeartsToZeroScore,
+                        title: UiText.SettingSendToZeroScore,
+                        help: UiText.SettingSendToZeroScoreHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.SendHeartsMaxRuntime,
+                        title: UiText.SettingSendMaxRuntime,
+                        help: UiText.SettingSendMaxRuntimeHelp,
+                        default: 0,
+                        step: 5,
+                        max: 80,
+                        min: 0
+                    },
+                    {
+                        key: SettingKey.SendHeartsMinWait,
+                        title: UiText.SettingRepeatWait,
+                        help: UiText.SettingSendWaitHelp,
+                        default: 26,
+                        step: 5,
+                        max: 60,
+                        min: 1
                     }
                 ]
             },
@@ -519,39 +310,94 @@ var tabs: TabSpec[] = [
                         min: 1
                     },
                 ]
-            },
+            }
+        ]
+    },
+    {
+        id: 'gameplay',
+        title: UiText.TabGameplay,
+        groups: [
             {
-                title: UiText.GroupSendHearts,
+                title: UiText.GroupChains,
                 rows: [
                     {
-                        key: SettingKey.SendHeartsAuto,
-                        title: UiText.SettingSendHeartsAuto,
-                        help: UiText.SettingSendHeartsAutoHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.SendHeartsToZeroScore,
-                        title: UiText.SettingSendToZeroScore,
-                        help: UiText.SettingSendToZeroScoreHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.SendHeartsMaxRuntime,
-                        title: UiText.SettingSendMaxRuntime,
-                        help: UiText.SettingSendMaxRuntimeHelp,
-                        default: 0,
-                        step: 5,
-                        max: 80,
-                        min: 0
-                    },
-                    {
-                        key: SettingKey.SendHeartsMinWait,
-                        title: UiText.SettingRepeatWait,
-                        help: UiText.SettingSendWaitHelp,
-                        default: 26,
-                        step: 5,
-                        max: 60,
+                        key: SettingKey.MaxChainsPerScan,
+                        title: UiText.SettingMaxChainsPerScan,
+                        help: UiText.SettingMaxChainsPerScanHelp,
+                        default: 6,
+                        step: 1,
+                        max: 12,
                         min: 1
+                    },
+                    {
+                        key: SettingKey.MaxChain,
+                        title: UiText.SettingMaxChain,
+                        help: UiText.SettingMaxChainHelp,
+                        default: 4,
+                        step: 1,
+                        max: 15,
+                        min: 3
+                    },
+                    {
+                        // Percent rather than a multiplier because a share code
+                        // carries a number as `Math.round(n).toString(36)` -- 2.2
+                        // would travel as 2.
+                        key: SettingKey.LinkReachPercent,
+                        title: UiText.SettingLinkReach,
+                        help: UiText.SettingLinkReachHelp,
+                        default: 190,
+                        step: 10,
+                        max: 350,
+                        min: 150
+                    },
+                    {
+                        key: SettingKey.PrioritizeMyTsum,
+                        title: UiText.SettingPrioritizeMyTsum,
+                        help: UiText.SettingPrioritizeMyTsumHelp,
+                        default: false
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupBoardHelpers,
+                rows: [
+                    {
+                        key: SettingKey.BubbleStrategy,
+                        title: UiText.SettingBubbleStrategy,
+                        help: UiText.SettingBubbleStrategyHelp,
+                        default: BubbleStrategy.OneMidChain as BubbleStrategy,
+                        // `src/bubbleOptions.ts`, as the skill row reads
+                        // `SkillOptions`: the Quick Bar offers this list too, and
+                        // it is a separate compilation, so the entries are shared
+                        // rather than written here and copied there. The typing
+                        // that used to be a `satisfies` on this literal is the
+                        // `BubbleOption` interface now -- a key that is not a
+                        // BubbleStrategy would otherwise compile, fall through
+                        // every comparison in the play loop and play as the
+                        // stingiest option without reporting it.
+                        //
+                        // Skills that clear bubbles themselves are unaffected by
+                        // any of these -- they declare `sweepsBubbles` and call
+                        // `clearAllBubbles` outright.
+                        dropdown: BubbleOptions
+                    },
+                    {
+                        // A hold over the strategy above rather than an entry in
+                        // it, so it combines with all three. The same shape as
+                        // "No skill last fever seconds" on the Skills tab.
+                        key: SettingKey.HoldBubblesLastFeverSec,
+                        title: UiText.SettingHoldBubblesLastFever,
+                        help: UiText.SettingHoldBubblesLastFeverHelp,
+                        default: 0,
+                        step: 1,
+                        max: 10,
+                        min: 0,
+                    },
+                    {
+                        key: SettingKey.UseFan,
+                        title: UiText.SettingUseFan,
+                        help: UiText.SettingUseFanHelp,
+                        default: false
                     }
                 ]
             }
@@ -667,9 +513,134 @@ var tabs: TabSpec[] = [
         ]
     },
     {
-        id: 'advanced',
-        title: UiText.TabAdvanced,
+        id: 'general',
+        title: UiText.TabGeneral,
         groups: [
+            {
+                title: UiText.GroupDevice,
+                rows: [
+                    {
+                        title: UiText.SettingLanguage,
+                        help: UiText.SettingLanguageHelp,
+                        // Drawn from the registered catalogues rather than
+                        // written out, so a new language file is a new button
+                        // with nothing here to edit.
+                        buttons: localeButtons()
+                    },
+                    {
+                        key: SettingKey.SpecialScreenRatio,
+                        title: UiText.SettingSpecialScreenRatio,
+                        help: UiText.SettingSpecialScreenRatioHelp,
+                        default: false
+                    },
+                    // {
+                    //     // The game runs its self-dismissing screens off a frame
+                    //     // counter, so the durations in PageProfiles are quoted at
+                    //     // 60fps and scaled by this. Set it to the emulator's frame
+                    //     // rate; leaving it at 60 is what the script did before this
+                    //     // existed.
+                    //     key: SettingKey.DeviceFps,
+                    //     title: UiText.SettingDeviceFps,
+                    //     help: UiText.SettingDeviceFpsHelp,
+                    //     default: 60,
+                    //     step: 10,
+                    //     max: 240,
+                    //     min: 20
+                    // }
+                ]
+            },
+            // The run rather than the round: none of these travel in a
+            // share code or preset.
+            {
+                title: UiText.GroupRun,
+                rows: [
+                    {
+                        key: SettingKey.AutoLaunchApp,
+                        title: UiText.SettingAutoLaunchApp,
+                        help: UiText.SettingAutoLaunchAppHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.AutoPlayGame,
+                        title: UiText.SettingAutoPlayGame,
+                        help: UiText.SettingAutoPlayGameHelp,
+                        default: true,
+                        // Whether rounds are played at all, not how one is
+                        // played -- see SHARE_TABS.
+                        neverShared: true
+                    },
+                    // {
+                    //     key: SettingKey.ClickAssist,
+                    //     title: UiText.SettingClickAssist,
+                    //     help: UiText.SettingClickAssistHelp,
+                    //     default: false
+                    // },
+                    {
+                        // Held by the play loop, not by the task's interval --
+                        // see `taskPlayGameQuick`. The button beside the number
+                        // ends a wait that is *already running*; the setting
+                        // itself is untouched, so the round after it waits
+                        // again.
+                        key: SettingKey.RoundDelayMinutes,
+                        title: UiText.SettingRoundDelay,
+                        help: UiText.SettingRoundDelayHelp,
+                        default: 0,
+                        step: 1,
+                        max: 120,
+                        min: 0,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { skipRoundDelay(); }}
+                        ],
+                        // The gap *between* rounds -- see SHARE_TABS.
+                        neverShared: true
+                    },
+                    {
+                        // The clock saying a round will not end -- see the Max
+                        // Round Duration block in `src/play.ts`. Measured from
+                        // the board coming up, so the walk in is not counted.
+                        key: SettingKey.MaxRoundMinutes,
+                        title: UiText.SettingMaxRound,
+                        help: UiText.SettingMaxRoundHelp,
+                        default: 0,
+                        step: 1,
+                        max: 60,
+                        min: 0,
+                        // How long the *run* will spend on one round before
+                        // giving up on it, not a rule the round is played under
+                        // -- the same reason the row above stays home. See
+                        // SHARE_TABS.
+                        neverShared: true
+                    },
+                    {
+                        key: SettingKey.MaxRoundAction,
+                        title: UiText.SettingMaxRoundAction,
+                        help: UiText.SettingMaxRoundActionHelp,
+                        default: MaxRoundAction.Coast as MaxRoundAction,
+                        // No `share` ids on the entries, unlike every other
+                        // dropdown: the row is `neverShared`, so no code and no
+                        // preset ever writes one. `satisfies` for the reason the
+                        // skill and bubble dropdowns have it -- a key that is
+                        // not a MaxRoundAction would compile, match no branch in
+                        // the play loop and quietly play the round out.
+                        dropdown: ([
+                            {key: MaxRoundAction.Coast, title: UiText.MaxRoundCoast},
+                            {key: MaxRoundAction.Stop, title: UiText.MaxRoundStop}
+                        ] satisfies { key: MaxRoundAction; title: UiText }[]),
+                        // Meaningless on its own -- it is what the cap above
+                        // does, and that row is not shared either.
+                        neverShared: true
+                    },
+                    {
+                        key: SettingKey.TrackRoundStats,
+                        title: UiText.SettingTrackRoundStats,
+                        help: UiText.SettingTrackRoundStatsHelp,
+                        default: true,
+                        // Bookkeeping about rounds, not a rule one is played
+                        // under -- see SHARE_TABS.
+                        neverShared: true
+                    }
+                ]
+            },
             {
                 title: UiText.GroupExperimental,
                 help: UiText.GroupExperimentalHelp,
@@ -683,6 +654,45 @@ var tabs: TabSpec[] = [
                         max: 120,
                         step: 6,
                         default: 0
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupRunOrder,
+                help: UiText.GroupRunOrderHelp,
+                rows: [
+                    {
+                        key: RowKey.RunOrder,
+                        // No `default`, so it holds no value: nothing to save,
+                        // nothing to share, no share slot to keep.
+                        build: buildRunOrder
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupSettingsCode,
+                help: UiText.GroupSettingsCodeHelp,
+                rows: [
+                    {
+                        key: RowKey.ShareSettings,
+                        title: UiText.SettingShareSettings,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonCopy), onClick: function () { copySettingsCode(); }},
+                            {text: i18nThunk(UiText.ButtonPaste), onClick: function () { pasteSettingsCode(); }}
+                        ]
+                    },
+                    {
+                        // Beside the share code because it is the same errand --
+                        // getting a configuration off this device -- and unlike
+                        // a code it carries every row, so the two are not
+                        // alternatives. See `presetsExportText`, src/presets.ts.
+                        key: RowKey.ExportPresets,
+                        title: UiText.SettingExportPresets,
+                        help: UiText.SettingExportPresetsHelp,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonCopy), onClick: function () { copyPresetsExport(); }},
+                            {text: i18nThunk(UiText.ButtonSaveFile), onClick: function () { savePresetsFile(); }}
+                        ]
                     }
                 ]
             }
@@ -1450,21 +1460,19 @@ var SHARE_SLOTS: (SettingKey | '')[] = [
 /**
  * The tabs a share code -- and so a preset -- draws its rows from.
  *
- * **What travels is how a round is played, and nothing else.** That is the
- * sentence the feature is defined by, and it is narrower than "these two tabs":
- * a row on them that is about the *run* rather than the round is marked
- * `neverShared` and stays home. Five are -- Auto Play Game (whether rounds are
- * played at all), the between-rounds delay, Track round statistics, and the Max
- * Round Duration pair (how long the run will spend on one round before giving
- * up on it). Nothing off these tabs travels either: not the language, the
- * device, the chores, the mailbox or the hearts, which are about the account.
+ * **What travels is how a round is played, and nothing else.** The rows about
+ * the *run* rather than the round -- Auto Play Game, the between-rounds delay,
+ * Track round statistics and the Max Round Duration pair -- live on the General
+ * tab and are marked `neverShared`. Nothing else off these tabs travels either:
+ * not the language, the device, the chores, the mailbox or the hearts, which
+ * are about the account.
  *
- * The set is still `SHARE_SLOTS`; these two lists are what `checkShareSlots`
- * holds it up against, so a row added to either tab with neither a slot nor a
+ * The set is still `SHARE_SLOTS`; these lists are what `checkShareSlots` holds
+ * it up against, so a row added to one of these tabs with neither a slot nor a
  * `neverShared` is reported rather than silently left out of every code and
  * every preset.
  */
-var SHARE_TABS = ['gameplay', 'skills'];
+var SHARE_TABS = ['skills', 'bonuses', 'gameplay'];
 
 /**
  * The 64 characters a code is built from: one per slot, and one per six bits of
@@ -1528,7 +1536,7 @@ var SHARE_DEFAULTS = captureShareDefaults();
 /**
  * Reports anything that would make codes wrong or unreadable: a slot listed
  * twice, more slots than the alphabet can name, a slot naming a row that must
- * never travel, or a Gameplay or Skills row with neither a slot nor a
+ * never travel, or a row on a `SHARE_TABS` tab with neither a slot nor a
  * `neverShared` saying it was left off on purpose.
  *
  * Called once on load. It only writes to the log -- the settings page is not the
@@ -1576,7 +1584,7 @@ function checkShareSlots(): void {
                 if (typeof row.key === 'string' && row.default !== undefined
                     && !seen[row.key] && row.neverShared !== true) {
                     logWarn(Log.Settings.ShareNoSlot,
-                        'A gameplay or skill setting has no share-code slot, so it is in no '
+                        'A shared-tab setting has no share-code slot, so it is in no '
                         + 'share code and no preset',
                         {setting: row.key, tab: tabs[t].id});
                 }
@@ -2543,9 +2551,9 @@ function pasteSettingsCode(): void {
 
 // --- Presets ---------------------------------------------------------------
 //
-// A preset is a name and a settings code's worth of form: **the Gameplay and
-// Skills tabs, and nothing else**. `SHARE_SLOTS` above is that set, so a preset
-// and a share code carry exactly the same rows -- which is what makes the code
+// A preset is a name and a settings code's worth of form: **the Skills,
+// Bonuses and Gameplay tabs, and nothing else**. `SHARE_SLOTS` above is that
+// set, so a preset and a share code carry exactly the same rows -- which is what makes the code
 // the export format rather than a second one invented for this.
 //
 // This half is the app bar: the dropdown that says which preset the form
