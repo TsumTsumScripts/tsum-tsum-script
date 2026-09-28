@@ -39,656 +39,97 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
-## [3.0b5]
+## [3.0]
 
 ### Summary
 
 - Settings page reorganized: Skills, Round (chain limits and bonuses) and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
 - Japanese (日本語) added as a language for the settings page, Quick Bar and log.
 - Copy with settings list option added: a copied settings code can carry a short list of its skill type and the settings changed from default.
-- Quick Bar gained a second page, switched by the dots beside Report: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout has its own toggle to show round/run times.
-
-### Added
-
-- **Japanese** (`ja-JP`): `src/uiJa.ts` and `src/logsJa.ts`. Bubbles are ボム, as in
-  the Japanese game. Skill, box and Quick Bar labels stay English, as in zh-TW;
-  every log sentence is translated.
-- **Copy with settings list** (General > Settings code). A page-only switch in
-  localStorage (`tsumtsumsharelisting`), not a setting. When on, Copy puts the
-  skill type and the rows that differ from default on one line under the code; the QR stays the
-  bare code and paste still reads only the code.
-- **Quick Bar page two**, flipped by a toggle stacked over Report (`.qb-side`),
-  so it costs no width; Report is now glyph-only. Both pages share one grid
-  area so the strip does not jump. The hotspot now covers the whole side
-  column, so pages can be switched mid-run.
-- **Hearts toggles are live.** `sendHeartsAuto` and `receiveHeartsOneByOne` are
-  `LiveWhen.Now`; `quickBarSyncJob` adds or removes their job using
-  `runTaskTable`'s spec. The settings panel gets this too.
-- **Strip actions.** Lvl (an open padlock) calls `unlockLevelsNow()`; Copy code broadcasts
-  `PageMessage.CopyShareCode` and the settings page (which owns the codec)
-  copies from the store and answers `ShareCodeCopied`/`NotCopied`. Both chips
-  sweep (`data-busy`, `qbBusyStart`/`qbBusyEnd`) until answered, and the outcome
-  is a banner rather than a colour. The strip's banners and log lines go through
-  `runScriptCallback`: a `runScript` counts as a run, and its end cleared them.
-- **Readout toggle**: two stacked dots on the coin readout's left edge flip
-  `<body data-readout>` between the coins and times tables, independent of the
-  page. `qbNameHotspot` sends one rect covering the side column and this toggle.
-- **`ts.runClock`** counts round time at every round end (stats on or off) for
-  the readout's times table.
-
-### Changed
-
-- **Settings tabs regrouped** as Skills, Round, Hearts, Gameplay, Chores,
-  General, Debug. Round holds chains per scan, max chain and the bonuses.
-  Run-level rows (auto launch/play, round delay, max round, stats, app restart)
-  moved to General; Advanced is gone. `SHARE_TABS` now covers Round, so share
-  codes and presets carry the same rows as before.
-- **Setting help text shortened** to about one line each, English and
-  Chinese; conflicts, coin/ruby spending and what 0 means are kept.
-
-## [3.0b4]
-
-### Summary
-
-- Fixed Box Buying stalling on the box's reveal card while the Quick Bar is up.
+- Quick Bar gained a second page: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout can switch to round/run times.
+- Wait for Settle setting added: once the gauge fills, waits up to 0.0-3.0s for the board to refill before firing the skill, so it goes off on a full board.
 - Delay Skill ReActivation setting added: holds a full gauge for a set time after each activation so a skill with a duration is not wasted.
-- Wait for Settle is now set in seconds (0.0-3.0) instead of milliseconds.
-
-### Added
-
-- **Delay Skill ReActivation** (Skills tab, Beta). Stored as
-  `skillReactivationTenths`; `skillStillRunning` refuses an activation within
-  it of `useSkill`'s last tap, so every activation path honours it. Live on the
-  next activation; last share slot. Number rows gained `scale` so a tenths value
-  shows as seconds.
-
-### Changed
-
-- **Wait for Settle shown in seconds.** Still stored as `skillSettleMs`, so
-  saved settings and share codes carry over; the row uses `scale: 1000`. Scaled
-  rows now show one decimal, step by 0.1 on the fine buttons and open a decimal
-  keypad.
-- **`build --adb` pushes to the first emulator in `adb devices`** instead of a
-  hardcoded serial; `--device SERIAL` still overrides.
-
-### Fixed
-
-- **Box reveals close under the Quick Bar.** The strip hides the reveal card's
-  foot probe, so the card read only as `ClosePage` and `clearBoxReveals` tapped
-  the blind advance forever. It now presses Close on `ClosePage` too.
-
-## [3.0b3]
-
-### Summary
-
-- Fixed Unlock Level and Box Buying repeating back to back instead of waiting their set hours, and Unlock Level missing capped Tsums when the collection opened past its first page.
-
-### Fixed
-
-- **Unlock Level and Box Buying no longer loop.** Their `true` ("ran" for the
-  Now queue) reached the scheduler as "due again next pass"; `taskBody` now
-  drops it. A device ran the sweep every ~7s for hours.
-- **The level-cap rewind waits for the grid to load.** After a re-sort the grid
-  shows placeholder cards for ~0.5s with no left chevron, so the first-page
-  check said yes on any page and the sweep read nothing capped.
-  `awaitCollectionLoaded` polls `CollectionGrid.loading*` before rewinding.
-
-## [3.0b2]
-
-### Summary
-
-- The next round starts about 3 seconds sooner after the score tally, and the tally's count-up is now skipped with round stats off too.
+- Bubbles are no longer popped the moment they appear or right after a skill fires; the Bubble Strategy spends them once the board has refilled.
+- The next round starts about 3 seconds sooner after the score tally, with its count-up skipped whether or not round stats are on.
+- Box Buying can buy the Pick-Up Capsule, and no longer stalls on a box's reveal card while the Quick Bar is up.
 - Gaston skill improved and moved to Beta.
 - Fixed Unlock Level and Box Buying repeating back to back instead of waiting their set hours, and Unlock Level missing capped Tsums when the collection opened past its first page.
 
-### Fixed
-
-- **The play job is due again as soon as a round ends.** The scheduler stamps
-  `lastRunTime` after a job returns, so the play job's 3s interval kept the
-  finished tally on screen for 3s before Play was pressed. A job may now return
-  `true` to be due on the next pass; `taskPlayGameQuick` does after a round.
-  The count-up tap itself worked -- on the device it cut ~0.6s off a count-up
-  under a second long.
-- **The count-up tap is retried after 400ms, not 1000ms.** With stats off the
-  first look at the tally comes straight off the level-up panel, mid-fade, and
-  the game drops that tap; the count-up (~1.25s) had ended before the retry.
-
-## [3.0b]
-
-### Summary
-
-- New "Wait for Settle" setting on the Skills tab: once the gauge fills, waits up to a chosen number of milliseconds (steps of 200) for the board to refill before firing the skill, popping bubbles into a board still moving as the Bubble Strategy allows, so it goes off on a full board rather than a half-empty one.
-- Bubbles are no longer popped the moment they appear or right after a skill fires, when the burst has left nothing round them to clear; the Bubble Strategy spends them once the board has refilled.
-- The score tally's count-up is tapped through whether or not round stats are being recorded, so the next round starts sooner.
-- Box Buying can buy the Pick-Up Capsule: pick it under "Box to buy" and the sweep buys from the capsule while one is on sale, opening each and closing its prize, whether a tsum or an item, closes the Last Prize the final capsule hands out, and stops once the capsule is sold out.
-
 ### Added
 
-- **`BoxType.Capsule` -- the Pick-Up Capsule under "Box to buy".** It shares
-  the store's limited-time tab with the Select Box, so `readBoxTabs` reads
-  the tab's icon (`BoxStore.capsuleIcon`: the machine's red base, either side
-  of its gold plate) and reports `limited` -- `capsule` or `select` -- which
-  `openBoxTab` puts in the slot; a player who picked one never buys the
-  other. The capsule sells singly, so any size buys one at a time. Its
-  confirmation (`ConfirmPurchaseCapsulePage`) is retuned to today's "Left: N"
-  dialog on the cyan bands instead of the dome gradient; the reveal loop taps
-  through "TAP! OPEN!" and the ~9s spin blind, and closes either the reveal
-  card (a tsum) or the game's GET! dialog, `EventGift` (an item), which it
-  now treats like the card. The last capsule follows its GET! with "Last
-  Prize!" over the store -- the same dialog, another title -- which the first
-  device run stuck on: `EventGiftLastPrize` (`EventGift`'s `lastPrize`
-  configuration) carries the GET! entry's chrome with two probes on the wider
-  title, thresholds sized to the sparkles that play over it, and the loop
-  closes it like the rest. The sold-out store reads as it does for a box (the
-  tab's ribbon stops above the icon probes; the button is blue), so the next
-  pass ends on `box.soldOut`. The tab read, the confirmation, the spin and
-  the GET! Close ran on MuMu; the Last Prize entry and the sold-out pass are
-  proven on the device's own captures only.
-
-- **`src/chainCounter.ts`: every measured drag reads the game's own chain
-  counter.** The number the game draws beside a chain's head is its outline
-  (`game_num_48_blue` over the white plate) boxed off a navy mask, sampled to
-  a 20x28 grid and scored against `ChainDigits`, templates the development
-  toolkit's `chain:digits` renders from the sprite itself. Read with the
-  finger still down, `settleMs` after the last MOVE. Gaston's passes log it
-  as `registered` beside `chain` (and `skill.gaston.done` lists both), with
-  `counter` saying where the number sat and what else was on the frame, and
-  `registeredLate` a held chain's count again before its release; the play
-  loop's chains log `board.chainDrawn` under a skill that sets
-  `SkillHandler.readsChainCounter`, which Gaston does. Nine recordings of his
-  drag were tuned without this number ever being in the log.
-- **`SettingKey.SkillSettleMs`.** `useSkill` runs `settleBoard` with the
-  setting as the budget and no floor between the gauge read and the activation
-  tap, ahead of the fever hold-off and `beforeActivate` -- the tap goes out the
-  moment the tsums have landed, or at the deadline. Milliseconds rather than
-  fractional seconds because a share code carries whole numbers. Live (`Now`,
-  read per activation), in share codes, presets and the stats CSV, and a Run
-  order chip when set. With it on, `maybeAutoTapSkill` stops blind-tapping
-  `bareTapActivates` skills and reads the gauge instead, since a blind tap
-  cannot wait for the board. `skill.use` carries `settleMs` (what the wait
-  took) and `settled`.
-- **`settleBoard` takes an `onMoving` callback**, run once at the first reading
-  that shows the tsums moving. The settle look above uses it to
-  `popGameBubbles()` -- the Bubble Strategy's own budget, under the same
-  hold after an activation as `link` -- so a board found refilling gets its
-  bubbles spent into the drop, and a board already still keeps them.
+- **Japanese** (`ja-JP`): `src/uiJa.ts`, `src/logsJa.ts`. Bubbles are ボム; skill,
+  box and Quick Bar labels stay English, as in zh-TW.
+- **Copy with settings list**: a page-only localStorage switch
+  (`tsumtsumsharelisting`). The QR and paste still use only the bare code.
+- **Quick Bar page two**, flipped by a toggle over Report (`.qb-side`); both
+  pages share one grid area. Lvl calls `unlockLevelsNow()`; Copy code asks the
+  settings page (`PageMessage.CopyShareCode`), which owns the codec. Busy chips
+  sweep until answered and report by banner, through `runScriptCallback`.
+- **Readout toggle** flips `<body data-readout>` between coins and times;
+  `ts.runClock` counts round time at every round end for it.
+- **Live Hearts toggles**: `sendHeartsAuto`/`receiveHeartsOneByOne` are
+  `LiveWhen.Now`; `quickBarSyncJob` adds or removes their job.
+- **Wait for Settle** (`SkillSettleMs`, stored in ms, shown in seconds via row
+  `scale`). `useSkill` runs `settleBoard` before the activation tap; its
+  `onMoving` callback pops bubbles into a refilling board. With it on,
+  `bareTapActivates` skills read the gauge instead of blind-tapping.
+- **Delay Skill ReActivation** (`skillReactivationTenths`): `skillStillRunning`
+  refuses an activation within it of `useSkill`'s last tap.
+- **`BoxType.Capsule`**: shares the limited tab with the Select Box, told apart
+  by `BoxStore.capsuleIcon`. Buys singly; the reveal loop closes the tsum card,
+  the item GET! (`EventGift`) and Last Prize (`EventGiftLastPrize`).
+- **`src/chainCounter.ts`** reads the game's own chain counter mid-drag, in
+  every colour it is drawn in, against sprite-rendered `ChainDigits`.
 
 ### Changed
 
-- **The tally's count-up tap is a dispatch handler, not `waitForScorePage`'s.**
-  `dismiss.tallyCountUp` fires on every look that names the tally -- the play
-  loop's, a chore's, `navigate`'s -- where with stats off nothing aimed a tap
-  at the count-up at all, only `nav.move.exit`'s Close at a button not yet
-  drawn. `record.tallyRow` (`readTallyRow`) reads the button row, the medals row
-  and Play off one frame into `Tsum.tallyRow`; the count-up tap, the Play
-  shortcut (`nav.move.tallyToGame`, which used to capture its own frame through
-  `tallyPlayShown`) and the stats read (`roundMedalsRow` is gone) all read that.
-  Each tap logs `page.scorePage.skipping` and is followed by a settle, so the
-  next look reads the finished row; `stats.tallySkipped` still sums them.
-- **Gaston's route is the longest path over the Gastons, from wherever it
-  starts.** `gastonChain` runs `findLongestTsumPath` over every component of
-  the free board under `GastonConfig.searchSteps`. The snake from a top corner
-  (`gastonSnake`, `gastonRows`, `gastonHops`, `rowGap`, `rowHeight`,
-  `snakeSteps`) is gone: on the device a route forced from the corner ran
-  upward into dead ends, into bubbles and back over itself, and the game
-  stopped linking there. Replayed over 725 logged boards it plans 15,917 tsums
-  to the snake's 15,743. `skill.gaston.pass` carries `bubbleAt`, the bubble
-  centres, so a hop across one can be checked offline.
-- **Gaston's route is planned over the tsums the game paints, from the head
-  the finger is on.** `gaston_8.mp4` aligned to its log: the colour cluster
-  held Donald, the Cheshire Cat and an orange tsum on most boards under the
-  fever tint, every route through one stalled or lost its head (the six held
-  chains registered 7-19 of 24-37), and the head check's eight far probes
-  were mostly those same tsums, so it read live heads dead 27 times in 40 and
-  each lift popped a chain of three. Now `gastonLinkChain` lands on the head,
-  waits `paintMs`, and reads every circle's floor rise (`gastonFloorRead`,
-  `paintRise`): what rose is Gaston, the route is `gastonChainFrom` over
-  those, a head that painted nothing is lifted with one tsum under it and the
-  pass tries another (`deadRetries`). No read inside `paintBlackoutMs` of the
-  close; a pass that cannot read plans off the last read's leftovers
-  (`gastonCarry`, `carryMatch`, pruned by each cancel's blast), else the
-  cluster. `skill.gaston.pass` now logs the whole scan as `board`, with
-  `painted`, `head`, `source` and `carried`; `deadAt` is gone.
-- **Gaston's hops cross nothing.** The game links along the line between two
-  MOVEs and takes a line back over the previous link as undoing it (a 37 planned
-  registered 7 that way). `gastonNeighbors` keeps only hops whose segment
-  passes no other tsum's centre within `crossAvoid` nor a bubble; replayed over
-  103 logged boards the routes plan 99.5% of the unfiltered length.
-- **Gaston's drag starts from the route's higher end.** `gaston_7.mp4` aligned
-  to its log: five of seven dead drags began on a leftover at the bottom of
-  the pile, where a longest path's tip lands. `gastonOrient` draws from the
-  higher end, an end touching a known leftover losing (`frontierAvoid`).
-- **Gaston's window is two cancelled chains, then one held through the
-  close.** A chain released while the skill still runs charges nothing, even
-  the part of its clear that pops after the close, so after `passesBeforeHold`
-  cancelled passes the next chain's finger stays on its last tsum until
-  `holdPastCloseMs` past the estimated close (`gastonLinkChain`), and from the
-  release the button is spammed until the gauge reads full (`gastonSpamSkill`,
-  replacing `gastonAwaitGauge` and the chain drawn after the close). Bubbles
-  are the skill's from the first activation to the tally
-  (`claimsBubbles` off `roundStartedAt`) and the Bubble Strategy's before it;
-  the cancel spends every bubble (`bubbleReserve` 0, since each activation
-  leaves one), the one over the most leftovers first (`gastonBubbleWorth`,
-  logged as `near`). `skill.gaston.pass` carries `heldMs`; the done record
-  carries `heldMs`, `releaseLeadMs` and `spamTaps` in place of `charged`.
-- **The hold after a skill activation is two seconds from the tap, not one
-  scan.** `GameBubbleConfig.holdAfterSkillMs` replaces `settleScansAfterSkill`.
-  `useSkill` stamps it at the activation, so an auto-tapped skill is covered
-  too (only the play loop's own path stamped the old one), and
-  `bubbleTapBudget`, `link`'s per-chain pops and the All Bubbles ASAP sweep
-  all honour it (`bubble.heldAfterSkill`). A blind-tapped burst reads the
-  button once after the tap while bubbles are on the board: still Active means
-  it fired, so the hold is stamped and the scan's bubbles dropped
-  (`skill.blindTapFired`). A skill's own pops and sweeps are untouched.
-- **A bubble is held for a second after it is first seen**
-  (`GameBubbleConfig.minAgeMs`). The blast count is one frame's reading, and a
-  burst's bubble first shows mid-clear, where it can read surrounded over a
-  hole -- Ariel+ popped hers the instant she made them. `trackGameBubbles`
-  carries sightings across scans by position (`GameBubble.firstSeen`), and the
-  unripe release is per bubble by age (`unripeReleaseMs`, 3s) instead of five
-  consecutive scans. `bubble.found` and `bubble.unripe` carry `age`.
-- **`gaston.ts`'s comments trimmed** to what the code needs: recording notes,
-  measurements and history removed (3416 to 2522 lines, no code change).
-- **Gaston's disabled fever dodges removed.** The fever-switch and fever
-  start/end waits (`dodgeSwitch`, `dodgeFever`), their rescan and the per-hop
-  steps (`stepsPerHop`, `pacedMoves`) were all off; `skill.gaston.pass` drops
-  `waitedMs`, `replanned`, `fever`, `feverWaitMs` and `feverRing`. The antler
-  read stays (`gastonWatchAntlers`, `antlerProbe`).
-- **Gaston's Debug-tab experiments removed**: Drag dwell, Board colour model
-  (radial) and Merge cluster fragments. The paint read replaced them; the scan
-  no longer reads each tsum's rim drop.
+- **Settings tabs** are Skills, Round, Hearts, Gameplay, Chores, General,
+  Debug; Advanced is gone. `SHARE_TABS` covers Round, so codes carry the same
+  rows. Help text cut to about one line each.
+- **Scaled number rows** show one decimal, step by 0.1 and open a decimal keypad.
+- **Tally count-up tap is a dispatch handler** (`dismiss.tallyCountUp`), so it
+  fires on any look at the tally, stats on or off. `readTallyRow` reads the
+  button row, medals and Play off one frame; the tap retries after 400ms.
+- **Bubble holds**: `holdAfterSkillMs` (2s from the activation tap, blind taps
+  included) replaces `settleScansAfterSkill`; a bubble is held `minAgeMs` after
+  first seen, and the unripe release is per bubble (`unripeReleaseMs`).
+- **Gaston rewritten**; design notes live in `gaston.ts` and the commit log.
+  - Window: opens no earlier than `openFloorMs`, plays two cancelled passes
+    cut to even slots, then a closing chain timed off the antlers (`antlerMs`,
+    up to `closeChainMax`, retried under `gaugeChain`), then spams the button
+    until the gauge fills and opens the next window (`afterActivate`,
+    `stillRunning`).
+  - Route: longest crossing-free path (`gastonNeighbors`, `hopReach` 1.6) over
+    the tsums a finger on the head paints (`gastonFloorRead`), from the higher
+    end; the colour cluster less the carry is the fallback. Dead and lookalike
+    heads (`strayPaint`) are lifted and another start tried.
+  - Drag: 30ms a tsum; stalls found from the coins and the chain counter, walked
+    back, restarted from the far end or replanned; cancelled chains release at
+    a stall past `stopFrom`.
+  - Bubbles: a second Hough over the bowl bottom, a gold-icon test at the rim,
+    HUD buttons excluded; each cancel taps all known bubbles but one
+    (`bubbleReserve`, `bubbleEarnChain`, `surplusBubbles`).
+  - Leftovers: crowded boards and the first window also clear other colours
+    (`gastonClearLeftovers`, `gastonPaintedLeftovers`).
+  - Play-loop rules (`chainLimits`, `readsChainCounter`) start at his first
+    activation; windows play to the round's end.
+  - Removed: the corner snake, the palette, fever dodges, paced moves, and the
+    Debug-tab experiments.
+- **`build --adb`** pushes to the first emulator in `adb devices`.
 
 ### Fixed
 
-- **Gaston's route is the board's biggest colour cluster, and nothing else.**
-  The palette -- learned by size on the window's first board, matched by colour
-  after -- is gone with `gastonPalette`, `paletteShare`, `paletteMinShare`,
-  `paletteDistance` and the pass record's `palette`. A recorded round read
-  chain by chain (`gaston_2.mp4`) had ten of 21 chains start on a leftover the
-  palette had admitted, by size on a board still half leftovers or by colour
-  within the scan's merge distance, and link one to four tsums of 17-33
-  planned; a fever-tinted board also left one window scanning 18 passes at 4
-  matched tsums. A route over one cluster is at worst a chain of one leftover
-  colour.
-- **Gaston's drags stay out of the fever switch, where the game stops
-  linking.** The game takes no link for 0.5-0.75s as the fever backdrop
-  switches, and a drag under way loses its head there: `gaston_4.mp4` had 33
-  planned register 11 with the drawn line frozen for 1.1s, and `gaston_6.mp4`
-  had the fever's exit land inside four of eight held chains (13, 9, 14 and 24
-  of 32, 22, 24 and 30 planned), two of which then never filled the gauge. The
-  exit is predictable -- the backdrop comes on 1.3s after the tap as the face
-  fades (`faceMs`) and stays exactly 8.35s (`feverMs`, nine of nine) -- so a
-  drag that would straddle it waits for the switch and the freeze behind it
-  (`gastonAwaitSwitch`, `switchFreezeMs`), and a switch seen just before any
-  drag holds it the rest; the backdrop is read as the chrome beside the score
-  not being its plain-board colour (`plainChrome`), since each fever theme
-  paints its own there. Two approaches to the freeze came first. A synchronous
-  MOVE at the host (`moveTo`'s `wait` flag, Gaston's `pacedMoves`) on the
-  theory that the UI thread blocked and the moves batched: measured at ~2ms a
-  hop with the chains dying all the same, so the freeze is the game's own; the
-  flag is off. And a probe of the coin the game draws on a
-  linked tsum, with a hold on a miss, which lost more than it saved
-  (`gaston_5.mp4`: 13 chains in a round where the one before drew 23) -- the
-  scan's centres sit ~14px off the sprites, and the game reads a finger
-  returning to the previous tsum as undoing the last link. `stepsPerHop` is 0:
-  a midpoint sample linked neighbours out of order. `skill.gaston.pass`
-  carries `dragMs`, `overMs` (the wait on the game beyond the dwells),
-  `waitedMs` (the hold-back from a switch) and `fever`. `GastonConfig.dodgeSwitch`
-  false turns the hold-back off while the backdrop is still watched, so `fever`
-  still says which drags went out under one.
-- **Gaston's charge opens the next window itself, and no activation goes out
-  inside a window.** The spam tap's read of a full gauge was handed to
-  `useSkill` for the tap, but once the button has fired the empty gauge
-  behind its flash reads empty, so `useSkill` saw no activation and the play
-  loop played the window: `gaston_6.mp4` had it chain a Gaston board for
-  eleven seconds, and once fire a second activation four seconds into a
-  window, wasting the rest of it. `afterActivate` now runs `gastonWindow`
-  after `gastonWindow` while each charge fires the next, anchoring each at
-  the read that saw the gauge full and logging `skill.use` with `charged`;
-  and `SkillHandler.stillRunning`, which Gaston answers until the window can
-  have closed, makes `useSkill` and `maybeAutoTapSkill` leave a full gauge
-  alone (`skill.stillRunning`). The spam loop stops when the round ends under
-  it, and a pass whose scan reads well under the board the gate just saw full
-  rescans for up to `flashRetryMs` (`rescans` in the pass record) -- the fever
-  label's flash read 29 of 40 and drew a chain of 5.
-- **Gaston's drag is the play loop's, 10/10/10 and unpaced.** It dwelt 40ms
-  a tsum with a paced MOVE for a while, on `gaston_3.mp4`'s finding that an
-  18ms dwell registered 279 of 456 planned -- measured on the snake route,
-  whose reach-length hops and back-crossings the crossing-free route has
-  since removed. At 40ms a thirty-chain was 1.3s and the window's three
-  passes outran its six seconds: the device log of 2026-09-21
-  (`muc2hht99b`) had the closing drag out 1.2-3.8s past the close in every
-  window, while the play loop's 10ms chains ran the same Gaston boards
-  whole between windows. A thirty-chain is ~0.35s.
-- **A Gaston chain with no bubble to cancel it is held when its pop would
-  refill past the close.** The pass used to wait out the pop
-  (`chain * popPerTsumMs + popTailMs`, 3.4s for a thirty) and draw the next
-  chain on the refill; past the close that refill is leftovers. Three of six
-  windows in `muc2hht99b` lost their charge that way, and the next
-  activation then opened on a full board of leftovers. `gastonLinkChain`
-  now asks a `holds` rule at the head -- the tail, or no bubble and the pop
-  running past `closesAt` -- in place of `cancelBefore`.
-- **Gaston's cancels no longer tap the HUD buttons.** The hem the bubble
-  capture runs below the play square brings in the two round buttons under the
-  bowl, read as bubbles on every pass; `hemButtons` names them and
-  `gastonNotButtons` drops them, so a cancel lands on a bubble in play and a
-  pass with none waits out the pop.
-- **Gaston's routes keep clear of the bubbles resting on the bowl.** Four
-  recordings at dwell 10/20/34 (2026-09-21), the planned route drawn over
-  the frames: every chain that died mid-drag died on a bubble the pass had
-  not read -- the Hough pass loses the resting ones under the rim lights, the
-  scan reads a bubble's icons as a tsum, and the paint read passed it.
-  `gastonBubbles` now adds a second Hough at `bandParam2` over the bowl's
-  bottom (`band`) and the round's memory of every read
-  (`gastonRememberBubbles`, `soft`), both planned round. The pass record
-  carries `band`, `soft` and every circle's paint `rises`. Clean routes
-  registered whole at 10ms, so the dwell was not the lever. The first run on
-  this charged 13 windows of 18 (5 of 23 before); `bubbleAvoid` was 1.4
-  widths for that run and cut a full board into routes of 4-13, so it is
-  back at 1.0.
-- **The band's bubbles are tapped as cancels.** They were `soft` too at
-  first, and the resting ones stood untouched: over six runs on 2026-09-22,
-  30 of the 35 chains released without a cancel had bubbles on the board,
-  all soft, 66 of the 78 in the band and read hard by the next pass often
-  enough. `gastonCancelBubble` and the no-bubble hold now count the band's
-  finds (`gastonTappableBubbles`); only the memory's stay untapped, since a
-  remembered bubble may have rolled when a clear went out from under it.
-- **A starved carry falls back to the cluster.** The window's first read
-  finds a board of leftovers; the first clear slides them into the positions
-  the carry remembered and the Gastons that land read as leftovers too, so
-  221 of 291 passes that day planned nothing and six windows of 23 drew no
-  chain at all. A pass whose carry leaves nothing plans from the colour
-  cluster and drops the carry until the next read (`starved` on the record).
-- **Gaston's window checks each step instead of assuming it.** On
-  2026-09-23 (`mudehgre4r`) three passes went uncancelled with a remembered
-  bubble on the board, and six charges failed. After each failed charge the
-  next activation opened on leftovers, and it took windows to recover. A
-  cancel is now checked off the tsum count (`cancelDrop`). One that did not
-  take taps the remembered bubbles too, then waits out the pop instead of
-  planning over it. The charge stops spamming once the held clear is over
-  (`chargeTailMs`), and a short chain is followed by other colours' chains
-  (`mixedChains`).
-- **Gaston's chains without a paint read are planned over his colour cluster,
-  less the carry.** `gaston_100.mp4` (2026-09-23), aligned to its log, had
-  three of four failed charges on held chains planned without a read over
-  tsums that were not his. The carry alone took everything dropped since the
-  read for Gaston, so two ran through Lotsos and Stitches. On the third,
-  reads had been switched off after three lifted heads that *had* painted.
-  Now only heads that painted nothing (`blank`) switch reads off, as the
-  header always said.
-- **Gaston's pass scans again after waiting out the fever switch, and a missed
-  cancel reads the board again.** `gaston_101.mp4` (2026-09-23) charged 5 of 7
-  windows. One failure was a held chain drawn 1.5s after its scan: the pile
-  had moved, and it linked 7 of 19. The other was a cancel tapped on a tsum
-  the band pass took for a bubble. The real bubble sat beside it, and the
-  36-chain popped slowly through the close. A wait over `replanAfterWaitMs`
-  now rescans, and an unconfirmed cancel taps whatever a fresh read finds
-  (`freshTaps`). The refill gate after an uncancelled pass now also waits
-  out the extra chains' pops (`popMs`).
-- **Gaston's no-bubble hold is judged against the earliest close, and a read
-  route keeps his tsums along the top.** `gaston_102.mp4` (2026-09-23)
-  charged 6 of 7 windows. The skill closes at tap+9.65s (the antler backdrop
-  went at 9.60-9.72 in all seven); `closesAt` puts it 1.0-1.65s later. The
-  one miss was a 29-chain with no bubble, judged to pop out before that late
-  close: it went unheld and refilled with leftovers. Both holds now use
-  `refillBy` (tap + `openMinMs` + duration). The HUD band also cut the
-  Gastons joining a pile's halves (6 planned of 14 painted); painted circles
-  are now cut only above `paintedHudBand`, 8% more planned over 153 passes.
-- **Gaston's drags wait out a fever starting or ending.** Checked on video,
-  `gaston_102`-`104.mp4` broke most chains short, about a third of them at a
-  fever's start or end, which the antlers hide from the chrome probe. The ring
-  round the fever gauge shows both: a drag now waits `feverStartMs` past it
-  lighting, and for it to go dark when the fill says the fever ends inside
-  the drag (`dodgeFever`, `feverWaitMs` on the pass record). Off by default:
-  `gaston_105.mp4` broke as many chains with it on, and its waits cost time.
-- **Gaston keeps a bubble for the next cancel.** `gaston_107.mp4` spent 2 and
-  3 bubbles cancelling chains of 4 and 5; two held chains then had none and
-  the next window's 29-chain went out uncancelled. A chain under
-  `cancelMinChain` now spends no bubble, and a cancel leaves one standing
-  (`bubbleReserve` 1; `spared` on the pass record).
-- **Gaston's drag dwells 30ms a tsum (was 10).** On BlueStacks, `gaston_102`-
-  `103.mp4` at 10ms linked 17 of 41 chains whole; `gaston_104`-`108.mp4` at 30
-  linked 44 of 75 (73-87% of planned tsums against 57-67%).
-- **Gaston's drag picks a stalled chain back up.** About 1.8% of hops fail
-  at random, breaking ~40% of thirty-chains. Every 4 tsums and at the end, a
-  capture looks for the game's gold coin on the tsums behind the finger; with
-  none on four, the finger walks the route back to the last coin (the undo
-  unwinds the chain to there) and draws on (`rewind`, `rewinds` and `coins` on
-  the pass record). A stall that comes back at the same place is the route's
-  (`gaston_111.mp4`: three of four redraws stalled where the first had), so it
-  is planned afresh from the chain's end without the failing tsum, or the drag
-  stops there; no walk back runs into the close.
-- **Gaston's closing chain goes out at once and lets go as the antlers leave.**
-  The switch wait held it 0.8-2.6s past the close on `gaston_108`/`109.mp4`,
-  and the hold ran to `closesAt`, 1.0-1.6s late. The antlers stay up 8.4-8.6s,
-  so the close is timed off them (`antlerMs`); the chain is cut to end
-  `closeLeadMs` before it (drags over the close broke 5 of 7), held, and let go
-  `antlerReleaseMs` after the antlers leave the chrome. `dodgeSwitch` is off.
-- **Gaston's coin check no longer throws mid-drag, and a throw lifts the finger.**
-  It called `getImageWidth`, which `globals.d.ts` declared but the host does
-  not have: every drag of 12+ threw with the finger down (`gaston_110.mp4`),
-  and five in a row restarted the app. `globals.d.ts` now declares only what
-  the host registers (12 phantom natives dropped), and `gastonLinkChain` lifts
-  the finger on any throw.
-- **Gaston's play-loop rules start at his first activation.** `chainLimits`
-  (one uncapped chain a scan), `extraClusterSlots` and `readsChainCounter`
-  (a counter read per chain) held from the round's start,
-  so the loop chained almost only Gaston before the skill had ever fired, and
-  `gaston_112.mp4` redrew the same three short chains for 15s. All three now
-  follow `gastonActivated`; `SkillHandler` takes a function for the last two.
-- **Gaston's windows spend spare bubbles.** An uncharged window hands the
-  board to the play loop, which keeps its bubbles for the windows; the windows
-  spared every chain under `cancelMinChain` and never popped on a pass with
-  no chain, so `gaston_113.mp4` had ten along the bottom by the fourth window,
-  refills with no room and 29 of 44 passes drawing nothing. From
-  `surplusBubbles` (3) every release is cancelled, and a pass with no chain
-  pops all but the reserve (`popped` on `skill.gaston.done`).
-- **Gaston's windows clear the other tsums off a crowded board.** Other
-  colours' chains went out only after a Gaston chain under 15, four at most
-  inside 600ms, and never on a pass with no Gaston chain -- 26 of those in
-  `gaston_113.mp4` lifted the finger on boards of 20-odd leftovers. Now a
-  board with `mixedFrom` (15) leftovers gets them too, every chain that fits
-  in `mixedChainMs` (1000) top of the pile first, and a pass with no Gaston
-  chain clears them instead (`gastonClearLeftovers`, `skill.gaston.clear`),
-  all while their refill still lands as Gaston. A cancel is judged on the
-  whole clear, not the Gaston chain alone.
-- **Gaston's window holds its closing chain whenever another would not fit.**
-  A chain was held only when it ended inside 800ms of the earliest close, so
-  on `gaston_114.mp4` four windows of ten cancelled a second chain that ended
-  just short of that and drew a third after the antlers had gone -- released
-  0.5-1.8s late, each window 1.5s longer. Now a chain is held when the next
-  pass (`nextPassMs`, 1.5s, plus a drag as long) could not end before the
-  close. A drag stopped mid-route also reports what it linked, not what was
-  planned, so the log, its pop wait and the charge go by that (`gaston_114`
-  logged 33, 28 and 23 for drags that had linked about 5, 13 and 9).
-- **Gaston's stalled chains walk back to the chain's real end.** Most stalls
-  came back on every redraw: on `gaston_114.mp4` a tsum was linked early,
-  from one three before its turn, so the chain ended one short of the last
-  coin and the next hop was out of that tsum's reach -- the walk back to the
-  last coin, the redraw and the replan all started from the wrong tsum. The
-  walk back now goes to the tsum before the last coin, the end in either
-  case, and plans a fresh route from there clear of what is linked. A stopped
-  drag logs its whole route again.
-- **Gaston's refill gate starts at the release.** Its floor ran from after the
-  cancel's check, adding that check to every pass; it now runs `fillMinMs`
-  (800) from the release, and the full, still count decides the rest. The
-  hold judges the next pass on the round's measured refill cycle, and each
-  pass logs its timings (`headMs`, `releaseMs`, `prepMs`, `cycleMs`): on
-  `gaston_116.mp4` a cancel's refill landed 0.95s after the release and the
-  next grab came 0.65s after that.
-- **Gaston's window plays two cancel rounds, then the closing chain as the
-  skill ends.** Holding the second chain whenever a third as long would not
-  fit made every window on `gaston_116.mp4` one cancel and a hold idle a
-  second into the close. Now both cancelled chains are cut to an even share
-  of the time to the last cancel, timed so its refill lands as the antlers
-  go (the round's measured refill cycle), and the closing chain is drawn the
-  moment they leave -- the game links right after the close, only not across
-  it -- cut to `closeChainMax` (20) and released at once, about 0.9s later.
-  A closing chain that fits before the close is still drawn and held.
-- **Gaston's closing chain is long enough to fill the gauge again.** Only
-  its clear fills the gauge, and the 20 cap of the entry above left it short:
-  on `gaston_117.mp4` every charge waited ~2s on the chain's own pop, the
-  gauge stayed empty through the next window, and five of sixteen never
-  filled, where the 23-35 of `gaston_116.mp4` filled it before the next
-  window's first chain. `closeChainMax` is 28 (release ~1.2s after the
-  antlers), and a closing chain begun before the close stands still through
-  it and finishes after (`pausedMs`).
-- **Gaston's closing chain reads the paint when it starts past the close.**
-  The read was off from `paintBlackoutMs` before the close, so a closing
-  chain begun once the antlers had gone was planned off the colour cluster:
-  on `gaston_118.mp4` one linked 1 and others broke at 16-24 of 28, charging
-  the gauge in 1.3-2.1s instead of at once. Past the close a touched Gaston
-  paints the rest as it does inside the window, so that chain reads again,
-  and a stall in it can replan.
-- **Gaston keeps one bubble from cancel to cancel.** A cancel tapped only
-  the bubbles its own read found, remembered ones only when those did not
-  take, and a short chain spared them all until three were up: passes on
-  `gaston_119.mp4` saw four to seven, each cutting the routes round it. Now
-  every cancel taps every known bubble but one -- kept out toward the rim,
-  where it cuts the fewest routes -- and from two up (`surplusBubbles`) a
-  short chain is cancelled too.
-- **Gaston finds the bubbles the Hough misses at the bottom rim.** Lit by the
-  rim, they went unread, the tsum scan took them for tsums -- the paint read
-  for Gastons, the one behind showing through -- and routes ran into them
-  and popped the chain there (two of four late boards on `gaston_120.mp4`),
-  while the cancels left them standing. A scanned circle in the bottom band
-  whose coin grid reads `bubbleGold` gold (their icons) is now a bubble:
-  planned round, and tapped. A chain with no bubble to cancel it is judged
-  on every known bubble, remembered ones included, since the cancel taps
-  those too now.
-- **A Gaston closing chain that stops short is followed by another.** Only
-  the closing chain charges the gauge, and one that stalled and stopped at 9
-  or 8 (two of ten windows on `gaston_121.mp4`) left the window uncharged
-  and the play loop to fill it. While the closing chains total under
-  `gaugeChain` (24), another is drawn once the last one's pop has landed --
-  every clear past the close fills the gauge -- up to `closeRetries` (2).
-  The gauge is tapped through the short chain's pop first and the retry
-  goes out only if it did not fill: on `gaston_122.mp4` a 23 was retried,
-  the retry found nothing, and the spam's budget had run out behind it, so a
-  gauge that may have been full was never tapped (`chargeMinMs`).
-- **Gaston's cancel after a long chain keeps no bubble back.** The chain
-  earns one as it clears, and that one is the next cancel's; keeping the
-  reserve as well left two to four on every board of `gaston_122.mp4`. A
-  chain under `bubbleEarnChain` (12) still keeps one.
-- **Gaston's stall recovery keeps to the pass's slot and the chain's head.**
-  On `gaston_123.mp4` rewinds ran three cancelled passes 0.4-1.6s past their
-  slots, and each of those windows lost its second cancel; a redraw is now
-  cut to what still fits, as the first draw is. A stall in the first four
-  tsums found no coin (they carry dots), walked back to the head, redrew the
-  same stall and stopped at 1 -- 1 drag in 10-20. The last coin is now looked
-  for from the second tsum (`coinBackFrom`), and a repeat stall at the head
-  replans clear of the route's second tsum.
-- **Gaston's windows play to the end of the round.** A pass ended its window
-  whenever the screen did not read as the game, which the last five seconds'
-  flashing border does not: the last windows of `gaston_123`/`124.mp4` quit
-  under it and the play loop drew short chains of any colour to the end.
-  Only a round-over page ends a window now, as in the play loop.
-- **The chain counter reads every colour the game draws it in.** Navy is only
-  1-9; past that it is crimson on a pink plate, slate, brown with the digits
-  touching, and rainbow from 30, so Gaston's counts -- mostly past 10 when
-  read -- registered on 15% of drags. Each colour is its own mask now
-  (`styles`), touching digits are split, and the plate may be pink: 67% of
-  `gaston_124.mp4`'s drag frames read, 2 to 40. Gaston's rewinds log the count
-  at each (`stallCounts`).
-- **Gaston's last cancel keeps a recovered chain.** Cut to its slot after a
-  rewind, `gaston_124.mp4`'s recovered chains went out at 10 and 13 of 45;
-  the last cancelled pass's redraw may now run `rewindGraceMs` (500) past it.
-- **Gaston's stall check believes the game's count over the coins.** On
-  `gaston_125.mp4` a chain the game counted at 24 was walked back to route 12
-  on a coin read that missed. A coin stall is now overruled when the count is
-  within `countSlack` (3) of the finger (`countKept`), and a count past the
-  last coin moves the walk back up to it, keeping what is linked.
-- **The chain counter is quick again.** Its colour masks box ~7 digit-sized
-  shapes each on a Gaston board, and the full plate read of every one took a
-  read to 76ms (341 at worst); 16 plate points per box, in one read, drop
-  most of them first (`plateProbeFrac`). A read along a route now looks only
-  round its last `nearTail` (12) tsums, where the counter is.
-- **Gaston's cancelled chains go out at a stall instead of being redrawn.**
-  Over `gaston_124`-`126.mp4` a cancelled pass's rewinds won a median 5 tsums
-  for 610ms -- time the next pass draws ~20 in -- and the trims that followed
-  were most of `gaston_126.mp4`'s cut-off chains. A cancelled chain releases
-  at a stall once `stopFrom` (8) are linked, or after one redraw below that.
-  A closing chain stops when the game's count has not moved since the last
-  stall (the board sat pale for 3s after a close the fever ended at), and the
-  retry now judges the gauge on the game's count, not the route drawn
-  (`gaston_126.mp4`: 42 drawn, 6 linked, no retry).
-- **Gaston's window opens no earlier than 4.6s.** The skill's own drop and
-  the last closing chain's pop both play out after the animation, so a count
-  full at ~3.8s was a board about to clear: those windows drew 0-14 on their
-  first pass (dead heads, short routes, a fever starting). Over 637 windows
-  to `gaston_129.mp4`, gates that left before 4.6s drew a median first chain
-  of 6-11, those from 4.8s on 23-24. The gate's floor is now `openFloorMs`.
-- **Gaston's cancelled chains let go at their last tsum.** Each waited
-  ~170-200ms there -- the end coin check's 80ms settle, then the count's
-  60ms settle and read -- for a stall it would release as it stood anyway
-  and a count only the log used: ~6 tsums of every cancelled slot, which now
-  goes to the chain. Held chains keep both reads; a released one logs no
-  `coins` or `registered`.
-- **Gaston's routes plan no hop over 1.6 tsum widths** (`hopReach`, was the
-  play loop's 1.9). Over `gaston_121`-`128.mp4` hops of 1.6-1.9 widths were 7%
-  of those drawn and 39% of the stalls, at 5-8 times the rate of the rest;
-  replayed over 774 logged boards the cap costs 1.7 tsums of plan, mostly
-  past what the slots draw.
-- **Gaston's cancelled chains run to the end of their slot.** They were cut
-  before the drag off a 26ms-a-hop estimate; hops take ~22ms, and on
-  `gaston_129.mp4` every trimmed chain let go 120-170ms early, ~6 tsums. A
-  cancelled chain now lets go at the hop that would pass its slot's end,
-  timed off its own hops; the closing chain keeps the cut up front. One the
-  whole route would be held for (no bubble left) is not cut: it ends the
-  window anyway (`gaston_132.mp4` held two cut to 32 and 36 of 41 and 42).
-- **Gaston reads bubbles better.** Over 108 bubbles marked by hand on
-  `gaston_138`/`141.mp4` the reads found 65 and took 11 other circles for
-  bubbles -- a Gaston or a Stitch at the rim once took a cancel's taps while
-  the real bubble went untapped (`gaston_138.mp4`). Both Hough passes now run
-  lower (`hardParam2` 24, `bandParam2` 14, `bandMaxRadius` 20) and every
-  circle must look like a bubble inside: no dark hair showing through, not
-  white (`bubbleDarkMax`, `bubbleWhiteMax`). The same frames: 85 found, 13
-  others, several of those real bubbles the marking missed.
-- **Gaston's first window of a round clears the other tsums.** It starts on
-  an ordinary board, half of it other tsums packed at the bottom, and only
-  what the window clears comes back Gaston. On `gaston_140.mp4` the bottom
-  half never cleared, the closing chain found 20 Gastons and drew 16, and the
-  charge never came; 4 of 25 first windows to then failed to charge. A
-  window the play loop opened now follows each cancelled pass's Gaston chain
-  with other-colour chains for up to `convertChainMs` (1.5s), past the pass's
-  slot, while the refill still lands before the close (`convert`). The
-  scan's colour groups found almost none on `gaston_141`/`142.mp4` (0 and one
-  5-chain), so the time left goes to the paint read: a finger on the densest
-  leftover paints its kind, and the chain is planned over those, up to
-  `convertReads` (3) kinds a pass (`gastonPaintedLeftovers`).
-  Its charge spams the whole `gaugeWaitMs`: the gauge starts empty there,
-  and `gaston_145.mp4`'s first window stopped at 3.7s with it 0.3s from full.
-- **Gaston's last cancel redraws a stall while its slot has room**
-  (`lastRewindRoomMs`). A cancelled chain releases at a stall once 8 are
-  linked; for the last cancel the time it frees only waits for the antlers,
-  and `gaston_138`/`139.mp4` let five go at 13-18 with 0.2-0.9s unused.
-  The first cancel does the same with 400ms of its own slot left
-  (`firstRewindRoomMs`): 7 of 19 let go at 8-15 with 0.4-0.7s to spare.
-- **Gaston's chains stuck at the head start over from the other end.** A
-  tsum the game links off the route beside the head leaves the chain stuck
-  at 1-3; walking back cannot undo it, and redrawing the same route stalled
-  the same way -- 55 of 80 such stalls to `gaston_136.mp4` ended the drag at
-  1, most of them the window's first cancel. The finger now comes up and
-  goes down on the route's far end (`restartBelow`, `restartSkip`), judged
-  on the coins where the count reads lower. The first check stays at the
-  twelfth tsum (`checkMinSpan`): moved to the eighth, it read the first
-  links' late coins as a stall and walked chains of 9-10 back.
-- **Gaston's passes pass over a lookalike.** A game box can hold a second
-  dark-haired tsum that clusters with Gaston by colour, and a finger on one
-  paints only its own kind: `gaston_134.mp4`'s heads painted 6-17 of 23-30,
-  the route ran over the lookalikes, the read then took the real Gastons for
-  leftovers, and the whole round drew 3-17 first chains. A head that paints
-  under `strayPaint` (12) and under half its cluster is lifted, and the next
-  start is tried clear of everything it painted (`stray`).
-- **Gaston's last cancel lets go 120ms later** (`closeSlackMs`). Over
-  `gaston_130`-`133.mp4` the closing pass was through its refill gate a
-  median 113ms before the antlers left and waited 162ms for them; that time
-  now goes to the two cancelled chains, whose medians sat at 30 and 31.
-- **Three native-image throw windows closed.** The host keeps every capture
-  until `releaseImage`, so a native throwing between a capture and its guard
-  leaked a frame for the rest of the run: `buildBoardGray` and `tiaraCapture`
-  now release on a throw before the return, and `scanBoardQuick`'s overload
-  tap moved inside its `try`. Nothing leaked on a normal path.
+- **Play job due right after a round** (a job may return `true`), so the
+  finished tally no longer sits 3s before Play.
+- **Unlock Level and Box Buying no longer loop**: `taskBody` drops their "ran"
+  `true`, which the scheduler read as "due again".
+- **Level-cap rewind waits for the grid** (`awaitCollectionLoaded`); placeholder
+  cards had passed the first-page check on any page.
+- **Box reveals close under the Quick Bar**: `ClosePage` presses Close too.
+- **`globals.d.ts` declares only real host natives** (12 phantoms dropped); one
+  threw mid-drag with the finger down. `gastonLinkChain` lifts it on any throw.
+- **Native images released on a throw** in `buildBoardGray`, `tiaraCapture` and
+  `scanBoardQuick`.
 
 ## [2.1b2]
 
