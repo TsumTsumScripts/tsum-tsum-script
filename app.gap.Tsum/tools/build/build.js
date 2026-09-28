@@ -302,6 +302,8 @@ async function main() {
   if (has('adb')) {
     const device = valueOf('device') || firstEmulator();
     console.log(`[build] pushing to ${device}...`);
+    // A multi-file push fails if the target folder is missing.
+    await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'shell', 'mkdir', '-p', `'${DEPLOY_DIR}'`]);
     await sh((text) => process.stdout.write(text), 'adb', [
       '-s', device, 'push',
       'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
