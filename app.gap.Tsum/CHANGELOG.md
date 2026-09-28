@@ -44,6 +44,13 @@ release note; they fold back in here when she ships.
 ### Summary
 
 - Settings page reorganized: Skills, Round (chain limits and bonuses) and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
+- Japanese (日本語) added as a language for the settings page, Quick Bar and log.
+
+### Added
+
+- **Japanese** (`ja-JP`): `src/uiJa.ts` and `src/logsJa.ts`. Bubbles are ボム, as in
+  the Japanese game. Skill, box and Quick Bar labels stay English, as in zh-TW;
+  every log sentence is translated.
 
 ### Changed
 
