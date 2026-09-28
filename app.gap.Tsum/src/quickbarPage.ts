@@ -109,14 +109,17 @@ function qbBridge(): typeof JavaScriptInterface | undefined {
  * before any script is loaded. This one has three lines to write and always has
  * an engine to write them with, so it borrows that one instead of being a third
  * implementation of the same record shape.
+ *
+ * Through the blocking Eval for the reason `qbBanner` gives: a `runScript` is
+ * counted as a run, and one ending while stopped clears the banner.
  */
 function qbWrite(writer: string, event: string, message: string, fields?: object): void {
     var bridge = qbBridge();
     if (bridge === undefined) {
         return;
     }
-    bridge.runScript(writer + '(' + JSON.stringify(event) + ',' + JSON.stringify(message)
-        + (fields === undefined ? '' : ',' + JSON.stringify(fields)) + ');');
+    bridge.runScriptCallback(writer + '(' + JSON.stringify(event) + ',' + JSON.stringify(message)
+        + (fields === undefined ? '' : ',' + JSON.stringify(fields)) + ');', 'qbIgnoreAnswer');
 }
 
 function qbLog(event: string, message: string, fields?: object): void {
@@ -981,14 +984,26 @@ function qbCopyDone(ok: boolean): void {
     }
 }
 
-/** One line in the floating window's banner, shown once. */
+/**
+ * One line in the floating window's banner, shown once.
+ *
+ * Through `runScriptCallback` (the host's blocking Eval), not `runScript`:
+ * `runScript` is how a run is started, so the host counts it as one, and its
+ * ending flips a stopped script back to idle -- which clears every banner,
+ * this one included.
+ */
 function qbBanner(text: string): void {
     var bridge = qbBridge();
     if (bridge === undefined) {
         return;
     }
-    bridge.runScript('typeof showBanner === "function" && showBanner('
-        + JSON.stringify(text) + ', 3000, 1)');
+    bridge.runScriptCallback('typeof showBanner === "function" && showBanner('
+        + JSON.stringify(text) + ', 3000, 1)', 'qbIgnoreAnswer');
+}
+
+/** A callback for evaluations whose answer nothing needs. */
+// noinspection JSUnusedGlobalSymbols
+function qbIgnoreAnswer(): void {
 }
 
 /**

@@ -68,7 +68,8 @@ release note; they fold back in here when she ships.
   `PageMessage.CopyShareCode` and the settings page (which owns the codec)
   copies from the store and answers `ShareCodeCopied`/`NotCopied`. Both chips
   sweep (`data-busy`, `qbBusyStart`/`qbBusyEnd`) until answered, and the outcome
-  is a banner rather than a colour.
+  is a banner rather than a colour. The strip's banners and log lines go through
+  `runScriptCallback`: a `runScript` counts as a run, and its end cleared them.
 - **`ts.runClock`** counts round time at every round end (stats on or off) for
   page two's readout.
 
