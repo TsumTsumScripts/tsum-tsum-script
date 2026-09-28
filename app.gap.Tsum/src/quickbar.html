@@ -29,8 +29,8 @@
       be iterated on directly, and quickbar.css is the other half of it.
 
       The strip is two pages of controls drawn in the same place, a side
-      column with the page toggle over the Report button, and a readout that
-      pages with them -- coins on page one, times on page two. Page one is a grid of three columns and two rows: column one is
+      column with the page toggle over the Report button, and a readout with
+      its own toggle between coins and times. Page one is a grid of three columns and two rows: column one is
       the skill name over its level and the two bonus chips; column two is the
       scan stepper over the chain stepper; column three is the preset over the
       bubble strategy. Every stepper and toggle is exactly as wide as its own
@@ -61,13 +61,15 @@
           engine to write an issue report of what is on screen;
         * `.qb-page-toggle` flips `<body data-page>` between `1` and `2`, which
           is what the CSS shows a `.qb-page[data-page]` from. It and Report
-          share `.qb-side`, the one patch live while the run is *going*, not
-          only paused -- the script names its rect to the host, which keeps it
-          touchable;
+          share `.qb-side`, which with `.qb-readout-toggle` is the one patch
+          live while the run is *going*, not only paused -- the script names
+          its rect to the host, which keeps it touchable;
         * a cell with a `data-key` is given `data-when` -- `now` or `nextRound`
           -- while a round is being played, and the CSS colours it from that;
         * the readouts are `#baseCoinAvg`, `#finalCoinAvg` and `#roundCount`,
-          and on page two `#avgRoundTime`, `#playedTime` and `#runTime`;
+          and on the times table `#avgRoundTime`, `#playedTime` and `#runTime`;
+        * `.qb-readout-toggle` flips `<body data-readout>` between `coins` and
+          `times`; it sits outside `.qb-controls`, so it is never disabled;
         * `<body>` carries `data-state`, which is what the CSS reads;
         * every control is a `<button>` inside `.qb-controls` -- that is what
           quickbarPage.ts disables while the script is running, `.qb-side`
@@ -120,8 +122,9 @@
     it; the rules are under *a short band* in quickbar.css.
 
     `data-page` is which page of controls is showing, flipped by the page toggle.
+    `data-readout` is which table the readout shows, flipped by its own toggle.
   -->
-  <body data-state="idle" data-dense="false" data-page="1">
+  <body data-state="idle" data-dense="false" data-page="1" data-readout="coins">
     <div class="qb">
       <div class="qb-controls">
 
@@ -340,15 +343,24 @@
         the script was last initialized" means. Shown whether or not the script
         is paused: this half is a readout, not a control.
 
+        Two tables in one chip, one showing at a time: coins, or times. The
+        dots on the chip's left edge are `.qb-readout-toggle`, which flips
+        `<body data-readout>` between `coins` and `times`. It is named to the
+        host with the side column, so it works mid-run too.
+
         A table because that is what the three are: a name against a figure,
         three times over. The figures share one right edge so their digits line
-        up down the block -- base over final is a comparison, and a comparison
-        wants a column -- and each name is its row's `<th>`, which is what a row
-        heading is. Rows are `.qb-stat`; the last is also `.qb-stat-rounds`,
-        which is how the CSS knows it is a count and not a coin figure.
+        up down the block, and each name is its row's `<th>`. Rows are
+        `.qb-stat`; the last is also `.qb-stat-rounds`, drawn quieter.
       -->
       <div class="qb-readouts">
-      <table class="qb-stats" data-page="1">
+      <button class="qb-readout-toggle" type="button">
+        <span class="qb-dot" aria-hidden="true"></span>
+        <span class="qb-dot" aria-hidden="true"></span>
+        <span class="qb-sr" data-i18n="qb.readout">Coins or times</span>
+      </button>
+      <div class="qb-readout-tables">
+      <table class="qb-stats" data-readout="coins">
         <tbody>
           <tr class="qb-stat">
             <th class="qb-stat-label" scope="row" data-i18n="qb.base">Base</th>
@@ -366,11 +378,11 @@
       </table>
 
       <!--
-        Page two's readout, in the same place: the average round (m:ss), the
-        total time spent in rounds (hh:mm), and how long the run has gone since
-        start(), pauses included (hh:mm).
+        The times: the average round (m:ss), the total time spent in rounds
+        (hh:mm), and how long the run has gone since start(), pauses included
+        (hh:mm).
       -->
-      <table class="qb-stats" data-page="2">
+      <table class="qb-stats" data-readout="times">
         <tbody>
           <tr class="qb-stat">
             <th class="qb-stat-label" scope="row" data-i18n="qb.avgRound">Avg</th>
@@ -386,6 +398,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
       </div>
     </div>
 

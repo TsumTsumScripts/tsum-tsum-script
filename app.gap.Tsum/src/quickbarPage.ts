@@ -388,7 +388,7 @@ var qbHotspotSent = '';
 
 /**
  * Tells the host where the side column is, so Report and the page toggle stay
- * pressable mid-run.
+ * pressable mid-run -- and the readout toggle beside it, in the same rect.
  *
  * The strip's window is untouchable while the script runs -- a touchable
  * overlay would eat the taps the script injects -- so a press on Report used
@@ -411,10 +411,19 @@ function qbNameHotspot(): void {
         return;
     }
     var box = side.getBoundingClientRect();
+    var right = box.right;
+    var bottom = box.bottom;
+    // The readout toggle sits just right of the side column; one rect covers both.
+    var readout = document.querySelector('.qb-readout-toggle');
+    if (readout !== null) {
+        var rbox = readout.getBoundingClientRect();
+        right = Math.max(right, rbox.right);
+        bottom = Math.max(bottom, rbox.bottom);
+    }
     var left = Math.floor(box.left);
     var top = Math.floor(box.top);
-    var width = Math.ceil(box.right) - left;
-    var height = Math.ceil(box.bottom) - top;
+    var width = Math.ceil(right) - left;
+    var height = Math.ceil(bottom) - top;
     var key = left + ',' + top + ',' + width + ',' + height;
     if (key === qbHotspotSent) {
         return;
@@ -1220,6 +1229,15 @@ function qbBind(): void {
         pageToggle.addEventListener('click', function () {
             var body = document.body;
             body.setAttribute('data-page', body.getAttribute('data-page') === '2' ? '1' : '2');
+        });
+    }
+
+    // Only the view as well: coins or times in the readout. The CSS reads `data-readout`.
+    var readoutToggle = document.querySelector('.qb-readout-toggle');
+    if (readoutToggle !== null) {
+        readoutToggle.addEventListener('click', function () {
+            var body = document.body;
+            body.setAttribute('data-readout', body.getAttribute('data-readout') === 'times' ? 'coins' : 'times');
         });
     }
 

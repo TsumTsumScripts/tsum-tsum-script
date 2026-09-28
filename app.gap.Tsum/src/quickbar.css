@@ -510,8 +510,8 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   background: var(--qb-off);
 }
 
-body[data-page="1"] .qb-dot:nth-child(1),
-body[data-page="2"] .qb-dot:nth-child(2) { background: var(--qb-on); }
+body[data-page="1"] .qb-page-toggle .qb-dot:nth-child(1),
+body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-on); }
 
 /*
  * Report is deliberately quiet -- the same chip fill as the rest, with the
@@ -588,29 +588,57 @@ body[data-page="2"] .qb-dot:nth-child(2) { background: var(--qb-on); }
   stroke-linecap: round;
 }
 
-/* --- the readout: coins, or times on page two --------------------------- */
-
-/* Both tables in one grid area, paged with the controls, so neither jumps. */
-.qb-readouts {
-  flex: 0 0 auto;
-  display: grid;
-}
-
-.qb-readouts > .qb-stats { grid-area: 1 / 1; }
+/* --- the readout: coins, or times --------------------------------------- */
 
 /*
- * A two-column table in a chip of its own on the strip's right edge: the names
- * down the left, the figures down the right on one edge, three rows ruled apart.
- * The block is the strip's one piece of pure reading, so it is laid out to be
- * scanned down rather than across -- base against final is the comparison worth
+ * A chip of its own on the strip's right edge: the toggle down its left side,
+ * then a two-column table -- names down the left, figures down the right on one
+ * edge, three rows ruled apart. Base against final is the comparison worth
  * making, and that wants the two figures in a column with their digits aligned.
  */
-.qb-stats {
+.qb-readouts {
   flex: 0 0 auto;
+  display: flex;
+  align-items: stretch;
+  background: var(--qb-chip);
+  border: 1px solid var(--qb-chip-edge);
+  border-radius: 10px;
+}
+
+/* Two dots stacked, the lit one being the table on screen. The chip's full
+   height, so it is an easy tap. Never disabled: it only changes the view. */
+.qb-readout-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(4 * var(--qb-u));
+  padding: 0 calc(4 * var(--qb-u));
+  border: 0;
+  border-right: 1px solid var(--qb-chip-edge);
+  border-radius: 9px 0 0 9px;
+  background: transparent;
+  font: inherit;
+}
+
+.qb-readout-toggle:active { background: #2b323b; }
+
+body[data-readout="coins"] .qb-readout-toggle .qb-dot:nth-child(1),
+body[data-readout="times"] .qb-readout-toggle .qb-dot:nth-child(2) { background: var(--qb-accent); }
+
+/* Both tables in one grid area, so the chip is as wide as the wider and does
+   not jump when it flips. Hidden rather than removed for the same reason. */
+.qb-readout-tables { display: grid; }
+
+.qb-readout-tables > .qb-stats { grid-area: 1 / 1; }
+
+body[data-readout="coins"] .qb-stats[data-readout="times"],
+body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden; }
+
+.qb-stats {
   /*
-   * Separate rather than collapsed: `border-radius` on a table is only honoured
-   * in the separate model, and the rules between rows are drawn on the cells
-   * below anyway -- a border on a `<tr>` is not painted here.
+   * Separate rather than collapsed: the rules between rows are drawn on the
+   * cells below, and a border on a `<tr>` is not painted here.
    */
   border-collapse: separate;
   border-spacing: 0;
@@ -619,10 +647,7 @@ body[data-page="2"] .qb-dot:nth-child(2) { background: var(--qb-on); }
    * ~52 of the 54px the band leaves at full size, and the slack that buys is
    * what keeps a descender off the hairline under it.
    */
-  padding: calc(var(--qb-vpad) / 2) calc(7 * var(--qb-u));
-  background: var(--qb-chip);
-  border: 1px solid var(--qb-chip-edge);
-  border-radius: 10px;
+  padding: calc(var(--qb-vpad) / 2) calc(7 * var(--qb-u)) calc(var(--qb-vpad) / 2) calc(6 * var(--qb-u));
 }
 
 /* The hairline between two readings, on the cells for the reason above. */

@@ -46,7 +46,7 @@ release note; they fold back in here when she ships.
 - Settings page reorganized: Skills, Round (chain limits and bonuses) and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
 - Japanese (日本語) added as a language for the settings page, Quick Bar and log.
 - Copy with settings list option added: a copied settings code can carry a short list of its skill type and the settings changed from default.
-- Quick Bar gained a second page, switched by the dots beside Report: heart sending and one-by-one receiving, Unlock now, Copy settings code, the other bonus items, and round/run times.
+- Quick Bar gained a second page, switched by the dots beside Report: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout has its own toggle to show round/run times.
 
 ### Added
 
@@ -70,8 +70,11 @@ release note; they fold back in here when she ships.
   sweep (`data-busy`, `qbBusyStart`/`qbBusyEnd`) until answered, and the outcome
   is a banner rather than a colour. The strip's banners and log lines go through
   `runScriptCallback`: a `runScript` counts as a run, and its end cleared them.
+- **Readout toggle**: two stacked dots on the coin readout's left edge flip
+  `<body data-readout>` between the coins and times tables, independent of the
+  page. `qbNameHotspot` sends one rect covering the side column and this toggle.
 - **`ts.runClock`** counts round time at every round end (stats on or off) for
-  page two's readout.
+  the readout's times table.
 
 ### Changed
 

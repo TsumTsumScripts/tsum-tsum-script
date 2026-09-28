@@ -417,6 +417,8 @@ declare const enum UiText {
   QbLevelsNotQueued = 'qb.levelsNotQueued',
   /** The page toggle's accessible name; the chip itself draws two dots. */
   QbPage = 'qb.page',
+  /** The readout toggle's accessible name; the chip itself draws two dots. */
+  QbReadout = 'qb.readout',
   QbScan = 'qb.scan',
   QbChain = 'qb.chain',
   QbPreset = 'qb.preset',

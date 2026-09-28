@@ -348,6 +348,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.QbLevelsAlreadyQueued]: 'Level caps are already queued',
     [UiText.QbLevelsNotQueued]: 'Could not queue raising level caps',
     [UiText.QbPage]: 'Switch page',
+    [UiText.QbReadout]: 'Coins or times',
     [UiText.QbScan]: 'Scan',
     [UiText.QbChain]: 'Chain',
     [UiText.QbPreset]: 'Preset',
