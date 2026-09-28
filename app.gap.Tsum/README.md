@@ -111,10 +111,15 @@ steps aside and the log moves up over it.
 | Preset | Not one setting: which saved configuration is loaded. Tap it to switch |
 | Bubble | Bubble strategy, short: **1 mid**, **All mid**, **All now** |
 | ●● (page dots) | Not a setting: switches the strip to its second page and back. The lit dot is the page on screen |
+| ♥ Send, ♥ 1-by-1 | *Page two.* Auto Send Hearts and Receive Hearts One By One. These take effect mid-run: the chore is added or dropped straight away |
+| Unlock | *Page two.* Not a setting: raises level caps once the current round is over, like the Now button beside Unlock Level. Needs a run |
+| Copy code | *Page two.* Not a setting: copies your settings code, as the Copy button on the settings panel does. The chip turns teal when it is on the clipboard |
 | +Score, +Exp, +Time, +Bubble, +Combo | *Page two.* The other bonus items |
-| Reach | *Page two.* Link reach, in steps of 10% |
-| MyTsum, Fan, Auto tap | *Page two.* Link MyTsum first, Use Fan, Auto Tap Skill |
 | ⚠ Report | Not a setting either: saves a report of what is on screen — see [Reporting a problem](#reporting-a-problem). It and the page dots are the only buttons here that work while the script is still playing; everything else needs it paused |
+
+**Page two's readout** swaps the coin figures for times: **Avg** is the average
+round (m:ss), **Played** the total time spent in rounds, and **Run** how long the
+script has been going, pauses included (both hh:mm).
 
 **Preset** shows the name of the preset your settings currently are, or *No
 preset* when they are not any of them, and tapping it lists the ones you have

@@ -176,8 +176,8 @@ body {
 
 .qb-page { grid-area: 1 / 1; }
 
-body[data-page="1"] .qb-page[data-page="2"],
-body[data-page="2"] .qb-page[data-page="1"] { visibility: hidden; }
+body[data-page="1"] [data-page="2"],
+body[data-page="2"] [data-page="1"] { visibility: hidden; }
 
 /* Page two: two rows of chips, each row as wide as its own. */
 .qb-rows {
@@ -357,6 +357,32 @@ body[data-page="2"] .qb-page[data-page="1"] { visibility: hidden; }
   color: var(--qb-on);
 }
 
+/* --- action chips: Unlock, Copy code ----------------------------------- */
+
+/*
+ * The toggle's shape, but full ink: an action has no off state to look muted
+ * in. `data-said` flashes the outcome for a few seconds (quickbarPage.ts).
+ */
+.qb-action {
+  flex: 0 0 auto;
+  height: 100%;
+  padding: 0 calc(7 * var(--qb-u));
+  border: 1px solid var(--qb-chip-edge);
+  border-radius: var(--qb-radius);
+  background: var(--qb-chip);
+  color: var(--qb-ink);
+  font: inherit;
+  font-size: calc(11 * var(--qb-u));
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.qb-action:active { background: #2b323b; }
+.qb-action[data-said="done"] { border-color: var(--qb-on); color: var(--qb-on); }
+.qb-action[data-said="failed"] { border-color: var(--qb-accent); color: var(--qb-accent); }
+/* Unlike a toggle, an action has no value to keep showing when it cannot act. */
+.qb-action:disabled { border-color: var(--qb-chip-edge-off); color: var(--qb-off); }
+
 /* --- the wide chips: the preset and the bubble strategy ------------------ */
 
 /*
@@ -534,7 +560,15 @@ body[data-page="2"] .qb-dot:nth-child(2) { background: var(--qb-on); }
   stroke-linecap: round;
 }
 
-/* --- the coin readout --------------------------------------------------- */
+/* --- the readout: coins, or times on page two --------------------------- */
+
+/* Both tables in one grid area, paged with the controls, so neither jumps. */
+.qb-readouts {
+  flex: 0 0 auto;
+  display: grid;
+}
+
+.qb-readouts > .qb-stats { grid-area: 1 / 1; }
 
 /*
  * A two-column table in a chip of its own on the strip's right edge: the names

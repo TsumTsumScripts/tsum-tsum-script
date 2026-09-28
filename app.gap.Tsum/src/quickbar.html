@@ -29,8 +29,8 @@
       be iterated on directly, and quickbar.css is the other half of it.
 
       The strip is two pages of controls drawn in the same place, a side
-      column with the page toggle over the Report button, and the coin
-      readout. Page one is a grid of three columns and two rows: column one is
+      column with the page toggle over the Report button, and a readout that
+      pages with them -- coins on page one, times on page two. Page one is a grid of three columns and two rows: column one is
       the skill name over its level and the two bonus chips; column two is the
       scan stepper over the chain stepper; column three is the preset over the
       bubble strategy. Every stepper and toggle is exactly as wide as its own
@@ -55,7 +55,9 @@
         * `.qb-preset` is one of the two controls that are not a single setting,
           so it has no `data-key`: it draws the loaded preset's name into
           `.qb-preset-value` and opens the list of them when tapped;
-        * `.qb-report` is the other, and changes nothing at all: it asks the
+        * `.qb-unlock-now` and `.qb-copy-share` are actions on page two, not
+          settings, and have no `data-key` either;
+        * `.qb-report` changes nothing at all: it asks the
           engine to write an issue report of what is on screen;
         * `.qb-page-toggle` flips `<body data-page>` between `1` and `2`, which
           is what the CSS shows a `.qb-page[data-page]` from. It and Report
@@ -64,7 +66,8 @@
           touchable;
         * a cell with a `data-key` is given `data-when` -- `now` or `nextRound`
           -- while a round is being played, and the CSS colours it from that;
-        * the readouts are `#baseCoinAvg`, `#finalCoinAvg` and `#roundCount`;
+        * the readouts are `#baseCoinAvg`, `#finalCoinAvg` and `#roundCount`,
+          and on page two `#avgRoundTime`, `#playedTime` and `#runTime`;
         * `<body>` carries `data-state`, which is what the CSS reads;
         * every control is a `<button>` inside `.qb-controls` -- that is what
           quickbarPage.ts disables while the script is running, `.qb-side`
@@ -240,10 +243,31 @@
         </div>
 
         <!--
-          Page two: the settings that did not fit on page one. Two rows of
-          chips, each as wide as its own word.
+          Page two: the hearts chores and two one-off actions over the other
+          bonus items. Each chip is as wide as its own word.
+
+          `.qb-unlock-now` and `.qb-copy-share` are actions, not settings, so
+          they carry no `data-key`; quickbarPage.ts finds them by class.
+          Unlock queues the level-cap sweep (`unlockLevelsNow`) and needs a
+          run; Copy code asks the settings page, which owns the share-code
+          format, to put the code on the clipboard.
         -->
         <div class="qb-page qb-rows" data-page="2">
+          <div class="qb-cluster">
+            <div class="qb-cell" data-key="sendHeartsAuto">
+              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.sendHearts">&#9829;&#65038; Send</button>
+            </div>
+            <div class="qb-cell" data-key="receiveHeartsOneByOne">
+              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.receiveOneByOne">&#9829;&#65038; 1-by-1</button>
+            </div>
+            <div class="qb-cell">
+              <button class="qb-action qb-unlock-now" type="button" data-i18n="qb.unlockNow">Unlock</button>
+            </div>
+            <div class="qb-cell">
+              <button class="qb-action qb-copy-share" type="button" data-i18n="qb.copyShare">Copy code</button>
+            </div>
+          </div>
+
           <div class="qb-cluster">
             <div class="qb-cell" data-key="bonusScore">
               <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.bonusScore">+Score</button>
@@ -259,30 +283,6 @@
             </div>
             <div class="qb-cell" data-key="bonusCombo">
               <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.bonusCombo">+Combo</button>
-            </div>
-          </div>
-
-          <div class="qb-cluster">
-            <!-- Steps by 10, as the settings row does; 1% is not a change you
-                 could see in play. -->
-            <div class="qb-cell" data-key="linkReachPercent" data-min="150" data-max="350">
-              <div class="qb-stepper">
-                <button class="qb-step" type="button" data-step="-10">&minus;</button>
-                <span class="qb-readout">
-                  <span class="qb-name" data-i18n="qb.reach">Reach</span>
-                  <span class="qb-value">&mdash;</span>
-                </span>
-                <button class="qb-step" type="button" data-step="10">+</button>
-              </div>
-            </div>
-            <div class="qb-cell" data-key="prioritizeMyTsum">
-              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.myTsum">MyTsum</button>
-            </div>
-            <div class="qb-cell" data-key="useFan">
-              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.fan">Fan</button>
-            </div>
-            <div class="qb-cell" data-key="skillAutoTap">
-              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.autoTap">Auto tap</button>
             </div>
           </div>
         </div>
@@ -341,7 +341,8 @@
         heading is. Rows are `.qb-stat`; the last is also `.qb-stat-rounds`,
         which is how the CSS knows it is a count and not a coin figure.
       -->
-      <table class="qb-stats">
+      <div class="qb-readouts">
+      <table class="qb-stats" data-page="1">
         <tbody>
           <tr class="qb-stat">
             <th class="qb-stat-label" scope="row" data-i18n="qb.base">Base</th>
@@ -357,6 +358,29 @@
           </tr>
         </tbody>
       </table>
+
+      <!--
+        Page two's readout, in the same place: the average round (m:ss), the
+        total time spent in rounds (hh:mm), and how long the run has gone since
+        start(), pauses included (hh:mm).
+      -->
+      <table class="qb-stats" data-page="2">
+        <tbody>
+          <tr class="qb-stat">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.avgRound">Avg</th>
+            <td class="qb-stat-value" id="avgRoundTime">&mdash;</td>
+          </tr>
+          <tr class="qb-stat">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.inRounds">Played</th>
+            <td class="qb-stat-value" id="playedTime">&mdash;</td>
+          </tr>
+          <tr class="qb-stat qb-stat-rounds">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.running">Run</th>
+            <td class="qb-stat-value" id="runTime">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
     </div>
 
     <!--

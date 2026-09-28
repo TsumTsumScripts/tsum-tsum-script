@@ -400,10 +400,10 @@ declare const enum UiText {
   QbBonusTime = 'qb.bonusTime',
   QbBonusBubble = 'qb.bonusBubble',
   QbBonusCombo = 'qb.bonusCombo',
-  QbReach = 'qb.reach',
-  QbMyTsum = 'qb.myTsum',
-  QbFan = 'qb.fan',
-  QbAutoTap = 'qb.autoTap',
+  QbSendHearts = 'qb.sendHearts',
+  QbReceiveOneByOne = 'qb.receiveOneByOne',
+  QbUnlockNow = 'qb.unlockNow',
+  QbCopyShare = 'qb.copyShare',
   /** The page toggle's accessible name; the chip itself draws two dots. */
   QbPage = 'qb.page',
   QbScan = 'qb.scan',
@@ -414,6 +414,9 @@ declare const enum UiText {
   QbBase = 'qb.base',
   QbFinal = 'qb.final',
   QbRounds = 'qb.rounds',
+  QbAvgRound = 'qb.avgRound',
+  QbInRounds = 'qb.inRounds',
+  QbRunning = 'qb.running',
 }
 
 /**

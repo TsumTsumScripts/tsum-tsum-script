@@ -327,6 +327,10 @@ function onGapState(json: string): void {
  */
 // noinspection JSUnusedGlobalSymbols
 function onGapMessage(topic: string): void {
+    if (topic === PageMessage.ShareCodeCopied || topic === PageMessage.ShareCodeNotCopied) {
+        qbSay('.qb-copy-share', topic === PageMessage.ShareCodeCopied ? 'done' : 'failed');
+        return;
+    }
     if (topic !== PageMessage.LiveSettings && topic !== PageMessage.Presets) {
         return;
     }
@@ -362,7 +366,9 @@ function qbSetEnabled(enabled: boolean): void {
         if (button.classList.contains('qb-report') || button.classList.contains('qb-page-toggle')) {
             continue;
         }
-        button.disabled = !enabled;
+        // Unlock acts on a run, so it also needs one.
+        button.disabled = !enabled
+            || (button.classList.contains('qb-unlock-now') && !qbActive);
     }
 }
 
@@ -569,6 +575,9 @@ function qbRender(): void {
     qbSetStat('baseCoinAvg', qbState.baseCoinAvg);
     qbSetStat('finalCoinAvg', qbState.finalCoinAvg);
     qbSetStat('roundCount', qbState.rounds);
+    qbSetTime('avgRoundTime', qbState.avgRoundSec, false);
+    qbSetTime('playedTime', qbState.playedSec, true);
+    qbSetTime('runTime', qbState.runSec, true);
     qbRenderPreset();
 }
 
@@ -638,6 +647,22 @@ function qbSetStat(id: string, value: string | number | boolean | undefined): vo
     }
     element.textContent = typeof value === 'number' && value >= 0
         ? qbGrouped(value) : '—';
+}
+
+/** Seconds as `hh:mm`, or `m:ss` for a round; a dash for no value. */
+function qbSetTime(id: string, value: string | number | boolean | undefined, hours: boolean): void {
+    var element = document.getElementById(id);
+    if (element === null) {
+        return;
+    }
+    if (typeof value !== 'number' || value < 0) {
+        element.textContent = '—';
+        return;
+    }
+    var pad = function (n: number): string { return (n < 10 ? '0' : '') + n; };
+    element.textContent = hours
+        ? pad(Math.floor(value / 3600)) + ':' + pad(Math.floor(value / 60) % 60)
+        : Math.floor(value / 60) + ':' + pad(value % 60);
 }
 
 /** Thousands separated by hand: `toLocaleString` is not reliable in this WebView. */
@@ -853,6 +878,63 @@ function onQuickBarReport(answer: string): void {
     }, QB_REPORT_SAID_MS);
 }
 
+/** How long an action chip shows what happened. */
+var QB_SAID_MS = 3000;
+var qbSaidTimers: { [selector: string]: number } = {};
+
+/** Marks an action chip `done` or `failed` for a few seconds; see quickbar.css. */
+function qbSay(selector: string, said: string): void {
+    var chip = document.querySelector(selector);
+    if (chip === null) {
+        return;
+    }
+    chip.setAttribute('data-said', said);
+    if (qbSaidTimers[selector] !== undefined) {
+        clearTimeout(qbSaidTimers[selector]);
+    }
+    qbSaidTimers[selector] = setTimeout(function () {
+        chip!.removeAttribute('data-said');
+        delete qbSaidTimers[selector];
+    }, QB_SAID_MS);
+}
+
+/**
+ * Queues the level-cap sweep on the run, as the settings page's Now button
+ * does. It runs once the run is resumed and the current round is over.
+ */
+function qbUnlockNow(): void {
+    var bridge = qbBridge();
+    if (!qbActive || !qbLive || bridge === undefined) {
+        return;
+    }
+    qbLogInfo(Log.QuickBar.UnlockNowAsked, 'Level caps asked for from the Quick Bar');
+    bridge.runScriptCallback('typeof unlockLevelsNow === "function" ? unlockLevelsNow() : "no script"',
+        'onQuickBarUnlockNow');
+}
+
+/** `queued` or `already queued` is success; anything else is a refusal. */
+// noinspection JSUnusedGlobalSymbols
+function onQuickBarUnlockNow(answer: string): void {
+    var said = String(answer);
+    qbSay('.qb-unlock-now', said === 'queued' || said === 'already queued' ? 'done' : 'failed');
+}
+
+/**
+ * Asks the settings page for the share code -- it owns the format. The store is
+ * flushed first because that is what the code is built from; the answer comes
+ * back through `onGapMessage`.
+ */
+function qbCopyShare(): void {
+    var bridge = qbBridge();
+    if (bridge === undefined || bridge.broadcast === undefined) {
+        qbSay('.qb-copy-share', 'failed');
+        return;
+    }
+    qbFlushApplies();
+    qbLogInfo(Log.QuickBar.CopyShareAsked, 'Share code asked for from the Quick Bar');
+    bridge.broadcast(PageMessage.CopyShareCode);
+}
+
 /**
  * Tells the settings page that the running world has moved.
  *
@@ -1050,6 +1132,15 @@ function qbBind(): void {
     var report = document.querySelector('.qb-report');
     if (report !== null) {
         report.addEventListener('click', qbReport);
+    }
+
+    var unlock = document.querySelector('.qb-unlock-now');
+    if (unlock !== null) {
+        unlock.addEventListener('click', qbUnlockNow);
+    }
+    var copyShare = document.querySelector('.qb-copy-share');
+    if (copyShare !== null) {
+        copyShare.addEventListener('click', qbCopyShare);
     }
 
     // Only the view: which page of cells is on screen. The CSS reads `data-page`.

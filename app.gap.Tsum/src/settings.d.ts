@@ -95,6 +95,14 @@ declare const enum PageMessage {
    * the strip re-reads the list it draws its names from.
    */
   Presets = 'presets',
+  /**
+   * The strip asking the settings page to copy the share code: that page owns
+   * the format. Built from the store, which the strip flushes first.
+   */
+  CopyShareCode = 'copyShareCode',
+  /** The settings page's answer to `CopyShareCode`. */
+  ShareCodeCopied = 'shareCodeCopied',
+  ShareCodeNotCopied = 'shareCodeNotCopied',
 }
 
 /**

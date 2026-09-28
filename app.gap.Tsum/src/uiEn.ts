@@ -334,10 +334,11 @@ i18nRegister(Locale.English, 'English', {
     [UiText.QbBonusTime]: '+Time',
     [UiText.QbBonusBubble]: '+Bubble',
     [UiText.QbBonusCombo]: '+Combo',
-    [UiText.QbReach]: 'Reach',
-    [UiText.QbMyTsum]: 'MyTsum',
-    [UiText.QbFan]: 'Fan',
-    [UiText.QbAutoTap]: 'Auto tap',
+    // U+FE0E keeps the heart a text glyph rather than an emoji.
+    [UiText.QbSendHearts]: '\u2665\uFE0E Send',
+    [UiText.QbReceiveOneByOne]: '\u2665\uFE0E 1-by-1',
+    [UiText.QbUnlockNow]: 'Unlock',
+    [UiText.QbCopyShare]: 'Copy code',
     [UiText.QbPage]: 'Switch page',
     [UiText.QbScan]: 'Scan',
     [UiText.QbChain]: 'Chain',
@@ -347,4 +348,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.QbBase]: 'Base',
     [UiText.QbFinal]: 'Final',
     [UiText.QbRounds]: 'Rounds',
+    [UiText.QbAvgRound]: 'Avg',
+    [UiText.QbInRounds]: 'Played',
+    [UiText.QbRunning]: 'Run',
 } satisfies UiStrings);

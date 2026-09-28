@@ -484,6 +484,8 @@ namespace Log {
     PresetApplied  = 'quickBar.presetApplied',
     ReportAsked    = 'quickBar.reportAsked',
     ReportFailed   = 'quickBar.reportFailed',
+    UnlockNowAsked = 'quickBar.unlockNowAsked',
+    CopyShareAsked = 'quickBar.copyShareAsked',
     UnknownSetting = 'quickBar.unknownSetting',
   }
 }

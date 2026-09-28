@@ -1169,7 +1169,24 @@ function onGapMessage(topic: string): void {
         refreshPresetLabel();
         refreshPresetPanel();
         pullLiveSettings(true);
+    } else if (topic === PageMessage.CopyShareCode) {
+        copySettingsCodeForStrip();
     }
+}
+
+/**
+ * The strip's Copy share chip. From the store rather than the form: the strip
+ * writes the store and flushed it before asking, and the form may not have
+ * caught up. Answers with a topic so the chip can say whether it worked.
+ */
+function copySettingsCodeForStrip(): void {
+    flushSettings();
+    writeClipboard(buildSettingsCode(storedSettings()), function (ok) {
+        var iface = bridge();
+        if (iface !== undefined && iface.broadcast !== undefined) {
+            iface.broadcast(ok ? PageMessage.ShareCodeCopied : PageMessage.ShareCodeNotCopied);
+        }
+    });
 }
 
 /**
