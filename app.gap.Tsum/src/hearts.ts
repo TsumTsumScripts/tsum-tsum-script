@@ -58,6 +58,12 @@ const HeartOkPresses = 3;
  */
 const HeartOkLostPolls = 3;
 /**
+ * Polls before a blue row with no toast counts as sent. The row turns blue
+ * ~0.5s before the toast arrives, so trusting it sooner leaves a late toast
+ * over the list.
+ */
+const HeartNoToastPolls = 6;
+/**
  * Screenfuls one direction may travel. A backstop, not a limit: a ranking runs
  * to a few hundred friends and a screenful is four of them, so this only fires
  * if something keeps reading as movement when the list is not moving.
@@ -146,8 +152,9 @@ Tsum.prototype.heartRowSent = function(heart) {
  *
  * `abortOn` ends the wait early on a screen whose presence makes waiting
  * pointless -- the gift dialog still up after OK -- but only from
- * `HeartOkLostPolls` on. So does `sentRow`: the list back with that row no
- * longer pink means the heart went out with no toast to wait for. The page it
+ * `HeartOkLostPolls` on. So does `sentRow`, from `HeartNoToastPolls` on: the
+ * list back with that row no longer pink means the heart went out with no
+ * toast to wait for. The page it
  * ends on is the answer, so a caller can tell "the screen never moved" from "it
  * moved and the one I wanted never came".
  */
@@ -161,7 +168,7 @@ Tsum.prototype.waitForHeartPage = function(want, polls, abortOn, sentRow) {
     if (abortOn !== undefined && page === abortOn && i >= HeartOkLostPolls) {
       return page;
     }
-    if (sentRow !== undefined && page === PageName.FriendPage && i >= HeartOkLostPolls
+    if (sentRow !== undefined && page === PageName.FriendPage && i >= HeartNoToastPolls
         && this.heartRowSent(sentRow)) {
       return page;
     }
@@ -237,6 +244,7 @@ Tsum.prototype.sendHeartsOnPage = function(stopAtZeroScore) {
   // Rows that would not send. Without them a stuck button is found by every
   // rescan and the loop never ends.
   const refused: number[] = [];
+  let toastChecked = false;
 
   // `mayContinue`: a level-cap sweep asked for from the settings page takes the
   // screen at the next heart rather than the next screenful.
@@ -265,6 +273,18 @@ Tsum.prototype.sendHeartsOnPage = function(stopAtZeroScore) {
       }
     }
     if (next === null) {
+      // A toast that turned up after a no-toast send dims the list, so the scan
+      // reads empty. Clear it and rescan rather than scroll past pink rows.
+      if (result.sent !== 0 && !toastChecked) {
+        toastChecked = true;
+        this.settleScreen(HeartStepSettleMs);
+        if (gPages.detect(1, 300, heartSweepPages()) === PageName.HeartSent) {
+          logDebug(Log.Hearts.SendStep, {step: 'lateToast'});
+          this.tap(Page.HeartSent.back);
+          this.settleScreen(HeartStepSettleMs);
+          continue;
+        }
+      }
       return result;
     }
 

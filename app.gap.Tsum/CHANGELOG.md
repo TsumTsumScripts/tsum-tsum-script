@@ -89,7 +89,10 @@ release note; they fold back in here when she ships.
 - **Faster heart sweep.** `dragList` settles on `settleScreen` instead of a
   fixed 900ms rest (mail scrolls too), and the extra 400ms rest after each
   friend-list scroll is gone. A send whose toast never shows (~6% on BlueStacks,
-  each ~5s of polling) now ends once its row turns blue, and is counted.
+  each ~5s of polling) now ends once its row turns blue, and is counted. The
+  row turns blue ~0.5s before the toast, so that wait is `HeartNoToastPolls`,
+  and a screenful that reads empty after sending clears any late toast before
+  scrolling past its rows.
 
 ## [3.0b4]
 
