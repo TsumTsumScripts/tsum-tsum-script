@@ -2584,33 +2584,29 @@ function shareListingValue(setting: SettingSpec, value: SettingValue): string {
 }
 
 /**
- * Every row a code carries, one line per card in page order, e.g.
- * `[Skill] Skill Type: Burst · Skill Level: 6`. For people, not the parser --
- * pasting it back reads only the code.
+ * The rows the code changes from default, on one line in page order, e.g.
+ * `Skill Type: Elsa · +Coin: On`. For people, not the parser -- pasting it
+ * back reads only the code.
  */
 function buildShareListing(values: SettingValues): string {
-    var lines: string[] = [];
+    var parts: string[] = [];
     for (var t = 0; t < tabs.length; t++) {
         for (var g = 0; g < tabs[t].groups.length; g++) {
-            var group = tabs[t].groups[g];
-            var parts: string[] = [];
-            for (var r = 0; r < group.rows.length; r++) {
-                var row = group.rows[r];
+            var rows = tabs[t].groups[g].rows;
+            for (var r = 0; r < rows.length; r++) {
+                var row = rows[r];
                 var key = row.key as SettingKey;
+                var value = values[key];
                 // Unshown rows take no shared value, so they are not listed.
-                if (isUnsharedSetting(row) || !offeredHere(row.status)) {
+                if (isUnsharedSetting(row) || !offeredHere(row.status)
+                    || value === undefined || value === SHARE_DEFAULTS[key]) {
                     continue;
                 }
-                var value = values[key] !== undefined ? values[key] : SHARE_DEFAULTS[key];
                 parts.push(getTitle(row) + ': ' + shareListingValue(row, value));
-            }
-            if (parts.length > 0) {
-                var title = getTitle(group);
-                lines.push((title !== '' ? '[' + title + '] ' : '') + parts.join(' · '));
             }
         }
     }
-    return lines.join('\n');
+    return parts.length > 0 ? parts.join(' · ') : i18nText(UiText.ShareListingDefaults);
 }
 
 /** `code`, plus the listing under it when the switch is on. */
