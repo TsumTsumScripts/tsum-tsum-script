@@ -357,14 +357,17 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   color: var(--qb-on);
 }
 
-/* --- action chips: Unlock, Copy code ----------------------------------- */
+/* --- action chips: Lvl, Copy code -------------------------------------- */
 
 /*
  * The toggle's shape, but full ink: an action has no off state to look muted
- * in. `data-said` flashes the outcome for a few seconds (quickbarPage.ts).
+ * in, and no lit state either -- the outcome is a banner, not a colour.
  */
 .qb-action {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: calc(3 * var(--qb-u));
   height: 100%;
   padding: 0 calc(7 * var(--qb-u));
   border: 1px solid var(--qb-chip-edge);
@@ -394,8 +397,17 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .qb-action[data-busy] { animation: none; background-image: none; background-color: #2b323b; }
 }
-.qb-action[data-said="done"] { border-color: var(--qb-on); color: var(--qb-on); }
-.qb-action[data-said="failed"] { border-color: var(--qb-accent); color: var(--qb-accent); }
+/* The open padlock on Lvl; `currentColor` so it greys out with the word. */
+.qb-action-glyph {
+  flex: 0 0 auto;
+  width: calc(13 * var(--qb-u));
+  height: calc(13 * var(--qb-u));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 /* Unlike a toggle, an action has no value to keep showing when it cannot act. */
 .qb-action:disabled { border-color: var(--qb-chip-edge-off); color: var(--qb-off); }
 

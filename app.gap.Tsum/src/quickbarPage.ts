@@ -878,24 +878,47 @@ function onQuickBarReport(answer: string): void {
     }, QB_REPORT_SAID_MS);
 }
 
-/** How long an action chip shows what happened. */
-var QB_SAID_MS = 3000;
-var qbSaidTimers: { [selector: string]: number } = {};
+/** The busy animation runs at least this long, so a fast answer still shows it. */
+var QB_BUSY_MIN_MS = 700;
+/** No answer by then counts as a failure. */
+var QB_BUSY_TIMEOUT_MS = 4000;
+/** When each busy action chip started, by selector; absent means idle. */
+var qbBusySince: { [selector: string]: number } = {};
+var qbBusyTimers: { [selector: string]: number } = {};
 
-/** Marks an action chip `done` or `failed` for a few seconds; see quickbar.css. */
-function qbSay(selector: string, said: string): void {
+/**
+ * Starts an action chip's busy sweep (`data-busy`, quickbar.css). False when it
+ * is already busy, so a second tap does nothing. `onTimeout` runs if no answer
+ * ends it first.
+ */
+function qbBusyStart(selector: string, onTimeout: () => void): boolean {
     var chip = document.querySelector(selector);
-    if (chip === null) {
-        return;
+    if (chip === null || qbBusySince[selector] !== undefined) {
+        return false;
     }
-    chip.setAttribute('data-said', said);
-    if (qbSaidTimers[selector] !== undefined) {
-        clearTimeout(qbSaidTimers[selector]);
+    chip.setAttribute('data-busy', 'true');
+    qbBusySince[selector] = Date.now();
+    qbBusyTimers[selector] = setTimeout(onTimeout, QB_BUSY_TIMEOUT_MS);
+    return true;
+}
+
+/** Ends the sweep, after its minimum. False when it was not busy (a late answer). */
+function qbBusyEnd(selector: string): boolean {
+    var since = qbBusySince[selector];
+    if (since === undefined) {
+        return false;
     }
-    qbSaidTimers[selector] = setTimeout(function () {
-        chip!.removeAttribute('data-said');
-        delete qbSaidTimers[selector];
-    }, QB_SAID_MS);
+    clearTimeout(qbBusyTimers[selector]);
+    delete qbBusyTimers[selector];
+    var left = QB_BUSY_MIN_MS - (Date.now() - since);
+    setTimeout(function () {
+        var chip = document.querySelector(selector);
+        if (chip !== null) {
+            chip.removeAttribute('data-busy');
+        }
+        delete qbBusySince[selector];
+    }, left > 0 ? left : 0);
+    return true;
 }
 
 /**
@@ -907,66 +930,55 @@ function qbUnlockNow(): void {
     if (!qbActive || !qbLive || bridge === undefined) {
         return;
     }
+    if (!qbBusyStart('.qb-unlock-now', function () { onQuickBarUnlockNow('no answer'); })) {
+        return;
+    }
     qbLogInfo(Log.QuickBar.UnlockNowAsked, 'Level caps asked for from the Quick Bar');
     bridge.runScriptCallback('typeof unlockLevelsNow === "function" ? unlockLevelsNow() : "no script"',
         'onQuickBarUnlockNow');
 }
 
-/** `queued` or `already queued` is success; anything else is a refusal. */
+/**
+ * `queued` needs no banner of ours: the engine already shows "Raising level
+ * caps next". Anything else is said here.
+ */
 // noinspection JSUnusedGlobalSymbols
 function onQuickBarUnlockNow(answer: string): void {
+    if (!qbBusyEnd('.qb-unlock-now')) {
+        return;
+    }
     var said = String(answer);
-    qbSay('.qb-unlock-now', said === 'queued' || said === 'already queued' ? 'done' : 'failed');
+    if (said === 'already queued') {
+        qbBanner(i18nText(UiText.QbLevelsAlreadyQueued));
+    } else if (said !== 'queued') {
+        qbBanner(i18nText(UiText.QbLevelsNotQueued));
+    }
 }
-
-/** The busy animation runs at least this long, so a fast copy still shows it. */
-var QB_BUSY_MIN_MS = 700;
-/** No answer by then means the settings page is not there to copy. */
-var QB_COPY_TIMEOUT_MS = 4000;
-var qbCopyStartedAt = 0;
-var qbCopyTimer: number | undefined;
 
 /**
  * Asks the settings page for the share code -- it owns the format. The store is
  * flushed first because that is what the code is built from; the answer comes
- * back through `onGapMessage`. The chip animates (`data-busy`) until then.
+ * back through `onGapMessage`.
  */
 function qbCopyShare(): void {
-    var chip = document.querySelector('.qb-copy-share');
-    if (chip === null || qbCopyStartedAt !== 0) {
+    if (!qbBusyStart('.qb-copy-share', function () { qbCopyDone(false); })) {
         return;
     }
-    chip.setAttribute('data-busy', 'true');
-    qbCopyStartedAt = Date.now();
     var bridge = qbBridge();
     if (bridge === undefined || bridge.broadcast === undefined) {
         qbCopyDone(false);
         return;
     }
-    qbCopyTimer = setTimeout(function () { qbCopyDone(false); }, QB_COPY_TIMEOUT_MS);
     qbFlushApplies();
     qbLogInfo(Log.QuickBar.CopyShareAsked, 'Share code asked for from the Quick Bar');
     bridge.broadcast(PageMessage.CopyShareCode);
 }
 
-/** Banners the outcome and returns the chip to normal. A late answer is ignored. */
+/** Banners the outcome. A late answer, after the timeout, is ignored. */
 function qbCopyDone(ok: boolean): void {
-    if (qbCopyStartedAt === 0) {
-        return;
+    if (qbBusyEnd('.qb-copy-share')) {
+        qbBanner(i18nText(ok ? UiText.QbCodeCopied : UiText.QbCodeNotCopied));
     }
-    if (qbCopyTimer !== undefined) {
-        clearTimeout(qbCopyTimer);
-        qbCopyTimer = undefined;
-    }
-    qbBanner(i18nText(ok ? UiText.QbCodeCopied : UiText.QbCodeNotCopied));
-    var left = QB_BUSY_MIN_MS - (Date.now() - qbCopyStartedAt);
-    setTimeout(function () {
-        var chip = document.querySelector('.qb-copy-share');
-        if (chip !== null) {
-            chip.removeAttribute('data-busy');
-        }
-        qbCopyStartedAt = 0;
-    }, left > 0 ? left : 0);
 }
 
 /** One line in the floating window's banner, shown once. */

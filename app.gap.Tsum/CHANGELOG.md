@@ -64,10 +64,11 @@ release note; they fold back in here when she ships.
 - **Hearts toggles are live.** `sendHeartsAuto` and `receiveHeartsOneByOne` are
   `LiveWhen.Now`; `quickBarSyncJob` adds or removes their job using
   `runTaskTable`'s spec. The settings panel gets this too.
-- **Strip actions.** Unlock calls `unlockLevelsNow()`; Copy code broadcasts
+- **Strip actions.** Lvl (an open padlock) calls `unlockLevelsNow()`; Copy code broadcasts
   `PageMessage.CopyShareCode` and the settings page (which owns the codec)
-  copies from the store and answers `ShareCodeCopied`/`NotCopied`. The chip
-  sweeps (`data-busy`) until then and the outcome is a `showBanner` line.
+  copies from the store and answers `ShareCodeCopied`/`NotCopied`. Both chips
+  sweep (`data-busy`, `qbBusyStart`/`qbBusyEnd`) until answered, and the outcome
+  is a banner rather than a colour.
 - **`ts.runClock`** counts round time at every round end (stats on or off) for
   page two's readout.
 

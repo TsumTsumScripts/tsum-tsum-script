@@ -412,6 +412,9 @@ declare const enum UiText {
   /** The banner after Copy code; the panel's own lines point at a box the strip lacks. */
   QbCodeCopied = 'qb.codeCopied',
   QbCodeNotCopied = 'qb.codeNotCopied',
+  /** Banners after the Lvl chip, when the engine's own banner does not apply. */
+  QbLevelsAlreadyQueued = 'qb.levelsAlreadyQueued',
+  QbLevelsNotQueued = 'qb.levelsNotQueued',
   /** The page toggle's accessible name; the chip itself draws two dots. */
   QbPage = 'qb.page',
   QbScan = 'qb.scan',

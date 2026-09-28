@@ -341,10 +341,12 @@ i18nRegister(Locale.English, 'English', {
     // U+FE0E keeps the heart a text glyph rather than an emoji.
     [UiText.QbSendHearts]: '\u2665\uFE0E Send',
     [UiText.QbReceiveOneByOne]: '\u2665\uFE0E 1-by-1',
-    [UiText.QbUnlockNow]: 'Unlock',
+    [UiText.QbUnlockNow]: 'Lvl',
     [UiText.QbCopyShare]: 'Copy code',
     [UiText.QbCodeCopied]: 'Settings code copied',
     [UiText.QbCodeNotCopied]: 'Could not copy the settings code',
+    [UiText.QbLevelsAlreadyQueued]: 'Level caps are already queued',
+    [UiText.QbLevelsNotQueued]: 'Could not queue raising level caps',
     [UiText.QbPage]: 'Switch page',
     [UiText.QbScan]: 'Scan',
     [UiText.QbChain]: 'Chain',

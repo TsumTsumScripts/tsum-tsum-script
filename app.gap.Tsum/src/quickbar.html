@@ -248,7 +248,7 @@
 
           `.qb-unlock-now` and `.qb-copy-share` are actions, not settings, so
           they carry no `data-key`; quickbarPage.ts finds them by class.
-          Unlock queues the level-cap sweep (`unlockLevelsNow`) and needs a
+          The Lvl chip (an open padlock) queues the level-cap sweep (`unlockLevelsNow`) and needs a
           run; Copy code asks the settings page, which owns the share-code
           format, to put the code on the clipboard.
         -->
@@ -261,7 +261,13 @@
               <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.receiveOneByOne">&#9829;&#65038; 1-by-1</button>
             </div>
             <div class="qb-cell">
-              <button class="qb-action qb-unlock-now" type="button" data-i18n="qb.unlockNow">Unlock</button>
+              <button class="qb-action qb-unlock-now" type="button">
+                <svg class="qb-action-glyph" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="5" y="11" width="14" height="10" rx="2"/>
+                  <path d="M8 11V7a4 4 0 0 1 7.6-1.7"/>
+                </svg>
+                <span data-i18n="qb.unlockNow">Lvl</span>
+              </button>
             </div>
             <div class="qb-cell">
               <button class="qb-action qb-copy-share" type="button" data-i18n="qb.copyShare">Copy code</button>
