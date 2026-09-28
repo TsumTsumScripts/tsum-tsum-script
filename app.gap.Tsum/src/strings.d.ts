@@ -280,8 +280,6 @@ declare const enum UiText {
   /** A switch's value in the settings list a copied code can carry. */
   ShareListingOn = 'share.listingOn',
   ShareListingOff = 'share.listingOff',
-  /** The list when nothing differs from default. */
-  ShareListingDefaults = 'share.listingDefaults',
   /** `{applied}` settings, `{from}` version suffix. */
   ShareApplied = 'share.applied',
   /** As above, plus `{skipped}`. */

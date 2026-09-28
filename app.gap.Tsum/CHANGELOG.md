@@ -45,7 +45,7 @@ release note; they fold back in here when she ships.
 
 - Settings page reorganized: Skills, Round (chain limits and bonuses) and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
 - Japanese (日本語) added as a language for the settings page, Quick Bar and log.
-- Copy with settings list option added: a copied settings code can carry a short list of the settings changed from default.
+- Copy with settings list option added: a copied settings code can carry a short list of its skill type and the settings changed from default.
 - Quick Bar gained a second page, switched by the dots beside Report: heart sending and one-by-one receiving, Unlock now, Copy settings code, the other bonus items, and round/run times.
 
 ### Added
@@ -55,7 +55,7 @@ release note; they fold back in here when she ships.
   every log sentence is translated.
 - **Copy with settings list** (General > Settings code). A page-only switch in
   localStorage (`tsumtsumsharelisting`), not a setting. When on, Copy puts the
-  rows that differ from default on one line under the code; the QR stays the
+  skill type and the rows that differ from default on one line under the code; the QR stays the
   bare code and paste still reads only the code.
 - **Quick Bar page two**, flipped by a toggle stacked over Report (`.qb-side`),
   so it costs no width; Report is now glyph-only. Both pages share one grid

@@ -361,7 +361,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.PrioritizeMyTsum,
                         title: UiText.SettingPrioritizeMyTsum,
                         help: UiText.SettingPrioritizeMyTsumHelp,
-                        default: false
+                        default: true
                     }
                 ]
             },
@@ -2584,8 +2584,8 @@ function shareListingValue(setting: SettingSpec, value: SettingValue): string {
 }
 
 /**
- * The rows the code changes from default, on one line in page order, e.g.
- * `Skill Type: Elsa · +Coin: On`. For people, not the parser -- pasting it
+ * The skill type, then the rows the code changes from default, on one line in
+ * page order, e.g. `Skill Type: Elsa · +Coin: On`. For people, not the parser -- pasting it
  * back reads only the code.
  */
 function buildShareListing(values: SettingValues): string {
@@ -2596,17 +2596,18 @@ function buildShareListing(values: SettingValues): string {
             for (var r = 0; r < rows.length; r++) {
                 var row = rows[r];
                 var key = row.key as SettingKey;
-                var value = values[key];
+                var value = values[key] !== undefined ? values[key] : SHARE_DEFAULTS[key];
                 // Unshown rows take no shared value, so they are not listed.
+                // The skill type always is: it says what the rest is tuned for.
                 if (isUnsharedSetting(row) || !offeredHere(row.status)
-                    || value === undefined || value === SHARE_DEFAULTS[key]) {
+                    || (value === SHARE_DEFAULTS[key] && key !== SettingKey.SkillType)) {
                     continue;
                 }
                 parts.push(getTitle(row) + ': ' + shareListingValue(row, value));
             }
         }
     }
-    return parts.length > 0 ? parts.join(' · ') : i18nText(UiText.ShareListingDefaults);
+    return parts.join(' · ');
 }
 
 /** `code`, plus the listing under it when the switch is on. */
