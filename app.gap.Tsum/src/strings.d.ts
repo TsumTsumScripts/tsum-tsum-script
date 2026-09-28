@@ -409,6 +409,9 @@ declare const enum UiText {
   QbReceiveOneByOne = 'qb.receiveOneByOne',
   QbUnlockNow = 'qb.unlockNow',
   QbCopyShare = 'qb.copyShare',
+  /** The banner after Copy code; the panel's own lines point at a box the strip lacks. */
+  QbCodeCopied = 'qb.codeCopied',
+  QbCodeNotCopied = 'qb.codeNotCopied',
   /** The page toggle's accessible name; the chip itself draws two dots. */
   QbPage = 'qb.page',
   QbScan = 'qb.scan',

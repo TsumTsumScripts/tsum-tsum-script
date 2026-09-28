@@ -343,6 +343,8 @@ i18nRegister(Locale.English, 'English', {
     [UiText.QbReceiveOneByOne]: '\u2665\uFE0E 1-by-1',
     [UiText.QbUnlockNow]: 'Unlock',
     [UiText.QbCopyShare]: 'Copy code',
+    [UiText.QbCodeCopied]: 'Settings code copied',
+    [UiText.QbCodeNotCopied]: 'Could not copy the settings code',
     [UiText.QbPage]: 'Switch page',
     [UiText.QbScan]: 'Scan',
     [UiText.QbChain]: 'Chain',

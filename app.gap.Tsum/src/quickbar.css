@@ -378,6 +378,22 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 }
 
 .qb-action:active { background: #2b323b; }
+
+/* Working: a highlight sweeps across the chip until the answer comes back. */
+.qb-action[data-busy] {
+  background-image: linear-gradient(90deg, transparent 20%, rgba(218, 222, 229, 0.18) 50%, transparent 80%);
+  background-size: 250% 100%;
+  animation: qb-sweep 0.9s linear infinite;
+}
+
+@keyframes qb-sweep {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qb-action[data-busy] { animation: none; background-image: none; background-color: #2b323b; }
+}
 .qb-action[data-said="done"] { border-color: var(--qb-on); color: var(--qb-on); }
 .qb-action[data-said="failed"] { border-color: var(--qb-accent); color: var(--qb-accent); }
 /* Unlike a toggle, an action has no value to keep showing when it cannot act. */

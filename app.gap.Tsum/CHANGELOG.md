@@ -66,7 +66,8 @@ release note; they fold back in here when she ships.
   `runTaskTable`'s spec. The settings panel gets this too.
 - **Strip actions.** Unlock calls `unlockLevelsNow()`; Copy code broadcasts
   `PageMessage.CopyShareCode` and the settings page (which owns the codec)
-  copies from the store and answers `ShareCodeCopied`/`NotCopied`.
+  copies from the store and answers `ShareCodeCopied`/`NotCopied`. The chip
+  sweeps (`data-busy`) until then and the outcome is a `showBanner` line.
 - **`ts.runClock`** counts round time at every round end (stats on or off) for
   page two's readout.
 

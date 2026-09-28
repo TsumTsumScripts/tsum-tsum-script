@@ -113,7 +113,7 @@ steps aside and the log moves up over it.
 | ●● (page dots) | Not a setting: switches the strip to its second page and back. The lit dot is the page on screen |
 | ♥ Send, ♥ 1-by-1 | *Page two.* Auto Send Hearts and Receive Hearts One By One. These take effect mid-run: the chore is added or dropped straight away |
 | Unlock | *Page two.* Not a setting: raises level caps once the current round is over, like the Now button beside Unlock Level. Needs a run |
-| Copy code | *Page two.* Not a setting: copies your settings code, as the Copy button on the settings panel does. The chip turns teal when it is on the clipboard |
+| Copy code | *Page two.* Not a setting: copies your settings code, as the Copy button on the settings panel does. The chip shimmers while it works, and a banner says when the code is on the clipboard |
 | +Score, +Exp, +Time, +Bubble, +Combo | *Page two.* The other bonus items |
 | ⚠ Report | Not a setting either: saves a report of what is on screen — see [Reporting a problem](#reporting-a-problem). It and the page dots are the only buttons here that work while the script is still playing; everything else needs it paused |
 

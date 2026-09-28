@@ -328,7 +328,7 @@ function onGapState(json: string): void {
 // noinspection JSUnusedGlobalSymbols
 function onGapMessage(topic: string): void {
     if (topic === PageMessage.ShareCodeCopied || topic === PageMessage.ShareCodeNotCopied) {
-        qbSay('.qb-copy-share', topic === PageMessage.ShareCodeCopied ? 'done' : 'failed');
+        qbCopyDone(topic === PageMessage.ShareCodeCopied);
         return;
     }
     if (topic !== PageMessage.LiveSettings && topic !== PageMessage.Presets) {
@@ -919,20 +919,64 @@ function onQuickBarUnlockNow(answer: string): void {
     qbSay('.qb-unlock-now', said === 'queued' || said === 'already queued' ? 'done' : 'failed');
 }
 
+/** The busy animation runs at least this long, so a fast copy still shows it. */
+var QB_BUSY_MIN_MS = 700;
+/** No answer by then means the settings page is not there to copy. */
+var QB_COPY_TIMEOUT_MS = 4000;
+var qbCopyStartedAt = 0;
+var qbCopyTimer: number | undefined;
+
 /**
  * Asks the settings page for the share code -- it owns the format. The store is
  * flushed first because that is what the code is built from; the answer comes
- * back through `onGapMessage`.
+ * back through `onGapMessage`. The chip animates (`data-busy`) until then.
  */
 function qbCopyShare(): void {
-    var bridge = qbBridge();
-    if (bridge === undefined || bridge.broadcast === undefined) {
-        qbSay('.qb-copy-share', 'failed');
+    var chip = document.querySelector('.qb-copy-share');
+    if (chip === null || qbCopyStartedAt !== 0) {
         return;
     }
+    chip.setAttribute('data-busy', 'true');
+    qbCopyStartedAt = Date.now();
+    var bridge = qbBridge();
+    if (bridge === undefined || bridge.broadcast === undefined) {
+        qbCopyDone(false);
+        return;
+    }
+    qbCopyTimer = setTimeout(function () { qbCopyDone(false); }, QB_COPY_TIMEOUT_MS);
     qbFlushApplies();
     qbLogInfo(Log.QuickBar.CopyShareAsked, 'Share code asked for from the Quick Bar');
     bridge.broadcast(PageMessage.CopyShareCode);
+}
+
+/** Banners the outcome and returns the chip to normal. A late answer is ignored. */
+function qbCopyDone(ok: boolean): void {
+    if (qbCopyStartedAt === 0) {
+        return;
+    }
+    if (qbCopyTimer !== undefined) {
+        clearTimeout(qbCopyTimer);
+        qbCopyTimer = undefined;
+    }
+    qbBanner(i18nText(ok ? UiText.QbCodeCopied : UiText.QbCodeNotCopied));
+    var left = QB_BUSY_MIN_MS - (Date.now() - qbCopyStartedAt);
+    setTimeout(function () {
+        var chip = document.querySelector('.qb-copy-share');
+        if (chip !== null) {
+            chip.removeAttribute('data-busy');
+        }
+        qbCopyStartedAt = 0;
+    }, left > 0 ? left : 0);
+}
+
+/** One line in the floating window's banner, shown once. */
+function qbBanner(text: string): void {
+    var bridge = qbBridge();
+    if (bridge === undefined) {
+        return;
+    }
+    bridge.runScript('typeof showBanner === "function" && showBanner('
+        + JSON.stringify(text) + ', 3000, 1)');
 }
 
 /**
