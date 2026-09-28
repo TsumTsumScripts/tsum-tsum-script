@@ -7,6 +7,18 @@ per version, so the day she ships her Summary lines fold back into that
 file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 `CHANGELOG_0.x.md` with everything else of that time.
 
+## [3.0b5]
+
+### Summary
+
+- Coronation Elsa Legacy skill removed; use Coronation Day Elsa.
+
+### Removed
+
+- **`src/skills/coronationElsaLegacy.ts`**, `SkillType.CoronationElsaLegacy`,
+  its `skill.elsaLegacy.*` log events and dropdown entry. Share letter `E`
+  stays unused so old codes decode to the default.
+
 ## [3.0b4]
 
 ### Summary

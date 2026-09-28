@@ -36,7 +36,6 @@ var LogsJa: LogCataloguePartial = {
   [Log.Skill.FormalBeastModeEnd]: '[Formal Beast] ツインゲージ終了',
   [Log.Skill.ElsaDone]: '[Coronation Elsa] 凍結時間終了',
   [Log.Skill.ElsaRoundOver]: '[Coronation Elsa] 凍結時間中にラウンド終了',
-  [Log.Skill.ElsaLegacyDone]: '[Coronation Elsa Legacy] 凍結時間終了',
   [Log.Skill.GastonClear]: '[Gaston] 残りのツムを消去',
   [Log.Skill.GastonDone]: '[Gaston] 時間終了',
   [Log.Skill.GastonPass]: '[Gaston] チェーンを引いた',

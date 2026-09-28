@@ -178,11 +178,6 @@ namespace Log {
     ElsaBurst             = 'skill.elsa.burst',
     ElsaDone              = 'skill.elsa.done',
     ElsaIceAlike          = 'skill.elsa.iceAlike',
-    // The 1.0 choreography's own names, so a log tells the two apart.
-    ElsaLegacyBurst       = 'skill.elsaLegacy.burst',
-    ElsaLegacyDone        = 'skill.elsaLegacy.done',
-    ElsaLegacyIceAlike    = 'skill.elsaLegacy.iceAlike',
-    ElsaLegacyPass        = 'skill.elsaLegacy.pass',
     ElsaKind              = 'skill.elsa.kind',
     ElsaPass              = 'skill.elsa.pass',
     ElsaSalvo             = 'skill.elsa.salvo',

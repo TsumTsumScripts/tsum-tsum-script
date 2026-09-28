@@ -218,7 +218,6 @@ i18nRegister(Locale.Taiwan, '中文', {
     // [UiText.SkillGaston]: '加斯頓',
     // [UiText.SkillTiaraMinniePlus]: '皇冠米妮+',
     // [UiText.SkillCoronationElsa]: '加冕日艾莎',
-    // [UiText.SkillCoronationElsaLegacy]: '加冕日艾莎（舊版）',
     // [UiText.SkillRapunzelPlus]: '樂佩+',
     // [UiText.SkillLorcanaAurora]: 'Lorcana 奧蘿拉',
     // [UiText.SkillPairTsum]: '搭檔Tsum',
