@@ -43,14 +43,15 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
-- Settings page reorganized: Skills, Bonuses and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
+- Settings page reorganized: Skills, Round (chain limits and bonuses) and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
 
 ### Changed
 
-- **Settings tabs regrouped** as Skills, Bonuses, Hearts, Gameplay, Chores,
-  General, Debug. Run-level rows (auto launch/play, round delay, max round,
-  stats, app restart) moved to General; Advanced is gone. `SHARE_TABS` now
-  covers Bonuses, so share codes and presets carry the same rows as before.
+- **Settings tabs regrouped** as Skills, Round, Hearts, Gameplay, Chores,
+  General, Debug. Round holds chains per scan, max chain and the bonuses.
+  Run-level rows (auto launch/play, round delay, max round, stats, app restart)
+  moved to General; Advanced is gone. `SHARE_TABS` now covers Round, so share
+  codes and presets carry the same rows as before.
 - **Setting help text shortened** to about one line each, English and
   Chinese; conflicts, coin/ruby spending and what 0 means are kept.
 

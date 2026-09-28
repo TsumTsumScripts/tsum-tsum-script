@@ -15,12 +15,12 @@ This script automates the following tasks:
 
 ## Settings
 
-The settings page is split into seven tabs — **Skills**, **Bonuses**,
+The settings page is split into seven tabs — **Skills**, **Round**,
 **Hearts**, **Gameplay**, **Chores**, **General** and **Debug** — and it opens
 on whichever one you used last. The first three are the ones you will reach for
-most. **Gameplay** is how chains and bubbles are played; **Chores** is the jobs
-the script does between rounds: raising level caps, and buying boxes. **General**
-holds the device settings and how the run goes — auto launch, auto play, the
+most: **Round** has the chain limits and bonus items. **Gameplay** is the finer
+linking and bubble tuning; **Chores** is the jobs the script does between
+rounds: raising level caps, and buying boxes. **General** holds the device settings and how the run goes — auto launch, auto play, the
 delay between rounds, the round time limit. The **Run order** card on General is
 worth a look before pressing Play: it lists what your settings add up to — every job the run
 will do, in the order it will do them, and what one board scan looks like. The button in the top right switches between light and dark; until you
@@ -191,7 +191,7 @@ be put back with two taps instead of a dozen. It is exactly what a
 [settings code](#sharing-settings) carries, which is why one can be exported as
 one.
 
-That is the Skills, Bonuses and Gameplay tabs. Everything else stays as you
+That is the Skills, Round and Gameplay tabs. Everything else stays as you
 have it, whichever preset you load — your language, the run settings on General
 (**Auto Play Game**, the **wait between rounds**, **Track round statistics**),
 the mailbox, the hearts, the chore schedules, the box buying. Those describe your account, and you should not

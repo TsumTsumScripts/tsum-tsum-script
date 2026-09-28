@@ -28,7 +28,7 @@ declare const enum UiText {
   TabGameplay = 'tab.gameplay',
   TabChores = 'tab.chores',
   TabSkills = 'tab.skills',
-  TabBonuses = 'tab.bonuses',
+  TabRound = 'tab.round',
   TabHearts = 'tab.hearts',
   TabDebug = 'tab.debug',
 
@@ -40,6 +40,7 @@ declare const enum UiText {
   GroupSettingsCodeHelp = 'group.settingsCode.help',
   GroupRun = 'group.run',
   GroupChains = 'group.chains',
+  GroupLinking = 'group.linking',
   GroupBoardHelpers = 'group.boardHelpers',
   GroupItems = 'group.items',
   GroupItemsHelp = 'group.items.help',

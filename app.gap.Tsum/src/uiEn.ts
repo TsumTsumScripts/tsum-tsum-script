@@ -12,7 +12,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.TabGameplay]: 'Gameplay',
     [UiText.TabChores]: 'Chores',
     [UiText.TabSkills]: 'Skills',
-    [UiText.TabBonuses]: 'Bonuses',
+    [UiText.TabRound]: 'Round',
     [UiText.TabHearts]: 'Hearts',
     [UiText.TabDebug]: 'Debug',
 
@@ -23,6 +23,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.GroupSettingsCodeHelp]: 'Copy your round setup as one line, or paste someone else\'s.',
     [UiText.GroupRun]: 'Running',
     [UiText.GroupChains]: 'Chains',
+    [UiText.GroupLinking]: 'Linking',
     [UiText.GroupBoardHelpers]: 'Board helpers',
     [UiText.GroupItems]: 'Round bonuses',
     [UiText.GroupItemsHelp]: 'Bought before each round, so each one costs Coins every round.',

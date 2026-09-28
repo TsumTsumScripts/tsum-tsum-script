@@ -49,7 +49,7 @@ var SETTINGS_KEY = StorageKey.Settings;
  */
 var tabs: TabSpec[] = [
     {
-        // First tab, with Bonuses and Hearts beside it: the three things a
+        // First tab, with Round and Hearts beside it: the three things a
         // player changes most, so each is one tap from opening the page.
         id: 'skills',
         title: UiText.TabSkills,
@@ -144,9 +144,34 @@ var tabs: TabSpec[] = [
         ]
     },
     {
-        id: 'bonuses',
-        title: UiText.TabBonuses,
+        // The round's own knobs: chain shape first (changed most), then the
+        // bonus items bought before it.
+        id: 'round',
+        title: UiText.TabRound,
         groups: [
+            {
+                title: UiText.GroupChains,
+                rows: [
+                    {
+                        key: SettingKey.MaxChainsPerScan,
+                        title: UiText.SettingMaxChainsPerScan,
+                        help: UiText.SettingMaxChainsPerScanHelp,
+                        default: 6,
+                        step: 1,
+                        max: 12,
+                        min: 1
+                    },
+                    {
+                        key: SettingKey.MaxChain,
+                        title: UiText.SettingMaxChain,
+                        help: UiText.SettingMaxChainHelp,
+                        default: 4,
+                        step: 1,
+                        max: 15,
+                        min: 3
+                    }
+                ]
+            },
             {
                 title: UiText.GroupItems,
                 help: UiText.GroupItemsHelp,
@@ -318,26 +343,8 @@ var tabs: TabSpec[] = [
         title: UiText.TabGameplay,
         groups: [
             {
-                title: UiText.GroupChains,
+                title: UiText.GroupLinking,
                 rows: [
-                    {
-                        key: SettingKey.MaxChainsPerScan,
-                        title: UiText.SettingMaxChainsPerScan,
-                        help: UiText.SettingMaxChainsPerScanHelp,
-                        default: 6,
-                        step: 1,
-                        max: 12,
-                        min: 1
-                    },
-                    {
-                        key: SettingKey.MaxChain,
-                        title: UiText.SettingMaxChain,
-                        help: UiText.SettingMaxChainHelp,
-                        default: 4,
-                        step: 1,
-                        max: 15,
-                        min: 3
-                    },
                     {
                         // Percent rather than a multiplier because a share code
                         // carries a number as `Math.round(n).toString(36)` -- 2.2
@@ -1472,7 +1479,7 @@ var SHARE_SLOTS: (SettingKey | '')[] = [
  * `neverShared` is reported rather than silently left out of every code and
  * every preset.
  */
-var SHARE_TABS = ['skills', 'bonuses', 'gameplay'];
+var SHARE_TABS = ['skills', 'round', 'gameplay'];
 
 /**
  * The 64 characters a code is built from: one per slot, and one per six bits of
@@ -2552,7 +2559,7 @@ function pasteSettingsCode(): void {
 // --- Presets ---------------------------------------------------------------
 //
 // A preset is a name and a settings code's worth of form: **the Skills,
-// Bonuses and Gameplay tabs, and nothing else**. `SHARE_SLOTS` above is that
+// Round and Gameplay tabs, and nothing else**. `SHARE_SLOTS` above is that
 // set, so a preset and a share code carry exactly the same rows -- which is what makes the code
 // the export format rather than a second one invented for this.
 //

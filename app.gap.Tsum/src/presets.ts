@@ -1,7 +1,7 @@
 // Presets: named configurations, and the one store both pages read them from.
 //
 // A preset is a name and **how a round is played** -- exactly the rows
-// `SHARE_SLOTS` (src/settings.ts) names, which is the Skills, Bonuses and
+// `SHARE_SLOTS` (src/settings.ts) names, which is the Skills, Round and
 // Gameplay tabs. The rows that shape the run rather than the round (Auto Play
 // Game, the between-rounds delay, Track round statistics) are on General and
 // stay out. Not the language, the device, the chores, the mailbox or the

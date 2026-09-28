@@ -5,7 +5,7 @@ description: What every setting means, tab by tab, plus the Quick Bar, presets, 
 
 # Settings reference
 
-The settings page has seven tabs — **Skills**, **Bonuses**, **Hearts**,
+The settings page has seven tabs — **Skills**, **Round**, **Hearts**,
 **Gameplay**, **Chores**, **General** and **Debug** — and opens on the one you
 used last. The first three are the ones reached for most. The **Run order**
 card on General lists what the settings add up to: every job the run will do,
@@ -33,10 +33,12 @@ settings". Close the panel instead and the run carries on where it left off.
 | Skill Waiting time | The most time the script leaves the board alone after a skill. It plays on as soon as the tsums stop falling, so a generous value costs nothing. |
 | Delay Skill ReActivation (sec) | Beta. After firing, hold a full gauge this long so a skill with a duration is not restarted while it runs. 0 never holds. |
 
-## Bonuses
+## Round
 
 | Setting | What it does |
 |:--|:--|
+| Chains per board scan | How many chains are linked before the board is looked at again. Fewer keeps targets fresh; more spends less time scanning. |
+| Maximum Chain Number | Caps how many tsums one chain links (3–15, default 4). A low cap plays more, shorter chains, which suits tsums that score off chain count and gets more out of a high-FPS setup; it also makes each scan cheaper. |
 | +Score, +Coin, +Exp, +Time, +Bubble, 5>4, +Combo | Play with that bonus item on. Bought on the pre-round screen, so each spends coins every round. |
 
 ## Hearts
@@ -73,8 +75,6 @@ settings". Close the panel instead and the run carries on where it left off.
 
 | Setting | What it does |
 |:--|:--|
-| Chains per board scan | How many chains are linked before the board is looked at again. Fewer keeps targets fresh; more spends less time scanning. |
-| Maximum Chain Number | Caps how many tsums one chain links (3–15, default 3). A low cap plays more, shorter chains, which suits tsums that score off chain count and gets more out of a high-FPS setup; it also makes each scan cheaper. |
 | Link reach (% of a tsum) | How far apart two tsums may be and still be linked. Too low and no long chain exists; too high and the game refuses the drag. |
 | Link MyTsum first | Prefer chains of your own tsum, which fills the skill gauge faster. |
 | Bubble Strategy | What to do with bubbles the board leaves lying about. A bubble popped while a chain is clearing takes a bigger area with it, so one spent off a chain is wasted. `One Bubble Mid Chain` (default) pops exactly one as a chain lands. `All Bubbles Mid Chain` pops every bubble the last scan found, still only as a chain lands. `All Bubbles ASAP` pops them as soon as seen and runs the old blind sweep as well. Skills that turn tsums into bubbles clear up after themselves whatever this says. |
@@ -158,7 +158,7 @@ the floating bar opens it.
 A preset is **how a round is played, under a name** — exactly what a settings
 code carries, so a setup tuned for farming coins with one tsum and one for
 score with another can be swapped with two taps. It covers the Skills,
-Bonuses and Gameplay tabs; everything on the other tabs — language, the run
+Round and Gameplay tabs; everything on the other tabs — language, the run
 settings on General, mailbox, hearts, chores — stays as you have it.
 
 The dropdown at the top of the settings page names the preset your settings

@@ -18,7 +18,7 @@ i18nRegister(Locale.Taiwan, '中文', {
     // rather than dropped, so the tab is not the one untranslated word in the bar.
     [UiText.TabChores]: '雜項',
     [UiText.TabSkills]: '技能',
-    [UiText.TabBonuses]: '道具',
+    [UiText.TabRound]: '對局',
     [UiText.TabHearts]: '愛心',
     [UiText.TabDebug]: '除錯',
 
@@ -29,6 +29,7 @@ i18nRegister(Locale.Taiwan, '中文', {
     [UiText.GroupSettingsCodeHelp]: '把玩法設定複製成一行文字，或貼上別人的。',
     [UiText.GroupRun]: '執行',
     [UiText.GroupChains]: '連鎖',
+    [UiText.GroupLinking]: '連線',
     [UiText.GroupBoardHelpers]: '版面輔助',
     [UiText.GroupItems]: '道具',
     [UiText.GroupItemsHelp]: '開局前購買，每一局都會花金幣。',
