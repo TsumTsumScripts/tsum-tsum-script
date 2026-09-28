@@ -16,8 +16,7 @@ file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 ### Removed
 
 - **`src/skills/coronationElsaLegacy.ts`**, `SkillType.CoronationElsaLegacy`,
-  its `skill.elsaLegacy.*` log events and dropdown entry. Share letter `E`
-  stays unused so old codes decode to the default.
+  its `skill.elsaLegacy.*` log events, dropdown entry and share letter `E`.
 
 ## [3.0b4]
 

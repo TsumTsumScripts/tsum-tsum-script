@@ -137,7 +137,6 @@ var tabs: TabSpec[] = [
                         max: 300,
                         min: 0,
                         scale: 10,
-                        status: ReleaseStatus.Beta
                     }
                 ]
             }
