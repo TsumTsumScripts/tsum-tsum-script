@@ -48,7 +48,7 @@ release note; they fold back in here when she ships.
 - Bubbles are no longer popped the moment they appear or right after a skill fires; the Bubble Strategy spends them once the board has refilled.
 - The next round starts about 3 seconds sooner after the score tally, with its count-up skipped whether or not round stats are on.
 - Box Buying can buy the Pick-Up Capsule, and no longer stalls on a box's reveal card while the Quick Bar is up.
-- Gaston skill improved and moved to Beta.
+- Gaston and Coronation Elsa skills are now available.
 - Fixed Unlock Level and Box Buying repeating back to back instead of waiting their set hours, and Unlock Level missing capped Tsums when the collection opened past its first page.
 
 ### Added
