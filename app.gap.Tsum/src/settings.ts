@@ -681,6 +681,12 @@ var tabs: TabSpec[] = [
                 help: UiText.GroupSettingsCodeHelp,
                 rows: [
                     {
+                        // Above the buttons, so the share panel still opens
+                        // directly under them.
+                        key: RowKey.ShareListing,
+                        build: buildShareListingRow
+                    },
+                    {
                         key: RowKey.ShareSettings,
                         title: UiText.SettingShareSettings,
                         buttons: [
@@ -1181,7 +1187,8 @@ function onGapMessage(topic: string): void {
  */
 function copySettingsCodeForStrip(): void {
     flushSettings();
-    writeClipboard(buildSettingsCode(storedSettings()), function (ok) {
+    var values = storedSettings();
+    writeClipboard(withShareListing(buildSettingsCode(values), values), function (ok) {
         var iface = bridge();
         if (iface !== undefined && iface.broadcast !== undefined) {
             iface.broadcast(ok ? PageMessage.ShareCodeCopied : PageMessage.ShareCodeNotCopied);
@@ -2501,12 +2508,14 @@ function setShareStatus(message: string, isError: boolean): void {
  * route that does -- `copyFieldSelection` -- takes focus itself, and only
  * when it is actually reached.
  */
-function showShareText(text: string, focus: boolean): void {
+function showShareText(text: string, focus: boolean, qrText?: string): void {
     var panel = ensureSharePanel();
     var box = shareBox()!;
     panel.hidden = false;
     box.value = text;
-    drawShareQr(text);
+    // Taller for a listing, so it reads without scrolling a three-line box.
+    box.rows = Math.min(12, Math.max(3, text.split('\n').length + 1));
+    drawShareQr(qrText !== undefined ? qrText : text);
     if (focus) {
         box.focus();
     }
@@ -2536,6 +2545,79 @@ function applySettingsCodeText(text: string): void {
         {applied: result.applied, from: from, skipped: result.skipped}), false);
 }
 
+/** localStorage key for the Copy with settings list switch. A page preference, so not a setting. */
+var SHARE_LISTING_KEY = 'tsumtsumsharelisting';
+
+function shareListingOn(): boolean {
+    return localStorage !== undefined && localStorage.getItem(SHARE_LISTING_KEY) === '1';
+}
+
+/** The Copy with settings list row: a switch drawn by hand, since it holds no setting. */
+function buildShareListingRow(): HTMLElement {
+    var row = fromTemplate('tpl-row');
+    pick(row, '.row-title').textContent = i18nText(UiText.SettingShareListing);
+    pick(row, '.row-help').textContent = i18nText(UiText.SettingShareListingHelp);
+    var input = fromTemplate('tpl-switch') as HTMLInputElement;
+    input.checked = shareListingOn();
+    input.addEventListener('change', function () {
+        if (localStorage !== undefined) {
+            localStorage.setItem(SHARE_LISTING_KEY, input.checked ? '1' : '0');
+        }
+    });
+    pick(row, '.row-control').appendChild(input);
+    return row;
+}
+
+/** One row's value as the page shows it: On/Off, the option's name, or the number. */
+function shareListingValue(setting: SettingSpec, value: SettingValue): string {
+    if (typeof value === 'boolean') {
+        return i18nText(value ? UiText.ShareListingOn : UiText.ShareListingOff);
+    }
+    if (setting.dropdown !== undefined) {
+        for (var i = 0; i < setting.dropdown.length; i++) {
+            if (setting.dropdown[i].key === value) {
+                return getTitle(setting.dropdown[i]);
+            }
+        }
+    }
+    return typeof value === 'number' ? shownNumber(setting, value) : String(value);
+}
+
+/**
+ * Every row a code carries, one line per card in page order, e.g.
+ * `[Skill] Skill Type: Burst · Skill Level: 6`. For people, not the parser --
+ * pasting it back reads only the code.
+ */
+function buildShareListing(values: SettingValues): string {
+    var lines: string[] = [];
+    for (var t = 0; t < tabs.length; t++) {
+        for (var g = 0; g < tabs[t].groups.length; g++) {
+            var group = tabs[t].groups[g];
+            var parts: string[] = [];
+            for (var r = 0; r < group.rows.length; r++) {
+                var row = group.rows[r];
+                var key = row.key as SettingKey;
+                // Unshown rows take no shared value, so they are not listed.
+                if (isUnsharedSetting(row) || !offeredHere(row.status)) {
+                    continue;
+                }
+                var value = values[key] !== undefined ? values[key] : SHARE_DEFAULTS[key];
+                parts.push(getTitle(row) + ': ' + shareListingValue(row, value));
+            }
+            if (parts.length > 0) {
+                var title = getTitle(group);
+                lines.push((title !== '' ? '[' + title + '] ' : '') + parts.join(' · '));
+            }
+        }
+    }
+    return lines.join('\n');
+}
+
+/** `code`, plus the listing under it when the switch is on. */
+function withShareListing(code: string, values: SettingValues): string {
+    return shareListingOn() ? code + '\n' + buildShareListing(values) : code;
+}
+
 /**
  * The Copy button.
  *
@@ -2547,8 +2629,10 @@ function applySettingsCodeText(text: string): void {
 function copySettingsCode(): void {
     ensureSharePanel();
     var code = buildSettingsCode();
-    showShareText(code, false);
-    writeClipboard(code, function (ok) {
+    var text = withShareListing(code, collectSettingValues(settings, isUnsharedSetting));
+    // The QR stays the bare code: a listing would not fit one.
+    showShareText(text, false, code);
+    writeClipboard(text, function (ok) {
         setShareStatus(i18nText(ok ? UiText.ShareCopied : UiText.ShareCopyFailed), !ok);
     });
 }

@@ -66,6 +66,8 @@ declare const enum UiText {
   SettingAutoLaunchApp = 'setting.autoLaunchApp',
   SettingAutoLaunchAppHelp = 'setting.autoLaunchApp.help',
   SettingShareSettings = 'setting.shareSettings',
+  SettingShareListing = 'setting.shareListing',
+  SettingShareListingHelp = 'setting.shareListing.help',
   SettingExportPresets = 'setting.exportPresets',
   SettingExportPresetsHelp = 'setting.exportPresets.help',
   SettingAutoPlayGame = 'setting.autoPlayGame',
@@ -275,6 +277,9 @@ declare const enum UiText {
   SharePastePrompt = 'share.pastePrompt',
   ShareOtherFormat = 'share.otherFormat',
   ShareNotACode = 'share.notACode',
+  /** A switch's value in the settings list a copied code can carry. */
+  ShareListingOn = 'share.listingOn',
+  ShareListingOff = 'share.listingOff',
   /** `{applied}` settings, `{from}` version suffix. */
   ShareApplied = 'share.applied',
   /** As above, plus `{skipped}`. */

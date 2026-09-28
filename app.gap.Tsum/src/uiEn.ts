@@ -48,6 +48,8 @@ i18nRegister(Locale.English, 'English', {
     [UiText.SettingAutoLaunchApp]: 'Auto Launch Tsum App',
     [UiText.SettingAutoLaunchAppHelp]: 'Opens Tsum Tsum on start. Leave off with Special Screen Ratio.',
     [UiText.SettingShareSettings]: 'Share settings',
+    [UiText.SettingShareListing]: 'Copy with settings list',
+    [UiText.SettingShareListingHelp]: 'Adds a readable list of what the code sets under it.',
     [UiText.SettingExportPresets]: 'Export presets',
     [UiText.SettingExportPresetsHelp]: 'One settings code per preset; paste one back above.',
     [UiText.SettingAutoPlayGame]: 'Auto Play Game',
@@ -245,6 +247,8 @@ i18nRegister(Locale.English, 'English', {
     [UiText.ShareOtherFormat]: 'That code is in a different version of the format and cannot be read '
         + 'here. Ask for a fresh copy.',
     [UiText.ShareNotACode]: 'That is not a settings code.',
+    [UiText.ShareListingOn]: 'On',
+    [UiText.ShareListingOff]: 'Off',
     [UiText.ShareApplied]: 'Applied {applied} settings{from}.',
     [UiText.ShareAppliedSkipped]: 'Applied {applied} settings{from}, skipped {skipped}.',
 

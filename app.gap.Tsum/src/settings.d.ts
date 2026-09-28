@@ -151,6 +151,8 @@ declare const enum RowKey {
   RunOrder = 'runOrder',
   /** The Copy/Paste buttons; the share panel is inserted under this row. */
   ShareSettings = 'shareSettings',
+  /** The switch that adds a settings list to a copied code; stored by the page, not a setting. */
+  ShareListing = 'shareListing',
   /** The preset export buttons; their status line is inserted under this row. */
   ExportPresets = 'exportPresets',
   /** The build stamp on the Debug tab. */

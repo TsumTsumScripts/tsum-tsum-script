@@ -54,6 +54,8 @@ i18nRegister(Locale.Taiwan, '中文', {
     [UiText.SettingAutoLaunchApp]: '自動開啟 Tsum App',
     [UiText.SettingAutoLaunchAppHelp]: '腳本啟動時開啟 Tsum Tsum。開特殊螢幕比例時請關閉。',
     [UiText.SettingShareSettings]: '分享設定',
+    [UiText.SettingShareListing]: '複製時附上設定清單',
+    [UiText.SettingShareListingHelp]: '在設定碼下方附上一份看得懂的設定清單。',
     [UiText.SettingExportPresets]: '匯出組合',
     [UiText.SettingExportPresetsHelp]: '每個組合一組設定碼，可貼回上面。',
     [UiText.SettingAutoPlayGame]: '自動玩遊戲',
@@ -243,6 +245,8 @@ i18nRegister(Locale.Taiwan, '中文', {
     [UiText.SharePastePrompt]: '請把設定碼貼到下方，再按套用。',
     [UiText.ShareOtherFormat]: '這個設定碼來自其他版本的格式，這個版本讀不了。請對方重新複製一份。',
     [UiText.ShareNotACode]: '這不是有效的設定碼。',
+    [UiText.ShareListingOn]: '開',
+    [UiText.ShareListingOff]: '關',
     [UiText.ShareApplied]: '已套用 {applied} 項設定{from}。',
     [UiText.ShareAppliedSkipped]: '已套用 {applied} 項設定{from}，略過 {skipped} 項。',
 

@@ -49,6 +49,8 @@ i18nRegister(Locale.Japanese, '日本語', {
     [UiText.SettingAutoLaunchApp]: 'ツムツムを自動起動',
     [UiText.SettingAutoLaunchAppHelp]: '開始時にツムツムを起動します。特殊な画面比率とは併用しないでください。',
     [UiText.SettingShareSettings]: '設定を共有',
+    [UiText.SettingShareListing]: '設定一覧も付けてコピー',
+    [UiText.SettingShareListingHelp]: 'コードの下に、設定内容の一覧を読める形で付けます。',
     [UiText.SettingExportPresets]: 'プリセットを書き出す',
     [UiText.SettingExportPresetsHelp]: 'プリセットごとに設定コードを1つ。上の欄に貼り付けると戻せます。',
     [UiText.SettingAutoPlayGame]: '自動プレイ',
@@ -204,6 +206,8 @@ i18nRegister(Locale.Japanese, '日本語', {
     [UiText.SharePastePrompt]: '下に設定コードを貼り付けて「適用」をタップしてください。',
     [UiText.ShareOtherFormat]: 'このコードは別バージョンの形式のため読み込めません。新しくコピーしてもらってください。',
     [UiText.ShareNotACode]: '設定コードではありません。',
+    [UiText.ShareListingOn]: 'オン',
+    [UiText.ShareListingOff]: 'オフ',
     [UiText.ShareApplied]: '{applied} 件の設定を適用しました{from}。',
     [UiText.ShareAppliedSkipped]: '{applied} 件の設定を適用し、{skipped} 件をスキップしました{from}。',
 
