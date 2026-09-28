@@ -28,8 +28,8 @@ declare const enum UiText {
   TabGameplay = 'tab.gameplay',
   TabChores = 'tab.chores',
   TabSkills = 'tab.skills',
-  TabRound = 'tab.round',
   TabHearts = 'tab.hearts',
+  TabAdvanced = 'tab.advanced',
   TabDebug = 'tab.debug',
 
   // --- group headings -----------------------------------------------------
@@ -38,9 +38,7 @@ declare const enum UiText {
   GroupRunOrderHelp = 'group.runOrder.help',
   GroupSettingsCode = 'group.settingsCode',
   GroupSettingsCodeHelp = 'group.settingsCode.help',
-  GroupRun = 'group.run',
-  GroupChains = 'group.chains',
-  GroupLinking = 'group.linking',
+  GroupPlaying = 'group.playing',
   GroupBoardHelpers = 'group.boardHelpers',
   GroupItems = 'group.items',
   GroupItemsHelp = 'group.items.help',
@@ -66,8 +64,6 @@ declare const enum UiText {
   SettingAutoLaunchApp = 'setting.autoLaunchApp',
   SettingAutoLaunchAppHelp = 'setting.autoLaunchApp.help',
   SettingShareSettings = 'setting.shareSettings',
-  SettingShareListing = 'setting.shareListing',
-  SettingShareListingHelp = 'setting.shareListing.help',
   SettingExportPresets = 'setting.exportPresets',
   SettingExportPresetsHelp = 'setting.exportPresets.help',
   SettingAutoPlayGame = 'setting.autoPlayGame',
@@ -276,9 +272,6 @@ declare const enum UiText {
   SharePastePrompt = 'share.pastePrompt',
   ShareOtherFormat = 'share.otherFormat',
   ShareNotACode = 'share.notACode',
-  /** A switch's value in the settings list a copied code can carry. */
-  ShareListingOn = 'share.listingOn',
-  ShareListingOff = 'share.listingOff',
   /** `{applied}` settings, `{from}` version suffix. */
   ShareApplied = 'share.applied',
   /** As above, plus `{skipped}`. */
@@ -399,25 +392,6 @@ declare const enum UiText {
    *  in some languages than the chip has room for. */
   QbBonusCoin = 'qb.bonusCoin',
   QbBonus5to4 = 'qb.bonus5to4',
-  QbBonusScore = 'qb.bonusScore',
-  QbBonusExp = 'qb.bonusExp',
-  QbBonusTime = 'qb.bonusTime',
-  QbBonusBubble = 'qb.bonusBubble',
-  QbBonusCombo = 'qb.bonusCombo',
-  QbSendHearts = 'qb.sendHearts',
-  QbReceiveOneByOne = 'qb.receiveOneByOne',
-  QbUnlockNow = 'qb.unlockNow',
-  QbCopyShare = 'qb.copyShare',
-  /** The banner after Copy code; the panel's own lines point at a box the strip lacks. */
-  QbCodeCopied = 'qb.codeCopied',
-  QbCodeNotCopied = 'qb.codeNotCopied',
-  /** Banners after the Lvl chip, when the engine's own banner does not apply. */
-  QbLevelsAlreadyQueued = 'qb.levelsAlreadyQueued',
-  QbLevelsNotQueued = 'qb.levelsNotQueued',
-  /** The page toggle's accessible name; the chip itself draws two dots. */
-  QbPage = 'qb.page',
-  /** The readout toggle's accessible name; the chip itself draws two dots. */
-  QbReadout = 'qb.readout',
   QbScan = 'qb.scan',
   QbChain = 'qb.chain',
   QbPreset = 'qb.preset',
@@ -426,9 +400,6 @@ declare const enum UiText {
   QbBase = 'qb.base',
   QbFinal = 'qb.final',
   QbRounds = 'qb.rounds',
-  QbAvgRound = 'qb.avgRound',
-  QbInRounds = 'qb.inRounds',
-  QbRunning = 'qb.running',
 }
 
 /**

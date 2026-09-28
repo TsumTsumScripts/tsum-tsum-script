@@ -59,7 +59,6 @@
     "src/logs.ts",
     "src/logsEn.ts",
     "src/logsZhTw.ts",
-    "src/logsJa.ts",
     // The structured logger. Reads `Config.debugLogs` and the message
     // catalogue above, and every other file logs through it -- but only
     // from inside a function, so its slot here is for reading order.

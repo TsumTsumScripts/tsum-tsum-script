@@ -154,8 +154,6 @@ class Tsum {
    */
   nextRoundAt: number;
   sendHearts: boolean;
-  /** Receive Hearts One By One. Like `sendHearts`, its job is added or removed live. */
-  receiveOneByOne: boolean;
   /** Step past the Ruby mails instead of opening them; untick them on Claim All. */
   keepRuby: boolean;
   /** Step past the Mission Clear medal mails instead of opening them. */
@@ -291,8 +289,6 @@ class Tsum {
    * counts the rounds whose figures were legible and no others.
    */
   runCoins: RunCoinTally;
-  /** How long this run and its rounds have taken, for the Quick Bar. */
-  runClock: RunClock;
 
   constructor(detect: boolean, logs: LogCatalogue) {
     this.debug = false;
@@ -377,7 +373,6 @@ class Tsum {
     // resuming a wait the previous run was in.
     this.nextRoundAt = 0;
     this.sendHearts = false;
-    this.receiveOneByOne = false;
     this.keepRuby = false;
     this.skipMedals = false;
     this.sendHeartMaxDuring = 0;
@@ -435,7 +430,6 @@ class Tsum {
     this.baseCoinHits = 0;
     this._statsDebugShots = 0;
     this.runCoins = {rounds: 0, baseRounds: 0, baseTotal: 0, finalRounds: 0, finalTotal: 0};
-    this.runClock = {startedAt: Date.now(), rounds: 0, roundSec: 0};
     this.init(detect);
   }
 }

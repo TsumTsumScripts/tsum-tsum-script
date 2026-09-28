@@ -43,10 +43,6 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
-- Settings page reorganized: Skills, Round (chain limits and bonuses) and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
-- Japanese (日本語) added as a language for the settings page, Quick Bar and log.
-- Copy with settings list option added: a copied settings code can carry a short list of its skill type and the settings changed from default.
-- Quick Bar gained a second page: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout can switch to round/run times.
 - Wait for Settle setting added: once the gauge fills, waits up to 0.0-3.0s for the board to refill before firing the skill, so it goes off on a full board.
 - Delay Skill ReActivation setting added: holds a full gauge for a set time after each activation so a skill with a duration is not wasted.
 - Bubbles are no longer popped the moment they appear or right after a skill fires; the Bubble Strategy spends them once the board has refilled.
@@ -57,18 +53,6 @@ release note; they fold back in here when she ships.
 
 ### Added
 
-- **Japanese** (`ja-JP`): `src/uiJa.ts`, `src/logsJa.ts`. Bubbles are ボム; skill,
-  box and Quick Bar labels stay English, as in zh-TW.
-- **Copy with settings list**: a page-only localStorage switch
-  (`tsumtsumsharelisting`). The QR and paste still use only the bare code.
-- **Quick Bar page two**, flipped by a toggle over Report (`.qb-side`); both
-  pages share one grid area. Lvl calls `unlockLevelsNow()`; Copy code asks the
-  settings page (`PageMessage.CopyShareCode`), which owns the codec. Busy chips
-  sweep until answered and report by banner, through `runScriptCallback`.
-- **Readout toggle** flips `<body data-readout>` between coins and times;
-  `ts.runClock` counts round time at every round end for it.
-- **Live Hearts toggles**: `sendHeartsAuto`/`receiveHeartsOneByOne` are
-  `LiveWhen.Now`; `quickBarSyncJob` adds or removes their job.
 - **Wait for Settle** (`SkillSettleMs`, stored in ms, shown in seconds via row
   `scale`). `useSkill` runs `settleBoard` before the activation tap; its
   `onMoving` callback pops bubbles into a refilling board. With it on,
@@ -83,9 +67,6 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
-- **Settings tabs** are Skills, Round, Hearts, Gameplay, Chores, General,
-  Debug; Advanced is gone. `SHARE_TABS` covers Round, so codes carry the same
-  rows. Help text cut to about one line each.
 - **Scaled number rows** show one decimal, step by 0.1 and open a decimal keypad.
 - **Tally count-up tap is a dispatch handler** (`dismiss.tallyCountUp`), so it
   fires on any look at the tally, stats on or off. `readTallyRow` reads the

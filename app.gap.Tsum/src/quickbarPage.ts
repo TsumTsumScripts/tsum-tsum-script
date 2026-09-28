@@ -109,17 +109,14 @@ function qbBridge(): typeof JavaScriptInterface | undefined {
  * before any script is loaded. This one has three lines to write and always has
  * an engine to write them with, so it borrows that one instead of being a third
  * implementation of the same record shape.
- *
- * Through the blocking Eval for the reason `qbBanner` gives: a `runScript` is
- * counted as a run, and one ending while stopped clears the banner.
  */
 function qbWrite(writer: string, event: string, message: string, fields?: object): void {
     var bridge = qbBridge();
     if (bridge === undefined) {
         return;
     }
-    bridge.runScriptCallback(writer + '(' + JSON.stringify(event) + ',' + JSON.stringify(message)
-        + (fields === undefined ? '' : ',' + JSON.stringify(fields)) + ');', 'qbIgnoreAnswer');
+    bridge.runScript(writer + '(' + JSON.stringify(event) + ',' + JSON.stringify(message)
+        + (fields === undefined ? '' : ',' + JSON.stringify(fields)) + ');');
 }
 
 function qbLog(event: string, message: string, fields?: object): void {
@@ -267,9 +264,8 @@ function qbMeasureStrip(): void {
  * `{"active":bool,"paused":bool,"visible":bool,"stripHeight":px}`. The first
  * three are the only thing that decides whether the controls are live -- the
  * window's own touchability is set from the same fact on the host side, so what
- * the strip will accept and what it looks like cannot disagree. The side
- * column (page toggle and Report) is the one exception, live for the whole
- * run: see `qbNameHotspot`.
+ * the strip will accept and what it looks like cannot disagree. The Report chip
+ * is the one exception, live for the whole run: see `qbNameHotspot`.
  *
  * `stripHeight` is the band the host settled on, which is not the window's own
  * height while a sheet is open and is not 62 whenever the status line is sharing
@@ -330,10 +326,6 @@ function onGapState(json: string): void {
  */
 // noinspection JSUnusedGlobalSymbols
 function onGapMessage(topic: string): void {
-    if (topic === PageMessage.ShareCodeCopied || topic === PageMessage.ShareCodeNotCopied) {
-        qbCopyDone(topic === PageMessage.ShareCodeCopied);
-        return;
-    }
     if (topic !== PageMessage.LiveSettings && topic !== PageMessage.Presets) {
         return;
     }
@@ -358,20 +350,17 @@ function onGapMessage(topic: string): void {
  * anything, and unlike the veil it refuses the tap itself -- the window is
  * untouchable while running anyway, so this is that one fact on the control.
  *
- * All but the side column: the Report chip lives by the run rather than by the
- * pause (`qbSetReportEnabled`), and the page toggle only changes the view, so it
- * is never disabled.
+ * All but the Report chip, which lives by the run rather than by the pause:
+ * `qbSetReportEnabled`.
  */
 function qbSetEnabled(enabled: boolean): void {
     var buttons = document.querySelectorAll('.qb-controls button');
     for (var i = 0; i < buttons.length; i++) {
         var button = buttons[i] as HTMLButtonElement;
-        if (button.classList.contains('qb-report') || button.classList.contains('qb-page-toggle')) {
+        if (button.classList.contains('qb-report')) {
             continue;
         }
-        // Unlock acts on a run, so it also needs one.
-        button.disabled = !enabled
-            || (button.classList.contains('qb-unlock-now') && !qbActive);
+        button.disabled = !enabled;
     }
 }
 
@@ -387,8 +376,7 @@ function qbSetReportEnabled(enabled: boolean): void {
 var qbHotspotSent = '';
 
 /**
- * Tells the host where the side column is, so Report and the page toggle stay
- * pressable mid-run -- and the readout toggle beside it, in the same rect.
+ * Tells the host where the Report chip is, so it stays pressable mid-run.
  *
  * The strip's window is untouchable while the script runs -- a touchable
  * overlay would eat the taps the script injects -- so a press on Report used
@@ -406,24 +394,15 @@ function qbNameHotspot(): void {
     if (bridge === undefined || !bridge.setQuickBarHotspot) {
         return;
     }
-    var side = document.querySelector('.qb-side');
-    if (side === null) {
+    var report = document.querySelector('.qb-report');
+    if (report === null) {
         return;
     }
-    var box = side.getBoundingClientRect();
-    var right = box.right;
-    var bottom = box.bottom;
-    // The readout toggle sits just right of the side column; one rect covers both.
-    var readout = document.querySelector('.qb-readout-toggle');
-    if (readout !== null) {
-        var rbox = readout.getBoundingClientRect();
-        right = Math.max(right, rbox.right);
-        bottom = Math.max(bottom, rbox.bottom);
-    }
+    var box = report.getBoundingClientRect();
     var left = Math.floor(box.left);
     var top = Math.floor(box.top);
-    var width = Math.ceil(right) - left;
-    var height = Math.ceil(bottom) - top;
+    var width = Math.ceil(box.right) - left;
+    var height = Math.ceil(box.bottom) - top;
     var key = left + ',' + top + ',' + width + ',' + height;
     if (key === qbHotspotSent) {
         return;
@@ -587,9 +566,6 @@ function qbRender(): void {
     qbSetStat('baseCoinAvg', qbState.baseCoinAvg);
     qbSetStat('finalCoinAvg', qbState.finalCoinAvg);
     qbSetStat('roundCount', qbState.rounds);
-    qbSetTime('avgRoundTime', qbState.avgRoundSec, false);
-    qbSetTime('playedTime', qbState.playedSec, true);
-    qbSetTime('runTime', qbState.runSec, true);
     qbRenderPreset();
 }
 
@@ -659,22 +635,6 @@ function qbSetStat(id: string, value: string | number | boolean | undefined): vo
     }
     element.textContent = typeof value === 'number' && value >= 0
         ? qbGrouped(value) : '—';
-}
-
-/** Seconds as `hh:mm`, or `m:ss` for a round; a dash for no value. */
-function qbSetTime(id: string, value: string | number | boolean | undefined, hours: boolean): void {
-    var element = document.getElementById(id);
-    if (element === null) {
-        return;
-    }
-    if (typeof value !== 'number' || value < 0) {
-        element.textContent = '—';
-        return;
-    }
-    var pad = function (n: number): string { return (n < 10 ? '0' : '') + n; };
-    element.textContent = hours
-        ? pad(Math.floor(value / 3600)) + ':' + pad(Math.floor(value / 60) % 60)
-        : Math.floor(value / 60) + ':' + pad(value % 60);
 }
 
 /** Thousands separated by hand: `toLocaleString` is not reliable in this WebView. */
@@ -890,131 +850,6 @@ function onQuickBarReport(answer: string): void {
     }, QB_REPORT_SAID_MS);
 }
 
-/** The busy animation runs at least this long, so a fast answer still shows it. */
-var QB_BUSY_MIN_MS = 700;
-/** No answer by then counts as a failure. */
-var QB_BUSY_TIMEOUT_MS = 4000;
-/** When each busy action chip started, by selector; absent means idle. */
-var qbBusySince: { [selector: string]: number } = {};
-var qbBusyTimers: { [selector: string]: number } = {};
-
-/**
- * Starts an action chip's busy sweep (`data-busy`, quickbar.css). False when it
- * is already busy, so a second tap does nothing. `onTimeout` runs if no answer
- * ends it first.
- */
-function qbBusyStart(selector: string, onTimeout: () => void): boolean {
-    var chip = document.querySelector(selector);
-    if (chip === null || qbBusySince[selector] !== undefined) {
-        return false;
-    }
-    chip.setAttribute('data-busy', 'true');
-    qbBusySince[selector] = Date.now();
-    qbBusyTimers[selector] = setTimeout(onTimeout, QB_BUSY_TIMEOUT_MS);
-    return true;
-}
-
-/** Ends the sweep, after its minimum. False when it was not busy (a late answer). */
-function qbBusyEnd(selector: string): boolean {
-    var since = qbBusySince[selector];
-    if (since === undefined) {
-        return false;
-    }
-    clearTimeout(qbBusyTimers[selector]);
-    delete qbBusyTimers[selector];
-    var left = QB_BUSY_MIN_MS - (Date.now() - since);
-    setTimeout(function () {
-        var chip = document.querySelector(selector);
-        if (chip !== null) {
-            chip.removeAttribute('data-busy');
-        }
-        delete qbBusySince[selector];
-    }, left > 0 ? left : 0);
-    return true;
-}
-
-/**
- * Queues the level-cap sweep on the run, as the settings page's Now button
- * does. It runs once the run is resumed and the current round is over.
- */
-function qbUnlockNow(): void {
-    var bridge = qbBridge();
-    if (!qbActive || !qbLive || bridge === undefined) {
-        return;
-    }
-    if (!qbBusyStart('.qb-unlock-now', function () { onQuickBarUnlockNow('no answer'); })) {
-        return;
-    }
-    qbLogInfo(Log.QuickBar.UnlockNowAsked, 'Level caps asked for from the Quick Bar');
-    bridge.runScriptCallback('typeof unlockLevelsNow === "function" ? unlockLevelsNow() : "no script"',
-        'onQuickBarUnlockNow');
-}
-
-/**
- * `queued` needs no banner of ours: the engine already shows "Raising level
- * caps next". Anything else is said here.
- */
-// noinspection JSUnusedGlobalSymbols
-function onQuickBarUnlockNow(answer: string): void {
-    if (!qbBusyEnd('.qb-unlock-now')) {
-        return;
-    }
-    var said = String(answer);
-    if (said === 'already queued') {
-        qbBanner(i18nText(UiText.QbLevelsAlreadyQueued));
-    } else if (said !== 'queued') {
-        qbBanner(i18nText(UiText.QbLevelsNotQueued));
-    }
-}
-
-/**
- * Asks the settings page for the share code -- it owns the format. The store is
- * flushed first because that is what the code is built from; the answer comes
- * back through `onGapMessage`.
- */
-function qbCopyShare(): void {
-    if (!qbBusyStart('.qb-copy-share', function () { qbCopyDone(false); })) {
-        return;
-    }
-    var bridge = qbBridge();
-    if (bridge === undefined || bridge.broadcast === undefined) {
-        qbCopyDone(false);
-        return;
-    }
-    qbFlushApplies();
-    qbLogInfo(Log.QuickBar.CopyShareAsked, 'Share code asked for from the Quick Bar');
-    bridge.broadcast(PageMessage.CopyShareCode);
-}
-
-/** Banners the outcome. A late answer, after the timeout, is ignored. */
-function qbCopyDone(ok: boolean): void {
-    if (qbBusyEnd('.qb-copy-share')) {
-        qbBanner(i18nText(ok ? UiText.QbCodeCopied : UiText.QbCodeNotCopied));
-    }
-}
-
-/**
- * One line in the floating window's banner, shown once.
- *
- * Through `runScriptCallback` (the host's blocking Eval), not `runScript`:
- * `runScript` is how a run is started, so the host counts it as one, and its
- * ending flips a stopped script back to idle -- which clears every banner,
- * this one included.
- */
-function qbBanner(text: string): void {
-    var bridge = qbBridge();
-    if (bridge === undefined) {
-        return;
-    }
-    bridge.runScriptCallback('typeof showBanner === "function" && showBanner('
-        + JSON.stringify(text) + ', 3000, 1)', 'qbIgnoreAnswer');
-}
-
-/** A callback for evaluations whose answer nothing needs. */
-// noinspection JSUnusedGlobalSymbols
-function qbIgnoreAnswer(): void {
-}
-
 /**
  * Tells the settings page that the running world has moved.
  *
@@ -1212,33 +1047,6 @@ function qbBind(): void {
     var report = document.querySelector('.qb-report');
     if (report !== null) {
         report.addEventListener('click', qbReport);
-    }
-
-    var unlock = document.querySelector('.qb-unlock-now');
-    if (unlock !== null) {
-        unlock.addEventListener('click', qbUnlockNow);
-    }
-    var copyShare = document.querySelector('.qb-copy-share');
-    if (copyShare !== null) {
-        copyShare.addEventListener('click', qbCopyShare);
-    }
-
-    // Only the view: which page of cells is on screen. The CSS reads `data-page`.
-    var pageToggle = document.querySelector('.qb-page-toggle');
-    if (pageToggle !== null) {
-        pageToggle.addEventListener('click', function () {
-            var body = document.body;
-            body.setAttribute('data-page', body.getAttribute('data-page') === '2' ? '1' : '2');
-        });
-    }
-
-    // Only the view as well: coins or times in the readout. The CSS reads `data-readout`.
-    var readoutToggle = document.querySelector('.qb-readout-toggle');
-    if (readoutToggle !== null) {
-        readoutToggle.addEventListener('click', function () {
-            var body = document.body;
-            body.setAttribute('data-readout', body.getAttribute('data-readout') === 'times' ? 'coins' : 'times');
-        });
     }
 
     var cells = qbCells();

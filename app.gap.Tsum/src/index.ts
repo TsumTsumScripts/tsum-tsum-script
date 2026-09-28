@@ -191,7 +191,6 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   ts.maxRoundAction = settings.maxRoundAction === MaxRoundAction.Stop
     ? MaxRoundAction.Stop : MaxRoundAction.Coast;
   ts.sendHearts = settings.sendHeartsAuto;
-  ts.receiveOneByOne = settings.receiveHeartsOneByOne;
   ts.keepRuby = settings.receiveHeartsSkipRuby;
   ts.skipMedals = settings.receiveHeartsSkipMedals;
   ts.sendHeartMaxDuring = settings.sendHeartsMaxRuntime * 60 * 1000;

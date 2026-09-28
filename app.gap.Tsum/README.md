@@ -15,14 +15,12 @@ This script automates the following tasks:
 
 ## Settings
 
-The settings page is split into seven tabs — **Skills**, **Round**,
-**Hearts**, **Gameplay**, **Chores**, **General** and **Debug** — and it opens
-on whichever one you used last. The first three are the ones you will reach for
-most: **Round** has the chain limits and bonus items. **Gameplay** is the finer
-linking and bubble tuning; **Chores** is the jobs the script does between
-rounds: raising level caps, and buying boxes. **General** holds the device settings and how the run goes — auto launch, auto play, the
-delay between rounds, the round time limit. The **Run order** card on General is
-worth a look before pressing Play: it lists what your settings add up to — every job the run
+The settings page is split into seven tabs — **General**, **Gameplay**,
+**Chores**, **Skills**, **Hearts**, **Advanced** and **Debug** — and it opens on
+whichever one you used last. **Chores** is the jobs the script does between
+rounds: raising level caps, and buying boxes. Hearts are chores too, and have a
+tab of their own. The **Run order** card at the top of General is worth a look
+before pressing Play: it lists what your settings add up to — every job the run
 will do, in the order it will do them, and what one board scan looks like. The button in the top right switches between light and dark; until you
 press it, the page follows whatever your device is set to.
 
@@ -110,16 +108,7 @@ steps aside and the log moves up over it.
 | 5>4 | The 5>4 bonus item |
 | Preset | Not one setting: which saved configuration is loaded. Tap it to switch |
 | Bubble | Bubble strategy, short: **1 mid**, **All mid**, **All now** |
-| ●● (page dots) | Not a setting: switches the strip to its second page and back. The lit dot is the page on screen |
-| ♥ Send, ♥ 1-by-1 | *Page two.* Auto Send Hearts and Receive Hearts One By One. These take effect mid-run: the chore is added or dropped straight away |
-| 🔓 Lvl | *Page two.* Not a setting: raises level caps once the current round is over, like the Now button beside Unlock Level. Needs a run. The chip shimmers while it asks, and a banner confirms |
-| Copy code | *Page two.* Not a setting: copies your settings code, as the Copy button on the settings panel does. The chip shimmers while it works, and a banner says when the code is on the clipboard |
-| +Score, +Exp, +Time, +Bubble, +Combo | *Page two.* The other bonus items |
-| ⚠ Report | Not a setting either: saves a report of what is on screen — see [Reporting a problem](#reporting-a-problem). It and the page dots are the only buttons here that work while the script is still playing; everything else needs it paused |
-
-**Page two's readout** swaps the coin figures for times: **Avg** is the average
-round (m:ss), **Played** the total time spent in rounds, and **Run** how long the
-script has been going, pauses included (both hh:mm).
+| Report | Not a setting either: saves a report of what is on screen — see [Reporting a problem](#reporting-a-problem). The one button here that works while the script is still playing; everything else needs it paused |
 
 **Preset** shows the name of the preset your settings currently are, or *No
 preset* when they are not any of them, and tapping it lists the ones you have
@@ -154,7 +143,7 @@ mid-round skill or preset change. And the right column decides which tasks a run
 does at all, so it can only change when a run begins.
 
 The between-rounds delay used to sit here and no longer does: **Delay between
-rounds (min)** is on the General tab, and the **Now** button beside it is what
+rounds (min)** is on the Gameplay tab, and the **Now** button beside it is what
 the old countdown's tap did.
 
 On the right it shows what this run has earned: the average **base** coins and
@@ -200,10 +189,11 @@ be put back with two taps instead of a dozen. It is exactly what a
 [settings code](#sharing-settings) carries, which is why one can be exported as
 one.
 
-That is the Skills, Round and Gameplay tabs. Everything else stays as you
-have it, whichever preset you load — your language, the run settings on General
-(**Auto Play Game**, the **wait between rounds**, **Track round statistics**),
-the mailbox, the hearts, the chore schedules, the box buying. Those describe your account, and you should not
+That is the Gameplay and Skills tabs apart from three rows about the run rather
+than the round: **Auto Play Game**, the **wait between rounds** and **Track
+round statistics** stay as you have them, whichever preset you load. So does
+everything outside those two tabs — your language, the mailbox, the hearts, the
+chore schedules, the box buying. Those describe your account, and you should not
 have to re-set them to try a different setup.
 
 The controls are at the top of the settings page, next to the light/dark button:
@@ -267,7 +257,7 @@ It carries **how a round is played, and nothing else** — the chain and board
 settings, which items are set, and how the skill is used. Nothing about your
 account or about your run travels with it, and none of it is touched by applying
 one: your language, the mailbox, the hearts, the chores, the box buying and the
-developer options, and the run settings on General: **Auto Play Game**, the
+developer options, and on the Gameplay tab itself **Auto Play Game**, the
 **wait between rounds**, **Track round statistics** and **Max round duration**
 with the action beside it. Someone else's code cannot stop your script playing,
 keep it waiting, turn your statistics off, or make it stop after a few minutes.
@@ -315,8 +305,8 @@ One thing to know about which screen you get. Opening the settings panel pauses
 the run, and pausing presses the game's own Pause button — so a report taken
 from there shows the pause menu rather than the thing you were looking at. The
 screens *before* it are saved too, which is usually where the problem is. To
-catch the live screen, press **Report on the Quick Bar** (the ⚠ button) while the
-script is still playing — it works without pausing —
+catch the live screen, press **Report on the Quick Bar** while the script is
+still playing — it is the one button on the strip that works without pausing —
 or **hold the Log button** on the floating bar. Neither route pauses first.
 
 Reports live in `tsum_record/reports`. The newest eight are kept and older ones

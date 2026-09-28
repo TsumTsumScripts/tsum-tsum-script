@@ -148,7 +148,7 @@ body {
 /* --- the controls ------------------------------------------------------- */
 
 /*
- * The pages and the side column beside them, at their content's width. `--qb-u`
+ * The grid and the Report button beside it, at their content's width. `--qb-u`
  * shrinks everything together as the screen narrows, and the grid's last
  * column gives way after it has bottomed out, because every control has to be
  * on screen -- one you have to scroll to is one you will not notice is there.
@@ -164,31 +164,7 @@ body {
 }
 
 /*
- * Both pages in one grid area, so the block is as wide as the wider page and the
- * side column does not move when the page changes. The hidden page is
- * `visibility: hidden` rather than `display: none` for that reason: it still
- * sizes the area, and it still takes no taps.
- */
-.qb-pages {
-  flex: 0 1 auto;
-  display: grid;
-}
-
-.qb-page { grid-area: 1 / 1; }
-
-body[data-page="1"] [data-page="2"],
-body[data-page="2"] [data-page="1"] { visibility: hidden; }
-
-/* Page two: two rows of chips, each row as wide as its own. */
-.qb-rows {
-  display: grid;
-  grid-template-rows: var(--qb-row) var(--qb-row);
-  row-gap: var(--qb-vpad);
-  justify-content: start;
-}
-
-/*
- * Page one: three columns, two rows. The first two columns are `auto`: as wide as the
+ * Three columns, two rows. The first two columns are `auto`: as wide as the
  * wider of their two rows and no wider, so the level-and-items cluster sets
  * the width the skill name gets, and the chain stepper sets the scan
  * stepper's. The third is as wide as the longer of its two names, or as wide
@@ -201,6 +177,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
  * being drawn over the Report button.
  */
 .qb-grid {
+  flex: 0 1 auto;
   display: grid;
   grid-template-columns: auto auto minmax(calc(56 * var(--qb-u)), max-content);
   grid-template-rows: var(--qb-row) var(--qb-row);
@@ -357,60 +334,6 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   color: var(--qb-on);
 }
 
-/* --- action chips: Lvl, Copy code -------------------------------------- */
-
-/*
- * The toggle's shape, but full ink: an action has no off state to look muted
- * in, and no lit state either -- the outcome is a banner, not a colour.
- */
-.qb-action {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: calc(3 * var(--qb-u));
-  height: 100%;
-  padding: 0 calc(7 * var(--qb-u));
-  border: 1px solid var(--qb-chip-edge);
-  border-radius: var(--qb-radius);
-  background: var(--qb-chip);
-  color: var(--qb-ink);
-  font: inherit;
-  font-size: calc(11 * var(--qb-u));
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
-.qb-action:active { background: #2b323b; }
-
-/* Working: a highlight sweeps across the chip until the answer comes back. */
-.qb-action[data-busy] {
-  background-image: linear-gradient(90deg, transparent 20%, rgba(218, 222, 229, 0.18) 50%, transparent 80%);
-  background-size: 250% 100%;
-  animation: qb-sweep 0.9s linear infinite;
-}
-
-@keyframes qb-sweep {
-  from { background-position: 100% 0; }
-  to { background-position: 0 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .qb-action[data-busy] { animation: none; background-image: none; background-color: #2b323b; }
-}
-/* The open padlock on Lvl; `currentColor` so it greys out with the word. */
-.qb-action-glyph {
-  flex: 0 0 auto;
-  width: calc(13 * var(--qb-u));
-  height: calc(13 * var(--qb-u));
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-/* Unlike a toggle, an action has no value to keep showing when it cannot act. */
-.qb-action:disabled { border-color: var(--qb-chip-edge-off); color: var(--qb-off); }
-
 /* --- the wide chips: the preset and the bubble strategy ------------------ */
 
 /*
@@ -459,27 +382,37 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 /* Nothing loaded is a dash, and a dash is not a reading -- keep it quiet. */
 .qb-preset-value[data-empty="true"] { color: var(--qb-muted); }
 
-/* --- the side column: page toggle and report ---------------------------- */
+/* --- report ------------------------------------------------------------- */
 
 /*
- * The page toggle over Report, one row each, both as wide as the wider. It never
- * shrinks: Report is the one control pressed when something has already gone
- * wrong, and a screen narrow enough to squeeze it is exactly the kind of device
- * the report would be about.
+ * One button over both rows, at the end of the controls, as narrow as its word.
+ * It never shrinks: this is the one control pressed when something has already
+ * gone wrong, and a screen narrow enough to squeeze it is exactly the kind of
+ * device the report would be about.
+ *
+ * Deliberately quiet -- the same chip fill as the rest, with the glyph in the
+ * warning colour rather than the whole button. It is not an alert and it is not
+ * an action anyone should feel steered towards; it is there for the moment it
+ * is wanted and reads as furniture until then.
+ *
+ * `height: auto` and `align-items: stretch` against `.qb-cell`'s row height and
+ * centring, so the button's `height: 100%` means both rows and not one.
  */
-.qb-side {
+.qb-cell-tall {
   flex: 0 0 auto;
-  display: grid;
-  grid-template-rows: var(--qb-row) var(--qb-row);
-  row-gap: var(--qb-vpad);
+  height: auto;
+  align-items: stretch;
 }
 
-.qb-page-toggle,
 .qb-report {
+  flex: 0 0 auto;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0 calc(5 * var(--qb-u));
+  gap: calc(2 * var(--qb-u));
+  height: 100%;
+  padding: 0 calc(3 * var(--qb-u));
   border: 1px solid var(--qb-chip-edge);
   border-radius: var(--qb-radius);
   background: var(--qb-chip);
@@ -487,48 +420,20 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   font: inherit;
 }
 
-.qb-page-toggle:active,
 .qb-report:active { background: #2b323b; }
 
-/* Text for screen readers only: the chip draws a glyph instead. */
-.qb-sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-/* Two dots; the lit one is the page on screen. */
-.qb-page-toggle { gap: calc(4 * var(--qb-u)); }
-
-.qb-dot {
-  width: calc(6 * var(--qb-u));
-  height: calc(6 * var(--qb-u));
-  border-radius: 50%;
-  background: var(--qb-off);
-}
-
-body[data-page="1"] .qb-page-toggle .qb-dot:nth-child(1),
-body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-on); }
-
-/*
- * Report is deliberately quiet -- the same chip fill as the rest, with the
- * glyph in the warning colour rather than the whole button. It is not an alert
- * and not an action anyone should feel steered towards.
- */
 .qb-report-glyph {
   flex: 0 0 auto;
-  /* Capped by the row so a short band cannot push it out of its chip. */
-  width: min(calc(15 * var(--qb-u)), calc(var(--qb-row) - 6px));
-  height: min(calc(15 * var(--qb-u)), calc(var(--qb-row) - 6px));
+  width: calc(15 * var(--qb-u));
+  height: calc(15 * var(--qb-u));
   fill: none;
   stroke: var(--qb-accent);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+.qb-report-label { white-space: nowrap; }
 
 /* Saved: the chip says so for a few seconds rather than a toast over the game. */
 .qb-report[data-said="saved"] {
@@ -588,57 +493,21 @@ body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-
   stroke-linecap: round;
 }
 
-/* --- the readout: coins, or times --------------------------------------- */
+/* --- the coin readout --------------------------------------------------- */
 
 /*
- * A chip of its own on the strip's right edge: the toggle down its left side,
- * then a two-column table -- names down the left, figures down the right on one
- * edge, three rows ruled apart. Base against final is the comparison worth
+ * A two-column table in a chip of its own on the strip's right edge: the names
+ * down the left, the figures down the right on one edge, three rows ruled apart.
+ * The block is the strip's one piece of pure reading, so it is laid out to be
+ * scanned down rather than across -- base against final is the comparison worth
  * making, and that wants the two figures in a column with their digits aligned.
  */
-.qb-readouts {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: stretch;
-  background: var(--qb-chip);
-  border: 1px solid var(--qb-chip-edge);
-  border-radius: 10px;
-}
-
-/* Two dots stacked, the lit one being the table on screen. The chip's full
-   height, so it is an easy tap. Never disabled: it only changes the view. */
-.qb-readout-toggle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: calc(4 * var(--qb-u));
-  padding: 0 calc(4 * var(--qb-u));
-  border: 0;
-  border-right: 1px solid var(--qb-chip-edge);
-  border-radius: 9px 0 0 9px;
-  background: transparent;
-  font: inherit;
-}
-
-.qb-readout-toggle:active { background: #2b323b; }
-
-body[data-readout="coins"] .qb-readout-toggle .qb-dot:nth-child(1),
-body[data-readout="times"] .qb-readout-toggle .qb-dot:nth-child(2) { background: var(--qb-accent); }
-
-/* Both tables in one grid area, so the chip is as wide as the wider and does
-   not jump when it flips. Hidden rather than removed for the same reason. */
-.qb-readout-tables { display: grid; }
-
-.qb-readout-tables > .qb-stats { grid-area: 1 / 1; }
-
-body[data-readout="coins"] .qb-stats[data-readout="times"],
-body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden; }
-
 .qb-stats {
+  flex: 0 0 auto;
   /*
-   * Separate rather than collapsed: the rules between rows are drawn on the
-   * cells below, and a border on a `<tr>` is not painted here.
+   * Separate rather than collapsed: `border-radius` on a table is only honoured
+   * in the separate model, and the rules between rows are drawn on the cells
+   * below anyway -- a border on a `<tr>` is not painted here.
    */
   border-collapse: separate;
   border-spacing: 0;
@@ -647,7 +516,10 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
    * ~52 of the 54px the band leaves at full size, and the slack that buys is
    * what keeps a descender off the hairline under it.
    */
-  padding: calc(var(--qb-vpad) / 2) calc(7 * var(--qb-u)) calc(var(--qb-vpad) / 2) calc(6 * var(--qb-u));
+  padding: calc(var(--qb-vpad) / 2) calc(7 * var(--qb-u));
+  background: var(--qb-chip);
+  border: 1px solid var(--qb-chip-edge);
+  border-radius: 10px;
 }
 
 /* The hairline between two readings, on the cells for the reason above. */
@@ -787,6 +659,18 @@ body[data-dense="true"] .qb-wide-readout {
 }
 
 /*
+ * The Report button goes the other way and drops its word, which is the one
+ * place a name is worth losing: the triangle says the same thing in a fraction
+ * of the width, and this chip's whole job is to still be on screen in a band
+ * that has nearly halved.
+ */
+body[data-dense="true"] .qb-report-label { display: none; }
+body[data-dense="true"] .qb-report-glyph {
+  width: calc(17 * var(--qb-u));
+  height: calc(17 * var(--qb-u));
+}
+
+/*
  * The coin block is three rows in the same band, so it is the other place the
  * height actually binds: its type comes down with `--qb-vs` itself rather than
  * with the floored unit the chips use, because a readout that overflows its
@@ -809,8 +693,8 @@ body[data-dense="true"] .qb-stat-rounds .qb-stat-value { font-size: calc(10 * va
  * affordances go quiet -- the chip edges recede and the arrows and caret dim --
  * which is the difference between "you cannot read this" and "you cannot press
  * this". quickbarPage.ts sets each button's `disabled` from the same fact, so
- * the control refuses the tap as well as looking like it would. The side column
- * is left out of these rules -- see *the side column* above.
+ * the control refuses the tap as well as looking like it would. The Report chip
+ * is the one control left out of these rules -- see *report* above.
  */
 body[data-state="running"] .qb-stepper,
 body[data-state="running"] .qb-select,

@@ -226,7 +226,7 @@ declare const enum DetectMyTsumRefusal {
  * Every language the project speaks, as BCP-47 tags.
  *
  * One member per registered catalogue -- `src/uiEn.ts` and `src/logsEn.ts` for
- * `English`, `src/uiZhTw.ts` and `src/logsZhTw.ts` for `Taiwan`, and so on. Adding a
+ * `English`, `src/uiZhTw.ts` and `src/logsZhTw.ts` for `Taiwan`. Adding a
  * language starts with a member here.
  *
  * Here rather than in `src/settings.d.ts` because all three compilations need
@@ -243,7 +243,6 @@ declare const enum DetectMyTsumRefusal {
 declare const enum Locale {
   English = 'en-US',
   Taiwan = 'zh-TW',
-  Japanese = 'ja-JP',
 }
 
 /**

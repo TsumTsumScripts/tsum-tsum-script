@@ -933,19 +933,6 @@ interface RunCoinTally {
 }
 
 /**
- * The run's time totals, read by the Quick Bar. Counted by the play task at
- * every round end whether or not round stats are on, unlike `RunCoinTally`.
- */
-interface RunClock {
-  /** When this run's `Tsum` was built -- the start of the run. */
-  startedAt: number;
-  /** Rounds that ended with both a start and an end stamp. */
-  rounds: number;
-  /** Their summed play time, seconds. */
-  roundSec: number;
-}
-
-/**
  * `tsum_record/record.txt` as parsed: the account's running heart tally, and
  * nothing else. It used to carry one entry per recorded sender beside this,
  * which is why it is a table rather than the counts themselves.

@@ -1,12 +1,11 @@
 // Presets: named configurations, and the one store both pages read them from.
 //
 // A preset is a name and **how a round is played** -- exactly the rows
-// `SHARE_SLOTS` (src/settings.ts) names, which is the Skills, Round and
-// Gameplay tabs. The rows that shape the run rather than the round (Auto Play
-// Game, the between-rounds delay, Track round statistics) are on General and
-// stay out. Not the language, the device, the chores, the mailbox or the
-// hearts either: those describe the account, and switching between setups
-// should not touch any of it.
+// `SHARE_SLOTS` (src/settings.ts) names, which is the Gameplay and Skills tabs
+// less the few rows that shape the run rather than the round (Auto Play Game,
+// the between-rounds delay, Track round statistics). Not the language, not the
+// device, not the chores, the mailbox or the hearts either: those describe the
+// account, and switching between setups should not touch any of it.
 //
 // Saving one takes a copy of those rows as the form has them; loading one writes
 // that copy back, so switching presets is switching rather than merging.
