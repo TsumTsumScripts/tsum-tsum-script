@@ -93,7 +93,7 @@ release note; they fold back in here when she ships.
 - **Bubble holds**: `holdAfterSkillMs` (2s from the activation tap, blind taps
   included) replaces `settleScansAfterSkill`; a bubble is held `minAgeMs` after
   first seen, and the unripe release is per bubble (`unripeReleaseMs`).
-- **Gaston rewritten**; design notes live in `gaston.ts` and the commit log.
+- **Gaston rewritten**; per-recording evidence is in the commit log.
   - Window: opens no earlier than `openFloorMs`, plays two cancelled passes
     cut to even slots, then a closing chain timed off the antlers (`antlerMs`,
     up to `closeChainMax`, retried under `gaugeChain`), then spams the button
