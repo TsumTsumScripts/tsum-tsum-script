@@ -39,6 +39,21 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
+## [3.0b5]
+
+### Summary
+
+- Settings page reorganized: Skills, Bonuses and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
+
+### Changed
+
+- **Settings tabs regrouped** as Skills, Bonuses, Hearts, Gameplay, Chores,
+  General, Debug. Run-level rows (auto launch/play, round delay, max round,
+  stats, app restart) moved to General; Advanced is gone. `SHARE_TABS` now
+  covers Bonuses, so share codes and presets carry the same rows as before.
+- **Setting help text shortened** to about one line each, English and
+  Chinese; conflicts, coin/ruby spending and what 0 means are kept.
+
 ## [3.0b4]
 
 ### Summary
@@ -46,7 +61,6 @@ release note; they fold back in here when she ships.
 - Fixed Box Buying stalling on the box's reveal card while the Quick Bar is up.
 - Delay Skill ReActivation setting added: holds a full gauge for a set time after each activation so a skill with a duration is not wasted.
 - Wait for Settle is now set in seconds (0.0-3.0) instead of milliseconds.
-- Settings page reorganized: Skills, Bonuses and Hearts are the first three tabs, and the run settings moved to General.
 
 ### Added
 
@@ -58,10 +72,6 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
-- **Settings tabs regrouped** as Skills, Bonuses, Hearts, Gameplay, Chores,
-  General, Debug. Run-level rows (auto launch/play, round delay, max round,
-  stats, app restart) moved to General; Advanced is gone. `SHARE_TABS` now
-  covers Bonuses, so share codes and presets carry the same rows as before.
 - **Wait for Settle shown in seconds.** Still stored as `skillSettleMs`, so
   saved settings and share codes carry over; the row uses `scale: 1000`. Scaled
   rows now show one decimal, step by 0.1 on the fine buttons and open a decimal
