@@ -110,7 +110,11 @@ steps aside and the log moves up over it.
 | 5>4 | The 5>4 bonus item |
 | Preset | Not one setting: which saved configuration is loaded. Tap it to switch |
 | Bubble | Bubble strategy, short: **1 mid**, **All mid**, **All now** |
-| Report | Not a setting either: saves a report of what is on screen — see [Reporting a problem](#reporting-a-problem). The one button here that works while the script is still playing; everything else needs it paused |
+| ●● (page dots) | Not a setting: switches the strip to its second page and back. The lit dot is the page on screen |
+| +Score, +Exp, +Time, +Bubble, +Combo | *Page two.* The other bonus items |
+| Reach | *Page two.* Link reach, in steps of 10% |
+| MyTsum, Fan, Auto tap | *Page two.* Link MyTsum first, Use Fan, Auto Tap Skill |
+| ⚠ Report | Not a setting either: saves a report of what is on screen — see [Reporting a problem](#reporting-a-problem). It and the page dots are the only buttons here that work while the script is still playing; everything else needs it paused |
 
 **Preset** shows the name of the preset your settings currently are, or *No
 preset* when they are not any of them, and tapping it lists the ones you have
@@ -306,8 +310,8 @@ One thing to know about which screen you get. Opening the settings panel pauses
 the run, and pausing presses the game's own Pause button — so a report taken
 from there shows the pause menu rather than the thing you were looking at. The
 screens *before* it are saved too, which is usually where the problem is. To
-catch the live screen, press **Report on the Quick Bar** while the script is
-still playing — it is the one button on the strip that works without pausing —
+catch the live screen, press **Report on the Quick Bar** (the ⚠ button) while the
+script is still playing — it works without pausing —
 or **hold the Log button** on the floating bar. Neither route pauses first.
 
 Reports live in `tsum_record/reports`. The newest eight are kept and older ones

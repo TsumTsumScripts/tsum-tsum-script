@@ -45,12 +45,17 @@ release note; they fold back in here when she ships.
 
 - Settings page reorganized: Skills, Round (chain limits and bonuses) and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
 - Japanese (日本語) added as a language for the settings page, Quick Bar and log.
+- Quick Bar gained a second page (the other bonus items, Link reach, MyTsum first, Fan and Auto Tap Skill), switched by the dots beside Report.
 
 ### Added
 
 - **Japanese** (`ja-JP`): `src/uiJa.ts` and `src/logsJa.ts`. Bubbles are ボム, as in
   the Japanese game. Skill, box and Quick Bar labels stay English, as in zh-TW;
   every log sentence is translated.
+- **Quick Bar page two**, flipped by a toggle stacked over Report (`.qb-side`),
+  so it costs no width; Report is now glyph-only. Both pages share one grid
+  area so the strip does not jump. The hotspot now covers the whole side
+  column, so pages can be switched mid-run.
 
 ### Changed
 

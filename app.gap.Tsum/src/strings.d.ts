@@ -395,6 +395,17 @@ declare const enum UiText {
    *  in some languages than the chip has room for. */
   QbBonusCoin = 'qb.bonusCoin',
   QbBonus5to4 = 'qb.bonus5to4',
+  QbBonusScore = 'qb.bonusScore',
+  QbBonusExp = 'qb.bonusExp',
+  QbBonusTime = 'qb.bonusTime',
+  QbBonusBubble = 'qb.bonusBubble',
+  QbBonusCombo = 'qb.bonusCombo',
+  QbReach = 'qb.reach',
+  QbMyTsum = 'qb.myTsum',
+  QbFan = 'qb.fan',
+  QbAutoTap = 'qb.autoTap',
+  /** The page toggle's accessible name; the chip itself draws two dots. */
+  QbPage = 'qb.page',
   QbScan = 'qb.scan',
   QbChain = 'qb.chain',
   QbPreset = 'qb.preset',

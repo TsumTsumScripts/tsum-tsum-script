@@ -264,8 +264,9 @@ function qbMeasureStrip(): void {
  * `{"active":bool,"paused":bool,"visible":bool,"stripHeight":px}`. The first
  * three are the only thing that decides whether the controls are live -- the
  * window's own touchability is set from the same fact on the host side, so what
- * the strip will accept and what it looks like cannot disagree. The Report chip
- * is the one exception, live for the whole run: see `qbNameHotspot`.
+ * the strip will accept and what it looks like cannot disagree. The side
+ * column (page toggle and Report) is the one exception, live for the whole
+ * run: see `qbNameHotspot`.
  *
  * `stripHeight` is the band the host settled on, which is not the window's own
  * height while a sheet is open and is not 62 whenever the status line is sharing
@@ -350,14 +351,15 @@ function onGapMessage(topic: string): void {
  * anything, and unlike the veil it refuses the tap itself -- the window is
  * untouchable while running anyway, so this is that one fact on the control.
  *
- * All but the Report chip, which lives by the run rather than by the pause:
- * `qbSetReportEnabled`.
+ * All but the side column: the Report chip lives by the run rather than by the
+ * pause (`qbSetReportEnabled`), and the page toggle only changes the view, so it
+ * is never disabled.
  */
 function qbSetEnabled(enabled: boolean): void {
     var buttons = document.querySelectorAll('.qb-controls button');
     for (var i = 0; i < buttons.length; i++) {
         var button = buttons[i] as HTMLButtonElement;
-        if (button.classList.contains('qb-report')) {
+        if (button.classList.contains('qb-report') || button.classList.contains('qb-page-toggle')) {
             continue;
         }
         button.disabled = !enabled;
@@ -376,7 +378,8 @@ function qbSetReportEnabled(enabled: boolean): void {
 var qbHotspotSent = '';
 
 /**
- * Tells the host where the Report chip is, so it stays pressable mid-run.
+ * Tells the host where the side column is, so Report and the page toggle stay
+ * pressable mid-run.
  *
  * The strip's window is untouchable while the script runs -- a touchable
  * overlay would eat the taps the script injects -- so a press on Report used
@@ -394,11 +397,11 @@ function qbNameHotspot(): void {
     if (bridge === undefined || !bridge.setQuickBarHotspot) {
         return;
     }
-    var report = document.querySelector('.qb-report');
-    if (report === null) {
+    var side = document.querySelector('.qb-side');
+    if (side === null) {
         return;
     }
-    var box = report.getBoundingClientRect();
+    var box = side.getBoundingClientRect();
     var left = Math.floor(box.left);
     var top = Math.floor(box.top);
     var width = Math.ceil(box.right) - left;
@@ -1047,6 +1050,15 @@ function qbBind(): void {
     var report = document.querySelector('.qb-report');
     if (report !== null) {
         report.addEventListener('click', qbReport);
+    }
+
+    // Only the view: which page of cells is on screen. The CSS reads `data-page`.
+    var pageToggle = document.querySelector('.qb-page-toggle');
+    if (pageToggle !== null) {
+        pageToggle.addEventListener('click', function () {
+            var body = document.body;
+            body.setAttribute('data-page', body.getAttribute('data-page') === '2' ? '1' : '2');
+        });
     }
 
     var cells = qbCells();
