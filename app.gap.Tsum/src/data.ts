@@ -430,7 +430,7 @@ var MailList = {
   /** A run shorter than this is a highlight or a clipped button, not a row. */
   minButtonRun: 50,
   /**
-   * One drag of the list, and how long its overscroll bounce takes to settle.
+   * One drag of the list, and the most its overscroll bounce may take to settle.
    *
    * Travels 505px: two and a half rows, so the rows land half a row out of
    * phase with where they were. Deliberate -- a run of Mission Clear mails is
@@ -2500,7 +2500,7 @@ var HeartScrollPath = {
   x: 900,
   down: [1304, 1102, 895, 698, 502],
   up: [698, 895, 1102, 1304, 1500],
-  /** Long enough for an overscroll bounce to settle before the list is re-read. */
+  /** Budget for the overscroll bounce to settle before the list is re-read. */
   settleMs: 900
 };
 

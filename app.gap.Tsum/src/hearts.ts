@@ -57,8 +57,6 @@ const HeartOkPresses = 3;
  * slack for a slow device, not for the dialog's own frames.
  */
 const HeartOkLostPolls = 3;
-/** Rest between a scroll and the scan that follows it. */
-const HeartScrollRestMs = 400;
 /**
  * Screenfuls one direction may travel. A backstop, not a limit: a ranking runs
  * to a few hundred friends and a screenful is four of them, so this only fires
@@ -131,15 +129,29 @@ Tsum.prototype.friendRowScoreIsZero = function(img, heart) {
   return true;
 }
 
+/** Whether the list is showing and `heart`'s row has gone from pink to sent. */
+Tsum.prototype.heartRowSent = function(heart) {
+  const img = this.screenshot();
+  let ys: number[];
+  try {
+    ys = this.readHeartColumn(img).map(h => h.y);
+  } finally {
+    releaseImage(img);
+  }
+  return !heartRefused(ys, heart);
+}
+
 /**
  * Poll the narrowed page set until `want` shows up, and say where it stopped.
  *
  * `abortOn` ends the wait early on a screen whose presence makes waiting
  * pointless -- the gift dialog still up after OK -- but only from
- * `HeartOkLostPolls` on. The page it ends on is the answer, so a caller can
- * tell "the screen never moved" from "it moved and the one I wanted never came".
+ * `HeartOkLostPolls` on. So does `sentRow`: the list back with that row no
+ * longer pink means the heart went out with no toast to wait for. The page it
+ * ends on is the answer, so a caller can tell "the screen never moved" from "it
+ * moved and the one I wanted never came".
  */
-Tsum.prototype.waitForHeartPage = function(want, polls, abortOn) {
+Tsum.prototype.waitForHeartPage = function(want, polls, abortOn, sentRow) {
   let page = PageName.Unknown;
   for (let i = 0; i < polls && this.isRunning; i++) {
     page = gPages.detect(1, 300, heartSweepPages());
@@ -147,6 +159,10 @@ Tsum.prototype.waitForHeartPage = function(want, polls, abortOn) {
       return page;
     }
     if (abortOn !== undefined && page === abortOn && i >= HeartOkLostPolls) {
+      return page;
+    }
+    if (sentRow !== undefined && page === PageName.FriendPage && i >= HeartOkLostPolls
+        && this.heartRowSent(sentRow)) {
       return page;
     }
     if (page === PageName.FriendInfo) {
@@ -177,7 +193,7 @@ Tsum.prototype.sendOneHeart = function(heart) {
     this.tap(Page.GiftHeart.next);  // OK
     this.settleScreen(HeartStepSettleMs);
     page = this.waitForHeartPage(
-      PageName.HeartSent, HeartToastPolls, PageName.GiftHeart);
+      PageName.HeartSent, HeartToastPolls, PageName.GiftHeart, heart);
     // Only the dialog still being up is worth another press. A wait that ran
     // out anywhere else means the press landed and it is the toast that went
     // missing -- and OK's coordinate on the friend list below is a friend's row.
@@ -187,9 +203,16 @@ Tsum.prototype.sendOneHeart = function(heart) {
     logDebug(Log.Hearts.SendStep, {step: 'okLost', y: heart.y, press: press});
   }
 
+  if (page === PageName.FriendPage && this.heartRowSent(heart)) {
+    // No toast, but the row has turned blue, which is the game's own record of
+    // the send. ~6% of sends on BlueStacks, each of which used to wait out the
+    // whole toast budget and go uncounted.
+    logDebug(Log.Hearts.SendStep, {step: 'sentNoToast', y: heart.y});
+    return true;
+  }
   if (page !== PageName.HeartSent) {
-    // The heart may well have gone out; without the toast nothing says so, and
-    // counting it would be counting a guess.
+    // The heart may well have gone out; without the toast or the row turning
+    // blue nothing says so, and counting it would be counting a guess.
     logWarn(Log.Hearts.NoToast, 'Pressed OK but never saw the confirmation',
       {y: heart.y, stoppedOn: page});
     return false;
@@ -321,7 +344,6 @@ Tsum.prototype.sweepHearts = function(down, startTime) {
         {down: down, screenfuls: screenfuls});
       return true;
     }
-    this.sleep(HeartScrollRestMs);
   }
   return false;
 }

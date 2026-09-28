@@ -47,6 +47,7 @@ release note; they fold back in here when she ships.
 - Japanese (日本語) added as a language for the settings page, Quick Bar and log.
 - Copy with settings list option added: a copied settings code can carry a short list of its skill type and the settings changed from default.
 - Quick Bar gained a second page, switched by the dots beside Report: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout has its own toggle to show round/run times.
+- Sending hearts through the ranking is faster, and hearts sent without a "Heart sent!" popup are now counted.
 
 ### Added
 
@@ -85,6 +86,10 @@ release note; they fold back in here when she ships.
   codes and presets carry the same rows as before.
 - **Setting help text shortened** to about one line each, English and
   Chinese; conflicts, coin/ruby spending and what 0 means are kept.
+- **Faster heart sweep.** `dragList` settles on `settleScreen` instead of a
+  fixed 900ms rest (mail scrolls too), and the extra 400ms rest after each
+  friend-list scroll is gone. A send whose toast never shows (~6% on BlueStacks,
+  each ~5s of polling) now ends once its row turns blue, and is counted.
 
 ## [3.0b4]
 

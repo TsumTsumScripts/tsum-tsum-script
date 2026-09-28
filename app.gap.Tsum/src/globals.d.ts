@@ -1397,7 +1397,8 @@ interface Tsum {
    * it stopped on. `abortOn` ends the wait early once that page has held for
    * `HeartOkLostPolls`.
    */
-  waitForHeartPage(want: PageName, polls: number, abortOn?: PageName): PageName;
+  heartRowSent(heart: Point): boolean;
+  waitForHeartPage(want: PageName, polls: number, abortOn?: PageName, sentRow?: Point): PageName;
   /** Tap one heart and see it through the gift dialog and the toast. */
   sendOneHeart(heart: Point): boolean;
   /** Send every heart on the screenful in front of us. */
