@@ -300,28 +300,45 @@ async function main() {
   console.log(`[build] done in ${elapsed}s`);
 
   if (has('adb')) {
-    const device = valueOf('device') || firstEmulator();
-    console.log(`[build] pushing to ${device}...`);
-    // A multi-file push fails if the target folder is missing.
-    await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'shell', 'mkdir', '-p', `'${DEPLOY_DIR}'`]);
-    await sh((text) => process.stdout.write(text), 'adb', [
-      '-s', device, 'push',
-      'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
-      DEPLOY_DIR,
-    ]);
+    const devices = valueOf('device') ? [valueOf('device')] : connectedEmulators();
+    const failed = [];
+    for (const device of devices) {
+      console.log(`[build] pushing to ${device}...`);
+      try {
+        // A multi-file push fails if the target folder is missing.
+        await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'shell', 'mkdir', '-p', `'${DEPLOY_DIR}'`]);
+        await sh((text) => process.stdout.write(text), 'adb', [
+          '-s', device, 'push',
+          'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
+          DEPLOY_DIR,
+        ]);
+      } catch (err) {
+        // Keep going so one bad emulator doesn't block the rest.
+        console.error(`[build] push to ${device} failed: ${err && err.message ? err.message : err}`);
+        failed.push(device);
+      }
+    }
+    if (failed.length) throw new Error(`push failed on ${failed.join(', ')}`);
   }
 }
 
-// First emulator in `adb devices`: `emulator-NNNN`, or a local TCP serial such
+// Every emulator in `adb devices`: `emulator-NNNN`, or a local TCP serial such
 // as BlueStacks' `127.0.0.1:5555`. Physical devices and offline entries are skipped.
-function firstEmulator() {
+function connectedEmulators() {
   const out = execFileSync('adb', ['devices'], { encoding: 'utf8' });
+  const serials = [];
   for (const line of out.split('\n').slice(1)) {
     const [serial, state] = line.trim().split(/\s+/);
     if (state !== 'device') continue;
-    if (/^emulator-\d+$/.test(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) return serial;
+    if (/^emulator-\d+$/.test(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) serials.push(serial);
   }
-  throw new Error('no emulator listed in `adb devices`; pass --device SERIAL');
+  // An emulator reached over `adb connect` also shows as 127.0.0.1:<console port + 1>; push once.
+  const unique = serials.filter((serial) => {
+    const port = /:(\d+)$/.exec(serial);
+    return !port || !serials.includes(`emulator-${Number(port[1]) - 1}`);
+  });
+  if (!unique.length) throw new Error('no emulator listed in `adb devices`; pass --device SERIAL');
+  return unique;
 }
 
 main().catch((err) => {

@@ -116,8 +116,8 @@ release note; they fold back in here when she ships.
   saved settings and share codes carry over; the row uses `scale: 1000`. Scaled
   rows now show one decimal, step by 0.1 on the fine buttons and open a decimal
   keypad.
-- **`build --adb` pushes to the first emulator in `adb devices`** instead of a
-  hardcoded serial; `--device SERIAL` still overrides.
+- **`build --adb` pushes to every emulator in `adb devices`** instead of a
+  hardcoded serial; `--device SERIAL` still picks one.
 
 ### Fixed
 
