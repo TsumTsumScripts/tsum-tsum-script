@@ -54,8 +54,11 @@ release note; they fold back in here when she ships.
   stops. Alpha.
 - **`src/tsumNames.dat`**: names a tsum by the name printed on the panel, which
   the game draws from a `win_tsumname_<id>` strip. The name row is found by its
-  tallest glyph, because its height moves with the description. On emulator it
-  named 43 of 44 panels, all correctly.
+  tallest glyph, because its height moves with the description. When two names
+  read alike ("Rescue Ranger Chip (Charm)" / "Dale (Charm)"), the portrait picks
+  between them. A full run on emulator named 353 of 355, all correctly; the
+  misses were plain Mickey and a tsum newer than the pack.
+- The level row ends short of the "x2" badge some tsums wear beside it.
 - **`src/tsumsCollection.dat`**: the portrait fallback, rendered from the `_l`
   art. On its own it named only 4 of 39 live panels: many panels draw a
   different image, such as McQueen's side view.

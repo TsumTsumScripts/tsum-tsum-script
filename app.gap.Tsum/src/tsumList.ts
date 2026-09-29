@@ -132,14 +132,23 @@ Tsum.prototype.identifyCollectionTsum = function() {
   const build = this.gameBuild();
   let fallback: MyTsumSelection | null = null;
   const byName = tsumListMatchName(this, build);
-  if (byName !== null) {
-    if (byName.confident) {
-      return byName;
-    }
-    fallback = byName;
-  }
   const lib = tsumListLibrary();
   const sig = lib.length === 0 ? null : this.myTsumSignature(TsumListPortrait.icon);
+  if (byName !== null) {
+    if (byName.match.confident) {
+      return byName.match;
+    }
+    // A name read clearly but shared, near enough, with one other tsum
+    // ("Rescue Ranger Chip (Charm)" / "... Dale (Charm)"): the portrait picks.
+    if (sig !== null && byName.match.score >= TsumListName.minScore) {
+      const picked = tsumListPortraitTieBreak(sig, lib, byName.match.short, byName.runnerUp);
+      if (picked !== null) {
+        return Object.assign({}, byName.match,
+          {short: picked, full: tsumListDisplayName(picked, build), confident: true});
+      }
+    }
+    fallback = byName.match;
+  }
   const match = sig === null ? null : myTsumMatch(sig, build, lib);
   if (match === null) {
     return fallback;
@@ -209,8 +218,29 @@ function tsumListNameLibrary(): TsumListNameEntry[] {
   return lib;
 }
 
+/**
+ * Of two tsums whose names read alike, the one the portrait matches, when it
+ * wins by `TsumListPortrait.tieMargin`; null otherwise.
+ */
+function tsumListPortraitTieBreak(sig: number[], lib: MyTsumEntry[], a: string, b: string): string | null {
+  const vec = myTsumPrepare(sig);
+  let scoreA = -2;
+  let scoreB = -2;
+  for (let i = 0; i < lib.length; i++) {
+    if (lib[i].short === a) {
+      scoreA = myTsumSimilarity(vec, lib[i].vec);
+    } else if (lib[i].short === b) {
+      scoreB = myTsumSimilarity(vec, lib[i].vec);
+    }
+  }
+  if (scoreA < -1 || scoreB < -1 || Math.abs(scoreA - scoreB) < TsumListPortrait.tieMargin) {
+    return null;
+  }
+  return scoreA > scoreB ? a : b;
+}
+
 /** Match the panel's printed name against this build's rows of the name library. */
-function tsumListMatchName(ts: Tsum, build: GameBuild): MyTsumSelection | null {
+function tsumListMatchName(ts: Tsum, build: GameBuild): {match: MyTsumSelection; runnerUp: string} | null {
   const lib = tsumListNameLibrary();
   if (lib.length === 0) {
     return null;
@@ -223,6 +253,7 @@ function tsumListMatchName(ts: Tsum, build: GameBuild): MyTsumSelection | null {
   let best = -2;
   let second = -2;
   let winner = '';
+  let runnerUp = '';
   for (let i = 0; i < lib.length; i++) {
     if (lib[i].build !== build) {
       continue;
@@ -233,10 +264,12 @@ function tsumListMatchName(ts: Tsum, build: GameBuild): MyTsumSelection | null {
     }
     if (dot > best) {
       second = best;
+      runnerUp = winner;
       best = dot;
       winner = lib[i].short;
     } else if (dot > second) {
       second = dot;
+      runnerUp = lib[i].short;
     }
   }
   if (winner === '') {
@@ -244,12 +277,15 @@ function tsumListMatchName(ts: Tsum, build: GameBuild): MyTsumSelection | null {
   }
   const margin = second < -1 ? best : best - second;
   return {
-    short: winner,
-    full: tsumListDisplayName(winner, build),
-    build: build,
-    score: best,
-    margin: margin,
-    confident: best >= TsumListName.minScore && margin >= TsumListName.minMargin
+    match: {
+      short: winner,
+      full: tsumListDisplayName(winner, build),
+      build: build,
+      score: best,
+      margin: margin,
+      confident: best >= TsumListName.minScore && margin >= TsumListName.minMargin
+    },
+    runnerUp: runnerUp
   };
 }
 

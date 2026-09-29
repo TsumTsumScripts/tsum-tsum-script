@@ -2746,7 +2746,9 @@ var TsumListPortrait = {
   library: 'tsumsCollection.dat',
   icon: {from: {x: 178, y: 368}, to: {x: 428, y: 618}},
   minScore: 0.985,
-  minMargin: 0.03
+  minMargin: 0.03,
+  /** Deciding between two names that read alike: Dale (Charm) 0.990, Chip (Charm) 0.597. */
+  tieMargin: 0.1
 };
 
 // The tsum's printed name at the top of the panel, which is the game's own
@@ -2773,7 +2775,8 @@ var TsumListName = {
 var TsumListRegions = {
   level: {
     name: 'tsum level',
-    x: 300, y: 672, w: 250, h: 60,
+    // Ends short of the "x2" badge some tsums wear at the bar's right end.
+    x: 300, y: 672, w: 190, h: 60,
     lo: [220, 220, 220], hi: [255, 255, 255], slash: true
   } as StatsRegion,
   levelCappedDx: 30,
