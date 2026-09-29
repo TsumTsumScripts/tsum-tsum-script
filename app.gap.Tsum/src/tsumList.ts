@@ -27,6 +27,18 @@ const TsumListMaxPages = 150;
 const TsumListAttempts = 3;
 /** Reads of one panel number before it counts as unreadable. */
 const TsumListNumberReads = 3;
+/** Rest between portrait reads while a selection animates. */
+const TsumListPortraitPollMs = 60;
+/**
+ * How long a selection gets to finish animating. Measured at 120fps: the old
+ * portrait holds for ~270ms, the swap runs to ~600ms and it is still from
+ * ~690ms; a 60fps device takes about twice that.
+ */
+const TsumListPortraitWaitMs = 3000;
+/** Below this, the portrait is no longer the one from before the tap. */
+const TsumListPortraitChanged = 0.9;
+/** Two reads in a row this alike are a settled portrait; sparkles cost ~0.01. */
+const TsumListPortraitStill = 0.98;
 const TsumListColumns = ['order', 'tsum', 'name', 'level', 'level_cap', 'skill', 'skill_max', 'acquired'];
 
 /** The collection library, loaded on first use. */
@@ -134,6 +146,17 @@ Tsum.prototype.identifyCollectionTsum = function() {
   const byName = tsumListMatchName(this, build);
   const lib = tsumListLibrary();
   const sig = lib.length === 0 ? null : this.myTsumSignature(TsumListPortrait.icon);
+  const match = sig === null ? null : myTsumMatch(sig, build, lib);
+  // Both readings, whichever wins: how often they agree is the evidence for
+  // which one the export should lead with.
+  logDebug(Log.TsumList.Identified, {
+    name: byName === null ? null : byName.match.short,
+    nameScore: byName === null ? null : +byName.match.score.toFixed(3),
+    nameMargin: byName === null ? null : +byName.match.margin.toFixed(3),
+    portrait: match === null ? null : match.short,
+    portraitScore: match === null ? null : +match.score.toFixed(3),
+    portraitMargin: match === null ? null : +match.margin.toFixed(3)
+  });
   if (byName !== null) {
     if (byName.match.confident) {
       return byName.match;
@@ -149,7 +172,6 @@ Tsum.prototype.identifyCollectionTsum = function() {
     }
     fallback = byName.match;
   }
-  const match = sig === null ? null : myTsumMatch(sig, build, lib);
   if (match === null) {
     return fallback;
   }
@@ -433,8 +455,9 @@ Tsum.prototype.saveCollectionPortrait = function(path) {
 Tsum.prototype.readCollectionCard = function(slot, order, date, shotDir) {
   let selected = false;
   for (let i = 0; i < TsumListAttempts && !selected && this.isRunning; i++) {
+    const before = this.myTsumSignature(TsumListPortrait.icon);
     this.tap(CollectionGrid.cells[slot]);
-    this.settleScreen(UnlockSelectSettleMs);
+    this.awaitCollectionPortrait(before);
     selected = this.readCollectionCards()[slot] === 'selected';
   }
   const row: TsumListRow = {
@@ -472,6 +495,40 @@ Tsum.prototype.readCollectionCard = function(slot, order, date, shotDir) {
   }
   logDebug(Log.TsumList.CardRead, row as unknown as LogFields);
   return row;
+}
+
+/**
+ * Wait out the portrait's selection animation. The old portrait holds still for
+ * a few hundred ms after the tap, so stillness alone would read the previous
+ * tsum: first wait for it to change from `before`, then for two reads in a row
+ * to agree. A card whose portrait never changes (already selected) goes on at
+ * the deadline. Frame-rate independent: it waits for the screen, not a clock.
+ */
+Tsum.prototype.awaitCollectionPortrait = function(before) {
+  const startedAt = Date.now();
+  let changed = before === null;
+  let prev: number[] | null = null;
+  const beforeVec = before === null ? null : myTsumPrepare(before);
+  while (this.isRunning && Date.now() - startedAt < TsumListPortraitWaitMs) {
+    this.sleep(TsumListPortraitPollMs);
+    const sig = this.myTsumSignature(TsumListPortrait.icon);
+    if (sig === null) {
+      continue;
+    }
+    const vec = myTsumPrepare(sig);
+    if (!changed) {
+      changed = beforeVec !== null && myTsumSimilarity(beforeVec, vec) < TsumListPortraitChanged;
+      prev = vec;
+      continue;
+    }
+    if (prev !== null && myTsumSimilarity(prev, vec) >= TsumListPortraitStill) {
+      logDebug(Log.TsumList.PortraitSettled, {ms: Date.now() - startedAt});
+      return true;
+    }
+    prev = vec;
+  }
+  logDebug(Log.TsumList.PortraitSettled, {ms: Date.now() - startedAt, changed: changed, timedOut: true});
+  return false;
 }
 
 /** The CSV, whole: the header and every row so far. */

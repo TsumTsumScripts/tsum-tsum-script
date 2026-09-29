@@ -1488,6 +1488,8 @@ interface Tsum {
   readTsumDetail(): {level: number[] | null; skill: number[] | null};
   /** Name the detail panel's portrait against the collection library. */
   identifyCollectionTsum(): MyTsumSelection | null;
+  /** Wait for the panel portrait to change from `before`, then hold still; false on timeout. */
+  awaitCollectionPortrait(before: number[] | null): boolean;
   /** Save the detail panel's portrait crop to `path`. */
   saveCollectionPortrait(path: string): void;
   /** Select card `slot` and read its row; unnamed portraits are saved under `shotDir`. */
