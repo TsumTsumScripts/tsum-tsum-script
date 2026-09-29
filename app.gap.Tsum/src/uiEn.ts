@@ -75,7 +75,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.SettingPrioritizeMyTsum]: 'Link MyTsum first',
     [UiText.SettingPrioritizeMyTsumHelp]: 'Fills the skill gauge faster.',
     [UiText.SettingTrackRoundStats]: 'Record round stats',
-    [UiText.SettingTrackRoundStatsHelp]: 'One CSV per skill under tsum_record/.',
+    [UiText.SettingTrackRoundStatsHelp]: 'One CSV a day (UTC) under tsum_record/: stats_YYYYMMDD.csv.',
     [UiText.SettingBubbleStrategy]: 'Bubble Strategy',
     [UiText.SettingBubbleStrategyHelp]: 'A bubble popped mid-chain clears more; the default saves them for that.',
     [UiText.SettingHoldBubblesLastFever]: 'Hold bubbles last fever seconds',

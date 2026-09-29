@@ -74,7 +74,7 @@ i18nRegister(Locale.Japanese, '日本語', {
     [UiText.SettingPrioritizeMyTsum]: 'マイツムを優先してつなぐ',
     [UiText.SettingPrioritizeMyTsumHelp]: 'スキルゲージが早くたまります。',
     [UiText.SettingTrackRoundStats]: 'ラウンド統計を記録',
-    [UiText.SettingTrackRoundStatsHelp]: 'スキルごとに CSV を1つ tsum_record/ に保存します。',
+    [UiText.SettingTrackRoundStatsHelp]: '1日 (UTC) ごとに CSV を1つ tsum_record/ に保存します: stats_YYYYMMDD.csv。',
     [UiText.SettingBubbleStrategy]: 'ボムの使い方',
     [UiText.SettingBubbleStrategyHelp]: 'チェーン途中で割ったボムはより多く消します。デフォルトはそのためにボムを残します。',
     [UiText.SettingHoldBubblesLastFever]: 'フィーバー終盤にボムを残す秒数',

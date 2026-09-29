@@ -79,7 +79,7 @@ i18nRegister(Locale.Taiwan, '中文', {
     [UiText.SettingPrioritizeMyTsum]: '優先連結我的Tsum',
     [UiText.SettingPrioritizeMyTsumHelp]: '技能集氣較快。',
     [UiText.SettingTrackRoundStats]: '記錄每局數據',
-    [UiText.SettingTrackRoundStatsHelp]: '每個技能一個 CSV，存於 tsum_record/。',
+    [UiText.SettingTrackRoundStatsHelp]: '每天 (UTC) 一個 CSV，存於 tsum_record/：stats_YYYYMMDD.csv。',
     [UiText.SettingBubbleStrategy]: '泡泡策略',
     [UiText.SettingBubbleStrategyHelp]: '連線中戳破的泡泡消得更多，預設會留給連線。',
     [UiText.SettingHoldBubblesLastFever]: 'Fever尾段保留泡泡秒數',
