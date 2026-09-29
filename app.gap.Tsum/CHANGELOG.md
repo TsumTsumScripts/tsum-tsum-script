@@ -52,12 +52,11 @@ release note; they fold back in here when she ships.
   `tsum_record/tsum_list_<stamp>.csv` after every page. Queued on a live run.
   Started from a stopped script (`SettingKey.TsumListOnly`), the run exports and
   stops. Alpha.
-- **`src/tsumNames.dat`**: names a tsum by the name printed on the panel, which
-  the game draws from a `win_tsumname_<id>` strip. The name row is found by its
-  tallest glyph, because its height moves with the description. When two names
-  read alike ("Rescue Ranger Chip (Charm)" / "Dale (Charm)"), the portrait picks
-  between them. A full run on emulator named 353 of 355, all correctly; the
-  misses were plain Mickey and a tsum newer than the pack.
+- **Naming** is by portrait first: `src/tsumsCollection.dat`, rendered from
+  each tsum's `_l` art. When the portrait can't separate art twins (Donald and
+  his variants, the Minnies, Piglet), the name printed on the panel decides:
+  `src/tsumNames.dat`, from the game's `win_tsumname_<id>` strips. On emulator
+  this named all 355 of 355 correctly, 350 of them by portrait alone.
 - The level row ends short of the "x2" badge some tsums wear beside it.
 - After a card is tapped, the export waits for the portrait to change and then
   hold still before reading it (`awaitCollectionPortrait`). For ~270ms the old

@@ -2725,18 +2725,20 @@ var CollectionSortDialog = {
 // The collection's detail panel, as the Tsum List export reads it
 // (src/tsumList.ts).
 //
-// `icon` is a square on the big portrait. The panel draws the tsum's plain
-// `_l` sprite unscaled at centre (303, 493), 432 wide -- fitted on two frames
-// independently, to the pixel -- and this crop covers the same share of it
-// that `MyTsumPortrait.icon` covers of the pre-round sprite. The pre-round
-// library cannot be used here (it is the glowing `_y` sprite on the orange
-// button), so the development tools' lexicon renders a second library from
-// the `_l` art at this rect: `library`. Same grid, mask and file format as
-// `MyTsumPortrait`, and read by the same loader.
+// `icon` is a square on the big portrait, which is how a tsum is named first.
+// The panel draws the tsum's plain `_l` sprite unscaled at centre (303, 493),
+// 432 wide, and this crop covers the same share of it that
+// `MyTsumPortrait.icon` covers of the pre-round sprite. The pre-round library
+// cannot be used here (it is the glowing `_y` sprite on the orange button), so
+// the development tools' lexicon renders a second one from the `_l` art at
+// this rect: `library`. Same grid, mask and file format as `MyTsumPortrait`,
+// and read by the same loader.
 //
-// The accept test is stricter than the pre-round one because the drawing is
-// exact: true matches score 0.999, and a tsum missing from the library (the
-// sixteen originals, whose art is not in the pack) tops out at 0.971.
+// Measured over 355 live panels once the selection animation had settled: the
+// right tsum scored 0.889 and up, and a tsum missing from the library 0.892 --
+// so the library has to hold every tsum. A lead under `minMargin` is an art
+// twin (Donald and his variants, the Minnies, Piglet), which the printed name
+// settles (`TsumListName`).
 //
 // The level and skill rows read "5/10" as [5, 10]. The level row moves 30
 // right when the raise-cap padlock is drawn beside it (`levelCappedDx`).
@@ -2745,15 +2747,15 @@ var CollectionSortDialog = {
 var TsumListPortrait = {
   library: 'tsumsCollection.dat',
   icon: {from: {x: 178, y: 368}, to: {x: 428, y: 618}},
-  minScore: 0.985,
+  minScore: 0.88,
   minMargin: 0.03,
-  /** Deciding between two names that read alike: Dale (Charm) 0.990, Chip (Charm) 0.597. */
-  tieMargin: 0.1
+  /** A lead under `minMargin` is still trusted at this score when the name cannot help. */
+  aloneScore: 0.95
 };
 
 // The tsum's printed name at the top of the panel, which is the game's own
-// `win_tsumname_<id>` strip drawn unscaled -- the surest way to name a tsum,
-// since the portrait is not always the `_l` art. It is centred at x 774 but
+// `win_tsumname_<id>` strip drawn unscaled -- the fallback for a portrait that
+// cannot tell two look-alikes apart. It is centred at x 774 but
 // its height moves with the length of the description under it, so the name
 // is *found*: the white text in `band`, and the row holding its tallest glyph.
 // That row's box is squashed to a `w` x `h` grid of the text mask.
