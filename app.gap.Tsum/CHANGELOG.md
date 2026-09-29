@@ -54,6 +54,8 @@ release note; they fold back in here when she ships.
   stops. Alpha.
 - The Tsum List CSV ends in a `build` column (`global`/`jp`), so a reader such
   as the stats site can tell an INTL list from a JP one.
+- `round.start` and `round.end` carry `build`, and `round.end` also `myTsum` and
+  `skill`, so a live consumer can file a round without waiting for its CSV row.
 - **Naming** is by portrait first: `src/tsumsCollection.dat`, rendered from
   each tsum's `_l` art. When the portrait can't separate art twins (Donald and
   his variants, the Minnies, Piglet), the name printed on the panel decides:

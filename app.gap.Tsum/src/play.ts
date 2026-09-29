@@ -481,6 +481,8 @@ Tsum.prototype.openRound = function() {
     round: this.roundNumber,
     myTsum: this.myTsum,
     skill: statsSkillName(this.roundSettings ? this.roundSettings.skillType : this.skillType),
+    // The CSV's `build` column: INTL and JP rounds only compare with their own.
+    build: this.gameBuild(),
     // What the round is played under, so a consumer can group rounds without
     // waiting for the CSV. The snapshot, so a mid-round Quick Bar change is the
     // next round's news.
@@ -837,6 +839,9 @@ Tsum.prototype.taskPlayGameQuick = function() {
     // closes the round without clearing either.
     id: this.roundUid,
     round: this.roundNumber,
+    myTsum: this.myTsum,
+    skill: statsSkillName(this.roundSettings ? this.roundSettings.skillType : this.skillType),
+    build: this.gameBuild(),
     seconds: outcome === null ? roundSeconds : outcome.seconds,
     score: outcome === null ? null : outcome.score,
     baseCoins: outcome === null ? null : outcome.baseCoins,

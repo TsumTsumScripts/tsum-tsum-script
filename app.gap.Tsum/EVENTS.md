@@ -19,8 +19,8 @@ Names are declared once, in `src/scriptEvents.ts`, and reached through
 | event | emitted from | payload |
 |---|---|---|
 | `round.over` | `src/play.ts:367` | `id`, `seconds` |
-| `round.start` | `src/play.ts:477` | `id`, `round`, `myTsum`, `skill`, `settings` |
-| `round.end` | `src/play.ts:833` | `id`, `round`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
+| `round.start` | `src/play.ts:477` | `id`, `round`, `myTsum`, `skill`, `build`, `settings` |
+| `round.end` | `src/play.ts:835` | `id`, `round`, `myTsum`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
 | `run.started` | `src/index.ts:80` | `version`, `skill`, `locale` |
 | `run.stopped` | `src/index.ts:376` | `rounds` |
 
@@ -49,6 +49,7 @@ Emitted from:
 | `round` | `number` |
 | `myTsum` | `string` |
 | `skill` | `string` |
+| `build` | `GameBuild` |
 | `settings` | `Partial<Settings> \| undefined` |
 
 Emitted from:
@@ -63,6 +64,9 @@ Emitted from:
 |---|---|
 | `id` | `string` |
 | `round` | `number` |
+| `myTsum` | `string` |
+| `skill` | `string` |
+| `build` | `GameBuild` |
 | `seconds` | `number` |
 | `score` | `number \| null` |
 | `baseCoins` | `number \| null` |
@@ -72,7 +76,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/play.ts:833` — `this.emit(Emit.Round.End, …)`
+- `src/play.ts:835` — `this.emit(Emit.Round.End, …)`
 
 ### `run.started`
 
