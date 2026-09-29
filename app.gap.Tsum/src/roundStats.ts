@@ -1226,6 +1226,11 @@ const MyTsumBase64: number[] = (function() {
  * for this build, and a partial vector would score against everything.
  */
 function myTsumDecode(packed: string): number[] | null {
+  return myTsumUnpack(packed, MyTsumChannels);
+}
+
+/** `count` four-bit values out of a packed signature; null when short or malformed. */
+function myTsumUnpack(packed: string, count: number): number[] | null {
   const out: number[] = [];
   let bits = 0;
   let held = 0;
@@ -1245,10 +1250,10 @@ function myTsumDecode(packed: string): number[] | null {
       out.push(((bits >> held) & 15) * 17);
     }
   }
-  if (out.length < MyTsumChannels) {
+  if (out.length < count) {
     return null;
   }
-  out.length = MyTsumChannels;
+  out.length = count;
   return out;
 }
 

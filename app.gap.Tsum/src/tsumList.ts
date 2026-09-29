@@ -123,21 +123,28 @@ Tsum.prototype.readTsumDetail = function() {
   return {level: tsumListReadPair(this, level), skill: tsumListReadPair(this, r.skill)};
 }
 
-/** Name the detail panel's portrait against the collection library. */
+/**
+ * Name the tsum on the detail panel: by its printed name first, which the game
+ * draws from a strip per tsum, then by its portrait for a tsum with no strip.
+ * The best guess comes back either way, `confident` saying whether to trust it.
+ */
 Tsum.prototype.identifyCollectionTsum = function() {
+  const build = this.gameBuild();
+  let fallback: MyTsumSelection | null = null;
+  const byName = tsumListMatchName(this, build);
+  if (byName !== null) {
+    if (byName.confident) {
+      return byName;
+    }
+    fallback = byName;
+  }
   const lib = tsumListLibrary();
-  if (lib.length === 0) {
-    return null;
-  }
-  const sig = this.myTsumSignature(TsumListPortrait.icon);
-  if (sig === null) {
-    return null;
-  }
-  const match = myTsumMatch(sig, this.gameBuild(), lib);
+  const sig = lib.length === 0 ? null : this.myTsumSignature(TsumListPortrait.icon);
+  const match = sig === null ? null : myTsumMatch(sig, build, lib);
   if (match === null) {
-    return null;
+    return fallback;
   }
-  return {
+  const byPortrait = {
     short: match.short,
     full: match.full,
     build: match.build,
@@ -145,6 +152,225 @@ Tsum.prototype.identifyCollectionTsum = function() {
     margin: match.margin,
     confident: match.score >= TsumListPortrait.minScore && match.margin >= TsumListPortrait.minMargin
   };
+  return byPortrait.confident || fallback === null ? byPortrait : fallback;
+}
+
+/** One row of the name library: a tsum's printed name in one build. */
+interface TsumListNameEntry {
+  short: string;
+  build: GameBuild;
+  vec: number[];
+}
+
+/** The name library, loaded on first use; empty when there is none. */
+var gTsumListNames: TsumListNameEntry[] | null = null;
+
+/**
+ * Read `TsumListName.library`: a `magic format w= h=` line, then one row per
+ * tsum and build -- id, build, packed signature. Refused whole when its grid is
+ * not this build's.
+ */
+function tsumListNameLibrary(): TsumListNameEntry[] {
+  if (gTsumListNames !== null) {
+    return gTsumListNames;
+  }
+  const t = TsumListName;
+  const lib: TsumListNameEntry[] = [];
+  gTsumListNames = lib;
+  if (typeof getScriptPath !== 'function') {
+    return lib;
+  }
+  const path = getScriptPath() + '/' + t.library;
+  const lines = readFile(path).split('\n');
+  let header = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].replace(/\r$/, '');
+    if (line === '' || line.charAt(0) === '#') {
+      continue;
+    }
+    if (!header) {
+      header = true;
+      const want = t.magic + ' ' + t.format + ' w=' + t.w + ' h=' + t.h;
+      if (line.substring(0, want.length) !== want) {
+        logWarn(Log.Tsums.StaleTemplate, {file: path, header: line});
+        return lib;
+      }
+      continue;
+    }
+    const parts = line.split('\t');
+    const sig = parts.length >= 3 ? myTsumUnpack(parts[2], t.w * t.h) : null;
+    if (sig !== null) {
+      lib.push({short: parts[0], build: parts[1] as GameBuild, vec: tsumListNamePrepare(sig)});
+    }
+  }
+  if (lib.length === 0) {
+    logWarn(Log.Tsums.NoLibrary, {reason: 'no usable rows', file: path});
+  }
+  return lib;
+}
+
+/** Match the panel's printed name against this build's rows of the name library. */
+function tsumListMatchName(ts: Tsum, build: GameBuild): MyTsumSelection | null {
+  const lib = tsumListNameLibrary();
+  if (lib.length === 0) {
+    return null;
+  }
+  const read = tsumListNameSignature(ts);
+  if (read === null) {
+    return null;
+  }
+  const vec = tsumListNamePrepare(read.sig);
+  let best = -2;
+  let second = -2;
+  let winner = '';
+  for (let i = 0; i < lib.length; i++) {
+    if (lib[i].build !== build) {
+      continue;
+    }
+    let dot = 0;
+    for (let j = 0; j < vec.length; j++) {
+      dot += vec[j] * lib[i].vec[j];
+    }
+    if (dot > best) {
+      second = best;
+      best = dot;
+      winner = lib[i].short;
+    } else if (dot > second) {
+      second = dot;
+    }
+  }
+  if (winner === '') {
+    return null;
+  }
+  const margin = second < -1 ? best : best - second;
+  return {
+    short: winner,
+    full: tsumListDisplayName(winner, build),
+    build: build,
+    score: best,
+    margin: margin,
+    confident: best >= TsumListName.minScore && margin >= TsumListName.minMargin
+  };
+}
+
+/** The name `build` prints for `short`, off the pre-round library; the id when it has none. */
+function tsumListDisplayName(short: string, build: GameBuild): string {
+  const lib = myTsumLibrary();
+  for (let i = 0; i < lib.length; i++) {
+    if (lib[i].short === short) {
+      return lib[i].names[build];
+    }
+  }
+  return short;
+}
+
+/**
+ * The panel's printed name as a signature: the text mask of the name row,
+ * squashed to `TsumListName.w` x `h`, plus the row's width over height. Null
+ * when no text was found. See `TsumListName` (data.ts).
+ */
+function tsumListNameSignature(ts: Tsum): {sig: number[]; aspect: number} | null {
+  const t = TsumListName;
+  const origin = ts.toRealXY(t.band.x, t.band.y);
+  const w = Math.floor(t.band.w * ts.captureGameRatio);
+  const h = Math.floor(t.band.h * ts.captureGameRatio);
+  const img = getScreenshotModify(origin.x, origin.y, w, h, 0, 0, 100);
+  if (!statsImageOk(img)) {
+    return null;
+  }
+  let mask: NativeImage | null = null;
+  let cur: NativeImage | null = null;
+  try {
+    mask = inRange(img, t.lo, t.lo, t.lo, 0, 255, 255, 255, 255);
+    if (!statsImageOk(mask)) {
+      mask = null;
+      return null;
+    }
+    const boxes = findContours(mask, 2, 0);
+    let tallest: ContourBox | null = null;
+    for (let i = 0; i < boxes.length; i++) {
+      if (tallest === null || boxes[i].height > tallest.height) {
+        tallest = boxes[i];
+      }
+    }
+    if (tallest === null) {
+      return null;
+    }
+    // The row: every glyph overlapping the tallest one vertically.
+    let x0 = tallest.x, y0 = tallest.y;
+    let x1 = tallest.x + tallest.width, y1 = tallest.y + tallest.height;
+    for (let i = 0; i < boxes.length; i++) {
+      const b = boxes[i];
+      const overlap = Math.min(b.y + b.height, tallest.y + tallest.height) - Math.max(b.y, tallest.y);
+      if (overlap < Math.min(b.height, tallest.height) * t.rowOverlap) {
+        continue;
+      }
+      x0 = Math.min(x0, b.x);
+      y0 = Math.min(y0, b.y);
+      x1 = Math.max(x1, b.x + b.width);
+      y1 = Math.max(y1, b.y + b.height);
+    }
+    cur = cropImage(mask, x0, y0, x1 - x0, y1 - y0);
+    // Halving, as statsGlyphBitmap does: one big INTER_LINEAR jump samples
+    // rather than averages.
+    for (;;) {
+      const size = getImageSize(cur);
+      if (size.width <= t.w * 2 && size.height <= t.h * 2) {
+        break;
+      }
+      const nw = Math.max(t.w, Math.ceil(size.width / 2));
+      const nh = Math.max(t.h, Math.ceil(size.height / 2));
+      if (nw === size.width && nh === size.height) {
+        break;
+      }
+      const half = resizeImage(cur, nw, nh);
+      releaseImage(cur);
+      cur = half;
+    }
+    const small = resizeImage(cur, t.w, t.h);
+    releaseImage(cur);
+    cur = small;
+    const points: Point[] = [];
+    for (let y = 0; y < t.h; y++) {
+      for (let x = 0; x < t.w; x++) {
+        points.push({x: x, y: y});
+      }
+    }
+    const read = getImageColors(cur, points);
+    const sig: number[] = [];
+    for (let i = 0; i < read.length; i++) {
+      sig.push(read[i].r);
+    }
+    return {sig: sig, aspect: (x1 - x0) / (y1 - y0)};
+  } finally {
+    if (cur !== null) {
+      releaseImage(cur);
+    }
+    if (mask !== null) {
+      releaseImage(mask);
+    }
+    releaseImage(img);
+  }
+}
+
+/** A name signature centred and scaled to unit length, so matching is a dot product. */
+function tsumListNamePrepare(sig: number[]): number[] {
+  let mean = 0;
+  for (let i = 0; i < sig.length; i++) {
+    mean += sig[i];
+  }
+  mean /= sig.length;
+  let sum = 0;
+  const v: number[] = [];
+  for (let i = 0; i < sig.length; i++) {
+    v.push(sig[i] - mean);
+    sum += (sig[i] - mean) * (sig[i] - mean);
+  }
+  const norm = Math.sqrt(sum);
+  for (let i = 0; i < v.length && norm > 0; i++) {
+    v[i] /= norm;
+  }
+  return v;
 }
 
 /** Save the detail panel's portrait crop, for a tsum the library could not name. */

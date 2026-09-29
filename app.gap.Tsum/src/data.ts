@@ -2749,6 +2749,27 @@ var TsumListPortrait = {
   minMargin: 0.03
 };
 
+// The tsum's printed name at the top of the panel, which is the game's own
+// `win_tsumname_<id>` strip drawn unscaled -- the surest way to name a tsum,
+// since the portrait is not always the `_l` art. It is centred at x 774 but
+// its height moves with the length of the description under it, so the name
+// is *found*: the white text in `band`, and the row holding its tallest glyph.
+// That row's box is squashed to a `w` x `h` grid of the text mask.
+var TsumListName = {
+  library: 'tsumNames.dat',
+  magic: 'gap-tsum-names',
+  format: 'v1',
+  band: {x: 480, y: 260, w: 590, h: 190},
+  lo: 200,
+  /** Glyphs overlapping the tallest by this share of its height are the same row. */
+  rowOverlap: 0.5,
+  w: 48,
+  h: 8,
+  /** Over 40 live panels the true name scored 0.90-0.99, 0.19+ ahead; a missing one 0.55. */
+  minScore: 0.85,
+  minMargin: 0.1
+};
+
 var TsumListRegions = {
   level: {
     name: 'tsum level',
