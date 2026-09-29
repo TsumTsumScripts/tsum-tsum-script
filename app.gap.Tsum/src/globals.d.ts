@@ -814,6 +814,34 @@ interface StatsRegion {
   /** Inclusive colour bounds as [r, g, b] -- reversed when handed to inRange. */
   lo: [number, number, number];
   hi: [number, number, number];
+  /** A '/' ends one number and starts the next ("5/10" reads [5, 10]). */
+  slash?: boolean;
+  /** Read the crop this many times the 540-wide template space, for small text. */
+  scale?: number;
+}
+
+/** The Change Order dialog's settings, as `sortCollection` found them. */
+interface CollectionSortState {
+  order: CollectionSort;
+  /** "Show owned Tsums only"; null when it was not read. */
+  ownedOnly: boolean | null;
+}
+
+/** What a collection slot holds: a card, the selected (gold) card, or nothing. */
+type CollectionCardState = 'empty' | 'card' | 'selected';
+
+/** One row of the Tsum List CSV. Unread fields are '' or null. */
+interface TsumListRow {
+  /** Position in Date acquired order, from 1. */
+  order: number;
+  tsum: string;
+  name: string;
+  level: number | null;
+  levelCap: number | null;
+  skill: number | null;
+  skillMax: number | null;
+  /** "YYYY-MM". */
+  acquired: string;
 }
 
 /** A portrait rect in logical 1080x1920 coordinates. `MyTsumPortrait` holds two. */
@@ -1433,14 +1461,39 @@ interface Tsum {
   // --- levelCap.ts -----------------------------------------------------
   /** Which order the open Change Order dialog says the collection is in; null when it cannot tell. */
   readCollectionSort(): CollectionSort | null;
-  /** Put the collection in `order`. The order it was in before, or null when the dialog failed. */
-  sortCollection(order: CollectionSort): CollectionSort | null;
-  /** Put the collection back in `order` once the sweep is done; nothing to do for Level Lock. */
-  restoreCollectionSort(order: CollectionSort): void;
+  /**
+   * Put the collection in `order`, and set "Show owned Tsums only" when
+   * `ownedOnly` is given. What it was before, or null when the dialog failed.
+   */
+  sortCollection(order: CollectionSort, ownedOnly?: boolean): CollectionSortState | null;
+  /** Put the collection back to `previous` once a sweep that sorted it to `current` is done. */
+  restoreCollectionSort(previous: CollectionSortState, current: CollectionSort): void;
+  /** Is "Show owned Tsums only" ticked on the open Change Order dialog? */
+  readCollectionOwnedOnly(): boolean;
   /** The raise loop. The fields for `Log.Unlock.End`, or null when the run stopped under it. */
   raiseCappedCards(): LogFields | null;
   /** Is the collection showing its first eight cards? By the left chevron's absence. */
   collectionAtFirstPage(): boolean;
+  /** Is the collection showing its last page? By the right chevron's absence. */
+  collectionAtLastPage(): boolean;
+  /** Does the detail panel offer a level-cap raise (the gold coin)? */
+  collectionOffersRaise(): boolean;
+
+  // --- tsumList.ts -----------------------------------------------------
+  /** What each of the eight collection slots holds, off one capture. */
+  readCollectionCards(): CollectionCardState[];
+  /** Card `slot`'s acquisition month as "YYYY-MM", or '' when unread. */
+  readCardDate(slot: number): string;
+  /** The detail panel's level and skill, each `[now, max]` or null. */
+  readTsumDetail(): {level: number[] | null; skill: number[] | null};
+  /** Name the detail panel's portrait against the collection library. */
+  identifyCollectionTsum(): MyTsumSelection | null;
+  /** Save the detail panel's portrait crop to `path`. */
+  saveCollectionPortrait(path: string): void;
+  /** Select card `slot` and read its row; unnamed portraits are saved under `shotDir`. */
+  readCollectionCard(slot: number, order: number, date: string, shotDir: string): TsumListRow;
+  /** The Tsum List export. False only when it stood aside for a round. */
+  taskExportTsumList(): boolean;
   /** How many of the eight cards are still loading placeholders. */
   collectionLoadingCards(): number;
   /** Wait for the grid's placeholder cards to load; false when they did not in time. */

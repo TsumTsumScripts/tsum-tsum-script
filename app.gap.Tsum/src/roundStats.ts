@@ -252,8 +252,30 @@ const StatsDigits: {[digit: string]: string[]} = {
 // they identify on their own -- it is half the width of everything else.
 const StatsDigitAspect: {[digit: string]: number} = {
   '0': 0.79, '1': 0.50, '2': 0.73, '3': 0.77, '4': 0.80,
-  '5': 0.74, '6': 0.77, '7': 0.75, '8': 0.76, '9': 0.75
+  '5': 0.74, '6': 0.77, '7': 0.75, '8': 0.76, '9': 0.75,
+  '/': 0.36
 };
+
+// The slash in "5/10" and "2026/05" (the collection screen), matched only in a
+// region marked `slash`, where it ends one number and starts the next. Cut from
+// the level row and the card dates; against every digit it scores under 0.56.
+const StatsSlash: string[] = [
+  '.......###',
+  '......####',
+  '......###.',
+  '.....####.',
+  '.....###..',
+  '....####..',
+  '....###...',
+  '...###....',
+  '...###....',
+  '..###.....',
+  '.###......',
+  '.###......',
+  '###.......',
+  '##........'
+];
+const StatsSlashDigits: {[digit: string]: string[]} = Object.assign({'/': StatsSlash}, StatsDigits);
 
 // Capture rectangles in logical 1080x1920 coordinates, each with the colour
 // range (r/g/b low, then high) that separates its digits from the background.
@@ -733,13 +755,17 @@ function statsSplitJoined(img: NativeImage, region: StatsRegion, box: ContourBox
   return parts;
 }
 
-/** Best-matching digit for one normalised glyph, with how clear the win was. */
-function statsMatchGlyph(rows: string[], aspect: number): {digit: string; score: number; margin: number} {
+/**
+ * Best-matching digit for one normalised glyph, with how clear the win was.
+ * `slash` adds '/' to the candidates.
+ */
+function statsMatchGlyph(rows: string[], aspect: number, slash?: boolean): {digit: string; score: number; margin: number} {
+  const templates = slash === true ? StatsSlashDigits : StatsDigits;
   let best = -1;
   let second = -1;
   let digit = '';
-  for (const d in StatsDigits) {
-    const template = StatsDigits[d];
+  for (const d in templates) {
+    const template = templates[d];
     let same = 0;
     for (let y = 0; y < StatsGlyphH; y++) {
       const got = rows[y];
@@ -803,9 +829,12 @@ Tsum.prototype.readStatsNumbers = function(region) {
   }
   // Bring the crop back to the 540-wide space the templates were measured in,
   // but never enlarge it: on a 540-wide screen the capture is already there.
-  let outW = Math.floor(region.w / 2);
-  let outH = Math.floor(region.h / 2);
-  if (outW >= w) {
+  // A region with `scale` is read that many times larger instead -- text too
+  // small to mask cleanly at 540 (the collection's 9px dates) is enlarged.
+  const scale = region.scale !== undefined ? region.scale : 1;
+  let outW = Math.floor(region.w / 2 * scale);
+  let outH = Math.floor(region.h / 2 * scale);
+  if (outW === w || (outW > w && scale <= 1)) {
     outW = 0;
     outH = 0;
   }
@@ -876,7 +905,7 @@ Tsum.prototype.readStatsNumbers = function(region) {
       if (rows === null) {
         return null;
       }
-      const match = statsMatchGlyph(rows, box.width / box.height);
+      const match = statsMatchGlyph(rows, box.width / box.height, region.slash);
       if (match.score < StatsMinGlyphScore || match.margin < StatsMinGlyphMargin) {
         logDebug(Log.Stats.UnreadableGlyph, {
           region: region.name,
@@ -888,6 +917,17 @@ Tsum.prototype.readStatsNumbers = function(region) {
           minMargin: StatsMinGlyphMargin,
         });
         return null;
+      }
+      if (match.digit === '/') {
+        // Ends the number before it; a slash with no number before it is not
+        // the text this region was aimed at.
+        if (digits === '') {
+          return null;
+        }
+        fields.push(parseInt(digits, 10));
+        digits = '';
+        prevRight = box.x + box.width;
+        continue;
       }
       if (digits !== '' && box.x - prevRight > gap) {
         fields.push(parseInt(digits, 10));
@@ -1268,7 +1308,9 @@ var myTsumLibraryCache: MyTsumEntry[] | null = null;
 var myTsumLibraryTsums = 0;
 
 /**
- * The library file, read and decoded once, on the first round that asks.
+ * A library file, read and decoded. `myTsumLibrary` loads the pre-round one
+ * once, on the first round that asks; `withBoard` is whether this file carries
+ * board colours (the collection library does not).
  *
  * It ships beside the bundle rather than inside it -- see the header of
  * `src/tsums.dat`. Two thirds of `index.js` used to be this table, and none of
@@ -1281,7 +1323,7 @@ var myTsumLibraryTsums = 0;
  * cell. Each says which failure it was exactly once, because the alternative
  * symptom is a column that quietly stops filling.
  */
-function myTsumLoadLibrary(): MyTsumEntry[] {
+function myTsumLoadLibrary(file: string, withBoard: boolean): MyTsumEntry[] {
   const empty: MyTsumEntry[] = [];
   // Defined by the host per load, so it exists whenever a script is running.
   // Guarded anyway: without it there is no path to try, and an offline harness
@@ -1290,7 +1332,7 @@ function myTsumLoadLibrary(): MyTsumEntry[] {
     logWarn(Log.Tsums.NoLibrary, { reason: 'no script path' });
     return empty;
   }
-  const path = getScriptPath() + '/' + MyTsumPortrait.library;
+  const path = getScriptPath() + '/' + file;
   // readFile answers '' for both a missing file and an unreadable one, and
   // neither is worth telling apart here: the fix is the same.
   const text = readFile(path);
@@ -1342,7 +1384,7 @@ function myTsumLoadLibrary(): MyTsumEntry[] {
           { file: path, cells: cells, expected: MyTsumPoints.length });
         return empty;
       }
-      if (!boardOk) {
+      if (withBoard && !boardOk) {
         logWarn(Log.Tsums.NoBoardColors, { file: path, expected: MyTsumBoard.tag });
       }
       continue;
@@ -1390,7 +1432,7 @@ function myTsumLibrary(): MyTsumEntry[] {
   if (myTsumLibraryCache !== null) {
     return myTsumLibraryCache;
   }
-  const lib = myTsumLoadLibrary();
+  const lib = myTsumLoadLibrary(MyTsumPortrait.library, true);
   myTsumLibraryCache = lib;
   myTsumLibraryTsums = lib.length;
   return lib;
@@ -1467,12 +1509,13 @@ function myTsumSimilarity(a: number[], b: number[]): number {
 
 /**
  * The closest library entry to one signature, named as `build` prints it.
+ * `library` defaults to the pre-round one; the Tsum List export passes its own.
  *
  * With a single entry there is no runner-up and `margin` is the score itself:
  * nothing to beat is not the same as a tie.
  */
-function myTsumMatch(sig: number[], build: GameBuild): MyTsumMatch | null {
-  const lib = myTsumLibrary();
+function myTsumMatch(sig: number[], build: GameBuild, library?: MyTsumEntry[]): MyTsumMatch | null {
+  const lib = library !== undefined ? library : myTsumLibrary();
   const vec = myTsumPrepare(sig);
   let best = -2;
   let second = -2;

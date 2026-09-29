@@ -129,7 +129,14 @@ var LogsEn = {
   [Log.Box.Retrying]: 'Purchase failed; retaking store page',
   [Log.Box.RevealsStuck]: 'Box reveals stuck',
   [Log.Box.PurchaseLimit]: 'Purchase limit reached',
-  [Log.Box.End]: 'Box buying done'
+  [Log.Box.End]: 'Box buying done',
+  [Log.TsumList.NowQueued]: 'Exporting the Tsum list next loop turn',
+  [Log.TsumList.NowRefused]: 'Not exporting the Tsum list now',
+  [Log.TsumList.NowWaiting]: 'Round in progress; exporting the Tsum list after',
+  [Log.TsumList.Start]: 'Exporting the Tsum list',
+  [Log.TsumList.PageRead]: 'Collection page read',
+  [Log.TsumList.Unnamed]: 'Could not name a Tsum; saved its portrait',
+  [Log.TsumList.End]: 'Tsum list exported'
 }
 
 logRegisterStrings(Locale.English, LogsEn);

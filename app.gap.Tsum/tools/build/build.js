@@ -254,12 +254,16 @@ const steps = [
     run: ({ log }) => inlinePage(log, 'build/quickbar.html', 'dist/quickbar.html'),
   },
   { id: 'dist:bundle', needs: ['tsc:game'], run: ({ log }) => distBundle(log) },
-  // The tsum portrait library: not compiled, but shipped, so it goes into dist/
-  // under the same rule as the scripts. It is read off getScriptPath() on the
-  // first round that needs a name rather than out of the bundle.
+  // The tsum portrait libraries: not compiled, but shipped, so they go into
+  // dist/ under the same rule as the scripts. Each is read off getScriptPath()
+  // on first use rather than out of the bundle. tsumsCollection.dat is the
+  // Tsum List export's, for the collection screen's portrait.
   {
     id: 'dist:library',
-    run: ({ log }) => node(log, 'tools/minify/library.js', 'src/tsums.dat', 'dist/tsums.dat'),
+    run: async ({ log }) => {
+      await node(log, 'tools/minify/library.js', 'src/tsums.dat', 'dist/tsums.dat');
+      await node(log, 'tools/minify/library.js', 'src/tsumsCollection.dat', 'dist/tsumsCollection.dat');
+    },
   },
   // The license and the notices ride in the archive: dist/index.html inlines
   // Pico CSS, whose MIT notice has to travel with it.
@@ -310,7 +314,7 @@ async function main() {
         await sh((text) => process.stdout.write(text), 'adb', [
           '-s', device, 'push',
           'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
-          DEPLOY_DIR,
+          'dist/tsumsCollection.dat', DEPLOY_DIR,
         ]);
       } catch (err) {
         // Keep going so one bad emulator doesn't block the rest.

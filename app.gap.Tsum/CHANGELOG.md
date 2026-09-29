@@ -39,6 +39,34 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
+## [4.0b1]
+
+### Summary
+
+- Tsum List export added (Chores > Tsum List > Now): writes every Tsum you own, with its level, skill level and month acquired, to a CSV.
+
+### Added
+
+- **Tsum List export** (`src/tsumList.ts`). Sorts the collection by Date acquired
+  with owned Tsums only, rewinds, taps each card, and writes
+  `tsum_record/tsum_list_<stamp>.csv` after every page. Queued on a live run.
+  Started from a stopped script (`SettingKey.TsumListOnly`), the run exports and
+  stops. Alpha.
+- **`src/tsumsCollection.dat`**: a second portrait library for the collection's
+  big portrait. It is rendered from the `_l` art that panel draws, since the
+  pre-round library (the `_y` sprite) named none of the samples. 781 tsums; the
+  16 originals have no art in the pack and go unnamed, with their portrait saved.
+- **Digit reader**: a `StatsRegion` can read `/` as a field break (`slash`) and
+  enlarge small text (`scale`). The collection's 9px dates are read under five
+  floor/scale pairs until two agree.
+
+### Changed
+
+- `sortCollection` can also set "Show owned Tsums only" and returns the dialog's
+  previous state; `restoreCollectionSort` puts both back.
+- `collectionOffersRaise` is split out of `raiseSelectedLevelCap`. The export
+  also uses it, because the level row moves right when the padlock is drawn.
+
 ## [3.0b5]
 
 ### Summary

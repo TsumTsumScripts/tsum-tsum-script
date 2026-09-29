@@ -312,6 +312,7 @@ declare const enum SettingKey {
   BuyBoxSize = 'buyBoxSize',
   BuyBoxMaxPurchases = 'buyBoxMaxPurchases',
   BuyBoxesFirst = 'buyBoxesFirst',
+  TsumListOnly = 'tsumListOnly',
   ReceiveAllHearts = 'receiveAllHearts',
   ReceiveAllHeartsMinWait = 'receiveAllHeartsMinWait',
   ReceiveHeartsOneByOne = 'receiveHeartsOneByOne',
@@ -470,6 +471,11 @@ interface Settings {
    * starts a run, and `buildRun` queues the sweep off it.
    */
   [SettingKey.BuyBoxesFirst]?: boolean;
+  /**
+   * A run started by the Tsum List Now button: it exports and stops. Not a
+   * schema entry; `exportTsumListNow()` sets it.
+   */
+  [SettingKey.TsumListOnly]?: boolean;
   [SettingKey.ReceiveAllHearts]: boolean;
   [SettingKey.ReceiveAllHeartsMinWait]: number;
   [SettingKey.ReceiveHeartsOneByOne]: boolean;

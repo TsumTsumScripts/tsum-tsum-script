@@ -516,6 +516,22 @@ var tabs: TabSpec[] = [
                         step: 1
                     }
                 ]
+            },
+            {
+                title: UiText.GroupTsumList,
+                help: UiText.GroupTsumListHelp,
+                rows: [
+                    {
+                        // A one-off with no schedule -- see `askExportTsumListNow`.
+                        key: RowKey.ExportTsumList,
+                        title: UiText.SettingExportTsumList,
+                        help: UiText.SettingExportTsumListHelp,
+                        status: ReleaseStatus.Alpha,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askExportTsumListNow(); }}
+                        ]
+                    }
+                ]
             }
         ]
     },
@@ -2062,6 +2078,24 @@ function askBuyBoxesNow(): void {
     iface.runScript('typeof buyBoxesNow === "function" && buyBoxesNow('
         + JSON.stringify(startSettings(settings)) + ');');
     logInfo(Log.Settings.BuyBoxesNowAsked, 'Asked the run to buy boxes now');
+}
+
+/**
+ * The Tsum List export's Now button. As `askBuyBoxesNow`, except that a run
+ * started from here stops once the export is done (`exportTsumListNow`).
+ */
+// noinspection JSUnusedGlobalSymbols
+function askExportTsumListNow(): void {
+    var iface = bridge();
+    if (iface === undefined) {
+        return;
+    }
+    flushSettings();
+    iface.hideMenu();
+    iface.showMenu();
+    iface.runScript('typeof exportTsumListNow === "function" && exportTsumListNow('
+        + JSON.stringify(startSettings(settings)) + ');');
+    logInfo(Log.Settings.ExportTsumListAsked, 'Asked the run to export the Tsum list');
 }
 
 /**

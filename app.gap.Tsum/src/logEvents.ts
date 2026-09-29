@@ -340,6 +340,24 @@ namespace Log {
     ToastStuck       = 'box.toastStuck',
   }
 
+  /** The Tsum List export: every owned tsum off the collection into a CSV. */
+  export const enum TsumList {
+    CardMissed      = 'tsumList.cardMissed',
+    CardRead        = 'tsumList.cardRead',
+    End             = 'tsumList.end',
+    NowQueued       = 'tsumList.nowQueued',
+    NowRefused      = 'tsumList.nowRefused',
+    NowWaiting      = 'tsumList.nowWaiting',
+    OwnedOnlyNotSet = 'tsumList.ownedOnlyNotSet',
+    PageMissed      = 'tsumList.pageMissed',
+    PageRead        = 'tsumList.pageRead',
+    PageTurnMissed  = 'tsumList.pageTurnMissed',
+    PortraitSaved   = 'tsumList.portraitSaved',
+    Start           = 'tsumList.start',
+    Unnamed         = 'tsumList.unnamed',
+    WriteFailed     = 'tsumList.writeFailed',
+  }
+
   /** The per-round CSV. */
   export const enum Stats {
     ClippedGlyph    = 'stats.clippedGlyph',
@@ -450,6 +468,7 @@ namespace Log {
     RoundDelaySkipAsked        = 'settings.roundDelaySkipAsked',
     UnlockLevelsNowAsked       = 'settings.unlockLevelsNowAsked',
     BuyBoxesNowAsked           = 'settings.buyBoxesNowAsked',
+    ExportTsumListAsked        = 'settings.exportTsumListAsked',
     Saved                      = 'settings.saved',
     ShareCodeUndecodable       = 'settings.shareCodeUndecodable',
     ShareFieldIgnored          = 'settings.shareFieldIgnored',

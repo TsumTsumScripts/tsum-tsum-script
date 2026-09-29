@@ -2574,6 +2574,23 @@ var CollectionGrid = {
   prevPageColor: {r: 220, g: 244, b: 253},
   prevPageDiff: 60,
   prevPageVotes: 3,
+  /** `prevPage`'s samples mirrored onto `nextPage`; absent on the last page. */
+  nextPageSamples: [
+    {dx: 0, dy: -27}, {dx: 9, dy: -9}, {dx: 0, dy: 0}, {dx: 0, dy: 9}, {dx: 0, dy: 27}
+  ],
+  /**
+   * Four points on each card's body, low and to the sides where no tsum art
+   * reaches (the top corners take the card's border colour, which varies). A
+   * card reads blue, the selected one gold, an empty slot the darker panel.
+   * Measured: blue b 173-206, gold r 222-247 b 8-74, empty b 99-156.
+   */
+  bodySamples: [{dx: -85, dy: 0}, {dx: 85, dy: 0}, {dx: -80, dy: 40}, {dx: 80, dy: 40}],
+  bodyColor: {r: 37, g: 107, b: 192},
+  bodyDiff: 32,
+  selectedColor: {r: 239, g: 174, b: 20},
+  selectedDiff: 60,
+  /** Of the four, how many make a card, or the selected one. */
+  bodyVotes: 2,
   /**
    * A card still loading: flat blue with a spinner where the tsum art goes. The
    * grid shows these for ~0.5s after a re-sort, with the right chevron drawn but
@@ -2693,7 +2710,68 @@ var CollectionSortDialog = {
   selectedColor: {r: 247, g: 174, b: 8},
   selectedDiff: 50,
   /** How many of the four have to be gold. Measured: 4 or 0, never between. */
-  selectedVotes: 3
+  selectedVotes: 3,
+  /**
+   * The "Show owned Tsums only" checkbox: its centre, and two points on the
+   * brown tick that only a ticked box draws (read 115-123/65/41).
+   */
+  ownedOnly: {x: 165, y: 1370},
+  ownedOnlySamples: [{dx: -5, dy: 5}, {dx: 0, dy: 10}],
+  ownedOnlyColor: {r: 119, g: 65, b: 41},
+  ownedOnlyDiff: 40
+};
+
+// ---------------------------------------------------------------------------
+// The collection's detail panel, as the Tsum List export reads it
+// (src/tsumList.ts).
+//
+// `icon` is a square on the big portrait. The panel draws the tsum's plain
+// `_l` sprite unscaled at centre (303, 493), 432 wide -- fitted on two frames
+// independently, to the pixel -- and this crop covers the same share of it
+// that `MyTsumPortrait.icon` covers of the pre-round sprite. The pre-round
+// library cannot be used here (it is the glowing `_y` sprite on the orange
+// button), so the development tools' lexicon renders a second library from
+// the `_l` art at this rect: `library`. Same grid, mask and file format as
+// `MyTsumPortrait`, and read by the same loader.
+//
+// The accept test is stricter than the pre-round one because the drawing is
+// exact: true matches score 0.999, and a tsum missing from the library (the
+// sixteen originals, whose art is not in the pack) tops out at 0.971.
+//
+// The level and skill rows read "5/10" as [5, 10]. The level row moves 30
+// right when the raise-cap padlock is drawn beside it (`levelCappedDx`).
+// ---------------------------------------------------------------------------
+
+var TsumListPortrait = {
+  library: 'tsumsCollection.dat',
+  icon: {from: {x: 178, y: 368}, to: {x: 428, y: 618}},
+  minScore: 0.985,
+  minMargin: 0.03
+};
+
+var TsumListRegions = {
+  level: {
+    name: 'tsum level',
+    x: 300, y: 672, w: 250, h: 60,
+    lo: [220, 220, 220], hi: [255, 255, 255], slash: true
+  } as StatsRegion,
+  levelCappedDx: 30,
+  skill: {
+    name: 'tsum skill',
+    x: 750, y: 672, w: 230, h: 60,
+    lo: [220, 220, 220], hi: [255, 255, 255], slash: true
+  } as StatsRegion,
+  /**
+   * A card's "2026/05", offset from its `CollectionGrid.cells` centre. At 9px
+   * tall no single floor and scale reads every card, but none of them reads a
+   * wrong date either -- they fail empty -- so a date is read under each of
+   * `dateReads` in turn until two agree. 27 of 27 cards, ~2 reads each.
+   */
+  date: {dx: -80, dy: 58, w: 160, h: 40},
+  dateReads: [
+    {scale: 4, lo: 170}, {scale: 3, lo: 180}, {scale: 2, lo: 180},
+    {scale: 3, lo: 130}, {scale: 3, lo: 190}
+  ]
 };
 
 // ---------------------------------------------------------------------------
