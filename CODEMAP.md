@@ -434,7 +434,7 @@ Run from `app.gap.Tsum/`.
 |:--|:--|
 | `npm run typecheck` | All three compilations. `npm run typecheck:game`, `npm run typecheck:settings` or `npm run typecheck:quickbar` for one |
 | `npm run build` | `tsc` both halves, regenerate `PAGE_DISPATCH.md`, inline the settings page → `dist/` (substituting `$BUILD_DATE`, `$VERSION` and `$SKILL_STATUS` — the channel's skill floor, `src/skillOptions.ts` — into it, and `$VERSION` into the game bundle on its way to `dist/`), then the channel's archive and its `.sha256` beside it (the bare digest, as a string). The archive is named from `config.json` (channel) and `package.json` (version), so `-c Beta` / `-Channel Beta` picks which. `npm run build:ps` is the PowerShell equivalent |
-| `npm run buildAndAdb` | Build, then push to the device. `npm run adb` pushes an existing `dist/` |
+| `npm run buildAndAdb` | Build, then push to every connected emulator (`--device SERIAL` picks one). `npm run adb` pushes an existing `dist/` |
 | `npm run pages:docs` | Regenerate `PAGE_DISPATCH.md` (also run by the build); `npm run pages:docs:check` is the gate that fails |
 | `npm run events:docs` | Regenerate `EVENTS.md` from the `emitEvent` call sites (also run by the build); `npm run events:docs:check` is the gate that fails. Also reports a name outside `Emit`, one not known at compile time, and an event emitted with two payload shapes |
 | `npm run dispatch:eval` | The dispatch queue and the scheduler against their golden traces (also run, non-fatally, by the build): exit 1 on a changed row or a broken invariant. `-- -v` lists every changed row, `-- --only X` narrows to rows or presets containing X, `-- --dispatch` / `--scheduler` runs one half, `-- --strict` makes every invariant a gate |

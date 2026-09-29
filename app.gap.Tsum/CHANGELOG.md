@@ -52,6 +52,11 @@ release note; they fold back in here when she ships.
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture
   disc, bubble pass and link reach. Other skills skip the read and stay at 1.
 
+### Changed
+
+- **`build --adb` pushes to every emulator in `adb devices`** instead of the
+  first; `--device SERIAL` still picks one.
+
 ## [3.2]
 
 ### Summary

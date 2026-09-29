@@ -951,7 +951,7 @@ The couplings that are easy to miss:
 ```bash
 npm run typecheck      # both compilations: the game bundle and the settings UI
 npm run build          # → dist/index.js, dist/index.html, dist/tsums.dat, LICENSE + NOTICE, <archive>.zip + .sha256
-npm run buildAndAdb    # build, then adb push to the device
+npm run buildAndAdb    # build, then adb push to every connected emulator
 npm run adb            # push an existing dist/ without rebuilding
 ```
 

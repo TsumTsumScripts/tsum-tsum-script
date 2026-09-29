@@ -65,6 +65,7 @@ const PAGE_SCRIPTS = [
   { file: 'build/i18n.js', verify: 'names:i18nRegister,i18nText' },
   { file: 'build/uiEn.js' },
   { file: 'build/uiZhTw.js' },
+  { file: 'build/uiJa.js' },
   { file: 'build/releaseStatus.js', verify: 'names:offeredHere,statusFlag' },
   { file: 'build/skillOptions.js' },
   // No `verify`, as skillOptions: `names:` looks for function declarations and
@@ -227,7 +228,7 @@ const steps = [
 
   { id: 'tsc:settings', run: ({ log }) => node(log, tsc, '-p', 'tsconfig.settings.json') },
   // Behind the settings compile for want of a lock, not a core: both configs
-  // emit build/i18n.js, uiEn.js, uiZhTw.js and skillOptions.js from the same
+  // emit build/i18n.js, the ui*.js catalogues and skillOptions.js from the same
   // sources. The output is identical either way, but two tsc processes writing
   // those paths at once can leave one of them half-written. Giving this config
   // its own outDir would buy back ~0.5s and cost a copy step plus a fix to
@@ -299,26 +300,45 @@ async function main() {
   console.log(`[build] done in ${elapsed}s`);
 
   if (has('adb')) {
-    const device = valueOf('device') || firstEmulator();
-    console.log(`[build] pushing to ${device}...`);
-    await sh((text) => process.stdout.write(text), 'adb', [
-      '-s', device, 'push',
-      'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
-      DEPLOY_DIR,
-    ]);
+    const devices = valueOf('device') ? [valueOf('device')] : connectedEmulators();
+    const failed = [];
+    for (const device of devices) {
+      console.log(`[build] pushing to ${device}...`);
+      try {
+        // A multi-file push fails if the target folder is missing.
+        await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'shell', 'mkdir', '-p', `'${DEPLOY_DIR}'`]);
+        await sh((text) => process.stdout.write(text), 'adb', [
+          '-s', device, 'push',
+          'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
+          DEPLOY_DIR,
+        ]);
+      } catch (err) {
+        // Keep going so one bad emulator doesn't block the rest.
+        console.error(`[build] push to ${device} failed: ${err && err.message ? err.message : err}`);
+        failed.push(device);
+      }
+    }
+    if (failed.length) throw new Error(`push failed on ${failed.join(', ')}`);
   }
 }
 
-// First emulator in `adb devices`: `emulator-NNNN`, or a local TCP serial such
+// Every emulator in `adb devices`: `emulator-NNNN`, or a local TCP serial such
 // as BlueStacks' `127.0.0.1:5555`. Physical devices and offline entries are skipped.
-function firstEmulator() {
+function connectedEmulators() {
   const out = execFileSync('adb', ['devices'], { encoding: 'utf8' });
+  const serials = [];
   for (const line of out.split('\n').slice(1)) {
     const [serial, state] = line.trim().split(/\s+/);
     if (state !== 'device') continue;
-    if (/^emulator-\d+$/.test(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) return serial;
+    if (/^emulator-\d+$/.test(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) serials.push(serial);
   }
-  throw new Error('no emulator listed in `adb devices`; pass --device SERIAL');
+  // An emulator reached over `adb connect` also shows as 127.0.0.1:<console port + 1>; push once.
+  const unique = serials.filter((serial) => {
+    const port = /:(\d+)$/.exec(serial);
+    return !port || !serials.includes(`emulator-${Number(port[1]) - 1}`);
+  });
+  if (!unique.length) throw new Error('no emulator listed in `adb devices`; pass --device SERIAL');
+  return unique;
 }
 
 main().catch((err) => {
