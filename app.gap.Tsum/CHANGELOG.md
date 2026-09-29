@@ -52,6 +52,8 @@ release note; they fold back in here when she ships.
   `tsum_record/tsum_list_<stamp>.csv` after every page. Queued on a live run.
   Started from a stopped script (`SettingKey.TsumListOnly`), the run exports and
   stops. Alpha.
+- The Tsum List CSV ends in a `build` column (`global`/`jp`), so a reader such
+  as the stats site can tell an INTL list from a JP one.
 - **Naming** is by portrait first: `src/tsumsCollection.dat`, rendered from
   each tsum's `_l` art. When the portrait can't separate art twins (Donald and
   his variants, the Minnies, Piglet), the name printed on the panel decides:

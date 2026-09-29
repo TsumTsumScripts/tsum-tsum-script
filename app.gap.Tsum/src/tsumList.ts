@@ -39,7 +39,7 @@ const TsumListPortraitWaitMs = 3000;
 const TsumListPortraitChanged = 0.9;
 /** Two reads in a row this alike are a settled portrait; sparkles cost ~0.01. */
 const TsumListPortraitStill = 0.98;
-const TsumListColumns = ['order', 'tsum', 'name', 'level', 'level_cap', 'skill', 'skill_max', 'acquired'];
+const TsumListColumns = ['order', 'tsum', 'name', 'level', 'level_cap', 'skill', 'skill_max', 'acquired', 'build'];
 
 /** The collection library, loaded on first use. */
 var gTsumListLibrary: MyTsumEntry[] | null = null;
@@ -495,8 +495,8 @@ Tsum.prototype.awaitCollectionPortrait = function(before) {
   return false;
 }
 
-/** The CSV, whole: the header and every row so far. */
-function tsumListCsv(rows: TsumListRow[]): string {
+/** The CSV, whole: the header and every row so far. `build` is the game build the list was read from. */
+function tsumListCsv(rows: TsumListRow[], build: GameBuild): string {
   const cell = function(v: number | null): string {
     return v === null ? '' : String(v);
   };
@@ -504,7 +504,7 @@ function tsumListCsv(rows: TsumListRow[]): string {
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
     lines.push([String(r.order), statsCsvField(r.tsum), statsCsvField(r.name), cell(r.level),
-      cell(r.levelCap), cell(r.skill), cell(r.skillMax), r.acquired].join(','));
+      cell(r.levelCap), cell(r.skill), cell(r.skillMax), r.acquired, build].join(','));
   }
   return lines.join('\n') + '\n';
 }
@@ -520,6 +520,7 @@ Tsum.prototype.taskExportTsumList = function() {
   const stamp = statsFileStamp(new Date());
   const base = this.storagePath + '/' + Config.recordDir + '/tsum_list_' + stamp;
   const csvPath = base + '.csv';
+  const build = this.gameBuild();
   logInfo(Log.TsumList.Start, {file: csvPath});
   this.banner('Exporting the Tsum list', 4000);
 
@@ -560,7 +561,7 @@ Tsum.prototype.taskExportTsumList = function() {
       rows.push(row);
     }
     try {
-      writeFile(csvPath, tsumListCsv(rows));
+      writeFile(csvPath, tsumListCsv(rows, build));
     } catch (e) {
       logWarn(Log.TsumList.WriteFailed, 'Could not write the Tsum list', {file: csvPath, errorText: String(e)});
     }
