@@ -1369,6 +1369,8 @@ interface Tsum {
   watchRoundEnd(hud: HudWatch): RoundLook;
   /** What is left of the between-rounds delay, in ms; 0 when none is running. */
   roundDelayRemainingMs(): number;
+  /** Counts a finished round toward "Stop after games"; true if it fired. */
+  countGameTowardStop(): boolean;
   /** True once a round has been played, so the next one starts without the job's interval. */
   taskPlayGameQuick(): boolean | void;
 
@@ -1892,6 +1894,14 @@ declare function showBanner(message: string, duration?: number, plays?: number):
  * reference to a missing global is a ReferenceError.
  */
 declare function publishStats(pattern: string): void;
+
+/**
+ * Ask the host to pause this script, as its own Pause button would. Returns at
+ * once; the pause lands at the script's next `sleep()` or touch, and the host's
+ * Resume carries on from there. Newer than the rest -- reach for it behind
+ * `typeof pauseScript === 'function'`.
+ */
+declare function pauseScript(): void;
 
 /**
  * Broadcast one of this script's own events to tooling outside the device.

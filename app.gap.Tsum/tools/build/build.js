@@ -71,6 +71,7 @@ const PAGE_SCRIPTS = [
   // No `verify`, as skillOptions: `names:` looks for function declarations and
   // both of these files are one `var` holding an array.
   { file: 'build/bubbleOptions.js' },
+  { file: 'build/stopAfterOptions.js' },
   { file: 'build/runPlan.js' },
   { file: 'build/qrCode.js', verify: 'names:qrMatrix' },
   { file: 'build/presets.js', verify: 'names:presetsLoad,presetMatchName' },

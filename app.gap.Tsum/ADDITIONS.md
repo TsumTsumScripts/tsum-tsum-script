@@ -14,3 +14,5 @@ docs), then drop its rows here.
 | `StatsRegion.slash`, `StatsRegion.scale`, `StatsSlash` | Tsum List: "5/10" and the 9px dates | `src/globals.d.ts`, `src/roundStats.ts` | used |
 | `TsumListPortrait`, `TsumListRegions`, `src/tsumsCollection.dat` | Tsum List: naming by portrait, level/skill/date reads | `src/data.ts`, build, lexicon | used |
 | `TsumListName`, `src/tsumNames.dat`, `myTsumUnpack` | Tsum List: printed-name fallback for art twins | `src/data.ts`, `src/tsumList.ts`, `src/roundStats.ts`, build, lexicon | used |
+| `SettingKey.StopAfterGames`, `SettingKey.StopAfterAction`, `StopAfterAction`, `src/stopAfterOptions.ts` | Stop after games | `src/shared.d.ts`, `src/settings.ts`, `src/quickbar.ts`, `src/quickbar.html`, `src/play.ts` | used |
+| `pauseScript()` host native | Stop after games: Pause | `src/globals.d.ts`, host `api_system.cpp` | used |

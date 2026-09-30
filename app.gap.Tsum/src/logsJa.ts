@@ -53,6 +53,7 @@ var LogsJa: LogCataloguePartial = {
   [Log.Play.RoundDelayOver]: '待機終了。次のラウンドへ',
   [Log.Play.RoundDelaySkipped]: '待機を打ち切り。次のラウンドへ',
   [Log.Play.RoundTimeUp]: 'ラウンドの最大時間に到達',
+  [Log.Play.GamesLimitReached]: '設定したゲーム数をプレイしました',
   [Log.Play.RoundCoasting]: 'ラウンドの終了待ち',
   [Log.Tsums.Detected]: '設定ページからマイツムを取得',
   [Log.Tsums.Identified]: 'マイツムを判定',

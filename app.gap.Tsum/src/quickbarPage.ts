@@ -470,6 +470,9 @@ function qbOptionsFor(key: string): QbOption[] | undefined {
     if (key === SettingKey.BubbleStrategy) {
         return BubbleOptions;
     }
+    if (key === SettingKey.StopAfterAction) {
+        return StopAfterOptions;
+    }
     return undefined;
 }
 

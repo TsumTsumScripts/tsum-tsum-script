@@ -162,6 +162,19 @@ declare const enum MaxRoundAction {
 }
 
 /**
+ * What happens once "Stop after games" has counted its rounds down. Checked
+ * between rounds, so the last round is always seen out.
+ */
+declare const enum StopAfterAction {
+  /** Stop starting rounds for the rest of this run; the chores carry on. */
+  AutoPlayOff = 'autoPlayOff',
+  /** Pause the script the way the overlay's Pause does; Resume counts again. */
+  Pause = 'pause',
+  /** End the run, the way the Stop button does. */
+  Stop = 'stop',
+}
+
+/**
  * The boxes the Tsum Tsum Store sells, as the Box Buying chore names them.
  *
  * The store draws its boxes as a row of tabs, and the row is three or four wide
@@ -281,6 +294,8 @@ declare const enum SettingKey {
   RoundDelayMinutes = 'roundDelayMinutes',
   MaxRoundMinutes = 'maxRoundMinutes',
   MaxRoundAction = 'maxRoundAction',
+  StopAfterGames = 'stopAfterGames',
+  StopAfterAction = 'stopAfterAction',
   BubbleStrategy = 'bubbleStrategy',
   HoldBubblesLastFeverSec = 'holdBubblesLastFeverSec',
   UseFan = 'useFan',
@@ -386,6 +401,9 @@ interface Settings {
   [SettingKey.MaxRoundMinutes]: number;
   /** What to do when `maxRoundMinutes` runs out. Ignored while that is 0. */
   [SettingKey.MaxRoundAction]: MaxRoundAction;
+  /** Rounds to play before `stopAfterAction` fires; 0 never stops. */
+  [SettingKey.StopAfterGames]: number;
+  [SettingKey.StopAfterAction]: StopAfterAction;
   [SettingKey.BubbleStrategy]: BubbleStrategy;
   /**
    * Pop no bubble while a fever has this many seconds left, so they are still

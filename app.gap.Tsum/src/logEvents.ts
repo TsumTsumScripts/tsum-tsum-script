@@ -143,6 +143,7 @@ namespace Log {
     GameOverAssumed       = 'play.gameOverAssumed',
     GameOverConfirmed     = 'play.gameOverConfirmed',
     GameStart             = 'play.gameStart',
+    GamesLimitReached     = 'play.gamesLimitReached',
     GamingFast            = 'play.gamingFast',
     HudBack               = 'play.hudBack',
     MagicalTimeCancelled  = 'play.magicalTimeCancelled',

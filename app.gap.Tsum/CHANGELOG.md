@@ -44,9 +44,17 @@ release note; they fold back in here when she ships.
 ### Summary
 
 - Tsum List export added (Chores > Tsum List > Now): writes every Tsum you own, with its level, skill level and month acquired, to a CSV.
+- Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
 
 ### Added
 
+- **Stop after games** (`SettingKey.StopAfterGames`, `StopAfterAction`). Counted
+  at the play task's tail (`countGameTowardStop`); firing or a new target resets
+  the count. Auto Play off removes the `PlayRound` job; Pause calls the host's
+  new `pauseScript()` (falls back to Auto Play off on an older host). Both are
+  `LiveWhen.Now`, `neverShared`.
+- **Quick Bar** page two's bottom row is now Games and Then; the five bonus
+  chips there are gone (still on the settings page).
 - **Tsum List export** (`src/tsumList.ts`). Sorts the collection by Date acquired
   with owned Tsums only, rewinds, taps each card, and writes
   `tsum_record/tsum_list_<stamp>.csv` after every page. Queued on a live run.

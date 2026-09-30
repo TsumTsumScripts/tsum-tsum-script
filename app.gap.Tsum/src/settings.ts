@@ -654,6 +654,28 @@ var tabs: TabSpec[] = [
                         neverShared: true
                     },
                     {
+                        // Counted at each round's tail -- see the Stop after
+                        // games block in `src/play.ts`. How long the run goes,
+                        // not how a round is played, so never shared.
+                        key: SettingKey.StopAfterGames,
+                        title: UiText.SettingStopAfterGames,
+                        help: UiText.SettingStopAfterGamesHelp,
+                        default: 0,
+                        step: 1,
+                        max: 999,
+                        min: 0,
+                        neverShared: true
+                    },
+                    {
+                        key: SettingKey.StopAfterAction,
+                        title: UiText.SettingStopAfterAction,
+                        help: UiText.SettingStopAfterActionHelp,
+                        default: StopAfterAction.AutoPlayOff as StopAfterAction,
+                        // `src/stopAfterOptions.ts`, shared with the Quick Bar.
+                        dropdown: StopAfterOptions,
+                        neverShared: true
+                    },
+                    {
                         key: SettingKey.TrackRoundStats,
                         title: UiText.SettingTrackRoundStats,
                         help: UiText.SettingTrackRoundStatsHelp,
@@ -3389,11 +3411,17 @@ function taskDetail(name: TaskName, values: { [key: string]: SettingValue }): st
             // which is what lets the chores keep their own clocks through it.
             var delay = num(SettingKey.RoundDelayMinutes);
             var cap = num(SettingKey.MaxRoundMinutes);
+            var games = num(SettingKey.StopAfterGames);
             return (delay > 0 ? i18nFormat(UiText.RunPlayRoundDelay, {minutes: delay}) : '')
                 + (cap > 0 ? i18nFormat(UiText.RunPlayRoundCap, {
                     minutes: cap,
                     action: optionLabelOf(SettingKey.MaxRoundAction,
                         values[SettingKey.MaxRoundAction])
+                }) : '')
+                + (games > 0 ? i18nFormat(UiText.RunPlayRoundStopAfter, {
+                    games: games,
+                    action: optionLabelOf(SettingKey.StopAfterAction,
+                        values[SettingKey.StopAfterAction])
                 }) : '')
                 + itemsLabel(values);
         }

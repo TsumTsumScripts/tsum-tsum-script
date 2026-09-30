@@ -145,6 +145,12 @@ class Tsum {
   maxRoundMs: number;
   /** What the play loop does when `maxRoundMs` runs out. */
   maxRoundAction: MaxRoundAction;
+  /** The "Stop after games" setting; 0 never stops. */
+  stopAfterGames: number;
+  /** What happens when `stopAfterGames` rounds have been played. */
+  stopAfterAction: StopAfterAction;
+  /** Rounds finished toward `stopAfterGames`; reset when it fires or changes. */
+  gamesTowardStop: number;
   /**
    * When the next round may start, epoch ms; 0 when nothing is waiting.
    *
@@ -373,6 +379,9 @@ class Tsum {
     this.roundDelayMs = 0;
     this.maxRoundMs = 0;
     this.maxRoundAction = MaxRoundAction.Coast;
+    this.stopAfterGames = 0;
+    this.stopAfterAction = StopAfterAction.AutoPlayOff;
+    this.gamesTowardStop = 0;
     // A new world per start(), so pressing Play always plays now rather than
     // resuming a wait the previous run was in.
     this.nextRoundAt = 0;

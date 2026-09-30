@@ -84,6 +84,17 @@ declare const enum UiText {
   SettingMaxRoundActionHelp = 'setting.maxRoundAction.help',
   MaxRoundCoast = 'maxRound.coast',
   MaxRoundStop = 'maxRound.stop',
+  SettingStopAfterGames = 'setting.stopAfterGames',
+  SettingStopAfterGamesHelp = 'setting.stopAfterGames.help',
+  SettingStopAfterAction = 'setting.stopAfterAction',
+  SettingStopAfterActionHelp = 'setting.stopAfterAction.help',
+  StopAfterAutoPlayOff = 'stopAfter.autoPlayOff',
+  StopAfterPause = 'stopAfter.pause',
+  StopAfterStop = 'stopAfter.stop',
+  /** The Quick Bar chip's names for the three. */
+  StopAfterAutoPlayOffShort = 'stopAfter.autoPlayOff.short',
+  StopAfterPauseShort = 'stopAfter.pause.short',
+  StopAfterStopShort = 'stopAfter.stop.short',
   SettingMaxChainsPerScan = 'setting.maxChainsPerScan',
   SettingMaxChainsPerScanHelp = 'setting.maxChainsPerScan.help',
   SettingMaxChain = 'setting.maxChain',
@@ -361,6 +372,7 @@ declare const enum UiText {
   /** Waits `{minutes}` between rounds. Prefixed to the item list, so it ends in a space. */
   RunPlayRoundDelay = 'run.playRound.delay',
   RunPlayRoundCap = 'run.playRound.cap',
+  RunPlayRoundStopAfter = 'run.playRound.stopAfter',
   RunItemsNone = 'run.items.none',
   /** `{items}`, joined with `RunItemsSeparator`. */
   RunItemsSome = 'run.items.some',
@@ -403,11 +415,9 @@ declare const enum UiText {
    *  in some languages than the chip has room for. */
   QbBonusCoin = 'qb.bonusCoin',
   QbBonus5to4 = 'qb.bonus5to4',
-  QbBonusScore = 'qb.bonusScore',
-  QbBonusExp = 'qb.bonusExp',
-  QbBonusTime = 'qb.bonusTime',
-  QbBonusBubble = 'qb.bonusBubble',
-  QbBonusCombo = 'qb.bonusCombo',
+  /** Stop after games' stepper and its action chip. */
+  QbGames = 'qb.games',
+  QbThen = 'qb.then',
   QbSendHearts = 'qb.sendHearts',
   QbReceiveOneByOne = 'qb.receiveOneByOne',
   QbUnlockNow = 'qb.unlockNow',

@@ -190,6 +190,9 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   // which is the one behaviour the cap exists to replace.
   ts.maxRoundAction = settings.maxRoundAction === MaxRoundAction.Stop
     ? MaxRoundAction.Stop : MaxRoundAction.Coast;
+  ts.stopAfterGames = typeof settings.stopAfterGames === 'number'
+    && settings.stopAfterGames > 0 ? Math.round(settings.stopAfterGames) : 0;
+  ts.stopAfterAction = stopAfterActionOf(settings.stopAfterAction);
   ts.sendHearts = settings.sendHeartsAuto;
   ts.receiveOneByOne = settings.receiveHeartsOneByOne;
   ts.keepRuby = settings.receiveHeartsSkipRuby;

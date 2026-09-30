@@ -55,6 +55,7 @@ var LogsEn = {
   [Log.Play.RoundDelayOver]: 'Wait over; next round',
   [Log.Play.RoundDelaySkipped]: 'Wait cut short; next round',
   [Log.Play.RoundTimeUp]: 'Round hit Max Round Duration',
+  [Log.Play.GamesLimitReached]: 'Played the set number of games',
   [Log.Play.RoundCoasting]: 'Still waiting for the round to end',
   [Log.Tsums.Detected]: 'MyTsum read from the settings page',
   [Log.Tsums.Identified]: 'MyTsum identified',
