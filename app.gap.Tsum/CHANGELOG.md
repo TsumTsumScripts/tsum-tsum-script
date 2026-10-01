@@ -90,9 +90,9 @@ release note; they fold back in here when she ships.
   previous state; `restoreCollectionSort` puts both back.
 - `collectionOffersRaise` is split out of `raiseSelectedLevelCap`. The export
   also uses it, because the level row moves right when the padlock is drawn.
-- `checkSkillReadiness` reads Far while the bottom chrome is pure green. Villains
-  (Set)'s smoke read Active at the button, so `while (useSkill())` re-fired every
-  ~300ms and drew no chains for up to 9s per window.
+- `checkSkillReadiness` reads Far while the bottom chrome is green or purple
+  smoke. Villains (Set)'s smoke read Active at the button, so `while (useSkill())`
+  re-fired every ~300ms and drew no chains for up to 9s per window.
 
 ## [3.0b5]
 
