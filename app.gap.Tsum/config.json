@@ -7,6 +7,10 @@
   "MessageMaxChars": 2000,
   "HistoryLimit": 5,
   "MinHost": "2.0",
+  "Prerelease": {
+    "Remote": "r2:app-assets",
+    "BaseUrl": "https://app-assets.gapapp.app"
+  },
   "Channels": {
     "Alpha": {
       "Name": "Tsum Tsum - ALPHA",

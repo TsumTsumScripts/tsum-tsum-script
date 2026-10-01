@@ -261,7 +261,12 @@ async function main() {
   console.log('\nRun build-official.ps1 in the catalogue to fold this into official.json, then commit there.');
 }
 
-main().catch((err) => {
-  console.error(err.message);
-  process.exit(1);
-});
+// prerelease.js reuses the note and the build.
+module.exports = { summaryBullets, releaseMessage, runBuild, historyRow, utcTimestamp };
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err.message);
+    process.exit(1);
+  });
+}
