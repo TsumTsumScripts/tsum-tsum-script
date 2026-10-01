@@ -39,6 +39,19 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
+## [3.3]
+
+### Summary
+
+- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums.
+
+### Added
+
+- **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`, Alpha). A burst
+  declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
+  5) into `Config.boardScale`, which scales the circle pass, blurs, texture
+  disc, bubble pass and link reach. Other skills skip the read and stay at 1.
+
 ## [3.2]
 
 ### Summary

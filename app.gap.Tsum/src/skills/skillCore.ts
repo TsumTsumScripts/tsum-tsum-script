@@ -128,6 +128,10 @@ interface SkillHandler {
   // chain a capture and `ChainCounterConfig.settleMs`, which is why not every
   // skill. A function is asked once per chain.
   readsChainCounter?: boolean | ((ts: Tsum) => boolean);
+  // The skill changes how big the tsums are, so each scan reads their size
+  // and scales the board read to it (`updateBoardScale`, `Config.boardScale`).
+  // Costs a Hough pass per scan, which is why not every skill.
+  scalesBoard?: boolean;
   // The last activation is still in effect, so a tap now would waste the
   // gauge: Gaston's window is a timed mode, and an activation inside it only
   // restarts the animation over the seconds it had left. While this answers
@@ -200,6 +204,13 @@ function skillReadsChainCounter(ts: Tsum): boolean {
   const handler = SkillHandlers[ts.skillType];
   const reads = handler && handler.readsChainCounter;
   return typeof reads === 'function' ? reads(ts) : !!reads;
+}
+
+// Whether each scan reads the tsums' size. See `SkillHandler.scalesBoard`;
+// every other skill plays at `Config.boardScale` 1.
+function skillScalesBoard(ts: Tsum): boolean {
+  const handler = SkillHandlers[ts.skillType];
+  return !!(handler && handler.scalesBoard);
 }
 
 // Whether bubbles on the board belong to the skill rather than to the Bubble

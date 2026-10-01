@@ -239,6 +239,7 @@ declare const enum UiText {
   SkillCptLightyear = 'skill.cptLightyear',
   SkillCptLightyear120 = 'skill.cptLightyear120',
   SkillLightningMcQueenPlus = 'skill.lightningMcQueenPlus',
+  SkillNightmareSet = 'skill.nightmareSet',
   SkillFormalBeast = 'skill.formalBeast',
   SkillGaston = 'skill.gaston',
   SkillTiaraMinniePlus = 'skill.tiaraMinniePlus',

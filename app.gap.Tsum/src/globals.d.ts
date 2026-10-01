@@ -1122,6 +1122,8 @@ interface TsumConfig {
    */
   linkReach: number;
   maxChain: number;
+  /** Tsum size against `tsumWidth`, 1 for a normal board -- see `tsumSpan`. */
+  boardScale: number;
   debugLogs: boolean;
   /**
    * Page-history frames an issue report copies, and so the number the router
@@ -1307,6 +1309,9 @@ interface Tsum {
   boardClusters: Color[];
   /** How many tsums each of `boardClusters` holds, same order. */
   boardClusterSizes: number[];
+  /** The last few tsum-size reads `Config.boardScale` is the median of; emptied each round. */
+  boardScaleReads: number[];
+  updateBoardScale(grayImg: NativeImage): void;
   scanBoardQuick(): BoardPoint[];
 
   // --- play.ts ---------------------------------------------------------

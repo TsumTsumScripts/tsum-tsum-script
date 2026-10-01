@@ -20,6 +20,7 @@ var LogsEn = {
   [Log.Board.PathStart]: 'Start path calculation',
   [Log.Board.PathDone]: 'Calculated path',
   [Log.Board.LinkReach]: 'Link reach',
+  [Log.Board.Scale]: 'Tsum size changed',
   [Log.Board.DeadScan]: 'Chain drawn but tsums still standing',
   [Log.Board.ChainDrawn]: 'Chain drawn; the game counted',
   [Log.Board.Stalled]: 'Board not taking chains; fanning',

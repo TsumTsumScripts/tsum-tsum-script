@@ -90,6 +90,12 @@ declare const enum SkillType {
    * (`src/lorcana.ts`).
    */
   LorcanaAurora = 'auroraink',
+  /**
+   * Nightmare Before Christmas (Set). Plays as a burst, but one of its skills
+   * puts more tsums on the board and shrinks them all, so the board read
+   * follows their size -- see `src/skills/nbcSet.ts`.
+   */
+  NightmareSet = 'nbc_set',
   PairTsum = 'pair_tsum',
   /** Offered in the dropdown; short-circuited in useSkill, so it has no handler. */
   NoSkill = 'nokill',
