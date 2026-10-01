@@ -44,7 +44,7 @@ release note; they fold back in here when she ships.
 ### Summary
 
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
-- Disney Villains (Set) now plays properly.
+- Disney Villains (Set) now plays properly, and its rounds record score and coins in the stats file.
 
 ### Added
 
@@ -62,6 +62,12 @@ release note; they fold back in here when she ships.
   smoke. Villains (Set)'s smoke read Active at the button, so `while (useSkill())`
   re-fired every ~300ms and drew no chains for up to 9s per window. The Quick
   Bar's grey strip hides that chrome, so the side margins at y 1700 back it up.
+
+### Fixed
+
+- `TsumLevelUpSingleTsum` moved two probes off the icon column and the "x2"
+  badge. Villains (Set)'s level-up read as unknown, so base coins were never
+  sampled and the tally wait gave up with the panel still up: every stats field blank.
 
 ## [4.0a1]
 

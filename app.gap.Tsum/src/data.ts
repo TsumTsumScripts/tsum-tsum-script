@@ -1865,30 +1865,32 @@ var Page = {
   // Probed on the panel's own background, in the four places the pill keeps
   // clear whatever tsum it is showing: the margin left of the icon (x 240), the
   // strip above the "Lv" row (y 875), the strip below the "Score" row (y ~1040)
-  // and the column right of the exp bar (x ~795). The icon, the two numbers,
-  // the exp fill and the score row all move with the tsum and the round.
+  // and the column right of the Score figure (x ~820). The icon, the two
+  // numbers, the exp fill and the score row all move with the tsum and the round.
   //
-  // This entry also passes the five-panel frame -- at these coordinates panel 3
-  // is drawn the same way -- which costs nothing, since both report
+  // Keep probes off the icon column and the top right of the panel. A Set's
+  // icon can be a cut-out that hangs below the Score row (Villains reaches
+  // y~1043 across x 260-426), and a "x2" badge sits right of the exp bar
+  // (y 870-935). Probes at (353,1043) and (797,911) landed on those, so a
+  // Villains level-up read as unknown and the round lost every stats field.
+  //
+  // This entry may also pass the five-panel frame -- at these coordinates panel
+  // 3 is drawn the same way -- which costs nothing, since both report
   // `PageName.TsumLevelUp`. The reverse does not hold, which is why it is a
-  // third entry rather than a widened one. The low-drift probes are what carry
-  // that: (797,911) and (791,1034) drift 7 and 25, so they read the same on
-  // both stacks.
+  // third entry rather than a widened one.
   //
-  // The best-separating pill probes in the table are here -- 41 to 86 against
-  // thresholds of 40 to 58 -- and that is still only "weak", every one of them
-  // inside twice its own threshold. Six were kept, chosen to keep both jobs:
-  // separation where there is any, and the two low-drift ones that hold the
-  // five-panel frame.
+  // Pill probes separate weakly from other dark-blue screens -- 35 to 56
+  // against thresholds of 40 to 45 -- so `LevelUpDimmedChrome` is what keeps
+  // this entry off them.
   TsumLevelUpSingleTsum: {
     name: PageName.TsumLevelUp,
     variant: 'single-tsum',
     colors: LevelUpDimmedChrome.concat([
       {x: 239, y:  971, r: 33, g:  60, b: 107, match: true, threshold: 40},  // left margin, separation 41, drift 172
       {x: 302, y: 1046, r: 24, g:  55, b:  99, match: true, threshold: 40},  // below the Score row, separation 48, drift 195
-      {x: 353, y: 1043, r: 24, g:  56, b: 106, match: true, threshold: 58},  // below the Score row, separation 86, drift 119
+      {x: 772, y: 1048, r: 33, g:  65, b: 108, match: true, threshold: 40},  // below the Score figure, separation 35
       {x: 791, y: 1034, r: 33, g:  64, b: 107, match: true, threshold: 40},  // below the Score row, right, separation 56, drift 25
-      {x: 797, y:  911, r: 35, g:  69, b: 115, match: true, threshold: 40},  // right of the exp bar, separation 43, drift 7
+      {x: 821, y:  997, r: 34, g:  67, b: 109, match: true, threshold: 40},  // right of the Score figure, separation 44
       {x: 845, y: 1010, r: 24, g:  54, b:  90, match: true, threshold: 45}   // right margin, separation 55, drift 104
     ]),
     back: {x: 300, y: 1660},
