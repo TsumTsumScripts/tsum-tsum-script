@@ -385,6 +385,36 @@ Tsum.prototype.sampleMyTsumColor = function() {
   }
 };
 
+// How many usable size reads `boardScale` is the median of. Smooths over a
+// board read mid-clear without lagging a shrink by more than a few scans.
+const BoardScaleWindow = 5;
+// Below this the tsums are taken as shrunk. Normal boards read 0.95 and up,
+// so they always play at exactly 1.
+const BoardScaleShrunk = 0.92;
+// The smallest scale the reads are trusted to; NBC Set bottoms out ~0.75.
+const BoardScaleMin = 0.6;
+
+/**
+ * Read the tsums' size off this scan's gray and set `Config.boardScale` to the
+ * median of the last few reads. Reset to 1 at each round's start.
+ */
+Tsum.prototype.updateBoardScale = function(grayImg) {
+  const read = readBoardScale(grayImg);
+  if (read === null) { return; }
+  this.boardScaleReads.push(read);
+  if (this.boardScaleReads.length > BoardScaleWindow) { this.boardScaleReads.shift(); }
+  const median = skillMedian(this.boardScaleReads);
+  const target = median < BoardScaleShrunk ? Math.max(BoardScaleMin, median) : 1;
+  // Moves only on a clear change, in 0.05 steps, so a median sitting on a step
+  // boundary does not flip the scale back and forth.
+  if (Math.abs(target - Config.boardScale) < 0.04) { return; }
+  const scale = Math.round(target * 20) / 20;
+  if (scale !== Config.boardScale) {
+    logInfo(Log.Board.Scale, { from: Config.boardScale, to: scale, read: +read.toFixed(2) });
+    Config.boardScale = scale;
+  }
+};
+
 Tsum.prototype.scanBoardQuick = function() {
   // load game tsums
   const startTime = Date.now();
@@ -411,6 +441,9 @@ Tsum.prototype.scanBoardQuick = function() {
     // two clones, two colour conversions and two 9x9 Gaussians per scan for a
     // pair of identical images.
     grayImg = buildBoardGray(srcImg);
+    if (skillScalesBoard(this)) {
+      this.updateBoardScale(grayImg);
+    }
     const points = findTsums(srcImg, grayImg);
     // Read bubble positions off this same capture and remember them, so popping
     // one after a chain is taps only -- no screenshot in the middle of a batch,

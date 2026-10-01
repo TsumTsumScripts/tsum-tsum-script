@@ -599,6 +599,9 @@ Tsum.prototype.taskPlayGameQuick = function() {
   this.roundStartedAt = Date.now();
   // A new round's first activation is never held by the last round's.
   this.skillActivatedAt = 0;
+  // Every round starts with normal-size tsums.
+  Config.boardScale = 1;
+  this.boardScaleReads = [];
   this.runTimes = 0;
   // Re-resolved on the first board scan of each game: the player may have
   // changed which tsum is selected, and `identifyMyTsum` has just re-read it.

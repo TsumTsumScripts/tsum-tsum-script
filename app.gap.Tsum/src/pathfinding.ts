@@ -272,7 +272,7 @@ function calculatePaths(
   // is the constraint that decides how long a chain can get -- not "Maximum
   // Chain Number", which can only cap what this has already made reachable.
   // Both ends of its range cost something; see `TsumConfig.linkReach`.
-  const threshold = Config.tsumWidth * Config.linkReach;
+  const threshold = tsumSpan() * Config.linkReach;
   const maxDistSq = threshold * threshold;
   const paths: TsumPath[] = [];
   // A cap makes the search stop as soon as a chain that long is found, so short
@@ -377,7 +377,7 @@ function findChainAtTouch(board: BoardPoint[], touchX: number, touchY: number): 
   // The multiplier moved 1.8 -> 1.15 when tsumWidth was corrected 16 -> 25, to
   // hold the reach at ~29px; unlike the link radius below, this one was already
   // the size it wanted to be.
-  const maxTouchDistSq = (Config.tsumWidth * 1.15) * (Config.tsumWidth * 1.15);
+  const maxTouchDistSq = (tsumSpan() * 1.15) * (tsumSpan() * 1.15);
   for (let i = 0; i < board.length; i++) {
     const dx = board[i].x - touchX;
     const dy = board[i].y - touchY;
@@ -402,7 +402,7 @@ function findChainAtTouch(board: BoardPoint[], touchX: number, touchY: number): 
 
   // The same reach the auto-player uses, so Click Assist draws the chain the
   // script would have drawn rather than a different one.
-  const threshold = Config.tsumWidth * Config.linkReach;
+  const threshold = tsumSpan() * Config.linkReach;
   const maxDistSq = threshold * threshold;
   const neighbors = buildTsumNeighbors(group, maxDistSq);
 
@@ -488,8 +488,9 @@ function findGameBubbles(grayImg: NativeImage, tsums?: Point[]): GameBubble[] {
   const cfg = GameBubbleConfig;
   // houghCircles returns centres, unlike the board points findTsums feeds the
   // pathfinder (those are shifted to a tsum's top-left corner).
-  const found = houghCircles(grayImg, 3, 1, cfg.minDist, cfg.param1, cfg.param2,
-                             cfg.minRadius, cfg.maxRadius);
+  // Bubbles shrink with the tsums (`Config.boardScale`).
+  const found = houghCircles(grayImg, 3, 1, scaledPx(cfg.minDist), cfg.param1, cfg.param2,
+                             scaledPx(cfg.minRadius), scaledPx(cfg.maxRadius));
   const out: GameBubble[] = [];
   for (const k in found) {
     const b = found[k];
@@ -497,7 +498,7 @@ function findGameBubbles(grayImg: NativeImage, tsums?: Point[]): GameBubble[] {
     // `found[k].r` and so stored `undefined` until that was declared properly.
     const bubble: GameBubble = {x: b.x, y: b.y, r: b.radius};
     if (tsums) {
-      const reach = b.radius + cfg.blastReach * Config.tsumWidth;
+      const reach = b.radius + cfg.blastReach * tsumSpan();
       let near = 0;
       for (let i = 0; i < tsums.length; i++) {
         const dx = tsums[i].x - b.x;
@@ -528,6 +529,60 @@ var TsumCircle = {
   maxRadius: 14,
 };
 
+/** A size in play-square px, scaled to the tsums on this board. */
+function scaledPx(px: number): number {
+  return Math.max(1, Math.round(px * Config.boardScale));
+}
+
+/** Centre-to-centre distance of two touching tsums on this board. */
+function tsumSpan(): number {
+  return Config.tsumWidth * Config.boardScale;
+}
+
+// Reading the tsums' size off the board (`readBoardScale`).
+//
+// HOUGH_GRADIENT_ALT rather than the tsum pass's HOUGH_GRADIENT: it keeps only
+// near-perfect circles, so what it finds sits on real tsums and the median
+// nearest-neighbour gap between them is the tsum spacing. Measured on NBC Set
+// recordings: 25px on a normal board, ~22 after the first shrink, 19 late in
+// the round. Normal boards (Gaston, Villains Set) never read below 0.95.
+var BoardScaleRead = {
+  method: 4,       // cv::HOUGH_GRADIENT_ALT
+  minDist: 8,
+  param1: 60,
+  param2: 0.6,     // circle perfectness, 0..1
+  minRadius: 5,
+  maxRadius: 15,
+  // Fewer circles than this is a board mid-clear or under an animation, where
+  // the gaps are holes rather than neighbours.
+  minCircles: 25,
+};
+
+/**
+ * The tsums' size against `Config.tsumWidth` from one board gray, or null when
+ * too few clean circles were found to say.
+ */
+function readBoardScale(grayImg: NativeImage): number | null {
+  const c = BoardScaleRead;
+  const found = houghCircles(grayImg, c.method, 1, c.minDist, c.param1, c.param2,
+    c.minRadius, c.maxRadius);
+  if (found.length < c.minCircles) { return null; }
+  const gaps: number[] = [];
+  for (let i = 0; i < found.length; i++) {
+    let best = Infinity;
+    for (let j = 0; j < found.length; j++) {
+      if (i === j) { continue; }
+      const dx = found[i].x - found[j].x;
+      const dy = found[i].y - found[j].y;
+      const d = dx * dx + dy * dy;
+      if (d < best) { best = d; }
+    }
+    gaps.push(Math.sqrt(best));
+  }
+  gaps.sort(function(a, b) { return a - b; });
+  return gaps[gaps.length >> 1] / Config.tsumWidth;
+}
+
 /**
  * How many tsums the board is showing -- `findTsums`' circle pass, counted and
  * nothing else, so no clone, no blur and no colour conversion.
@@ -539,8 +594,8 @@ var TsumCircle = {
  */
 function findTsumCount(grayImg: NativeImage): number {
   const c = TsumCircle;
-  return houghCircles(grayImg, 3, c.dp, c.minDist, c.param1, c.param2,
-    c.minRadius, c.maxRadius).length;
+  return houghCircles(grayImg, 3, c.dp, scaledPx(c.minDist), c.param1, c.param2,
+    scaledPx(c.minRadius), scaledPx(c.maxRadius)).length;
 }
 
 /**
@@ -563,9 +618,9 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
   let localImg: NativeImage | null = null;
   let debugImg: NativeImage | null = null;
   try {
-    const minRadius = TsumCircle.minRadius;
-    const points = houghCircles(grayImg, 3, TsumCircle.dp, TsumCircle.minDist,
-      TsumCircle.param1, TsumCircle.param2, minRadius, TsumCircle.maxRadius);
+    const minRadius = scaledPx(TsumCircle.minRadius);
+    const points = houghCircles(grayImg, 3, TsumCircle.dp, scaledPx(TsumCircle.minDist),
+      TsumCircle.param1, TsumCircle.param2, minRadius, scaledPx(TsumCircle.maxRadius));
 
     if (ts!.debug) {
       debugImg = clone(img);
@@ -586,7 +641,7 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
     // at both 0 and 179, so a red tsum's blurred hue landed near 90 -- on top
     // of green. Blurring in BGR averages three linear channels and converts
     // once, which leaves red at 0. See `chromaFeature` for the rest of it.
-    smooth(hsvImg, 1, 22);
+    smooth(hsvImg, 1, scaledPx(22));
     convertColor(hsvImg, 40);
 
     // One crossing for the whole board instead of up to five per circle. A
@@ -617,7 +672,7 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
     // and reads a tsum ringed by pale ice as pale itself; this read does not,
     // which is what tells an overlay on one tsum from the tsum next to it.
     localImg = clone(img);
-    smooth(localImg, 1, LocalSampleBlur);
+    smooth(localImg, 1, scaledPx(LocalSampleBlur));
     convertColor(localImg, 40);
     const locals = pts.length > 0 ? getImageColors(localImg, pts) : [];
     // The texture read, off the gray the Hough pass already has.
@@ -781,12 +836,14 @@ const TextureDisc: Point[] = (function() {
 function readTextures(grayImg: NativeImage, circles: Point[]): TsumTexture[] {
   const DiscPoints = TextureDisc.length;
   const edge = Config.screenResize - 1;
+  // The disc shrinks with the tsums so it stays inside one head.
+  const s = Config.boardScale;
   const pts: Point[] = [];
   for (let k = 0; k < circles.length; k++) {
     const p = circles[k];
     for (let d = 0; d < DiscPoints; d++) {
-      const x = p.x + TextureDisc[d].x;
-      const y = p.y + TextureDisc[d].y;
+      const x = p.x + Math.round(TextureDisc[d].x * s);
+      const y = p.y + Math.round(TextureDisc[d].y * s);
       pts.push({
         x: x < 0 ? 0 : (x > edge ? edge : x),
         y: y < 0 ? 0 : (y > edge ? edge : y),

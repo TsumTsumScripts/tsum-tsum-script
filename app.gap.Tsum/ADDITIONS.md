@@ -17,3 +17,5 @@ docs), then drop its rows here.
 | `TsumListName`, `src/tsumNames.dat`, `myTsumUnpack` | Tsum List: printed-name fallback for art twins | `src/data.ts`, `src/tsumList.ts`, `src/roundStats.ts`, build, lexicon | used |
 | `SettingKey.StopAfterGames`, `SettingKey.StopAfterAction`, `StopAfterAction`, `src/stopAfterOptions.ts` | Stop after games | `src/shared.d.ts`, `src/settings.ts`, `src/quickbar.ts`, `src/quickbar.html`, `src/play.ts` | used |
 | `pauseScript()` host native | Stop after games: Pause | `src/globals.d.ts`, host `api_system.cpp` | used |
+| `SkillType.NightmareSet`, `UiText.SkillNightmareSet`, `src/skills/nbcSet.ts` | NBC Set skill | `src/shared.d.ts`, `src/strings.d.ts`, `src/uiEn.ts`, `src/skillOptions.ts` | used |
+| `SkillHandler.scalesBoard`, `skillScalesBoard`, `Config.boardScale`, `BoardScaleRead`, `readBoardScale`, `updateBoardScale`, `Tsum.boardScaleReads`, `Log.Board.Scale` | NBC Set: board read follows shrinking tsums | `src/skills/skillCore.ts`, `src/data.ts`, `src/pathfinding.ts`, `src/board.ts`, `src/play.ts`, `src/logEvents.ts` | used |

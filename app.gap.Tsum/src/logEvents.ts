@@ -115,6 +115,8 @@ namespace Log {
     RecognitionStart = 'board.recognitionStart',
     RecognitionTime  = 'board.recognitionTime',
     Recognized       = 'board.recognized',
+    /** The tsums on the board changed size (`Config.boardScale`). */
+    Scale            = 'board.scale',
     Stalled          = 'board.stalled',
   }
 

@@ -18,6 +18,7 @@ var LogsJa: LogCataloguePartial = {
   [Log.Board.PathStart]: 'ルート計算を開始',
   [Log.Board.PathDone]: 'ルートを計算',
   [Log.Board.LinkReach]: 'つなぐ距離',
+  [Log.Board.Scale]: 'ツムの大きさが変化',
   [Log.Board.DeadScan]: 'チェーンを引いたがツムが残っている',
   [Log.Board.ChainDrawn]: 'チェーンを引いた。ゲームが反応',
   [Log.Board.Stalled]: '盤面がチェーンを受け付けないため、ファンを使用',

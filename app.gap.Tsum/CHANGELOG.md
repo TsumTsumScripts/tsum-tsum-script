@@ -45,9 +45,14 @@ release note; they fold back in here when she ships.
 
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
 - Disney Villains (Set) now plays properly, records score and coins in the stats file, and works with Auto Unlock MyTsum Level.
+- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums.
 
 ### Added
 
+- **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`, Alpha). A burst
+  declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
+  5) into `Config.boardScale`, which scales the circle pass, blurs, texture
+  disc, bubble pass and link reach. Other skills skip the read and stay at 1.
 - **Stop after games** (`SettingKey.StopAfterGames`, `StopAfterAction`). Counted
   at the play task's tail (`countGameTowardStop`); firing or a new target resets
   the count. Auto Play off removes the `PlayRound` job; Pause calls the host's

@@ -44,6 +44,12 @@ var Config: TsumConfig = {
   // setting, 3-15. 0 is not reachable from the settings UI and is treated as
   // "no limit", which is what a hand-written start() command can ask for.
   maxChain: 3,
+  // How big the tsums are against `tsumWidth`, read off the board each scan
+  // (`updateBoardScale`) and reset to 1 every round. Some skills put more tsums
+  // on the board and shrink them all to fit (Nightmare Before Christmas Set,
+  // down to ~0.75); the circle pass, the colour blurs and the link reach all
+  // scale with it.
+  boardScale: 1,
   debugLogs: false,
   // What an issue report copies, and so what the router keeps -- see report.ts.
   reportTrailFrames: 8,
