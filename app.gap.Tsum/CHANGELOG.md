@@ -44,7 +44,7 @@ release note; they fold back in here when she ships.
 ### Summary
 
 - Sending hearts through the ranking is faster, and hearts sent without a "Heart sent!" popup are now counted.
-- Disney Villains (Set) now keeps chaining through its skill smoke instead of standing idle.
+- Disney Villains (Set) now plays properly.
 
 ### Changed
 
