@@ -2660,13 +2660,13 @@ var LevelUpMyTsumCard = {
    * A lone card sits far below any multi-card first card (~860 against
    * ~400-575 mid-bounce), and its own gutter run is cut short by its wider
    * Score row -- so it is told by its top, and its bar placed off the top
-   * rather than the middle. Unverified on a capped lone card: the one corpus
-   * frame of this layout shows an EXP bar.
+   * rather than the middle. Measured on a capped lone card (Villains Set): top
+   * 855, padlock body y 958-970.
    */
   singleMinTopY: 780,
-  singleBarFromTopY: 119,
-  /** The padlock body, about the bar row: two columns, two rows, all four required. */
-  lockX: [500, 515],
+  singleBarFromTopY: 104,
+  /** The padlock body (x 496-514), about the bar row: two columns, two rows, all four required. */
+  lockX: [500, 511],
   lockDy: [0, 6],
   lockColor: {r: 255, g: 255, b: 255},
   lockDiff: 40

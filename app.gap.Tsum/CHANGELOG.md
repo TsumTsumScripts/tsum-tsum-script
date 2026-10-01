@@ -44,7 +44,7 @@ release note; they fold back in here when she ships.
 ### Summary
 
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
-- Disney Villains (Set) now plays properly, and its rounds record score and coins in the stats file.
+- Disney Villains (Set) now plays properly, records score and coins in the stats file, and works with Auto Unlock MyTsum Level.
 
 ### Added
 
@@ -68,6 +68,9 @@ release note; they fold back in here when she ships.
 - `TsumLevelUpSingleTsum` moved two probes off the icon column and the "x2"
   badge. Villains (Set)'s level-up read as unknown, so base coins were never
   sampled and the tally wait gave up with the panel still up: every stats field blank.
+- `LevelUpMyTsumCard`: lone-card padlock read at top + 104 (was 119, below the
+  lock) and column x 511 (515 was the lock's edge). A capped single-tsum party was
+  never seen, so Auto Unlock MyTsum Level never raised it.
 
 ## [4.0a1]
 
