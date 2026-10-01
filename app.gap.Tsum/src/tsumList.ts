@@ -39,7 +39,7 @@ const TsumListPortraitWaitMs = 3000;
 const TsumListPortraitChanged = 0.9;
 /** Two reads in a row this alike are a settled portrait; sparkles cost ~0.01. */
 const TsumListPortraitStill = 0.98;
-const TsumListColumns = ['order', 'tsum', 'name', 'level', 'level_cap', 'skill', 'skill_max', 'acquired', 'build'];
+const TsumListColumns = ['order', 'tsum', 'name', 'level', 'level_cap', 'skill', 'skill_max', 'skill_progress', 'acquired', 'build'];
 
 /** The collection library, loaded on first use. */
 var gTsumListLibrary: MyTsumEntry[] | null = null;
@@ -426,7 +426,7 @@ Tsum.prototype.readCollectionCard = function(slot, order, date, shotDir) {
   }
   const row: TsumListRow = {
     order: order, tsum: '', name: '', level: null, levelCap: null,
-    skill: null, skillMax: null, acquired: date
+    skill: null, skillMax: null, skillProgress: null, acquired: date
   };
   if (!selected) {
     logWarn(Log.TsumList.CardMissed, 'A card would not select; its row has only the date',
@@ -441,6 +441,10 @@ Tsum.prototype.readCollectionCard = function(slot, order, date, shotDir) {
   if (detail.skill !== null) {
     row.skill = detail.skill[0];
     row.skillMax = detail.skill[1];
+    // At MAX there is nothing left to fill.
+    if (row.skill < row.skillMax) {
+      row.skillProgress = this.readSkillProgress();
+    }
   }
   const id = this.identifyCollectionTsum();
   if (id !== null && id.confident) {
@@ -495,6 +499,39 @@ Tsum.prototype.awaitCollectionPortrait = function(before) {
   return false;
 }
 
+/**
+ * Percent through the current skill level: where the bar's yellow fill ends,
+ * on the line `TsumListRegions.skillBar` was fitted to. 0 when there is no fill.
+ */
+Tsum.prototype.readSkillProgress = function() {
+  const b = TsumListRegions.skillBar;
+  const f = TsumListRegions.skillFill;
+  const points: Coord[] = [];
+  for (let y = b.fromY; y <= b.toY; y += b.stepY) {
+    for (let x = b.fromX; x <= b.toX; x += b.stepX) {
+      points.push({x: x, y: y});
+    }
+  }
+  let end = -1;
+  const img = this.screenshot();
+  try {
+    const read = this.getColors(img, points);
+    for (let i = 0; i < read.length; i++) {
+      const c = read[i];
+      if (c.r >= f.rMin && c.g >= f.gMin && c.b <= f.bMax && points[i].x > end) {
+        end = points[i].x;
+      }
+    }
+  } finally {
+    releaseImage(img);
+  }
+  if (end < 0) {
+    return 0;
+  }
+  const pct = Math.round((end - b.zeroX) / (b.fullX - b.zeroX) * 100);
+  return Math.max(0, Math.min(100, pct));
+}
+
 /** The CSV, whole: the header and every row so far. `build` is the game build the list was read from. */
 function tsumListCsv(rows: TsumListRow[], build: GameBuild): string {
   const cell = function(v: number | null): string {
@@ -504,7 +541,7 @@ function tsumListCsv(rows: TsumListRow[], build: GameBuild): string {
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
     lines.push([String(r.order), statsCsvField(r.tsum), statsCsvField(r.name), cell(r.level),
-      cell(r.levelCap), cell(r.skill), cell(r.skillMax), r.acquired, build].join(','));
+      cell(r.levelCap), cell(r.skill), cell(r.skillMax), cell(r.skillProgress), r.acquired, build].join(','));
   }
   return lines.join('\n') + '\n';
 }

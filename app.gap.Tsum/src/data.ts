@@ -2794,6 +2794,15 @@ var TsumListRegions = {
    * `dateReads` in turn until two agree. 27 of 27 cards, ~2 reads each.
    */
   date: {dx: -80, dy: 58, w: 160, h: 40},
+  /**
+   * The skill bar's yellow fill: progress through the current skill level.
+   * Where the fill ends, scanned across every row so the white "%" text over it
+   * does not matter, is linear in the percentage: fitted on 25/37/50/75% panels
+   * (all read back within 0.2%), 0% at x 583 and 100% at 947. Near 0% the
+   * rounded end reads ~2 points high. `toX` stops short of the gold "+" coin.
+   */
+  skillBar: {fromX: 570, toX: 946, stepX: 2, fromY: 732, toY: 788, stepY: 4, zeroX: 583, fullX: 946.6},
+  skillFill: {rMin: 200, gMin: 110, bMax: 130},
   dateReads: [
     {scale: 4, lo: 170}, {scale: 3, lo: 180}, {scale: 2, lo: 180},
     {scale: 3, lo: 130}, {scale: 3, lo: 190}

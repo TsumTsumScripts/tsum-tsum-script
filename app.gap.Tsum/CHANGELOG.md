@@ -43,7 +43,7 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
-- Tsum List export added (Chores > Tsum List > Now): writes every Tsum you own, with its level, skill level and month acquired, to a CSV.
+- Tsum List export added (Chores > Tsum List > Now): writes every Tsum you own, with its level, skill level, progress to the next skill level and month acquired, to a CSV.
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
 
 ### Added
@@ -69,6 +69,9 @@ release note; they fold back in here when she ships.
   his variants, the Minnies, Piglet), the name printed on the panel decides:
   `src/tsumNames.dat`, from the game's `win_tsumname_<id>` strips. On emulator
   this named all 355 of 355 correctly, 350 of them by portrait alone.
+- **`skill_progress`**: percent through the current skill level, read off where
+  the skill bar's yellow fill ends (fitted on 25/37/50/75%, all within 0.2%).
+  Empty at MAX. Reads ~2 points high near 0%.
 - The level row ends short of the "x2" badge some tsums wear beside it.
 - After a card is tapped, the export waits for the portrait to change and then
   hold still before reading it (`awaitCollectionPortrait`). For ~270ms the old

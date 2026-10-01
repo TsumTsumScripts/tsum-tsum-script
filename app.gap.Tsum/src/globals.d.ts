@@ -840,6 +840,8 @@ interface TsumListRow {
   levelCap: number | null;
   skill: number | null;
   skillMax: number | null;
+  /** Percent through the current skill level, 0-100; null at MAX or unread. */
+  skillProgress: number | null;
   /** "YYYY-MM". */
   acquired: string;
 }
@@ -1486,6 +1488,8 @@ interface Tsum {
   readCollectionCards(): CollectionCardState[];
   /** Card `slot`'s acquisition month as "YYYY-MM", or '' when unread. */
   readCardDate(slot: number): string;
+  /** Percent through the current skill level off the skill bar's fill. */
+  readSkillProgress(): number;
   /** The detail panel's level and skill, each `[now, max]` or null. */
   readTsumDetail(): {level: number[] | null; skill: number[] | null};
   /** Name the detail panel's portrait against the collection library. */
