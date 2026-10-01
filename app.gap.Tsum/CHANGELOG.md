@@ -39,6 +39,21 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
+## [3.2]
+
+### Summary
+
+- Disney Villains (Set) rounds now record score and coins in the stats file, and work with Auto Unlock MyTsum Level.
+
+### Fixed
+
+- `TsumLevelUpSingleTsum` moved two probes off the icon column and the "x2"
+  badge. Villains (Set)'s level-up read as unknown, so base coins were never
+  sampled and the tally wait gave up with the panel still up: every stats field blank.
+- `LevelUpMyTsumCard`: lone-card padlock read at top + 104 (was 119, below the
+  lock) and column x 511 (515 was the lock's edge). A capped single-tsum party was
+  never seen, so Auto Unlock MyTsum Level never raised it.
+
 ## [3.1]
 
 ### Summary
