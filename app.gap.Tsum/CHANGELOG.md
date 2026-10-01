@@ -39,6 +39,29 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
+## [3.1]
+
+### Summary
+
+- Sending hearts through the ranking is faster, and hearts sent without a "Heart sent!" popup are now counted.
+- Disney Villains (Set) now keeps chaining through its skill smoke instead of standing idle.
+
+### Changed
+
+- **Faster heart sweep.** `dragList` settles on `settleScreen` instead of a
+  fixed 900ms rest (mail scrolls too), and the extra 400ms rest after each
+  friend-list scroll is gone. A send whose toast never shows (~6% on BlueStacks,
+  each ~5s of polling) now ends once its row turns blue, and is counted. The
+  row turns blue ~0.5s before the toast, so that wait is `HeartNoToastPolls`,
+  and a screenful that reads empty after sending clears any late toast before
+  scrolling past its rows.
+
+### Fixed
+
+- `checkSkillReadiness` reads Far while the bottom chrome is green or purple
+  smoke. Villains (Set)'s smoke read Active at the button, so `while (useSkill())`
+  re-fired every ~300ms and drew no chains for up to 9s per window.
+
 ## [3.0]
 
 ### Summary

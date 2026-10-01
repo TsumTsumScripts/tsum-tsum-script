@@ -762,7 +762,9 @@ Tsum.prototype.dragList = function(x, path, settleMs, sample) {
     this.moveTo({x: x, y: path[i]}, i === last ? 500 : 50);
   }
   this.tapUp({x: x, y: path[last]}, 100);
-  this.sleep(settleMs);
+  // A budget, not a rest: ends when the list stops. Less the settle's lead, so a
+  // screen that never reads still costs what the old fixed rest did.
+  this.settleScreen(settleMs - ScreenSettle.leadMs);
 
   let moved = 0;
   const second = this.screenshot();
