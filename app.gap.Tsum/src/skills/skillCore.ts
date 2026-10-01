@@ -380,7 +380,14 @@ function classifySkillGauge(c: Color): SkillReadiness {
 // -- which reads Active at the button, so the play loop re-fired it every
 // ~300ms and drew no chains for the whole window. Normal chrome is cyan
 // (0,202,232) and fever chrome dark teal (0,44,54).
-const SkillSmokeProbes: Coord[] = [{x: 300, y: 1885}, {x: 780, y: 1885}];
+//
+// The Quick Bar's translucent grey strip covers the bottom pair (its top is
+// ~y 1734), so the side margins beside the skill and fan buttons back them up.
+// The smoke there is patchier, hence the looser test.
+const SkillSmokeProbes: Coord[] = [
+  {x: 300, y: 1885}, {x: 780, y: 1885},  // bottom chrome
+  {x: 30, y: 1700}, {x: 1050, y: 1700}   // side margins, above the Quick Bar
+];
 
 function isSkillSmoke(c: Color): boolean {
   const green = c.g >= 150 && c.r <= 60 && c.b <= 100;   // ~(0,220,0)
@@ -388,9 +395,16 @@ function isSkillSmoke(c: Color): boolean {
   return green || purple;
 }
 
+function isSkillSmokeLoose(c: Color): boolean {
+  const green = c.g >= 110 && c.g - c.r >= 70 && c.g - c.b >= 50;
+  const purple = c.g <= 50 && c.r >= 60 && c.b >= 110 && c.b - c.g >= 90;
+  return green || purple;
+}
+
 Tsum.prototype.checkSkillReadiness = function(img, skillButton) {
   const smoke = this.getColors(img, SkillSmokeProbes);
-  if (isSkillSmoke(smoke[0]) && isSkillSmoke(smoke[1])) {
+  if ((isSkillSmoke(smoke[0]) && isSkillSmoke(smoke[1]))
+      || (isSkillSmokeLoose(smoke[2]) && isSkillSmokeLoose(smoke[3]))) {
     return SkillReadiness.Far;
   }
   return classifySkillGauge(this.getColor(img, skillButton));
