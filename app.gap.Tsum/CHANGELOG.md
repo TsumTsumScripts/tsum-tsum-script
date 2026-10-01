@@ -58,6 +58,9 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
+- Tsum List export writes a `device` column: the host's `getDeviceName()`, the
+  name its events carry, so GAP Stats can filter its Catalog by device. Empty on
+  a host without it.
 - `checkSkillReadiness` reads Far while the bottom chrome is green or purple
   smoke. Villains (Set)'s smoke read Active at the button, so `while (useSkill())`
   re-fired every ~300ms and drew no chains for up to 9s per window. The Quick

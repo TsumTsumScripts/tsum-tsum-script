@@ -39,7 +39,7 @@ const TsumListPortraitWaitMs = 3000;
 const TsumListPortraitChanged = 0.9;
 /** Two reads in a row this alike are a settled portrait; sparkles cost ~0.01. */
 const TsumListPortraitStill = 0.98;
-const TsumListColumns = ['order', 'tsum', 'name', 'level', 'level_cap', 'skill', 'skill_max', 'skill_progress', 'acquired', 'build'];
+const TsumListColumns = ['order', 'tsum', 'name', 'level', 'level_cap', 'skill', 'skill_max', 'skill_progress', 'acquired', 'build', 'device'];
 
 /** The collection library, loaded on first use. */
 var gTsumListLibrary: MyTsumEntry[] | null = null;
@@ -532,8 +532,12 @@ Tsum.prototype.readSkillProgress = function() {
   return Math.max(0, Math.min(100, pct));
 }
 
-/** The CSV, whole: the header and every row so far. `build` is the game build the list was read from. */
-function tsumListCsv(rows: TsumListRow[], build: GameBuild): string {
+/**
+ * The CSV, whole: the header and every row so far. `build` is the game build
+ * the list was read from; `device` names the device it was read on (GAP Stats
+ * filters its Catalog by it).
+ */
+function tsumListCsv(rows: TsumListRow[], build: GameBuild, device: string): string {
   const cell = function(v: number | null): string {
     return v === null ? '' : String(v);
   };
@@ -541,7 +545,7 @@ function tsumListCsv(rows: TsumListRow[], build: GameBuild): string {
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
     lines.push([String(r.order), statsCsvField(r.tsum), statsCsvField(r.name), cell(r.level),
-      cell(r.levelCap), cell(r.skill), cell(r.skillMax), cell(r.skillProgress), r.acquired, build].join(','));
+      cell(r.levelCap), cell(r.skill), cell(r.skillMax), cell(r.skillProgress), r.acquired, build, statsCsvField(device)].join(','));
   }
   return lines.join('\n') + '\n';
 }
@@ -558,6 +562,8 @@ Tsum.prototype.taskExportTsumList = function() {
   const base = this.storagePath + '/' + Config.recordDir + '/tsum_list_' + stamp;
   const csvPath = base + '.csv';
   const build = this.gameBuild();
+  // The host's device name, the one its events carry; older hosts have none.
+  const device = typeof getDeviceName === 'function' ? getDeviceName() : '';
   logInfo(Log.TsumList.Start, {file: csvPath});
   this.banner('Exporting the Tsum list', 4000);
 
@@ -598,7 +604,7 @@ Tsum.prototype.taskExportTsumList = function() {
       rows.push(row);
     }
     try {
-      writeFile(csvPath, tsumListCsv(rows, build));
+      writeFile(csvPath, tsumListCsv(rows, build, device));
     } catch (e) {
       logWarn(Log.TsumList.WriteFailed, 'Could not write the Tsum list', {file: csvPath, errorText: String(e)});
     }

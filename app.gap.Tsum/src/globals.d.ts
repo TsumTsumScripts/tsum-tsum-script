@@ -1802,6 +1802,15 @@ declare function getScriptPath(): string;
  */
 declare function getDeviceId(): string;
 /**
+ * What this device is called: the name the host's event stream sends (set in
+ * the app's Settings, or `<model>-<first four of getDeviceId()>`). GAP Stats
+ * shows rounds and Tsum lists under it.
+ *
+ * Newer than the rest of the API -- reach for it behind
+ * `typeof getDeviceName === 'function'`.
+ */
+declare function getDeviceName(): string;
+/**
  * The top-most screen row this script reads, in screen px, so the host keeps
  * the windows it leaves up for a whole run -- the status line under the
  * floating bar -- above it, or shows nothing there. Negative withdraws it.
