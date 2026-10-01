@@ -39,13 +39,12 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
-## [4.0a1]
+## [4.0a2]
 
 ### Summary
 
-- Tsum List export added (Chores > Tsum List > Now): writes every Tsum you own, with its level, skill level, progress to the next skill level and month acquired, to a CSV.
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
-- Disney Villains (Set) now keeps chaining through its green-smoke skill window instead of standing idle.
+- Disney Villains (Set) now plays properly.
 
 ### Added
 
@@ -56,6 +55,22 @@ release note; they fold back in here when she ships.
   `LiveWhen.Now`, `neverShared`.
 - **Quick Bar** page two's bottom row is now Games and Then; the five bonus
   chips there are gone (still on the settings page).
+
+### Changed
+
+- `checkSkillReadiness` reads Far while the bottom chrome is green or purple
+  smoke. Villains (Set)'s smoke read Active at the button, so `while (useSkill())`
+  re-fired every ~300ms and drew no chains for up to 9s per window. The Quick
+  Bar's grey strip hides that chrome, so the side margins at y 1700 back it up.
+
+## [4.0a1]
+
+### Summary
+
+- Tsum List export added (Chores > Tsum List > Now): writes every Tsum you own, with its level, skill level, progress to the next skill level and month acquired, to a CSV.
+
+### Added
+
 - **Tsum List export** (`src/tsumList.ts`). Sorts the collection by Date acquired
   with owned Tsums only, rewinds, taps each card, and writes
   `tsum_record/tsum_list_<stamp>.csv` after every page. Queued on a live run.
@@ -90,10 +105,6 @@ release note; they fold back in here when she ships.
   previous state; `restoreCollectionSort` puts both back.
 - `collectionOffersRaise` is split out of `raiseSelectedLevelCap`. The export
   also uses it, because the level row moves right when the padlock is drawn.
-- `checkSkillReadiness` reads Far while the bottom chrome is green or purple
-  smoke. Villains (Set)'s smoke read Active at the button, so `while (useSkill())`
-  re-fired every ~300ms and drew no chains for up to 9s per window. The Quick
-  Bar's grey strip hides that chrome, so the side margins at y 1700 back it up.
 
 ## [3.0b5]
 
