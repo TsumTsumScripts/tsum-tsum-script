@@ -45,6 +45,7 @@ release note; they fold back in here when she ships.
 
 - Tsum List export added (Chores > Tsum List > Now): writes every Tsum you own, with its level, skill level, progress to the next skill level and month acquired, to a CSV.
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
+- Disney Villains (Set) now keeps chaining through its green-smoke skill window instead of standing idle.
 
 ### Added
 
@@ -89,6 +90,9 @@ release note; they fold back in here when she ships.
   previous state; `restoreCollectionSort` puts both back.
 - `collectionOffersRaise` is split out of `raiseSelectedLevelCap`. The export
   also uses it, because the level row moves right when the padlock is drawn.
+- `checkSkillReadiness` reads Far while the bottom chrome is pure green. Villains
+  (Set)'s smoke read Active at the button, so `while (useSkill())` re-fired every
+  ~300ms and drew no chains for up to 9s per window.
 
 ## [3.0b5]
 

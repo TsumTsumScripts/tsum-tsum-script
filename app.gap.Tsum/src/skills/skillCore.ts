@@ -375,7 +375,21 @@ function classifySkillGauge(c: Color): SkillReadiness {
   return SkillReadiness.Far;
 }
 
+// The bottom chrome, either side of the fever bar. Disney Villains (Set) paints
+// the whole screen bright green while its skill runs, which reads Active at the
+// button, so the play loop re-fired it every ~300ms and drew no chains for the
+// whole window. Normal chrome is cyan and fever chrome dark teal.
+const SkillGreenSmokeProbes: Coord[] = [{x: 300, y: 1885}, {x: 780, y: 1885}];
+
+function isGreenSmoke(c: Color): boolean {
+  return c.g >= 150 && c.r <= 60 && c.b <= 100;
+}
+
 Tsum.prototype.checkSkillReadiness = function(img, skillButton) {
+  const smoke = this.getColors(img, SkillGreenSmokeProbes);
+  if (isGreenSmoke(smoke[0]) && isGreenSmoke(smoke[1])) {
+    return SkillReadiness.Far;
+  }
   return classifySkillGauge(this.getColor(img, skillButton));
 };
 
