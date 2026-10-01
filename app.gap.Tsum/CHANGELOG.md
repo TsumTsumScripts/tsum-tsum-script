@@ -60,7 +60,8 @@ release note; they fold back in here when she ships.
 
 - `checkSkillReadiness` reads Far while the bottom chrome is green or purple
   smoke. Villains (Set)'s smoke read Active at the button, so `while (useSkill())`
-  re-fired every ~300ms and drew no chains for up to 9s per window.
+  re-fired every ~300ms and drew no chains for up to 9s per window. The Quick
+  Bar's grey strip hides that chrome, so the side margins at y 1700 back it up.
 
 ## [3.0]
 
