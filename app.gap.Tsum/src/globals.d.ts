@@ -1311,6 +1311,11 @@ interface Tsum {
   boardClusterSizes: number[];
   /** The last few tsum-size reads `Config.boardScale` is the median of; emptied each round. */
   boardScaleReads: number[];
+  /**
+   * Which way the skill last said the tsums can change size: -1 only smaller,
+   * 1 only bigger, 0 neither. 0 at each round's start, where they are full size.
+   */
+  boardScaleTrend: number;
   updateBoardScale(grayImg: NativeImage): void;
   scanBoardQuick(): BoardPoint[];
 

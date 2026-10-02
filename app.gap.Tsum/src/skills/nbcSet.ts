@@ -3,12 +3,16 @@
 // Each activation fires a character skill (Jack, Sally, Zero, the Mayor, the
 // pumpkins), each opening on its own cut-in.
 //
-// One of them adds tsums to the board and shrinks every tsum to fit, more with
-// each activation -- from 25px apart to ~19 in the play square by the end of a
-// round. At normal size the circle pass then finds about half of them, off
+// Oogie Boogie's roll (below) adds tsums on 7+ and shrinks every tsum to fit,
+// more with each such roll -- from 25px apart to ~19 in the play square by the
+// end of a round. At normal size the circle pass then finds about half of them, off
 // centre, and the link reach spans hops the game refuses, so no chain lands.
 // `scalesBoard` has each scan read the size and scale the board read to it
 // (`updateBoardScale`, `Config.boardScale`).
+//
+// Only Oogie's dice change the size, so the scale holds at 1 until his first
+// roll, then follows the reads only the way the roll points
+// (`boardScaleTrend`): smaller after 7+, bigger after a roll under 7.
 //
 // `colorBlur` 15: at the default 22 Sally's blue face and red hood average to
 // a pale colour that clusters with Jack and Zero, so white chains ran through
@@ -50,8 +54,9 @@ var NbcDice = {
   stableReads: 2,
   // Pip blob: area against the face's bounding box, and how much of its own box
   // it fills. The skull engraved on every face is a sparse blob; a pip on a
-  // shaded side face is taller than wide.
-  pipMinRel: 0.012,
+  // shaded side face is taller than wide. Areas are `findContours`' outline
+  // areas: a 5's or 6's back pip measures 0.0106 that way.
+  pipMinRel: 0.009,
   pipMaxRel: 0.06,
   pipMinFill: 0.55,
   // Lowest a top-face pip's centre sits in the die's box (top-face pips reach
@@ -256,6 +261,10 @@ function nbcPlayDice(ts: Tsum) {
       const reroll = !rerolled && total < cfg.rerollBelow;
       logInfo(Log.Skill.NbcDice, { roll: rerolled ? 2 : 1, dice: read, total: total, reroll: reroll });
       if (!reroll) {
+        // 7+ adds tsums and shrinks them all; under 7 takes some away and they
+        // grow back towards full size. The reads say how far.
+        ts.boardScaleTrend = total >= cfg.rerollBelow ? -1 : 1;
+        ts.boardScaleReads = [];
         // Gone twice running, so one dropped read is not the end.
         let gone = 0;
         nbcWaitFor(ts, cfg.clearWaitMs, () => {

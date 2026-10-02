@@ -386,8 +386,8 @@ Tsum.prototype.sampleMyTsumColor = function() {
 };
 
 // How many usable size reads `boardScale` is the median of. Smooths over a
-// board read mid-clear without lagging a shrink by more than a few scans.
-const BoardScaleWindow = 5;
+// board read mid-clear without lagging a change by much more than a second.
+const BoardScaleWindow = 9;
 // Below this the tsums are taken as shrunk. Normal boards read 0.95 and up,
 // so they always play at exactly 1.
 const BoardScaleShrunk = 0.92;
@@ -396,10 +396,13 @@ const BoardScaleMin = 0.6;
 
 /**
  * Read the tsums' size off this scan's gray and set `Config.boardScale` to the
- * median of the last few reads. Reset to 1 at each round's start.
+ * median of the last few reads, in the direction `boardScaleTrend` allows.
+ * Reset to 1 at each round's start.
  */
 Tsum.prototype.updateBoardScale = function(grayImg) {
-  const read = readBoardScale(grayImg);
+  // Nothing can change, so no Hough pass.
+  if (this.boardScaleTrend === 0) { return; }
+  const read = readBoardScale(grayImg, this.boardScaleTrend > 0);
   if (read === null) { return; }
   this.boardScaleReads.push(read);
   if (this.boardScaleReads.length > BoardScaleWindow) { this.boardScaleReads.shift(); }
@@ -408,6 +411,9 @@ Tsum.prototype.updateBoardScale = function(grayImg) {
   // Moves only on a clear change, in 0.05 steps, so a median sitting on a step
   // boundary does not flip the scale back and forth.
   if (Math.abs(target - Config.boardScale) < 0.04) { return; }
+  // Only the way the skill said: the reads straddle a step on a board that
+  // has stopped changing, and following both ways flipped the scale every scan.
+  if (Math.sign(target - Config.boardScale) !== this.boardScaleTrend) { return; }
   const scale = Math.round(target * 20) / 20;
   if (scale !== Config.boardScale) {
     logInfo(Log.Board.Scale, { from: Config.boardScale, to: scale, read: +read.toFixed(2) });

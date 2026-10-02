@@ -73,6 +73,16 @@ release note; they fold back in here when she ships.
 - **NBC Set: no 4s stall after a finished roll.** The green skull over the
   result also reads as Oogie; the wait now ends 0.5s after neither he nor a die
   is on screen (`NbcDice.goneMs`).
+- **NBC Set: 5s and 6s no longer read one short on the device** (a 6 rolled
+  as 5+1 was rerolled). The host's `findContours` area is the outline's
+  (`cv::contourArea`), 15-20% under the pixel count the test harness used, so
+  the smallest pip fell under `pipMinRel`; now 0.009, and the harness shim
+  traces outlines the same way.
+- **NBC Set: tsum size follows Oogie's dice.** The scale stays 1 until his
+  first roll, then may only shrink after 7+ and only grow after under 7
+  (`Tsum.boardScaleTrend`), over a 9-read median. On a size sitting near a
+  step the free read flipped 0.9/1 up to 13 times in 10s; the radius read
+  for sparse boards is only used while growing, since it reads low mid-clear.
 - **NBC Set: front-face pip no longer counted** (a 3 read as 4): top-face pips
   sit in the top 70% of the die's box (`NbcDice.pipMaxY`).
 - **NBC Set: board scale recovers on a sparse board.** Under 25 clean circles

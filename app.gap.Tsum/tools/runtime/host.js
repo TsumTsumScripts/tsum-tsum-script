@@ -205,11 +205,9 @@ function createHost(options) {
     // api_image.cpp:330 -- RETR_EXTERNAL bounding boxes over the non-zero pixels,
     // filtered by area (`maxArea` of 0 means no upper bound).
     //
-    // One divergence, deliberate: `area` here is the component's pixel count,
-    // where cv::contourArea is the area of the traced outline polygon and so
-    // runs about half a perimeter smaller. Nothing in the scripts uses `area`
-    // for anything but a floor of a few pixels against speckle (roundStats.ts
-    // passes 2), and the two agree well before that matters.
+    // `area` is the traced outline's area, as cv::contourArea gives it: about
+    // half a perimeter under the pixel count, which on a small blob (a die's
+    // pip) is 15-20% -- enough to cross a size threshold tuned on the other.
     findContours: (handle, minArea, maxArea) => {
       const blobs = connectedBoxes(get(handle, 'findContours'));
       const min = Number(minArea) || 0;
@@ -390,9 +388,44 @@ function createHost(options) {
           }
         }
       }
-      boxes.push({ x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1, area });
+      boxes.push({ x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1,
+        area: outlineArea(img, start % w, (start - start % w) / w) });
     }
     return boxes;
+  }
+
+  // cv::contourArea of a blob's outer contour: trace its border clockwise from
+  // its first pixel in raster order, then the shoelace area of the traced
+  // pixel centres. A blob one pixel wide has no area, as in OpenCV.
+  const TraceDirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+  function outlineArea(img, x0, y0) {
+    const on = (x, y) => {
+      if (x < 0 || y < 0 || x >= img.w || y >= img.h) return false;
+      const q = (y * img.w + x) * 4;
+      return 0.114 * img.data[q] + 0.587 * img.data[q + 1] + 0.299 * img.data[q + 2] >= 0.5;
+    };
+    const next = (x, y, from) => {
+      for (let k = 0; k < 8; k++) {
+        const d = (from + k) % 8;
+        if (on(x + TraceDirs[d][0], y + TraceDirs[d][1])) return d;
+      }
+      return -1;
+    };
+    // The first pixel has nothing above it or to its left: search from north.
+    const first = next(x0, y0, 6);
+    if (first < 0) return 0;
+    let x = x0, y = y0, d = first, sum = 0;
+    for (let guard = 0; guard < img.w * img.h * 4; guard++) {
+      const nx = x + TraceDirs[d][0];
+      const ny = y + TraceDirs[d][1];
+      sum += x * ny - nx * y;
+      x = nx;
+      y = ny;
+      // Each step starts its search just past the pixel it came from.
+      d = next(x, y, (d + 6) % 8);
+      if (x === x0 && y === y0 && d === first) break;
+    }
+    return Math.abs(sum) / 2;
   }
 
   // Shared by getImageColor/getImageColors so both report a pixel identically,
