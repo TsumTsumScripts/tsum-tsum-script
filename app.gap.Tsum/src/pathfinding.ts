@@ -519,6 +519,9 @@ function findGameBubbles(grayImg: NativeImage, tsums?: Point[]): GameBubble[] {
 // features at the centre cross, narrow enough (a fifth of a tsum) to keep the
 // neighbours out. The 22px smear the clustering samples is the other extreme.
 const LocalSampleBlur = 5;
+// The heavy blur the clustering samples: a whole tsum, so faces flatten to one
+// colour. A skill may narrow it (`SkillHandler.colorBlur`).
+const TsumColorBlur = 22;
 
 var TsumCircle = {
   dp: 1,           // accumulator resolution (lower = finer)
@@ -641,7 +644,7 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
     // at both 0 and 179, so a red tsum's blurred hue landed near 90 -- on top
     // of green. Blurring in BGR averages three linear channels and converts
     // once, which leaves red at 0. See `chromaFeature` for the rest of it.
-    smooth(hsvImg, 1, scaledPx(22));
+    smooth(hsvImg, 1, scaledPx(skillColorBlur(ts!)));
     convertColor(hsvImg, 40);
 
     // One crossing for the whole board instead of up to five per circle. A

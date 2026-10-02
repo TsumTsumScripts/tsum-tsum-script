@@ -43,7 +43,7 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
-- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums.
+- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums, and no longer mixes Sally into Jack and Zero's chains.
 
 ### Added
 
@@ -59,6 +59,10 @@ release note; they fold back in here when she ships.
 
 ### Fixed
 
+- **NBC Set: Sally no longer clusters with Jack and Zero.** Her blue face and
+  red hood blurred to a pale colour at the 22px colour blur; the skill now
+  declares `colorBlur: 15` (`SkillHandler.colorBlur`), so white chains stop
+  routing through her. Other skills keep 22.
 - **Quick Bar skill name ellipsises at the 5>4 chip's edge** (`.qb-cell-fit`)
   instead of widening its column and squeezing the Report button.
 
