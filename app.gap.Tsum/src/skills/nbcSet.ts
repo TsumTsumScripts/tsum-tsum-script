@@ -22,9 +22,11 @@
 // that reroll on every roll, good or bad. So each board scan looks for his green
 // cut-in (`watchScan`, `nbcOogieSeen`); from there nothing touches the board
 // until the roll is known: the dice are read where they come to rest
-// (`nbcReadDice`), and only a first roll under 7 gets the reroll tap. Watching
+// (`nbcLook`), and only a first roll under 7 gets the reroll tap. Watching
 // the scans rather than holding after the tap leaves the play loop free for
-// the activations he does not follow.
+// the activations he does not follow. The play loop's `while (useSkill())`
+// takes no scans, and its skill and fan taps would throw the dice too, so each
+// of its taps looks first (`beforeActivate`).
 
 // --- Tuning data -----------------------------------------------------------
 
@@ -52,6 +54,10 @@ var NbcDice = {
   pipMinRel: 0.012,
   pipMaxRel: 0.06,
   pipMinFill: 0.55,
+  // Lowest a top-face pip's centre sits in the die's box (top-face pips reach
+  // 0.7). The front face's top row shows at 0.9 and passes the ring test,
+  // since that face is lit red too.
+  pipMaxY: 0.8,
   // A top-face pip has lit face red this far to its left and right, and above or
   // below it (the corner pips sit on the face's edge on one side).
   ringPad: 4,
@@ -62,6 +68,10 @@ var NbcDice = {
   // Held after the roll until the dice are gone, so no touch lands while they
   // still count.
   clearWaitMs: 3000,
+  // Neither Oogie nor a die on screen this long: the roll is over (Oogie fades
+  // into the dice within 0.2s). Catches the green skull over a finished roll,
+  // which also reads as Oogie, without holding touches on an empty board.
+  goneMs: 500,
   rerollBelow: 7,
 };
 
@@ -131,6 +141,7 @@ function nbcCountPips(img: NativeImage, face: ContourBox): number {
       if (rel < cfg.pipMinRel || rel > cfg.pipMaxRel) { continue; }
       if (b.area / (b.width * b.height) < cfg.pipMinFill) { continue; }
       if (b.height > b.width * 1.05) { continue; }
+      if (y0 + b.y + b.height / 2 - face.y > face.height * cfg.pipMaxY) { continue; }
       pips.push(b);
     }
     if (pips.length === 0) { return 0; }
@@ -163,20 +174,28 @@ function nbcCountPips(img: NativeImage, face: ContourBox): number {
   }
 }
 
-/** Both dice's top-face pips, left die first, or null unless both sit at rest. */
-function nbcReadDice(ts: Tsum): number[] | null {
+interface NbcLook {
+  /** Both dice's top-face pips, left die first; null unless both sit at rest. */
+  dice: number[] | null;
+  /** Oogie or a die, at rest or not, is on screen. */
+  busy: boolean;
+}
+
+/** One look at the roll. */
+function nbcLook(ts: Tsum): NbcLook {
   const cfg = NbcDice;
   const img = nbcCapture(ts, cfg.scan);
-  if (!img) { return null; }
+  if (!img) { return {dice: null, busy: true}; }
   try {
     const mask = nbcMask(img, NbcFaceRed);
-    if (!mask) { return null; }
+    if (!mask) { return {dice: null, busy: true}; }
     let faces: ContourBox[];
     try {
       faces = findContours(mask, cfg.faceMinArea, 0);
     } finally {
       releaseImage(mask);
     }
+    const busy = faces.length > 0 || nbcOogieSeen(img) > 0;
     const pips: number[] = [];
     for (let d = 0; d < cfg.rest.length; d++) {
       const rest = cfg.rest[d];
@@ -187,12 +206,12 @@ function nbcReadDice(ts: Tsum): number[] | null {
           face = faces[i];
         }
       }
-      if (!face) { return null; }
+      if (!face) { return {dice: null, busy: busy}; }
       const n = nbcCountPips(img, face);
-      if (n < 1 || n > 6) { return null; }
+      if (n < 1 || n > 6) { return {dice: null, busy: busy}; }
       pips.push(n);
     }
-    return pips;
+    return {dice: pips, busy: busy};
   } finally {
     releaseImage(img);
   }
@@ -221,8 +240,15 @@ function nbcPlayDice(ts: Tsum) {
   let last: number[] | null = null;
   let same = 0;
   let deadline = Date.now() + cfg.landWaitMs;
+  let seenAt = Date.now();
   while (ts.isRunning && Date.now() < deadline) {
-    const read = nbcReadDice(ts);
+    const look = nbcLook(ts);
+    if (look.busy) {
+      seenAt = Date.now();
+    } else if (Date.now() - seenAt > cfg.goneMs) {
+      break;
+    }
+    const read = look.dice;
     same = !read ? 0 : last && read[0] === last[0] && read[1] === last[1] ? same + 1 : 1;
     last = read;
     if (read && same >= cfg.stableReads) {
@@ -233,22 +259,34 @@ function nbcPlayDice(ts: Tsum) {
         // Gone twice running, so one dropped read is not the end.
         let gone = 0;
         nbcWaitFor(ts, cfg.clearWaitMs, () => {
-          gone = nbcReadDice(ts) ? 0 : gone + 1;
+          gone = nbcLook(ts).dice ? 0 : gone + 1;
           return gone >= 2;
         });
         return;
       }
       ts.tap({x: 540, y: PlayAreaTopY + 540});  // middle of the board
       rerolled = true;
-      nbcWaitFor(ts, cfg.rethrowWaitMs, () => nbcReadDice(ts) === null);
+      nbcWaitFor(ts, cfg.rethrowWaitMs, () => nbcLook(ts).dice === null);
       last = null;
       same = 0;
       deadline = Date.now() + cfg.landWaitMs;
+      seenAt = Date.now();
       continue;
     }
     ts.sleep(cfg.pollMs);
   }
-  logWarn(Log.Skill.NbcDiceUnread, { roll: rerolled ? 2 : 1, last: last });
+  // `gone`: nothing left on screen, so too late rather than unreadable.
+  logWarn(Log.Skill.NbcDiceUnread, { roll: rerolled ? 2 : 1, last: last,
+    gone: Date.now() < deadline });
+}
+
+/** Plays Oogie's roll if `img` shows him; whether it did. */
+function nbcWatch(ts: Tsum, img: NativeImage): boolean {
+  const green = nbcOogieSeen(img);
+  if (!green) { return false; }
+  logInfo(Log.Skill.NbcOogie, { green: +green.toFixed(3) });
+  nbcPlayDice(ts);
+  return true;
 }
 
 registerSkill({
@@ -256,12 +294,15 @@ registerSkill({
   bareTapActivates: true,
   scalesBoard: true,
   colorBlur: 15,
-  watchScan: function(ts, img) {
-    const green = nbcOogieSeen(img);
-    if (!green) { return false; }
-    logInfo(Log.Skill.NbcOogie, { green: +green.toFixed(3) });
-    nbcPlayDice(ts);
-    return true;
+  watchScan: nbcWatch,
+  // The skill button can read full all through Oogie's roll.
+  beforeActivate: function(ts) {
+    const img = ts.playScreenshotSquare();
+    try {
+      nbcWatch(ts, img);
+    } finally {
+      releaseImage(img);
+    }
   },
   afterActivate: function(ts) {
     skillRandomizeAndWait(ts);

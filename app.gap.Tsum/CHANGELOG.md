@@ -43,7 +43,7 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
-- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums, no longer mixes Sally into Jack and Zero's chains, and reads Oogie Boogie's dice, rerolling only a roll under 7.
+- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums or Oogie Boogie clears them, no longer mixes Sally into Jack and Zero's chains, and reads Oogie Boogie's dice, rerolling only a roll under 7.
 
 ### Added
 
@@ -56,7 +56,7 @@ release note; they fold back in here when she ships.
   another character's skill seconds after the tap, never the tap itself, so
   each board scan looks for his green cut-in (new `SkillHandler.watchScan`);
   from there every touch is held, both dice are read at their fixed rest spots
-  (`nbcReadDice`: lit top-face red, pips as dark holes in it), and a first total
+  (`nbcLook`: lit top-face red, pips as dark holes in it), and a first total
   under 7 gets one mid-board tap.
 
 ### Changed
@@ -66,6 +66,19 @@ release note; they fold back in here when she ships.
 
 ### Fixed
 
+- **NBC Set: no touches during Oogie's roll from the skill-use loop.** The skill
+  button can read full through his roll, and `while (useSkill())` takes no
+  scans, so its skill and fan taps rerolled the dice; each tap now looks for
+  him first (`beforeActivate`).
+- **NBC Set: no 4s stall after a finished roll.** The green skull over the
+  result also reads as Oogie; the wait now ends 0.5s after neither he nor a die
+  is on screen (`NbcDice.goneMs`).
+- **NBC Set: front-face pip no longer counted** (a 3 read as 4): top-face pips
+  sit in the top 70% of the die's box (`NbcDice.pipMaxY`).
+- **NBC Set: board scale recovers on a sparse board.** Under 25 clean circles
+  the spacing read gave up, so after Oogie's wipe refilled at full size the
+  board stayed read at 0.85 for 30s; 8-24 circles now go by median radius
+  (`BoardScaleRead.minRadiusCircles`).
 - **NBC Set: Sally no longer clusters with Jack and Zero.** Her blue face and
   red hood blurred to a pale colour at the 22px colour blur; the skill now
   declares `colorBlur: 15` (`SkillHandler.colorBlur`), so white chains stop

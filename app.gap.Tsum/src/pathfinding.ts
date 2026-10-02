@@ -559,17 +559,29 @@ var BoardScaleRead = {
   // Fewer circles than this is a board mid-clear or under an animation, where
   // the gaps are holes rather than neighbours.
   minCircles: 25,
+  // A sparse board goes by the circles' median radius instead, so a shrunk
+  // board that a skill empties and refills at full size is noticed (NBC's
+  // Oogie). Noisier than the spacing (a full-size board reads 0.8-1.1), so
+  // only below `minCircles`.
+  minRadiusCircles: 8,
+  // A full-size tsum's circle radius against `Config.tsumWidth`.
+  radiusPerWidth: 0.45,
 };
 
 /**
  * The tsums' size against `Config.tsumWidth` from one board gray, or null when
- * too few clean circles were found to say.
+ * too few clean circles were found to say. Spacing on a full board, radius on
+ * a sparse one.
  */
 function readBoardScale(grayImg: NativeImage): number | null {
   const c = BoardScaleRead;
   const found = houghCircles(grayImg, c.method, 1, c.minDist, c.param1, c.param2,
     c.minRadius, c.maxRadius);
-  if (found.length < c.minCircles) { return null; }
+  if (found.length < c.minRadiusCircles) { return null; }
+  if (found.length < c.minCircles) {
+    const radii = found.map(function(f) { return f.radius; });
+    return skillMedian(radii) / (c.radiusPerWidth * Config.tsumWidth);
+  }
   const gaps: number[] = [];
   for (let i = 0; i < found.length; i++) {
     let best = Infinity;
