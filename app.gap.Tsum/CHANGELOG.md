@@ -44,6 +44,12 @@ release note; they fold back in here when she ships.
 ### Summary
 
 - Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums or Oogie Boogie clears them, no longer mixes Sally into Jack and Zero's chains, and reads Oogie Boogie's dice, rerolling only a roll under 7.
+- Tsum List export added (Chores > Tsum List > Now): writes every Tsum you own, with its level, skill level, progress to the next skill level and month acquired, to a CSV.
+- Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
+- Settings page reorganized: Skills, Round (chain limits and bonuses) and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
+- Japanese (日本語) added as a language for the settings page, Quick Bar and log.
+- Copy with settings list option added: a copied settings code can carry a short list of its skill type and the settings changed from default.
+- Quick Bar gained a second page, switched by the dots beside Report: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout can switch to round/run times.
 
 ### Added
 
@@ -58,11 +64,50 @@ release note; they fold back in here when she ships.
   from there every touch is held, both dice are read at their fixed rest spots
   (`nbcLook`: lit top-face red, pips as dark holes in it), and a first total
   under 7 gets one mid-board tap.
+- **Tsum List export** (`src/tsumList.ts`, Alpha). Sorts the collection by Date
+  acquired, owned only, taps each card and writes
+  `tsum_record/tsum_list_<stamp>.csv` after every page. Queued on a live run;
+  from a stopped script (`SettingKey.TsumListOnly`) it exports and stops.
+  Columns end in `skill_progress` (off the skill bar's fill, empty at MAX),
+  `build` (`global`/`jp`) and `device` (`getDeviceName()`).
+- **Tsum List naming**: by portrait first (`src/tsumsCollection.dat`, from the
+  `_l` art), then by the printed name (`src/tsumNames.dat`) for art twins.
+  Named 355 of 355 on emulator. Waits for the portrait to change and settle
+  after a tap (`awaitCollectionPortrait`).
+- **Digit reader**: a `StatsRegion` can read `/` as a field break (`slash`) and
+  enlarge small text (`scale`), for the collection's 9px dates.
+- **Stop after games** (`SettingKey.StopAfterGames`, `StopAfterAction`). Counted
+  at the play task's tail (`countGameTowardStop`); firing or a new target resets
+  the count. Auto Play off removes the `PlayRound` job; Pause calls the host's
+  `pauseScript()` (Auto Play off on an older host). `LiveWhen.Now`, `neverShared`.
+  Quick Bar page two's bottom row is Games and Then; its bonus chips are gone.
+- `round.start` and `round.end` carry `build`, and `round.end` also `myTsum` and
+  `skill`, so a live consumer can file a round without waiting for its CSV row.
+- `prerelease:alpha`/`prerelease:beta` build and publish a tester build to the
+  R2 folder.
+- **Japanese** (`ja-JP`): `src/uiJa.ts`, `src/logsJa.ts`. Bubbles are ボム; skill,
+  box and Quick Bar labels stay English, as in zh-TW.
+- **Copy with settings list**: a page-only localStorage switch
+  (`tsumtsumsharelisting`). The QR and paste still use only the bare code.
+- **Quick Bar page two**, flipped by a toggle over Report (`.qb-side`); both
+  pages share one grid area. Lvl calls `unlockLevelsNow()`; Copy code asks the
+  settings page (`PageMessage.CopyShareCode`), which owns the codec. Busy chips
+  sweep until answered and report by banner, through `runScriptCallback`.
+- **Readout toggle** flips `<body data-readout>` between coins and times;
+  `ts.runClock` counts round time at every round end for it.
+- **Live Hearts toggles**: `sendHeartsAuto`/`receiveHeartsOneByOne` are
+  `LiveWhen.Now`; `quickBarSyncJob` adds or removes their job.
 
 ### Changed
 
 - **`build --adb` pushes to every emulator in `adb devices`** instead of the
   first; `--device SERIAL` still picks one.
+- **Settings tabs** are Skills, Round, Hearts, Gameplay, Chores, General,
+  Debug; Advanced is gone. `SHARE_TABS` covers Round, so codes carry the same
+  rows. Help text cut to about one line each.
+- `sortCollection` can also set "Show owned Tsums only" and returns the dialog's
+  previous state; `restoreCollectionSort` puts both back.
+- `collectionOffersRaise` is split out of `raiseSelectedLevelCap`.
 
 ### Fixed
 
@@ -150,10 +195,6 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
-- Settings page reorganized: Skills, Round (chain limits and bonuses) and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
-- Japanese (日本語) added as a language for the settings page, Quick Bar and log.
-- Copy with settings list option added: a copied settings code can carry a short list of its skill type and the settings changed from default.
-- Quick Bar gained a second page: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout can switch to round/run times.
 - Wait for Settle setting added: once the gauge fills, waits up to 0.0-3.0s for the board to refill before firing the skill, so it goes off on a full board.
 - Delay Skill ReActivation setting added: holds a full gauge for a set time after each activation so a skill with a duration is not wasted.
 - Bubbles are no longer popped the moment they appear or right after a skill fires; the Bubble Strategy spends them once the board has refilled.
@@ -164,18 +205,6 @@ release note; they fold back in here when she ships.
 
 ### Added
 
-- **Japanese** (`ja-JP`): `src/uiJa.ts`, `src/logsJa.ts`. Bubbles are ボム; skill,
-  box and Quick Bar labels stay English, as in zh-TW.
-- **Copy with settings list**: a page-only localStorage switch
-  (`tsumtsumsharelisting`). The QR and paste still use only the bare code.
-- **Quick Bar page two**, flipped by a toggle over Report (`.qb-side`); both
-  pages share one grid area. Lvl calls `unlockLevelsNow()`; Copy code asks the
-  settings page (`PageMessage.CopyShareCode`), which owns the codec. Busy chips
-  sweep until answered and report by banner, through `runScriptCallback`.
-- **Readout toggle** flips `<body data-readout>` between coins and times;
-  `ts.runClock` counts round time at every round end for it.
-- **Live Hearts toggles**: `sendHeartsAuto`/`receiveHeartsOneByOne` are
-  `LiveWhen.Now`; `quickBarSyncJob` adds or removes their job.
 - **Wait for Settle** (`SkillSettleMs`, stored in ms, shown in seconds via row
   `scale`). `useSkill` runs `settleBoard` before the activation tap; its
   `onMoving` callback pops bubbles into a refilling board. With it on,
@@ -190,9 +219,6 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
-- **Settings tabs** are Skills, Round, Hearts, Gameplay, Chores, General,
-  Debug; Advanced is gone. `SHARE_TABS` covers Round, so codes carry the same
-  rows. Help text cut to about one line each.
 - **Scaled number rows** show one decimal, step by 0.1 and open a decimal keypad.
 - **Tally count-up tap is a dispatch handler** (`dismiss.tallyCountUp`), so it
   fires on any look at the tally, stats on or off. `readTallyRow` reads the

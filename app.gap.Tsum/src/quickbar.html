@@ -105,6 +105,8 @@
     <script src="skillOptions.js"></script>
     <!-- The Bubble Strategy entries, shared the same way; src/bubbleOptions.ts. -->
     <script src="bubbleOptions.js"></script>
+    <!-- Stop after games' actions, shared the same way; src/stopAfterOptions.ts. -->
+    <script src="stopAfterOptions.js"></script>
     <!-- The named-configuration store the preset chip switches between, shared
          with the settings page; src/presets.ts. -->
     <script src="presets.js"></script>
@@ -246,8 +248,8 @@
         </div>
 
         <!--
-          Page two: the hearts chores and two one-off actions over the other
-          bonus items. Each chip is as wide as its own word.
+          Page two: the hearts chores and two one-off actions over Stop after
+          games. Each chip is as wide as its own word.
 
           `.qb-unlock-now` and `.qb-copy-share` are actions, not settings, so
           they carry no `data-key`; quickbarPage.ts finds them by class.
@@ -277,21 +279,32 @@
             </div>
           </div>
 
+          <!--
+            Stop after games: how many rounds (0 = off), then what happens.
+            The action chip draws its option's short name, as Bubble does.
+          -->
           <div class="qb-cluster">
-            <div class="qb-cell" data-key="bonusScore">
-              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.bonusScore">+Score</button>
+            <div class="qb-cell" data-key="stopAfterGames" data-min="0" data-max="999">
+              <div class="qb-stepper">
+                <button class="qb-step" type="button" data-step="-1">&minus;</button>
+                <span class="qb-readout">
+                  <span class="qb-name" data-i18n="qb.games">Games</span>
+                  <span class="qb-value">&mdash;</span>
+                </span>
+                <button class="qb-step" type="button" data-step="1">+</button>
+              </div>
             </div>
-            <div class="qb-cell" data-key="bonusExp">
-              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.bonusExp">+Exp</button>
-            </div>
-            <div class="qb-cell" data-key="bonusTime">
-              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.bonusTime">+Time</button>
-            </div>
-            <div class="qb-cell" data-key="bonusBubble">
-              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.bonusBubble">+Bubble</button>
-            </div>
-            <div class="qb-cell" data-key="bonusCombo">
-              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.bonusCombo">+Combo</button>
+            <div class="qb-cell qb-cell-wide" data-key="stopAfterAction">
+              <button class="qb-select qb-wide" type="button"
+                      aria-haspopup="listbox" aria-expanded="false">
+                <span class="qb-readout qb-wide-readout">
+                  <span class="qb-name" data-i18n="qb.then">Then</span>
+                  <span class="qb-wide-value qb-select-value">&mdash;</span>
+                </span>
+                <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 9.5l6 6 6-6"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>

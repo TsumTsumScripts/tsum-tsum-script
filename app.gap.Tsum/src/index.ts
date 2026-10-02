@@ -190,6 +190,9 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   // which is the one behaviour the cap exists to replace.
   ts.maxRoundAction = settings.maxRoundAction === MaxRoundAction.Stop
     ? MaxRoundAction.Stop : MaxRoundAction.Coast;
+  ts.stopAfterGames = typeof settings.stopAfterGames === 'number'
+    && settings.stopAfterGames > 0 ? Math.round(settings.stopAfterGames) : 0;
+  ts.stopAfterAction = stopAfterActionOf(settings.stopAfterAction);
   ts.sendHearts = settings.sendHeartsAuto;
   ts.receiveOneByOne = settings.receiveHeartsOneByOne;
   ts.keepRuby = settings.receiveHeartsSkipRuby;
@@ -282,6 +285,7 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   // Set when a Now button started this run -- see `unlockLevelsNow`, `buyBoxesNow`.
   const unlockFirst = settings.unlockLevelsFirst === true;
   const buyBoxesFirst = settings.buyBoxesFirst === true;
+  const tsumListOnly = settings.tsumListOnly === true;
 
   // The walkthrough recorder is a mode, not a task alongside the others: it is
   // watching a person play, so nothing else may touch the screen. The table
@@ -296,6 +300,9 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
     if (buyBoxesFirst) {
       logWarn(Log.Box.NowRefused, { reason: 'walkthrough' });
     }
+    if (tsumListOnly) {
+      logWarn(Log.TsumList.NowRefused, { reason: 'walkthrough' });
+    }
   }
   const jobs = runTaskTable(settings);
   for (let i = 0; i < jobs.length; i++) {
@@ -309,6 +316,9 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   }
   if (buyBoxesFirst) {
     queueBuyBoxSweep(ts, gTaskController);
+  }
+  if (tsumListOnly) {
+    queueTsumListExport(ts, gTaskController, true);
   }
 }
 
@@ -350,6 +360,7 @@ function endRun(): void {
   gWalkthroughRun = false;
   gUnlockNowQueued = false;
   gBuyBoxNowQueued = false;
+  gTsumListNowQueued = false;
   // Read before `ts` is cleared below; the event itself goes out with the rest
   // of the closing lines.
   const rounds = ts === undefined ? 0 : ts.runCoins.rounds;
@@ -691,6 +702,70 @@ function buyBoxesNow(settings?: Settings): string {
   }
   applyLiveSettings(settings);
   queueBuyBoxSweep(ts, gTaskController);
+  return 'queued';
+}
+
+/** Name of the one-shot task `exportTsumListNow` queues. */
+const TsumListNowTask = 'exportTsumListNow';
+
+/** Set while a Tsum List export asked for from the settings page waits for its turn. */
+let gTsumListNowQueued = false;
+
+/**
+ * Registers the Tsum List export on `controller`, the way `queueBuyBoxSweep`
+ * does. `stopAfter` is set for a run started only for the export, which ends
+ * once it is done.
+ */
+function queueTsumListExport(run: Tsum, controller: TsumTaskController, stopAfter: boolean): void {
+  gTsumListNowQueued = true;
+  run.yieldAsked = true;
+  let waited = false;
+  controller.newTask(TsumListNowTask, function() {
+    run.yieldAsked = false;
+    if (!run.taskExportTsumList()) {
+      run.yieldAsked = true;
+      if (!waited) {
+        waited = true;
+        logInfo(Log.TsumList.NowWaiting);
+      }
+      return;
+    }
+    gTsumListNowQueued = false;
+    controller.removeTask(TsumListNowTask);
+    if (stopAfter) {
+      requestStop();
+    }
+  }, UnlockNowRetryMs, 0, false, JobPriority.TsumListNow);
+  logInfo(Log.TsumList.NowQueued);
+  run.banner('Exporting the Tsum list next', 4000);
+}
+
+/**
+ * Exports the Tsum list once. A global the settings page reaches by name, like
+ * `buyBoxesNow`: queued on a live run, which carries on afterwards; with
+ * nothing running it starts a run for the export alone, which stops when the
+ * export is done.
+ *
+ * Returns what it decided, which the host writes to the log.
+ */
+// noinspection JSUnusedGlobalSymbols
+function exportTsumListNow(settings?: Settings): string {
+  if (!gRunActive || ts === undefined || gTaskController === undefined) {
+    if (settings === undefined) {
+      return 'no run';
+    }
+    settings.tsumListOnly = true;
+    start(settings);
+    return 'started';
+  }
+  if (gWalkthroughRun) {
+    logWarn(Log.TsumList.NowRefused, { reason: 'walkthrough' });
+    return 'walkthrough recording';
+  }
+  if (gTsumListNowQueued) {
+    return 'already queued';
+  }
+  queueTsumListExport(ts, gTaskController, false);
   return 'queued';
 }
 

@@ -515,6 +515,22 @@ var tabs: TabSpec[] = [
                         step: 1
                     }
                 ]
+            },
+            {
+                title: UiText.GroupTsumList,
+                help: UiText.GroupTsumListHelp,
+                rows: [
+                    {
+                        // A one-off with no schedule -- see `askExportTsumListNow`.
+                        key: RowKey.ExportTsumList,
+                        title: UiText.SettingExportTsumList,
+                        help: UiText.SettingExportTsumListHelp,
+                        status: ReleaseStatus.Alpha,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askExportTsumListNow(); }}
+                        ]
+                    }
+                ]
             }
         ]
     },
@@ -634,6 +650,28 @@ var tabs: TabSpec[] = [
                         ] satisfies { key: MaxRoundAction; title: UiText }[]),
                         // Meaningless on its own -- it is what the cap above
                         // does, and that row is not shared either.
+                        neverShared: true
+                    },
+                    {
+                        // Counted at each round's tail -- see the Stop after
+                        // games block in `src/play.ts`. How long the run goes,
+                        // not how a round is played, so never shared.
+                        key: SettingKey.StopAfterGames,
+                        title: UiText.SettingStopAfterGames,
+                        help: UiText.SettingStopAfterGamesHelp,
+                        default: 0,
+                        step: 1,
+                        max: 999,
+                        min: 0,
+                        neverShared: true
+                    },
+                    {
+                        key: SettingKey.StopAfterAction,
+                        title: UiText.SettingStopAfterAction,
+                        help: UiText.SettingStopAfterActionHelp,
+                        default: StopAfterAction.AutoPlayOff as StopAfterAction,
+                        // `src/stopAfterOptions.ts`, shared with the Quick Bar.
+                        dropdown: StopAfterOptions,
                         neverShared: true
                     },
                     {
@@ -2064,6 +2102,24 @@ function askBuyBoxesNow(): void {
 }
 
 /**
+ * The Tsum List export's Now button. As `askBuyBoxesNow`, except that a run
+ * started from here stops once the export is done (`exportTsumListNow`).
+ */
+// noinspection JSUnusedGlobalSymbols
+function askExportTsumListNow(): void {
+    var iface = bridge();
+    if (iface === undefined) {
+        return;
+    }
+    flushSettings();
+    iface.hideMenu();
+    iface.showMenu();
+    iface.runScript('typeof exportTsumListNow === "function" && exportTsumListNow('
+        + JSON.stringify(startSettings(settings)) + ');');
+    logInfo(Log.Settings.ExportTsumListAsked, 'Asked the run to export the Tsum list');
+}
+
+/**
  * The browser's async clipboard, which only exists in a secure context. Both
  * hosts load this page from a file:// base, so it is normally absent and only
  * ever helps when the page is opened in a real browser.
@@ -3354,11 +3410,17 @@ function taskDetail(name: TaskName, values: { [key: string]: SettingValue }): st
             // which is what lets the chores keep their own clocks through it.
             var delay = num(SettingKey.RoundDelayMinutes);
             var cap = num(SettingKey.MaxRoundMinutes);
+            var games = num(SettingKey.StopAfterGames);
             return (delay > 0 ? i18nFormat(UiText.RunPlayRoundDelay, {minutes: delay}) : '')
                 + (cap > 0 ? i18nFormat(UiText.RunPlayRoundCap, {
                     minutes: cap,
                     action: optionLabelOf(SettingKey.MaxRoundAction,
                         values[SettingKey.MaxRoundAction])
+                }) : '')
+                + (games > 0 ? i18nFormat(UiText.RunPlayRoundStopAfter, {
+                    games: games,
+                    action: optionLabelOf(SettingKey.StopAfterAction,
+                        values[SettingKey.StopAfterAction])
                 }) : '')
                 + itemsLabel(values);
         }

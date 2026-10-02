@@ -140,6 +140,8 @@ function quickBarState(): string {
     // settings panel is the only thing that moves them, and it reads this back.
     state[SettingKey.MaxRoundMinutes] = Math.round(ts.maxRoundMs / 60000);
     state[SettingKey.MaxRoundAction] = ts.maxRoundAction;
+    state[SettingKey.StopAfterGames] = ts.stopAfterGames;
+    state[SettingKey.StopAfterAction] = ts.stopAfterAction;
     // A span rather than the instant it ends at, so a page counting it down
     // needs the two clocks to agree about nothing. 0 is "nothing is resting".
     // Nothing draws it since the countdown left the strip; it is kept because
@@ -382,6 +384,18 @@ function quickBarApplyOne(tsum: Tsum, key: SettingKey,
         ? MaxRoundAction.Stop : MaxRoundAction.Coast;
       tsum.maxRoundAction = applied as MaxRoundAction;
       break;
+    // A new target restarts the count, so "5" means five more from here.
+    case SettingKey.StopAfterGames:
+      applied = quickBarClamp(value, 0, 999);
+      if (applied !== tsum.stopAfterGames) {
+        tsum.gamesTowardStop = 0;
+      }
+      tsum.stopAfterGames = applied as number;
+      break;
+    case SettingKey.StopAfterAction:
+      applied = stopAfterActionOf(value);
+      tsum.stopAfterAction = applied as StopAfterAction;
+      break;
     // Held back, and this pairing is why: `uniqueTsumCount` is how many colours
     // every board scan keeps, and the board in front of the loop was dealt under
     // the old answer. The same pairing `buildRun` makes.
@@ -520,6 +534,10 @@ const LiveSettings: { [key: string]: LiveWhen } = {
   // *run* spends on a round, not how one is played.
   [SettingKey.MaxRoundMinutes]: LiveWhen.Now,
   [SettingKey.MaxRoundAction]: LiveWhen.Now,
+  // Read at each round's tail (`countGameTowardStop`), so a change counts from
+  // the round in progress. Not preset rows: they shape the run, not a round.
+  [SettingKey.StopAfterGames]: LiveWhen.Now,
+  [SettingKey.StopAfterAction]: LiveWhen.Now,
   // Not preset rows either -- these belong to the account rather than to how a
   // round is played -- and live because the sweep re-reads them when it runs,
   // which is between rounds by definition.

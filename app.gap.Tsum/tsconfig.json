@@ -84,6 +84,8 @@
     "src/levelCap.ts",
     // Borrows `awaitPage` from levelCap.ts, which is why it follows it.
     "src/boxes.ts",
+    // Walks the collection with levelCap.ts's helpers, so it follows it too.
+    "src/tsumList.ts",
     // Attaches to Tsum.prototype and constructs its singleton (`gFever`) at
     // load time, so it follows tsum.ts and precedes pageHandlers.ts, whose
     // observe.feverTime feeds it.

@@ -53,6 +53,8 @@
     // The Bubble Strategy dropdown's entries, shared for the same reason and in
     // the same shape. Emits build/bubbleOptions.js.
     "src/bubbleOptions.ts",
+    // Stop after games' action entries, the same way. Emits build/stopAfterOptions.js.
+    "src/stopAfterOptions.ts",
     // The run's task table, shared with the game bundle so the Run order card
     // lists what buildRun registers. Emits build/runPlan.js, loaded before
     // settings.js.

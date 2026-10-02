@@ -437,6 +437,53 @@ const RoundCoastPollMs = 500;
 /** Between `play.roundCoasting` lines, so a long coast is visibly still alive. */
 const RoundCoastHeartbeatMs = 60 * 1000;
 
+// --- Stop after games --------------------------------------------------------
+//
+// Counted at the round's tail, so the last round is always seen out and a round
+// abandoned by a stop never counts. Firing resets the count, so a Resume after
+// `Pause` plays the same number again.
+
+/** Anything unrecognised is AutoPlayOff: the one action that loses nothing. */
+function stopAfterActionOf(value: unknown): StopAfterAction {
+  return value === StopAfterAction.Pause || value === StopAfterAction.Stop
+    ? value : StopAfterAction.AutoPlayOff;
+}
+
+Tsum.prototype.countGameTowardStop = function() {
+  if (this.stopAfterGames <= 0 || !this.isRunning) {
+    return false;
+  }
+  this.gamesTowardStop++;
+  if (this.gamesTowardStop < this.stopAfterGames) {
+    return false;
+  }
+  this.gamesTowardStop = 0;
+  let action = this.stopAfterAction;
+  // An older host has no pauseScript; ending play is the closest safe answer.
+  if (action === StopAfterAction.Pause && typeof pauseScript !== 'function') {
+    action = StopAfterAction.AutoPlayOff;
+  }
+  logInfo(Log.Play.GamesLimitReached, { games: this.stopAfterGames,
+    action: action });
+  switch (action) {
+    case StopAfterAction.Stop:
+      this.banner('Played ' + this.stopAfterGames + ' games: stopping', 5000);
+      requestStop();
+      break;
+    case StopAfterAction.Pause:
+      this.banner('Played ' + this.stopAfterGames + ' games: pausing', 5000);
+      pauseScript();
+      break;
+    default:
+      // Only the round job goes; chores and their schedules keep running.
+      this.banner('Played ' + this.stopAfterGames + ' games: Auto Play off', 5000);
+      if (gTaskController !== undefined) {
+        gTaskController.removeTask(TaskName.PlayRound);
+      }
+  }
+  return true;
+}
+
 Tsum.prototype.roundDelayRemainingMs = function() {
   const left = this.nextRoundAt - Date.now();
   return left > 0 ? left : 0;
@@ -481,6 +528,8 @@ Tsum.prototype.openRound = function() {
     round: this.roundNumber,
     myTsum: this.myTsum,
     skill: statsSkillName(this.roundSettings ? this.roundSettings.skillType : this.skillType),
+    // The CSV's `build` column: INTL and JP rounds only compare with their own.
+    build: this.gameBuild(),
     // What the round is played under, so a consumer can group rounds without
     // waiting for the CSV. The snapshot, so a mid-round Quick Bar change is the
     // next round's news.
@@ -841,6 +890,9 @@ Tsum.prototype.taskPlayGameQuick = function() {
     // closes the round without clearing either.
     id: this.roundUid,
     round: this.roundNumber,
+    myTsum: this.myTsum,
+    skill: statsSkillName(this.roundSettings ? this.roundSettings.skillType : this.skillType),
+    build: this.gameBuild(),
     seconds: outcome === null ? roundSeconds : outcome.seconds,
     score: outcome === null ? null : outcome.score,
     baseCoins: outcome === null ? null : outcome.baseCoins,
@@ -853,6 +905,10 @@ Tsum.prototype.taskPlayGameQuick = function() {
   // whatever comes next. Before the delay below, which measures from the game
   // being back between rounds.
   this.raiseMyTsumLevelCapIfPending();
+  // Not due again at once: a pause lands at the next sleep, not the next walk.
+  if (this.countGameTowardStop()) {
+    return false;
+  }
   // Start the wait here rather than at game over: finishRoundStats sees the
   // score screen away, so this measures from the game being back at the start
   // screen -- which is what "between rounds" means to the person who set it.
