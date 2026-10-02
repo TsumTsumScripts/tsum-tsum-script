@@ -108,6 +108,8 @@ namespace Log {
     ChainDrawn       = 'board.chainDrawn',
     Clusters         = 'board.clusters',
     DeadScan         = 'board.deadScan',
+    /** The scan waited out the last seconds' edge wash (`waitOutEdgeWash`). */
+    EdgeWash         = 'board.edgeWash',
     LinkReach        = 'board.linkReach',
     MyTsumColor      = 'board.myTsumColor',
     PathDone         = 'board.pathDone',

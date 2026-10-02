@@ -44,6 +44,7 @@ release note; they fold back in here when she ships.
 ### Summary
 
 - Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums or Oogie Boogie clears them, no longer mixes Sally into Jack and Zero's chains, and reads Oogie Boogie's dice, rerolling only a roll under 7.
+- Chains in a round's last 5 seconds no longer break on tsums at the board's edges.
 
 ### Added
 
@@ -66,6 +67,10 @@ release note; they fold back in here when she ships.
 
 ### Fixed
 
+- **Last-seconds edge wash no longer breaks chains.** The game washes the
+  screen edges cyan ~0.55s of every second in the last 5s; edge tsums read the
+  wrong colour then. `waitOutEdgeWash` spots it from the bright gaps in the
+  board's edge strips and waits for the dim part before planning (max 800ms).
 - **NBC Set: no touches during Oogie's roll from the skill-use loop.** The skill
   button can read full through his roll, and `while (useSkill())` takes no
   scans, so its skill and fan taps rerolled the dice; each tap now looks for

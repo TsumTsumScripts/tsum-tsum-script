@@ -416,6 +416,85 @@ Tsum.prototype.updateBoardScale = function(grayImg) {
   Config.boardScale = scale;
 };
 
+// The round's last ~5 seconds wash the screen edges cyan once a second: ~0.55s
+// bright, then ~0.45s dim. Under the bright part, tsums near the left and right
+// edges read the wrong colour (whites join Sally on NBC Set), so chains planned
+// through them break after a link or two. Read off the gaps between tsums in
+// the edge strips: dark on any board, bright only under the wash. Measured on
+// the NBC, Gaston and Elsa recordings (play square, blurred board gray).
+var EdgeWash = {
+  strip: 8,        // strip width at each side, play-square px
+  top: 20,         // rows read, clear of the corners
+  bottom: 180,
+  step: 2,
+  percentile: 0.1, // the darkest tenth: the gaps, not the tsums
+  bright: 130,     // both strips at least this bright = washed (normal ~50-80)
+  pollMs: 50,
+  maxWaitMs: 800,  // the dim part always comes within ~0.55s
+  // A wait that ran out was something else lighting the edges, not the wash;
+  // don't spend another wait on it this soon.
+  backoffMs: 3000,
+};
+
+// Sample points of the two strips, left strip first. Built on first use.
+let edgeWashPoints: Point[] | null = null;
+
+function edgeWashSamplePoints(): Point[] {
+  if (edgeWashPoints !== null) { return edgeWashPoints; }
+  const c = EdgeWash;
+  const size = Config.screenResize;
+  const pts: Point[] = [];
+  for (const x0 of [0, size - c.strip]) {
+    for (let y = c.top; y < c.bottom; y += c.step) {
+      for (let x = x0; x < x0 + c.strip; x += c.step) { pts.push({x: x, y: y}); }
+    }
+  }
+  edgeWashPoints = pts;
+  return pts;
+}
+
+/** How bright the dimmer edge strip's gaps are, on the board gray. */
+function edgeWashLevel(grayImg: NativeImage): number {
+  const colors = getImageColors(grayImg, edgeWashSamplePoints());
+  const half = colors.length >> 1;
+  const level = function(from: number): number {
+    const v: number[] = [];
+    for (let i = from; i < from + half; i++) { v.push(colors[i].r); }
+    v.sort(function(a, b) { return a - b; });
+    return v[Math.floor(v.length * EdgeWash.percentile)];
+  };
+  return Math.min(level(0), level(half));
+}
+
+/**
+ * If this scan's gray is under the last seconds' edge wash, wait for its dim
+ * part. True when it waited, so the caller captures the board again.
+ */
+Tsum.prototype.waitOutEdgeWash = function(grayImg) {
+  const c = EdgeWash;
+  const first = edgeWashLevel(grayImg);
+  if (first < c.bright || Date.now() < this.edgeWashBackoffUntil) { return false; }
+  const start = Date.now();
+  let level = first;
+  while (this.isRunning && level >= c.bright && Date.now() - start < c.maxWaitMs) {
+    this.sleep(c.pollMs);
+    const img = this.playScreenshotSquare();
+    let gray: NativeImage | null = null;
+    try {
+      gray = buildBoardGray(img);
+      level = edgeWashLevel(gray);
+    } finally {
+      if (gray !== null) { releaseImage(gray); }
+      releaseImage(img);
+    }
+  }
+  const timedOut = level >= c.bright;
+  if (timedOut) { this.edgeWashBackoffUntil = Date.now() + c.backoffMs; }
+  logDebug(Log.Board.EdgeWash, { waitedMs: Date.now() - start, first: first,
+    level: level, timedOut: timedOut });
+  return true;
+};
+
 Tsum.prototype.scanBoardQuick = function() {
   // load game tsums
   const startTime = Date.now();
@@ -448,6 +527,13 @@ Tsum.prototype.scanBoardQuick = function() {
     // two clones, two colour conversions and two 9x9 Gaussians per scan for a
     // pair of identical images.
     grayImg = buildBoardGray(srcImg);
+    if (this.waitOutEdgeWash(grayImg)) {
+      releaseImage(grayImg);
+      grayImg = null;
+      releaseImage(srcImg);
+      srcImg = this.playScreenshotSquare();
+      grayImg = buildBoardGray(srcImg);
+    }
     if (skillScalesBoard(this)) {
       this.updateBoardScale(grayImg);
     }

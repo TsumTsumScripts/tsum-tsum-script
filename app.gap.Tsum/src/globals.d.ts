@@ -1316,7 +1316,10 @@ interface Tsum {
    * 1 only bigger, 0 neither. 0 at each round's start, where they are full size.
    */
   boardScaleTrend: number;
+  /** Until when `waitOutEdgeWash` skips waiting, after a wait that ran out. */
+  edgeWashBackoffUntil: number;
   updateBoardScale(grayImg: NativeImage): void;
+  waitOutEdgeWash(grayImg: NativeImage): boolean;
   scanBoardQuick(): BoardPoint[];
 
   // --- play.ts ---------------------------------------------------------
