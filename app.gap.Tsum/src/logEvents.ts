@@ -521,5 +521,7 @@ namespace Log {
     WrapUpAsked    = 'quickBar.wrapUpAsked',
     CopyShareAsked = 'quickBar.copyShareAsked',
     UnknownSetting = 'quickBar.unknownSetting',
+    /** An enum setting sent a value it does not have; refused. */
+    InvalidValue   = 'quickBar.invalidValue',
   }
 }

@@ -195,6 +195,13 @@ function quickBarApply(key: SettingKey, value: string | number | boolean): strin
   if (!quickBarRunning()) {
     return JSON.stringify({ ok: false, why: 'no run' });
   }
+  // Refused rather than coerced: an enum value nothing knows would be written
+  // onto the world as-is (or quietly become the default).
+  if (!quickBarEnumValid(key, value)) {
+    logWarn(Log.QuickBar.InvalidValue, 'The Quick Bar sent a value this setting does not have',
+      { setting: key, value: value });
+    return JSON.stringify({ ok: false, why: 'invalid value' });
+  }
   const applied = quickBarApplyOne(ts!, key, value);
   if (applied === undefined) {
     logWarn(Log.QuickBar.UnknownSetting, 'The Quick Bar named a setting it cannot change',
@@ -206,6 +213,54 @@ function quickBarApply(key: SettingKey, value: string | number | boolean): strin
     { setting: key, value: applied, takesEffect: held ? 'nextRound' : 'now' });
   quickBarSayHeldBack(ts!, held ? 1 : 0);
   return JSON.stringify({ ok: true, value: applied });
+}
+
+/**
+ * The values each enum setting may take. `satisfies` makes a member added to
+ * the enum a build error until it is listed here.
+ */
+const QuickBarEnumValues: { [key: string]: { [value: string]: true } } = {
+  [SettingKey.BubbleStrategy]: {
+    [BubbleStrategy.OneMidChain]: true,
+    [BubbleStrategy.AllMidChain]: true,
+    [BubbleStrategy.AllAsap]: true,
+  } satisfies Record<BubbleStrategy, true>,
+  [SettingKey.BuyBoxType]: {
+    [BoxType.PremiumPlus]: true,
+    [BoxType.Premium]: true,
+    [BoxType.Select]: true,
+    [BoxType.Capsule]: true,
+    [BoxType.Happiness]: true,
+  } satisfies Record<BoxType, true>,
+  [SettingKey.BuyBoxSize]: {
+    [BoxPurchaseSize.One]: true,
+    [BoxPurchaseSize.Ten]: true,
+    [BoxPurchaseSize.TenThenOne]: true,
+  } satisfies Record<BoxPurchaseSize, true>,
+  [SettingKey.MaxRoundAction]: {
+    [MaxRoundAction.Coast]: true,
+    [MaxRoundAction.Stop]: true,
+  } satisfies Record<MaxRoundAction, true>,
+  [SettingKey.StopAfterAction]: {
+    [StopAfterAction.AutoPlayOff]: true,
+    [StopAfterAction.Pause]: true,
+    [StopAfterAction.Stop]: true,
+  } satisfies Record<StopAfterAction, true>,
+};
+
+/**
+ * False when `key` is an enum setting and `value` is not one of its members;
+ * true for every other key. A skill is valid when it has a handler, or is No
+ * Skill (which has none).
+ */
+function quickBarEnumValid(key: SettingKey, value: string | number | boolean): boolean {
+  if (key === SettingKey.SkillType) {
+    return typeof value === 'string'
+      && (value === SkillType.NoSkill || SkillHandlers[value] !== undefined);
+  }
+  const allowed = QuickBarEnumValues[key];
+  return allowed === undefined
+    || (typeof value === 'string' && allowed.hasOwnProperty(value));
 }
 
 /**

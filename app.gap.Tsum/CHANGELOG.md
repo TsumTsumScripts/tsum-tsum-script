@@ -84,6 +84,9 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
+- **Quick Bar enum checks.** `quickBarApply` refuses a value an enum setting
+  lacks (skill, bubble strategy, box type/size, the two stop actions) with
+  `{ok:false, why:"invalid value"}` and a `quickBar.invalidValue` warning.
 - Gaston, Coronation Day Elsa and `SkillReactivationTenths` to Production;
   Nightmare Before Christmas (Set) to Beta. From 4.0.
 - Quick Bar: the skill name no longer widens its column (`.qb-cell-fit`), so a
