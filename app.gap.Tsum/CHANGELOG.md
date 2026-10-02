@@ -57,6 +57,11 @@ release note; they fold back in here when she ships.
 - **`build --adb` pushes to every emulator in `adb devices`** instead of the
   first; `--device SERIAL` still picks one.
 
+### Fixed
+
+- **Quick Bar skill name ellipsises at the 5>4 chip's edge** (`.qb-cell-fit`)
+  instead of widening its column and squeezing the Report button.
+
 ## [3.2]
 
 ### Summary
