@@ -462,6 +462,58 @@ function roundDelaySkip(): string {
   return 'skipped ' + Math.round(left / 1000) + 's';
 }
 
+/** Name of the one-shot job `stopAfterThisRound` queues for between rounds. */
+const WrapUpNowTask = 'wrapUpNow';
+
+/**
+ * "Stop after this round": ends the run once the round in progress is over, or
+ * at the loop's next turn when no round is being played (between rounds, Auto
+ * Play off, a chore running). A global the Quick Bar reaches by name.
+ *
+ * A run-time flag on `ts`, not a setting: never saved, never in a preset, and
+ * gone with the run. Returns a short status for the host's log.
+ */
+// noinspection JSUnusedGlobalSymbols
+function stopAfterThisRound(): string {
+  if (!gRunActive || ts === undefined || gTaskController === undefined) {
+    return 'no run';
+  }
+  if (ts.wrapUpAsked) {
+    return 'already armed';
+  }
+  const run = ts;
+  run.wrapUpAsked = true;
+  const inRound = quickBarInRound(run);
+  logInfo(Log.Play.WrapUpArmed, { inRound: inRound });
+  run.banner(inRound ? 'Stopping after this round' : 'Stopping before the next round', 4000);
+  // Covers the runs no round tail will reach: Auto Play off, a rest, chores.
+  // Waits while a round is on; that round's tail fires first.
+  gTaskController.newTask(WrapUpNowTask, function() {
+    if (!quickBarInRound(run)) {
+      run.wrapUpIfAsked('betweenRounds');
+    }
+  }, 1000, 0, false, JobPriority.WrapUpNow);
+  return inRound ? 'armed: after this round' : 'armed: before the next round';
+}
+
+/** Disarms `stopAfterThisRound`. A global the Quick Bar reaches by name. */
+// noinspection JSUnusedGlobalSymbols
+function cancelStopAfterThisRound(): string {
+  if (!gRunActive || ts === undefined) {
+    return 'no run';
+  }
+  if (gTaskController !== undefined) {
+    gTaskController.removeTask(WrapUpNowTask);
+  }
+  if (!ts.wrapUpAsked) {
+    return 'not armed';
+  }
+  ts.wrapUpAsked = false;
+  logInfo(Log.Play.WrapUpCancelled);
+  ts.banner('Stop after this round cancelled', 3000);
+  return 'cancelled';
+}
+
 /**
  * Puts the settings page's saved values onto the run in progress, for the rows
  * a run can take mid-run.

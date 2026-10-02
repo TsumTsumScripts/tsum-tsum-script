@@ -419,6 +419,8 @@ declare const enum UiText {
   /** Stop after games' stepper and its action chip. */
   QbGames = 'qb.games',
   QbThen = 'qb.then',
+  /** Stop after this round: a run-time toggle, not a setting. */
+  QbStopAfterRound = 'qb.stopAfterRound',
   QbSendHearts = 'qb.sendHearts',
   QbReceiveOneByOne = 'qb.receiveOneByOne',
   QbUnlockNow = 'qb.unlockNow',

@@ -57,6 +57,8 @@
           `.qb-preset-value` and opens the list of them when tapped;
         * `.qb-unlock-now` and `.qb-copy-share` are actions on page two, not
           settings, and have no `data-key` either;
+        * `.qb-wrap-up` (Stop after this round) is a `.qb-toggle` with no
+          `data-key`: a run-time flag the engine reports, never stored;
         * `.qb-report` changes nothing at all: it asks the
           engine to write an issue report of what is on screen;
         * `.qb-page-toggle` flips `<body data-page>` between `1` and `2`, which
@@ -282,8 +284,12 @@
           <!--
             Stop after games: how many rounds (0 = off), then what happens.
             The action chip draws its option's short name, as Bubble does.
+            `.qb-wrap-up` before them is Stop after this round, for this run only.
           -->
           <div class="qb-cluster">
+            <div class="qb-cell">
+              <button class="qb-toggle qb-wrap-up" type="button" role="switch" aria-checked="false" data-i18n="qb.stopAfterRound">Last round</button>
+            </div>
             <div class="qb-cell" data-key="stopAfterGames" data-min="0" data-max="999">
               <div class="qb-stepper">
                 <button class="qb-step" type="button" data-step="-1">&minus;</button>

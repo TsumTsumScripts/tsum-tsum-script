@@ -117,6 +117,7 @@ steps aside and the log moves up over it.
 | ♥ Send, ♥ 1-by-1 | *Page two.* Auto Send Hearts and Receive Hearts One By One. These take effect mid-run: the chore is added or dropped straight away |
 | 🔓 Lvl | *Page two.* Not a setting: raises level caps once the current round is over, like the Now button beside Unlock Level. Needs a run. The chip shimmers while it asks, and a banner confirms |
 | Copy code | *Page two.* Not a setting: copies your settings code, as the Copy button on the settings panel does. The chip shimmers while it works, and a banner says when the code is on the clipboard |
+| Last round | *Page two.* Not a setting: stop the script once the round in progress is over, or before the next round starts if none is being played. For this run only — never saved, and off at the next start. Tap again to cancel. Needs a run |
 | Games, Then | *Page two.* Stop after games and what happens then. Take effect at once |
 | ⚠ Report | Not a setting either: saves a report of what is on screen — see [Reporting a problem](#reporting-a-problem). It and the page dots are the only buttons here that work while the script is still playing; everything else needs it paused |
 

@@ -44,6 +44,7 @@ release note; they fold back in here when she ships.
 ### Summary
 
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
+- Quick Bar "Last round" button added: stops the script once the current round is over.
 - Disney Villains (Set) now plays properly, records score and coins in the stats file, and works with Auto Unlock MyTsum Level.
 - Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums, and rerolls Oogie Boogie's dice only on a roll under 7.
 - Gaston and Coronation Day Elsa skills and the Delay Skill ReActivation setting are out of Beta.
@@ -51,6 +52,12 @@ release note; they fold back in here when she ships.
 
 ### Added
 
+- **Stop after this round** (Quick Bar page two, "Last round"). A run-time
+  flag (`Tsum.wrapUpAsked`), never saved: `stopAfterThisRound()` /
+  `cancelStopAfterThisRound()` arm it; it fires at the round's tail
+  (`countGameTowardStop`), before a round starts, or via the `wrapUpNow` job
+  when no round is being played. Reported as `stopAfterThisRound` in
+  `quickBarState`.
 - **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`, Beta). A burst
   declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture

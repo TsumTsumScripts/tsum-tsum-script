@@ -19,8 +19,8 @@ Names are declared once, in `src/scriptEvents.ts`, and reached through
 | event | emitted from | payload |
 |---|---|---|
 | `round.over` | `src/play.ts:367` | `id`, `seconds` |
-| `round.start` | `src/play.ts:524` | `id`, `round`, `myTsum`, `skill`, `build`, `settings` |
-| `round.end` | `src/play.ts:886` | `id`, `round`, `myTsum`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
+| `round.start` | `src/play.ts:545` | `id`, `round`, `myTsum`, `skill`, `build`, `settings` |
+| `round.end` | `src/play.ts:911` | `id`, `round`, `myTsum`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
 | `run.started` | `src/index.ts:80` | `version`, `skill`, `locale` |
 | `run.stopped` | `src/index.ts:379` | `rounds` |
 
@@ -54,7 +54,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/play.ts:524` — `this.emit(Emit.Round.Start, …)`
+- `src/play.ts:545` — `this.emit(Emit.Round.Start, …)`
 
 ### `round.end`
 
@@ -76,7 +76,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/play.ts:886` — `this.emit(Emit.Round.End, …)`
+- `src/play.ts:911` — `this.emit(Emit.Round.End, …)`
 
 ### `run.started`
 

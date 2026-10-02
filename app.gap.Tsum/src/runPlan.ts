@@ -37,6 +37,8 @@ const enum TaskName {
  * number because a run registers at most one of them.
  */
 const enum JobPriority {
+  /** "Stop after this round" between rounds: ahead of every other job. */
+  WrapUpNow = 5,
   UnlockNow = 10,
   BuyBoxesNow = 11,
   TsumListNow = 12,

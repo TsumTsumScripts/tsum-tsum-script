@@ -157,6 +157,10 @@ namespace Log {
     RoundDelayWaiting     = 'play.roundDelayWaiting',
     RoundCoasting         = 'play.roundCoasting',
     RoundTimeUp           = 'play.roundTimeUp',
+    /** "Stop after this round": armed, cancelled, and the stop it made. */
+    WrapUpArmed           = 'play.wrapUpArmed',
+    WrapUpCancelled       = 'play.wrapUpCancelled',
+    WrapUpFired           = 'play.wrapUpFired',
   }
 
   /** Which tsum is selected, off the pre-round icon. */
@@ -512,6 +516,7 @@ namespace Log {
     ReportAsked    = 'quickBar.reportAsked',
     ReportFailed   = 'quickBar.reportFailed',
     UnlockNowAsked = 'quickBar.unlockNowAsked',
+    WrapUpAsked    = 'quickBar.wrapUpAsked',
     CopyShareAsked = 'quickBar.copyShareAsked',
     UnknownSetting = 'quickBar.unknownSetting',
   }

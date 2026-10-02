@@ -450,6 +450,10 @@ function stopAfterActionOf(value: unknown): StopAfterAction {
 }
 
 Tsum.prototype.countGameTowardStop = function() {
+  // "Stop after this round" wins over the count: the run ends either way.
+  if (this.wrapUpIfAsked('roundEnd')) {
+    return true;
+  }
   if (this.stopAfterGames <= 0 || !this.isRunning) {
     return false;
   }
@@ -481,6 +485,23 @@ Tsum.prototype.countGameTowardStop = function() {
         gTaskController.removeTask(TaskName.PlayRound);
       }
   }
+  return true;
+}
+
+// --- Stop after this round ----------------------------------------------------
+//
+// A run-time flag (`wrapUpAsked`), armed by `stopAfterThisRound` (src/index.ts)
+// and never saved. Checked at a round's tail, before a round starts, and by a
+// one-shot job between rounds -- so a run with Auto Play off still stops.
+
+Tsum.prototype.wrapUpIfAsked = function(at: string) {
+  if (!this.wrapUpAsked || !this.isRunning) {
+    return false;
+  }
+  this.wrapUpAsked = false;
+  logInfo(Log.Play.WrapUpFired, { at: at });
+  this.banner(at === 'roundEnd' ? 'Round over: stopping as asked' : 'Stopping as asked', 5000);
+  requestStop();
   return true;
 }
 
@@ -538,6 +559,10 @@ Tsum.prototype.openRound = function() {
 }
 
 Tsum.prototype.taskPlayGameQuick = function() {
+  // Armed between rounds: no new round, whatever the delay says.
+  if (this.wrapUpIfAsked('beforeRound')) {
+    return;
+  }
   // The between-rounds delay, if one is running. Held here rather than by
   // lengthening this task's interval, because an interval is a schedule nothing
   // else can see or cut short: `nextRoundAt` is what the Quick Bar's countdown

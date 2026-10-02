@@ -148,6 +148,9 @@ function quickBarState(): string {
     // the rest is the one thing a run does that a reader cannot see coming, and
     // `roundDelaySkip()` -- the panel's Now button -- is still there to end it.
     state.roundDelayRemainingMs = ts.roundDelayRemainingMs();
+    // "Stop after this round" (`stopAfterThisRound`, src/index.ts). A run-time
+    // flag, not a `SettingKey`, so neither page stores it.
+    state.stopAfterThisRound = ts.wrapUpAsked;
 
     // What the strip marks its cells from: whether a round is on, and which
     // settings that round will not take. Not `SettingKey`s themselves, so the

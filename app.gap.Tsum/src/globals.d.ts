@@ -1384,8 +1384,16 @@ interface Tsum {
   watchRoundEnd(hud: HudWatch): RoundLook;
   /** What is left of the between-rounds delay, in ms; 0 when none is running. */
   roundDelayRemainingMs(): number;
-  /** Counts a finished round toward "Stop after games"; true if it fired. */
+  /**
+   * At a round's tail: ends the run if "Stop after this round" is armed, else
+   * counts the round toward "Stop after games". True if either fired.
+   */
   countGameTowardStop(): boolean;
+  /**
+   * Ends the run if "Stop after this round" is armed; true if it did. `at` is
+   * for the log: where the run was when it fired.
+   */
+  wrapUpIfAsked(at: string): boolean;
   /** True once a round has been played, so the next one starts without the job's interval. */
   taskPlayGameQuick(): boolean | void;
 

@@ -369,9 +369,10 @@ function qbSetEnabled(enabled: boolean): void {
         if (button.classList.contains('qb-report') || button.classList.contains('qb-page-toggle')) {
             continue;
         }
-        // Unlock acts on a run, so it also needs one.
+        // Unlock and Stop after this round act on a run, so they also need one.
         button.disabled = !enabled
-            || (button.classList.contains('qb-unlock-now') && !qbActive);
+            || ((button.classList.contains('qb-unlock-now')
+                || button.classList.contains('qb-wrap-up')) && !qbActive);
     }
 }
 
@@ -586,6 +587,10 @@ function qbRender(): void {
         } else {
             cell.removeAttribute('data-when');
         }
+    }
+    var wrapUp = document.querySelector('.qb-wrap-up');
+    if (wrapUp !== null) {
+        wrapUp.setAttribute('aria-checked', qbState.stopAfterThisRound === true ? 'true' : 'false');
     }
     qbSetStat('baseCoinAvg', qbState.baseCoinAvg);
     qbSetStat('finalCoinAvg', qbState.finalCoinAvg);
@@ -971,6 +976,33 @@ function onQuickBarUnlockNow(answer: string): void {
 }
 
 /**
+ * Arms or disarms Stop after this round (`stopAfterThisRound`, src/index.ts).
+ * Engine-only, so nothing goes to the store: it lasts this run. The engine
+ * banners the outcome; the answer only triggers a redraw.
+ */
+function qbWrapUp(): void {
+    var bridge = qbBridge();
+    if (!qbActive || !qbLive || bridge === undefined) {
+        return;
+    }
+    var armed = qbState.stopAfterThisRound === true;
+    qbState.stopAfterThisRound = !armed;
+    qbRender();
+    bridge.runScriptCallback(armed
+        ? 'typeof cancelStopAfterThisRound === "function" ? cancelStopAfterThisRound() : "no script"'
+        : 'typeof stopAfterThisRound === "function" ? stopAfterThisRound() : "no script"',
+        'onQuickBarWrapUp');
+}
+
+/** The engine's answer to `qbWrapUp`; the state read is what redraws the chip. */
+// noinspection JSUnusedGlobalSymbols
+function onQuickBarWrapUp(answer: string): void {
+    qbLogInfo(Log.QuickBar.WrapUpAsked, 'Stop after this round toggled from the Quick Bar',
+        {answer: String(answer)});
+    qbRequestState();
+}
+
+/**
  * Asks the settings page for the share code -- it owns the format. The store is
  * flushed first because that is what the code is built from; the answer comes
  * back through `onGapMessage`.
@@ -1220,6 +1252,10 @@ function qbBind(): void {
     var unlock = document.querySelector('.qb-unlock-now');
     if (unlock !== null) {
         unlock.addEventListener('click', qbUnlockNow);
+    }
+    var wrapUp = document.querySelector('.qb-wrap-up');
+    if (wrapUp !== null) {
+        wrapUp.addEventListener('click', qbWrapUp);
     }
     var copyShare = document.querySelector('.qb-copy-share');
     if (copyShare !== null) {

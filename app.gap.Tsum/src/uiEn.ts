@@ -350,6 +350,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.QbBonus5to4]: '5>4',
     [UiText.QbGames]: 'Games',
     [UiText.QbThen]: 'Then',
+    [UiText.QbStopAfterRound]: 'Last round',
     // U+FE0E keeps the heart a text glyph rather than an emoji.
     [UiText.QbSendHearts]: '\u2665\uFE0E Send',
     [UiText.QbReceiveOneByOne]: '\u2665\uFE0E 1-by-1',

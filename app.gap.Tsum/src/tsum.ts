@@ -155,6 +155,12 @@ class Tsum {
   /** Rounds finished toward `stopAfterGames`; reset when it fires or changes. */
   gamesTowardStop: number;
   /**
+   * "Stop after this round" is armed (`stopAfterThisRound`, src/index.ts). A
+   * run-time flag, not a setting, so it never reaches the saved form or a
+   * preset; a new `Tsum` per start() is what resets it.
+   */
+  wrapUpAsked: boolean;
+  /**
    * When the next round may start, epoch ms; 0 when nothing is waiting.
    *
    * An instant rather than a countdown, so nothing has to tick it down: the
@@ -388,6 +394,7 @@ class Tsum {
     this.stopAfterGames = 0;
     this.stopAfterAction = StopAfterAction.AutoPlayOff;
     this.gamesTowardStop = 0;
+    this.wrapUpAsked = false;
     // A new world per start(), so pressing Play always plays now rather than
     // resuming a wait the previous run was in.
     this.nextRoundAt = 0;
