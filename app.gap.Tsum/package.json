@@ -7,6 +7,7 @@
     "build": "node tools/build/build.js",
     "build:ps": "powershell -ExecutionPolicy Bypass -File ./build.ps1",
     "buildAndAdb": "node tools/build/build.js --adb",
+    "buildAndAdb:beta": "node tools/build/build.js --adb --channel Beta",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.settings.json --noEmit && tsc -p tsconfig.quickbar.json --noEmit",
     "typecheck:game": "tsc --noEmit",
     "typecheck:settings": "tsc -p tsconfig.settings.json --noEmit",

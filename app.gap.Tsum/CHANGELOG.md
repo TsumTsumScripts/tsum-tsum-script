@@ -100,6 +100,8 @@ release note; they fold back in here when she ships.
   `ts.runClock` counts round time at every round end for it.
 - **Live Hearts toggles**: `sendHeartsAuto`/`receiveHeartsOneByOne` are
   `LiveWhen.Now`; `quickBarSyncJob` adds or removes their job.
+- **`npm run buildAndAdb:beta`** pushes a Beta-channel build, to preview what
+  Alpha hides.
 
 ### Changed
 
