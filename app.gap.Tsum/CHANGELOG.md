@@ -43,7 +43,7 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
-- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums, and no longer mixes Sally into Jack and Zero's chains.
+- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums, no longer mixes Sally into Jack and Zero's chains, and reads Oogie Boogie's dice, rerolling only a roll under 7.
 
 ### Added
 
@@ -51,6 +51,12 @@ release note; they fold back in here when she ships.
   declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture
   disc, bubble pass and link reach. Other skills skip the read and stay at 1.
+- **NBC Set: Oogie Boogie's dice.** Any touch during his roll rerolls it once,
+  so the play loop chaining on spent the reroll on every roll. After an
+  activation the green cut-in marks his (`nbcCutIn`); every touch is then held,
+  both dice are read at their fixed rest spots (`nbcReadDice`: lit top-face red,
+  pips as dark holes in it), and a first total under 7 gets one mid-board tap.
+  No longer `bareTapActivates`, since a blind tap skips `afterActivate`.
 
 ### Changed
 
