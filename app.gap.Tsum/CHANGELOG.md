@@ -73,6 +73,10 @@ release note; they fold back in here when she ships.
 - **NBC Set: no 4s stall after a finished roll.** The green skull over the
   result also reads as Oogie; the wait now ends 0.5s after neither he nor a die
   is on screen (`NbcDice.goneMs`).
+- **NBC Set: a die still rocking no longer triggers a reroll.** A die can
+  show the wrong face at its rest spot for ~130ms before settling (a 4+6 read
+  as 4+1 and thrown away); the first roll's read must now hold 250ms
+  (`NbcDice.settleMs`), well inside its ~850ms before the result shows.
 - **NBC Set: 5s and 6s no longer read one short on the device** (a 6 rolled
   as 5+1 was rerolled). The host's `findContours` area is the outline's
   (`cv::contourArea`), 15-20% under the pixel count the test harness used, so

@@ -52,6 +52,11 @@ var NbcDice = {
   // Identical reads in a row before a landing counts. A tumble passes through
   // sharp, readable poses, but never twice in the same place.
   stableReads: 2,
+  // ...and on the first roll, held this long: a die rocking at its rest spot
+  // can show the wrong face for ~130ms before it settles, and a reroll spent
+  // on that throws away a good roll. The first landing holds ~850ms; the
+  // reroll's lands just before the result covers it, so it takes the reads.
+  settleMs: 250,
   // Pip blob: area against the face's bounding box, and how much of its own box
   // it fills. The skull engraved on every face is a sparse blob; a pip on a
   // shaded side face is taller than wide. Areas are `findContours`' outline
@@ -244,6 +249,7 @@ function nbcPlayDice(ts: Tsum) {
   let rerolled = false;
   let last: number[] | null = null;
   let same = 0;
+  let since = 0;
   let deadline = Date.now() + cfg.landWaitMs;
   let seenAt = Date.now();
   while (ts.isRunning && Date.now() < deadline) {
@@ -255,8 +261,10 @@ function nbcPlayDice(ts: Tsum) {
     }
     const read = look.dice;
     same = !read ? 0 : last && read[0] === last[0] && read[1] === last[1] ? same + 1 : 1;
+    if (same === 1) { since = Date.now(); }
     last = read;
-    if (read && same >= cfg.stableReads) {
+    if (read && same >= cfg.stableReads
+        && (rerolled || Date.now() - since >= cfg.settleMs)) {
       const total = read[0] + read[1];
       const reroll = !rerolled && total < cfg.rerollBelow;
       logInfo(Log.Skill.NbcDice, { roll: rerolled ? 2 : 1, dice: read, total: total, reroll: reroll });
