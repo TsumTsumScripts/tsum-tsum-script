@@ -65,6 +65,7 @@ const PAGE_SCRIPTS = [
   { file: 'build/i18n.js', verify: 'names:i18nRegister,i18nText' },
   { file: 'build/uiEn.js' },
   { file: 'build/uiZhTw.js' },
+  { file: 'build/uiJa.js' },
   { file: 'build/releaseStatus.js', verify: 'names:offeredHere,statusFlag' },
   { file: 'build/skillOptions.js' },
   // No `verify`, as skillOptions: `names:` looks for function declarations and
@@ -227,7 +228,7 @@ const steps = [
 
   { id: 'tsc:settings', run: ({ log }) => node(log, tsc, '-p', 'tsconfig.settings.json') },
   // Behind the settings compile for want of a lock, not a core: both configs
-  // emit build/i18n.js, uiEn.js, uiZhTw.js and skillOptions.js from the same
+  // emit build/i18n.js, the ui*.js catalogues and skillOptions.js from the same
   // sources. The output is identical either way, but two tsc processes writing
   // those paths at once can leave one of them half-written. Giving this config
   // its own outDir would buy back ~0.5s and cost a copy step plus a fix to

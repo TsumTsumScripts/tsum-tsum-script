@@ -143,9 +143,10 @@ Rules that keep it honest:
   it a `false` default — the bitmap is packed six bits per character, and an
   older code's padding would switch it off.
 - **`SHARE_SLOTS` is what a preset is.** A preset is *how a round is played,
-  under a name* — the Gameplay and Skills tabs less the rows that shape the
-  run rather than the round (`neverShared`: Auto Play Game, the between-rounds
-  delay, Track round statistics, the Max Round Duration pair). Exporting
+  under a name* — the Skills, Round and Gameplay tabs (`SHARE_TABS`). The
+  rows that shape the run rather than the round (`neverShared`: Auto Play Game,
+  the between-rounds delay, Track round statistics, the Max Round Duration
+  pair) are on General. Exporting
   presets writes one settings code per preset.
 - **A damaged code is refused, not half-applied.** The format is positional,
   so a code cut short would decode as one that merely mentions less; the

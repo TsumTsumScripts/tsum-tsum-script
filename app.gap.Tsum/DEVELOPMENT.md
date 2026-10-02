@@ -537,6 +537,12 @@ It is a **third compilation** (`tsconfig.quickbar.json` → `dist/quickbar.html`
 finds it by name: `quickbar.html` beside `index.html`, and a script without one
 simply has no Quick Bar button.
 
+**The strip never calls `runScript`.** The host counts a `runScript` as a run,
+so one finishing while the script is stopped flips the state back to idle, and
+that transition clears every banner. Everything the strip evaluates, its log
+lines and `showBanner` included, goes through `runScriptCallback`, with
+`qbIgnoreAnswer` where nothing needs the answer.
+
 It is built the opposite way round from the settings page, on purpose. There the
 schema is the source of truth and `settings.ts` renders it; here **the markup is**
 — every control is written out in `src/quickbar.html` with a `data-key` naming

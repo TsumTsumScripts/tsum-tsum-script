@@ -824,6 +824,10 @@ Tsum.prototype.taskPlayGameQuick = function() {
   const roundSeconds = this.roundStartedAt && this.roundEndedAt
     ? Math.round((this.roundEndedAt - this.roundStartedAt) / 1000)
     : 0;
+  if (roundSeconds > 0) {
+    this.runClock.rounds++;
+    this.runClock.roundSec += roundSeconds;
+  }
   this.finishRoundStats();
   // The stop signal, and emitted from here rather than from inside
   // finishRoundStats: that returns early when round stats are off, and an event

@@ -45,6 +45,7 @@
     "src/i18n.ts",
     "src/uiEn.ts",
     "src/uiZhTw.ts",
+    "src/uiJa.ts",
     // What this channel is allowed to offer, and how an unfinished thing is
     // badged. Shared with the settings page. Emits build/releaseStatus.js,
     // loaded before the list that reads it.

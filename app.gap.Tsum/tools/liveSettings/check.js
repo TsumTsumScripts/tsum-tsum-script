@@ -369,6 +369,9 @@ function main() {
     // id, which always opens with the UTC stamp report.ts builds it from.
     ['reportIssue("liveCheck", ""); reportIssue("liveCheck", "")',
       (r) => /^\d{8}-\d{6}-/.test(r)],
+    // The Quick Bar's Unlock now chip, pressed while the run is paused.
+    ['gTaskController = new TsumTaskController(); unlockLevelsNow(); unlockLevelsNow()',
+      (r) => r === 'already queued'],
   ];
   for (const [code, answered] of entries) {
     newWorld();
