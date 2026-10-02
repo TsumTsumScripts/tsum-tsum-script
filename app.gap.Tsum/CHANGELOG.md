@@ -39,13 +39,15 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
+[Unreleased]
+
+- Tsum List export added (Chores > Tsum List > Now): writes every Tsum you own, with its level, skill level, progress to the next skill level and month acquired, to a CSV.
+
 ## [4.0b1]
 
 ### Summary
 
-- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums or Oogie Boogie clears them, no longer mixes Sally into Jack and Zero's chains, and reads Oogie Boogie's dice, rerolling only a roll under 7.
-- Chains in a round's last 5 seconds no longer break on tsums at the board's edges.
-- Tsum List export added (Chores > Tsum List > Now): writes every Tsum you own, with its level, skill level, progress to the next skill level and month acquired, to a CSV.
+- Nightmare Before Christmas (Set) skill added.
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
 - Settings page reorganized: Skills, Round (chain limits and bonuses) and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
 - Japanese (日本語) added as a language for the settings page, Quick Bar and log.
