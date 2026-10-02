@@ -362,6 +362,7 @@ In a file manager that is **Download ▸ GameAutomationPlatform**. Inside it:
 | `reports/` | The zips **Save to device** in Run History writes |
 | `tsum_record/record.txt`, `tsum_record/presets.txt` | The heart tally, and your exported presets |
 | `tsum_record/corpus/`, `tsum_record/walkthrough/` | Unknown screens and walkthrough recordings — only with those [developer options](#developer-options) on |
+| `scripts/…/<script folder>/last-settings-<device id>.json` | The settings the last run on that device started with, as one JSON object (the `start()` settings, without the one-shot Now flags `unlockLevelsFirst`, `buyBoxesFirst` and `tsumListOnly`). Rewritten at every start; `lastRunSettings()` reads it back. Safe to delete |
 | `tmp/` | Scratch: the *Debug game* frames (`…-boardImg.jpg`, `…-detectedHoughCircles.jpg`, `…-hsvImg.jpg`) and what a dialog check left behind. Safe to empty |
 
 Every file name and timestamp is UTC, so a stats file named for today may still

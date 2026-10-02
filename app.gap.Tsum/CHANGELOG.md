@@ -52,6 +52,9 @@ release note; they fold back in here when she ships.
 
 ### Added
 
+- **Last run settings.** `start()` writes its settings, minus the one-shot
+  flags, to `last-settings-<getDeviceId()>.json` in the script folder; a failed
+  write only warns. `lastRunSettings()` reads it back, or null.
 - **Stop after this round** (Quick Bar page two, "Last round"). A run-time
   flag (`Tsum.wrapUpAsked`), never saved: `stopAfterThisRound()` /
   `cancelStopAfterThisRound()` arm it; it fires at the round's tail

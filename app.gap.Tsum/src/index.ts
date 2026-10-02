@@ -89,6 +89,7 @@ function start(settings: Settings) {
     if (controller === undefined) {
       return;
     }
+    saveLastRunSettings(settings);
     // A yield, not a rest: the host hands the interpreter lock over at every
     // `sleep()`, and this is the chance a `stop()` that arrived during the build
     // has to set its flag before the loop below starts tapping. It was 500ms,
@@ -104,6 +105,73 @@ function start(settings: Settings) {
     endRun();
   }
   logInfo(Log.Task.LoopStopped);
+}
+
+/**
+ * Keys `start()` takes that are one-shot triggers rather than settings: a Now
+ * button's run (and Box Buying's purchase). Replaying them would redo that action.
+ */
+const LastSettingsOneShot: SettingKey[] = [
+  SettingKey.UnlockLevelsFirst,
+  SettingKey.BuyBoxesFirst,
+  SettingKey.TsumListOnly,
+];
+
+/**
+ * `<script folder>/last-settings-<device id>.json`, or '' on a host without
+ * either native. Per device, because emulator instances can share the folder.
+ */
+function lastSettingsPath(): string {
+  if (typeof getScriptPath !== 'function' || typeof getDeviceId !== 'function') {
+    return '';
+  }
+  return getScriptPath() + '/last-settings-' + getDeviceId() + '.json';
+}
+
+/**
+ * Writes the settings this run started with, minus `LastSettingsOneShot`, so a
+ * later start can replay them (`lastRunSettings`). Never throws: a failed write
+ * is a warning, not a reason to stop the run.
+ */
+function saveLastRunSettings(settings: Settings): void {
+  try {
+    const path = lastSettingsPath();
+    if (path === '') {
+      return;
+    }
+    const copy: { [key: string]: unknown } = {};
+    const source = settings as unknown as { [key: string]: unknown };
+    for (const key in source) {
+      if (LastSettingsOneShot.indexOf(key as SettingKey) === -1) {
+        copy[key] = source[key];
+      }
+    }
+    writeFile(path, JSON.stringify(copy));
+  } catch (e) {
+    logWarn(Log.Run.LastSettingsNotSaved, 'Could not save the last run settings',
+      { errorText: '' + e });
+  }
+}
+
+/**
+ * The settings the last run on this device started with (see
+ * `saveLastRunSettings`), or null when there is no readable file. A global, so
+ * it can be read by name like `start`.
+ */
+// noinspection JSUnusedGlobalSymbols
+function lastRunSettings(): Partial<Settings> | null {
+  try {
+    const path = lastSettingsPath();
+    const text = path === '' ? '' : readFile(path);
+    if (text === '') {
+      return null;
+    }
+    const parsed = JSON.parse(text);
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed as Partial<Settings> : null;
+  } catch (e) {
+    return null;
+  }
 }
 
 /**

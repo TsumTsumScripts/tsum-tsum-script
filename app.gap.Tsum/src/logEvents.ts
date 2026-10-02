@@ -20,6 +20,8 @@ namespace Log {
   /** One start()..stop(). */
   export const enum Run {
     BundleIncomplete = 'run.bundleIncomplete',
+    /** `saveLastRunSettings` could not write its file; the run goes on. */
+    LastSettingsNotSaved = 'run.lastSettingsNotSaved',
     Start            = 'run.start',
     StartBusy        = 'run.startBusy',
     Stop             = 'run.stop',

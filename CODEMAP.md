@@ -236,6 +236,7 @@ enforces every row below, so these are true rather than approximate.
 | `quickBar*`, `onPause` | `src/quickbar.ts` |
 | `qb*`, `QB_*`, `onQuickBar*`, `onGapState` | `src/quickbarPage.ts` |
 | `*LiveSettings`, `onLiveSettingsApplied`, `LIVE_POLL_MS` — the settings page and the running world, kept in step | `src/index.ts` (`applyLiveSettings`, the engine's end), `src/settings.ts` (`pushLiveSettings`, `pullLiveSettings`, `onLiveSettings`, and `onLiveSettingsApplied` — the engine confirming a push, which is where the nudge to the other page goes out) |
+| `lastRunSettings`, `saveLastRunSettings`, `lastSettingsPath`, `LastSettingsOneShot` — the per-device last-settings file (README § Getting logs) | `src/index.ts` |
 | `StorageKey`, `PageMessage` | `src/settings.d.ts` |
 | `preset*`, `Preset*`, `PRESET_*` — the named-configuration store and the page halves that drive it | `src/presets.ts` (the store), `src/settings.ts` (the app bar's dropdown, the save panel, the export row), `src/settings.d.ts` (`interface Preset`) — the Quick Bar's own half is `qb*`, in `src/quickbarPage.ts` |
 | `onGapMessage` — the page-to-page nudge's handler, one per page | `src/settings.ts`, `src/quickbarPage.ts` |
