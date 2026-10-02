@@ -519,6 +519,9 @@ function findGameBubbles(grayImg: NativeImage, tsums?: Point[]): GameBubble[] {
 // features at the centre cross, narrow enough (a fifth of a tsum) to keep the
 // neighbours out. The 22px smear the clustering samples is the other extreme.
 const LocalSampleBlur = 5;
+// The heavy blur the clustering samples: a whole tsum, so faces flatten to one
+// colour. A skill may narrow it (`SkillHandler.colorBlur`).
+const TsumColorBlur = 22;
 
 var TsumCircle = {
   dp: 1,           // accumulator resolution (lower = finer)
@@ -556,17 +559,29 @@ var BoardScaleRead = {
   // Fewer circles than this is a board mid-clear or under an animation, where
   // the gaps are holes rather than neighbours.
   minCircles: 25,
+  // A sparse board can go by the circles' median radius instead, so a shrunk
+  // board that a skill empties and refills at full size is noticed (NBC's
+  // Oogie). Noisy and low mid-clear (a full-size board reads 0.8-1.1), so only
+  // asked for when the tsums can only be growing.
+  minRadiusCircles: 8,
+  // A full-size tsum's circle radius against `Config.tsumWidth`.
+  radiusPerWidth: 0.45,
 };
 
 /**
  * The tsums' size against `Config.tsumWidth` from one board gray, or null when
- * too few clean circles were found to say.
+ * too few clean circles were found to say. Spacing on a full board; radius on a
+ * sparse one when `sparse`.
  */
-function readBoardScale(grayImg: NativeImage): number | null {
+function readBoardScale(grayImg: NativeImage, sparse: boolean): number | null {
   const c = BoardScaleRead;
   const found = houghCircles(grayImg, c.method, 1, c.minDist, c.param1, c.param2,
     c.minRadius, c.maxRadius);
-  if (found.length < c.minCircles) { return null; }
+  if (found.length < (sparse ? c.minRadiusCircles : c.minCircles)) { return null; }
+  if (found.length < c.minCircles) {
+    const radii = found.map(function(f) { return f.radius; });
+    return skillMedian(radii) / (c.radiusPerWidth * Config.tsumWidth);
+  }
   const gaps: number[] = [];
   for (let i = 0; i < found.length; i++) {
     let best = Infinity;
@@ -641,7 +656,7 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
     // at both 0 and 179, so a red tsum's blurred hue landed near 90 -- on top
     // of green. Blurring in BGR averages three linear channels and converts
     // once, which leaves red at 0. See `chromaFeature` for the rest of it.
-    smooth(hsvImg, 1, scaledPx(22));
+    smooth(hsvImg, 1, scaledPx(skillColorBlur(ts!)));
     convertColor(hsvImg, 40);
 
     // One crossing for the whole board instead of up to five per circle. A

@@ -45,14 +45,25 @@ release note; they fold back in here when she ships.
 
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
 - Disney Villains (Set) now plays properly, records score and coins in the stats file, and works with Auto Unlock MyTsum Level.
-- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums.
+- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums, and rerolls Oogie Boogie's dice only on a roll under 7.
+- Gaston and Coronation Day Elsa skills and the Delay Skill ReActivation setting are out of Beta.
+- Chains no longer break in a round's last seconds.
 
 ### Added
 
-- **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`, Alpha). A burst
+- **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`, Beta). A burst
   declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture
   disc, bubble pass and link reach. Other skills skip the read and stay at 1.
+- **NBC Set: Oogie Boogie's dice.** Any touch during his roll rerolls it once.
+  Each board scan looks for his green cut-in (`SkillHandler.watchScan`); from
+  there every touch is held, both dice are read at rest (`nbcLook`), and a first
+  total under 7 gets one mid-board tap. The tsum size then follows the roll
+  (`Tsum.boardScaleTrend`: 7+ shrink only, under 7 grow only).
+- `SkillHandler.colorBlur`: NBC Set narrows the colour blur so Sally does not
+  cluster with Jack and Zero.
+- **`npm run buildAndAdb:beta`** pushes a Beta-channel build, to preview what
+  Alpha hides.
 - **Stop after games** (`SettingKey.StopAfterGames`, `StopAfterAction`). Counted
   at the play task's tail (`countGameTowardStop`); firing or a new target resets
   the count. Auto Play off removes the `PlayRound` job; Pause calls the host's
@@ -63,6 +74,10 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
+- Gaston, Coronation Day Elsa and `SkillReactivationTenths` to Production;
+  Nightmare Before Christmas (Set) to Beta. From 4.0.
+- Quick Bar: the skill name no longer widens its column (`.qb-cell-fit`), so a
+  long name ellipsises at the bonus cluster instead of pushing Report.
 - Tsum List export writes a `device` column: the host's `getDeviceName()`, the
   name its events carry, so GAP Stats can filter its Catalog by device. Empty on
   a host without it.
@@ -73,6 +88,19 @@ release note; they fold back in here when she ships.
 
 ### Fixed
 
+- **Last-seconds edge wash no longer breaks chains.** The game washes the
+  screen edges cyan ~0.55s of every second in the last 5s; edge tsums read the
+  wrong colour then. `waitOutEdgeWash` waits for the dim part before planning
+  (max 800ms).
+- **NBC Set roll handling**: no skill-loop taps during Oogie's roll
+  (`beforeActivate`); the wait ends 0.5s after he and the dice are gone
+  (`NbcDice.goneMs`); a first roll must hold 250ms before a reroll
+  (`NbcDice.settleMs`); pip thresholds fit the device's `findContours`
+  outline area (`pipMinRel` 0.006, `pipMinFill` 0.45; harness shim matches).
+  Temporarily each first roll is saved to `<storage>/tmp/nbc-dice-*.png`
+  (`nbcSaveRoll`).
+- **NBC Set board scale** takes the nearest 0.05 step over a 9-read median once
+  3 reads are in, with no dead-band; the radius read is used only while growing.
 - `TsumLevelUpSingleTsum` moved two probes off the icon column and the "x2"
   badge. Villains (Set)'s level-up read as unknown, so base coins were never
   sampled and the tally wait gave up with the panel still up: every stats field blank.

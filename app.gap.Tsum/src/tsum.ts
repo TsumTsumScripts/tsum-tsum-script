@@ -65,6 +65,8 @@ class Tsum {
   boardClusters: Color[];
   boardClusterSizes: number[];
   boardScaleReads: number[];
+  boardScaleTrend: number;
+  edgeWashBackoffUntil: number;
   storagePath: string;
   originScreenWidth: number;
   originScreenHeight: number;
@@ -360,6 +362,8 @@ class Tsum {
     // Bubble positions from the last board scan, tapped after a long chain.
     this.gameBubbles = [];
     this.boardScaleReads = [];
+    this.boardScaleTrend = 0;
+    this.edgeWashBackoffUntil = 0;
     // Optional safety poll: fire the skill the instant it's ready, even mid-link,
     // rather than only at the end of each board-scan cycle (see maybeAutoTapSkill).
     this.skillAutoTap = false;

@@ -225,6 +225,12 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
    the ellipsis is for -- so the column can come down to its floor. */
 .qb-cell-wide { min-width: 0; }
 
+/* The skill name adds no width to its column, so the cluster under it sets the
+   width and a long name ellipsises at the 5>4 chip's edge instead of pushing
+   the Report button. `width: 0` drops its contribution; `min-width: 100%`
+   stretches it back over the column. */
+.qb-cell-fit { width: 0; min-width: 100%; }
+
 /*
  * The skill level and the two bonus chips, side by side in one grid cell.
  * Each is its own width and they never stretch: this cluster is what sizes

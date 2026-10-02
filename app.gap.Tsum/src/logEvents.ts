@@ -108,6 +108,8 @@ namespace Log {
     ChainDrawn       = 'board.chainDrawn',
     Clusters         = 'board.clusters',
     DeadScan         = 'board.deadScan',
+    /** The scan waited out the last seconds' edge wash (`waitOutEdgeWash`). */
+    EdgeWash         = 'board.edgeWash',
     LinkReach        = 'board.linkReach',
     MyTsumColor      = 'board.myTsumColor',
     PathDone         = 'board.pathDone',
@@ -197,6 +199,12 @@ namespace Log {
     LorcanaAuroraStayed   = 'skill.lorcanaAurora.stayed',
     LorcanaAuroraSwept    = 'skill.lorcanaAurora.swept',
     MyTsumPriorityHold    = 'skill.myTsumPriority.hold',
+    /** NBC Set: Oogie Boogie's cut-in seen on a scan; his dice follow. */
+    NbcOogie              = 'skill.nbc.oogie',
+    /** NBC Set: Oogie's dice read at rest, and whether that roll is rerolled. */
+    NbcDice               = 'skill.nbc.dice',
+    /** NBC Set: Oogie's dice never read at rest before the wait ran out. */
+    NbcDiceUnread         = 'skill.nbc.diceUnread',
     OverloadProbe         = 'skill.overloadProbe',
     RapunzelDone          = 'skill.rapunzel.done',
     ReadyAgain            = 'skill.readyAgain',

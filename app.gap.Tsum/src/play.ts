@@ -602,6 +602,7 @@ Tsum.prototype.taskPlayGameQuick = function() {
   // Every round starts with normal-size tsums.
   Config.boardScale = 1;
   this.boardScaleReads = [];
+  this.boardScaleTrend = 0;
   this.runTimes = 0;
   // Re-resolved on the first board scan of each game: the player may have
   // changed which tsum is selected, and `identifyMyTsum` has just re-read it.

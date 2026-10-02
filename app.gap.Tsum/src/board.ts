@@ -386,39 +386,119 @@ Tsum.prototype.sampleMyTsumColor = function() {
 };
 
 // How many usable size reads `boardScale` is the median of. Smooths over a
-// board read mid-clear without lagging a shrink by more than a few scans.
-const BoardScaleWindow = 5;
-// Below this the tsums are taken as shrunk. Normal boards read 0.95 and up,
-// so they always play at exactly 1.
-const BoardScaleShrunk = 0.92;
+// board read mid-clear without lagging a change by much more than a second.
+const BoardScaleWindow = 9;
+// Reads needed after a roll before the scale moves, so one taken while the
+// new tsums are still falling in cannot set it alone.
+const BoardScaleMinReads = 3;
 // The smallest scale the reads are trusted to; NBC Set bottoms out ~0.75.
 const BoardScaleMin = 0.6;
 
 /**
  * Read the tsums' size off this scan's gray and set `Config.boardScale` to the
- * median of the last few reads. Reset to 1 at each round's start.
+ * median of the last few reads, in 0.05 steps and only in the direction
+ * `boardScaleTrend` allows. Reset to 1 at each round's start.
  */
 Tsum.prototype.updateBoardScale = function(grayImg) {
-  const read = readBoardScale(grayImg);
+  // Nothing can change, so no Hough pass.
+  if (this.boardScaleTrend === 0) { return; }
+  const read = readBoardScale(grayImg, this.boardScaleTrend > 0);
   if (read === null) { return; }
   this.boardScaleReads.push(read);
   if (this.boardScaleReads.length > BoardScaleWindow) { this.boardScaleReads.shift(); }
-  const median = skillMedian(this.boardScaleReads);
-  const target = median < BoardScaleShrunk ? Math.max(BoardScaleMin, median) : 1;
-  // Moves only on a clear change, in 0.05 steps, so a median sitting on a step
-  // boundary does not flip the scale back and forth.
-  if (Math.abs(target - Config.boardScale) < 0.04) { return; }
-  const scale = Math.round(target * 20) / 20;
-  if (scale !== Config.boardScale) {
-    logInfo(Log.Board.Scale, { from: Config.boardScale, to: scale, read: +read.toFixed(2) });
-    Config.boardScale = scale;
+  if (this.boardScaleReads.length < BoardScaleMinReads) { return; }
+  const median = Math.min(1, Math.max(BoardScaleMin, skillMedian(this.boardScaleReads)));
+  const scale = Math.round(median * 20) / 20;
+  // Only the way the skill said, which is also what stops a median sitting on
+  // a step boundary from flipping the scale back and forth.
+  if (Math.sign(scale - Config.boardScale) !== this.boardScaleTrend) { return; }
+  logInfo(Log.Board.Scale, { from: Config.boardScale, to: scale, read: +read.toFixed(2) });
+  Config.boardScale = scale;
+};
+
+// The round's last ~5 seconds wash the screen edges cyan once a second: ~0.55s
+// bright, then ~0.45s dim. Under the bright part, tsums near the left and right
+// edges read the wrong colour (whites join Sally on NBC Set), so chains planned
+// through them break after a link or two. Read off the gaps between tsums in
+// the edge strips: dark on any board, bright only under the wash. Measured on
+// the NBC, Gaston and Elsa recordings (play square, blurred board gray).
+var EdgeWash = {
+  strip: 8,        // strip width at each side, play-square px
+  top: 20,         // rows read, clear of the corners
+  bottom: 180,
+  step: 2,
+  percentile: 0.1, // the darkest tenth: the gaps, not the tsums
+  bright: 130,     // both strips at least this bright = washed (normal ~50-80)
+  pollMs: 50,
+  maxWaitMs: 800,  // the dim part always comes within ~0.55s
+  // A wait that ran out was something else lighting the edges, not the wash;
+  // don't spend another wait on it this soon.
+  backoffMs: 3000,
+};
+
+// Sample points of the two strips, left strip first. Built on first use.
+let edgeWashPoints: Point[] | null = null;
+
+function edgeWashSamplePoints(): Point[] {
+  if (edgeWashPoints !== null) { return edgeWashPoints; }
+  const c = EdgeWash;
+  const size = Config.screenResize;
+  const pts: Point[] = [];
+  for (const x0 of [0, size - c.strip]) {
+    for (let y = c.top; y < c.bottom; y += c.step) {
+      for (let x = x0; x < x0 + c.strip; x += c.step) { pts.push({x: x, y: y}); }
+    }
   }
+  edgeWashPoints = pts;
+  return pts;
+}
+
+/** How bright the dimmer edge strip's gaps are, on the board gray. */
+function edgeWashLevel(grayImg: NativeImage): number {
+  const colors = getImageColors(grayImg, edgeWashSamplePoints());
+  const half = colors.length >> 1;
+  const level = function(from: number): number {
+    const v: number[] = [];
+    for (let i = from; i < from + half; i++) { v.push(colors[i].r); }
+    v.sort(function(a, b) { return a - b; });
+    return v[Math.floor(v.length * EdgeWash.percentile)];
+  };
+  return Math.min(level(0), level(half));
+}
+
+/**
+ * If this scan's gray is under the last seconds' edge wash, wait for its dim
+ * part. True when it waited, so the caller captures the board again.
+ */
+Tsum.prototype.waitOutEdgeWash = function(grayImg) {
+  const c = EdgeWash;
+  const first = edgeWashLevel(grayImg);
+  if (first < c.bright || Date.now() < this.edgeWashBackoffUntil) { return false; }
+  const start = Date.now();
+  let level = first;
+  while (this.isRunning && level >= c.bright && Date.now() - start < c.maxWaitMs) {
+    this.sleep(c.pollMs);
+    const img = this.playScreenshotSquare();
+    let gray: NativeImage | null = null;
+    try {
+      gray = buildBoardGray(img);
+      level = edgeWashLevel(gray);
+    } finally {
+      if (gray !== null) { releaseImage(gray); }
+      releaseImage(img);
+    }
+  }
+  const timedOut = level >= c.bright;
+  if (timedOut) { this.edgeWashBackoffUntil = Date.now() + c.backoffMs; }
+  logDebug(Log.Board.EdgeWash, { waitedMs: Date.now() - start, first: first,
+    level: level, timedOut: timedOut });
+  return true;
 };
 
 Tsum.prototype.scanBoardQuick = function() {
   // load game tsums
   const startTime = Date.now();
-  const srcImg = this.playScreenshotSquare();
+  let srcImg = this.playScreenshotSquare();
   const board = [];
   // Owned here rather than inside either pass, so the two Hough passes below
   // share one image and exactly one release covers it -- including when a
@@ -426,6 +506,12 @@ Tsum.prototype.scanBoardQuick = function() {
   // retries, so a leak here would recur on every scan.
   let grayImg: NativeImage | null = null;
   try {
+    // The skill sees the frame first (`SkillHandler.watchScan`); one that acted
+    // on it has moved the board on, so capture again.
+    if (skillWatchScan(this, srcImg)) {
+      releaseImage(srcImg);
+      srcImg = this.playScreenshotSquare();
+    }
     // Overload carry-over: the last batch's count-in may top the gauge off
     // during this scan; one blind tap catches it. After the capture so the tap
     // can't disturb the frame, and inside the try so a tap that throws still
@@ -441,6 +527,13 @@ Tsum.prototype.scanBoardQuick = function() {
     // two clones, two colour conversions and two 9x9 Gaussians per scan for a
     // pair of identical images.
     grayImg = buildBoardGray(srcImg);
+    if (this.waitOutEdgeWash(grayImg)) {
+      releaseImage(grayImg);
+      grayImg = null;
+      releaseImage(srcImg);
+      srcImg = this.playScreenshotSquare();
+      grayImg = buildBoardGray(srcImg);
+    }
     if (skillScalesBoard(this)) {
       this.updateBoardScale(grayImg);
     }

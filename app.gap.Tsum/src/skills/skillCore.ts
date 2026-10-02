@@ -132,12 +132,23 @@ interface SkillHandler {
   // and scales the board read to it (`updateBoardScale`, `Config.boardScale`).
   // Costs a Hough pass per scan, which is why not every skill.
   scalesBoard?: boolean;
+  // Width of the box blur a tsum's colour is sampled through, in play-square
+  // px at scale 1 (default `TsumColorBlur`). Narrower keeps a packed
+  // neighbour's colour out of the sample, for a roster whose tsums blur
+  // together at the default.
+  colorBlur?: number;
   // The last activation is still in effect, so a tap now would waste the
   // gauge: Gaston's window is a timed mode, and an activation inside it only
   // restarts the animation over the seconds it had left. While this answers
   // true the play loop neither reads the gauge nor taps; the choreography that
   // knows the window's clock is the one to answer.
   stillRunning?: (ts: Tsum) => boolean;
+  // Sees each board scan's capture before anything is planned or tapped, and
+  // returns true if it acted on it (the scan then captures again). For a skill
+  // whose activation can set off a follow-up the play loop must not touch
+  // through: NBC Set's Oogie Boogie, whose dice any touch rerolls. Runs on
+  // every scan, so it has to stay cheap.
+  watchScan?: (ts: Tsum, img: NativeImage) => boolean;
   // Runs after the gauge check but before the activation tap -- settle waits and
   // pre-taps that have to land while the skill is not yet running.
   beforeActivate?: (ts: Tsum) => void;
@@ -211,6 +222,18 @@ function skillReadsChainCounter(ts: Tsum): boolean {
 function skillScalesBoard(ts: Tsum): boolean {
   const handler = SkillHandlers[ts.skillType];
   return !!(handler && handler.scalesBoard);
+}
+
+// Whether the skill acted on this scan's capture. See `SkillHandler.watchScan`.
+function skillWatchScan(ts: Tsum, img: NativeImage): boolean {
+  const handler = SkillHandlers[ts.skillType];
+  return !!(handler && handler.watchScan && handler.watchScan(ts, img));
+}
+
+// The colour sample's blur width. See `SkillHandler.colorBlur`.
+function skillColorBlur(ts: Tsum): number {
+  const handler = SkillHandlers[ts.skillType];
+  return handler && handler.colorBlur ? handler.colorBlur : TsumColorBlur;
 }
 
 // Whether bubbles on the board belong to the skill rather than to the Bubble
