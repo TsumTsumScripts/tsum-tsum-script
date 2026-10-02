@@ -47,7 +47,7 @@ var LogsEn = {
   [Log.Skill.LorcanaAuroraNoChain]: '[Lorcana Aurora] No bubbles to chain; skill wasted',
   [Log.Skill.LorcanaAuroraStayed]: '[Lorcana Aurora] Bubbles stayed; chain not taken',
   [Log.Skill.LorcanaAuroraSwept]: '[Lorcana Aurora] Bubbles popped in place',
-  [Log.Skill.NbcCutIn]: '[NBC Set] Skill cut-in read',
+  [Log.Skill.NbcOogie]: '[NBC Set] Oogie Boogie up; holding for his dice',
   [Log.Skill.NbcDice]: '[NBC Set] Dice read',
   [Log.Skill.NbcDiceUnread]: '[NBC Set] Dice not read',
   [Log.Play.GameStart]: 'Game Start',

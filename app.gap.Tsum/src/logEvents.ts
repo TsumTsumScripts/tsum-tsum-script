@@ -196,8 +196,8 @@ namespace Log {
     LorcanaAuroraStayed   = 'skill.lorcanaAurora.stayed',
     LorcanaAuroraSwept    = 'skill.lorcanaAurora.swept',
     MyTsumPriorityHold    = 'skill.myTsumPriority.hold',
-    /** NBC Set: whose cut-in an activation opened on (Oogie's means dice). */
-    NbcCutIn              = 'skill.nbc.cutIn',
+    /** NBC Set: Oogie Boogie's cut-in seen on a scan; his dice follow. */
+    NbcOogie              = 'skill.nbc.oogie',
     /** NBC Set: Oogie's dice read at rest, and whether that roll is rerolled. */
     NbcDice               = 'skill.nbc.dice',
     /** NBC Set: Oogie's dice never read at rest before the wait ran out. */

@@ -1,7 +1,7 @@
 // Nightmare Before Christmas (Set).
 //
-// Each activation fires one of three character skills at random -- Jack, Zero
-// or Oogie Boogie -- each opening on its own cut-in.
+// Each activation fires a character skill (Jack, Sally, Zero, the Mayor, the
+// pumpkins), each opening on its own cut-in.
 //
 // One of them adds tsums to the board and shrinks every tsum to fit, more with
 // each activation -- from 25px apart to ~19 in the play square by the end of a
@@ -15,32 +15,27 @@
 // her and the game refused them. 15 keeps her apart (offline: 12% of
 // clustered tsums in the wrong group down to 1%).
 //
-// Oogie Boogie rolls two dice: a total of 7 or more adds tsums, under 7 removes
-// some. Any touch while they roll throws them again, once -- and the play loop
-// chaining straight on used to spend that reroll on every roll, good or bad. So
-// nothing touches the board until the roll is known: his green cut-in says the
-// activation is his (`nbcCutIn`), the dice are read where they come to rest
-// (`nbcReadDice`), and only a first roll under 7 gets the reroll tap.
-//
-// Not `bareTapActivates`: a blind tap from the play loop skips `afterActivate`,
-// and with it the hold.
+// Oogie Boogie sometimes follows one of those, seconds after the tap (3.5-4.5s
+// in the 18-21-30 recording), never on the tap itself. He rolls two dice: a
+// total of 7 or more adds tsums, under 7 removes some. Any touch while they
+// roll throws them again, once -- and the play loop chaining on used to spend
+// that reroll on every roll, good or bad. So each board scan looks for his green
+// cut-in (`watchScan`, `nbcOogieSeen`); from there nothing touches the board
+// until the roll is known: the dice are read where they come to rest
+// (`nbcReadDice`), and only a first roll under 7 gets the reroll tap. Watching
+// the scans rather than holding after the tap leaves the play loop free for
+// the activations he does not follow.
 
 // --- Tuning data -----------------------------------------------------------
 
 // Measured off the 2026-10-01 NBC recordings. Positions and sizes are in a
 // 540px-wide capture of the play square.
 var NbcDice = {
-  // The cut-in is one blob most of the board wide, so a small capture does.
-  cutInScan: 270,
-  // Looked for this long after the tap; nothing seen means not Oogie.
-  cutInWaitMs: 2000,
+  // Oogie's green face as a share of the scan's capture: ~0.10 whenever he is
+  // up, where nothing else in either recording passed 0.056 (Zero's rainbow,
+  // touching green tsums). Fading in he reads lower for a scan or two.
+  greenMin: 0.075,
   pollMs: 40,
-  // Largest blob as a share of the capture. Oogie's green face is ~0.10 (a
-  // board's green tsums stay under 0.013); Jack's and Zero's white faces are
-  // ~0.05, a board's white under 0.013. White is checked first: Zero's rainbow
-  // reaches 0.056 green.
-  greenMin: 0.06,
-  whiteMin: 0.034,
   scan: 540,
   // A die's lit top face: one bright-red blob of at least this contour area.
   faceMinArea: 1500,
@@ -75,7 +70,6 @@ interface NbcRange { lo: Color; hi: Color }
 var NbcFaceRed: NbcRange = {lo: {r: 140, g: 0, b: 0}, hi: {r: 255, g: 60, b: 90}};
 var NbcPip: NbcRange = {lo: {r: 18, g: 0, b: 0}, hi: {r: 125, g: 16, b: 16}};
 var NbcGreen: NbcRange = {lo: {r: 0, g: 180, b: 0}, hi: {r: 170, g: 255, b: 150}};
-var NbcWhite: NbcRange = {lo: {r: 225, g: 225, b: 225}, hi: {r: 255, g: 255, b: 255}};
 
 // --- Reading ---------------------------------------------------------------
 
@@ -107,33 +101,11 @@ function nbcLargestBlob(img: NativeImage, range: NbcRange): number {
   }
 }
 
-/** Whose cut-in this activation opened on: Oogie's, someone else's, or none seen. */
-function nbcCutIn(ts: Tsum): 'oogie' | 'other' | 'none' {
-  const cfg = NbcDice;
-  const from = Date.now();
-  const px = cfg.cutInScan * cfg.cutInScan;
-  while (ts.isRunning && Date.now() - from < cfg.cutInWaitMs) {
-    const img = nbcCapture(ts, cfg.cutInScan);
-    if (img) {
-      let green = 0;
-      let white = 0;
-      try {
-        white = nbcLargestBlob(img, NbcWhite) / px;
-        green = nbcLargestBlob(img, NbcGreen) / px;
-      } finally {
-        releaseImage(img);
-      }
-      const kind = white >= cfg.whiteMin ? 'other' : green >= cfg.greenMin ? 'oogie' : null;
-      if (kind) {
-        logInfo(Log.Skill.NbcCutIn, { kind: kind, ms: Date.now() - from,
-          green: +green.toFixed(3), white: +white.toFixed(3) });
-        return kind;
-      }
-    }
-    ts.sleep(cfg.pollMs);
-  }
-  logInfo(Log.Skill.NbcCutIn, { kind: 'none', ms: Date.now() - from });
-  return 'none';
+/** Oogie's green share of `img` when his cut-in is up, else 0. */
+function nbcOogieSeen(img: NativeImage): number {
+  const size = getImageSize(img);
+  const green = nbcLargestBlob(img, NbcGreen) / (size.width * size.height);
+  return green >= NbcDice.greenMin ? green : 0;
 }
 
 function nbcIsFaceRed(c: Color): boolean {
@@ -241,7 +213,7 @@ function nbcWaitFor(ts: Tsum, ms: number, done: () => boolean): boolean {
 /**
  * Oogie's roll, from his cut-in to the dice leaving: read the landing, reroll a
  * first roll under 7 with one tap mid-board, and hold every touch until the dice
- * are gone. The caller's fan tap and settle follow.
+ * are gone. The scan that saw him then captures again.
  */
 function nbcPlayDice(ts: Tsum) {
   const cfg = NbcDice;
@@ -281,12 +253,17 @@ function nbcPlayDice(ts: Tsum) {
 
 registerSkill({
   types: [SkillType.NightmareSet],
+  bareTapActivates: true,
   scalesBoard: true,
   colorBlur: 15,
+  watchScan: function(ts, img) {
+    const green = nbcOogieSeen(img);
+    if (!green) { return false; }
+    logInfo(Log.Skill.NbcOogie, { green: +green.toFixed(3) });
+    nbcPlayDice(ts);
+    return true;
+  },
   afterActivate: function(ts) {
-    if (nbcCutIn(ts) === 'oogie') {
-      nbcPlayDice(ts);
-    }
     skillRandomizeAndWait(ts);
   }
 });

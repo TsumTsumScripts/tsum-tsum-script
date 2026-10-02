@@ -418,7 +418,7 @@ Tsum.prototype.updateBoardScale = function(grayImg) {
 Tsum.prototype.scanBoardQuick = function() {
   // load game tsums
   const startTime = Date.now();
-  const srcImg = this.playScreenshotSquare();
+  let srcImg = this.playScreenshotSquare();
   const board = [];
   // Owned here rather than inside either pass, so the two Hough passes below
   // share one image and exactly one release covers it -- including when a
@@ -426,6 +426,12 @@ Tsum.prototype.scanBoardQuick = function() {
   // retries, so a leak here would recur on every scan.
   let grayImg: NativeImage | null = null;
   try {
+    // The skill sees the frame first (`SkillHandler.watchScan`); one that acted
+    // on it has moved the board on, so capture again.
+    if (skillWatchScan(this, srcImg)) {
+      releaseImage(srcImg);
+      srcImg = this.playScreenshotSquare();
+    }
     // Overload carry-over: the last batch's count-in may top the gauge off
     // during this scan; one blind tap catches it. After the capture so the tap
     // can't disturb the frame, and inside the try so a tap that throws still

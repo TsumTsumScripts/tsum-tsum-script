@@ -52,11 +52,12 @@ release note; they fold back in here when she ships.
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture
   disc, bubble pass and link reach. Other skills skip the read and stay at 1.
 - **NBC Set: Oogie Boogie's dice.** Any touch during his roll rerolls it once,
-  so the play loop chaining on spent the reroll on every roll. After an
-  activation the green cut-in marks his (`nbcCutIn`); every touch is then held,
-  both dice are read at their fixed rest spots (`nbcReadDice`: lit top-face red,
-  pips as dark holes in it), and a first total under 7 gets one mid-board tap.
-  No longer `bareTapActivates`, since a blind tap skips `afterActivate`.
+  so the play loop chaining on spent the reroll on every roll. He follows
+  another character's skill seconds after the tap, never the tap itself, so
+  each board scan looks for his green cut-in (new `SkillHandler.watchScan`);
+  from there every touch is held, both dice are read at their fixed rest spots
+  (`nbcReadDice`: lit top-face red, pips as dark holes in it), and a first total
+  under 7 gets one mid-board tap.
 
 ### Changed
 
