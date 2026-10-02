@@ -21,7 +21,7 @@ in this area. Follow the list in order.
 | 2 | `src/strings.d.ts` + `src/uiEn.ts` | `UiText` keys for the title and the help text, with English. |
 | 3 | `src/settings.ts` | A row in `tabs`. |
 | 4 | `src/index.ts` | The read in `buildRun` — where the value lands on `ts` or `Config`. |
-| 5 | `src/settings.ts` | If the row is on the Gameplay or Skills tab: a slot appended to `SHARE_SLOTS`, or `neverShared: true`. |
+| 5 | `src/settings.ts` | If the row is on a `SHARE_TABS` tab (Skills, Round, Gameplay): a slot appended to `SHARE_SLOTS`, or `neverShared: true`. |
 | 6 | `src/quickbar.ts` | An entry in `LiveSettings`, and a `case` in `quickBarApplyOne` if it is `Now` or `NextRound`. |
 | 7 | `src/quickbar.html` (optional) | A cell with `data-key`, if the setting belongs on the Quick Bar. |
 | 8 | `src/settings.ts` (optional) | `status: ReleaseStatus.Alpha` while the setting is unfinished. |

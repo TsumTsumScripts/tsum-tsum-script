@@ -23,7 +23,9 @@
     "release:alpha": "node tools/release/release.js --channel Alpha",
     "release:beta": "node tools/release/release.js --channel Beta",
     "release:production": "node tools/release/release.js --channel Production",
-    "adb": "adb push dist/index.js dist/index.html dist/quickbar.html dist/tsums.dat \"/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/\""
+    "prerelease:alpha": "node tools/release/prerelease.js --channel Alpha",
+    "prerelease:beta": "node tools/release/prerelease.js --channel Beta",
+    "adb": "adb shell mkdir -p \"'/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/'\" && adb push dist/index.js dist/index.html dist/quickbar.html dist/tsums.dat \"/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/\""
   },
   "keywords": [],
   "author": "Thi Nguyen",

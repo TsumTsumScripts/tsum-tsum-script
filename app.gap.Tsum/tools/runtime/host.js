@@ -271,6 +271,7 @@ function createHost(options) {
     // A fixed 12-hex id, the shape the host's DeviceIdentity produces, so a
     // round id minted in the harness has the device half every real one has.
     getDeviceId: () => '0badc0ffee00',
+    getDeviceName: () => 'harness-0bad',
     sleep: () => {},                        // the harness has no real time to pass
     execute: (cmd) => { noted('execute:' + String(cmd).split(' ')[0]); return ''; },
     readFile: (p) => { try { return fs.readFileSync(p, 'utf8'); } catch (e) { return ''; } },

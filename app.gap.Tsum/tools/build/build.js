@@ -65,11 +65,13 @@ const PAGE_SCRIPTS = [
   { file: 'build/i18n.js', verify: 'names:i18nRegister,i18nText' },
   { file: 'build/uiEn.js' },
   { file: 'build/uiZhTw.js' },
+  { file: 'build/uiJa.js' },
   { file: 'build/releaseStatus.js', verify: 'names:offeredHere,statusFlag' },
   { file: 'build/skillOptions.js' },
   // No `verify`, as skillOptions: `names:` looks for function declarations and
   // both of these files are one `var` holding an array.
   { file: 'build/bubbleOptions.js' },
+  { file: 'build/stopAfterOptions.js' },
   { file: 'build/runPlan.js' },
   { file: 'build/qrCode.js', verify: 'names:qrMatrix' },
   { file: 'build/presets.js', verify: 'names:presetsLoad,presetMatchName' },
@@ -227,7 +229,7 @@ const steps = [
 
   { id: 'tsc:settings', run: ({ log }) => node(log, tsc, '-p', 'tsconfig.settings.json') },
   // Behind the settings compile for want of a lock, not a core: both configs
-  // emit build/i18n.js, uiEn.js, uiZhTw.js and skillOptions.js from the same
+  // emit build/i18n.js, the ui*.js catalogues and skillOptions.js from the same
   // sources. The output is identical either way, but two tsc processes writing
   // those paths at once can leave one of them half-written. Giving this config
   // its own outDir would buy back ~0.5s and cost a copy step plus a fix to
@@ -253,12 +255,17 @@ const steps = [
     run: ({ log }) => inlinePage(log, 'build/quickbar.html', 'dist/quickbar.html'),
   },
   { id: 'dist:bundle', needs: ['tsc:game'], run: ({ log }) => distBundle(log) },
-  // The tsum portrait library: not compiled, but shipped, so it goes into dist/
-  // under the same rule as the scripts. It is read off getScriptPath() on the
-  // first round that needs a name rather than out of the bundle.
+  // The tsum portrait libraries: not compiled, but shipped, so they go into
+  // dist/ under the same rule as the scripts. Each is read off getScriptPath()
+  // on first use rather than out of the bundle. tsumNames.dat and
+  // tsumsCollection.dat are the Tsum List export's, for the collection screen.
   {
     id: 'dist:library',
-    run: ({ log }) => node(log, 'tools/minify/library.js', 'src/tsums.dat', 'dist/tsums.dat'),
+    run: async ({ log }) => {
+      await node(log, 'tools/minify/library.js', 'src/tsums.dat', 'dist/tsums.dat');
+      await node(log, 'tools/minify/library.js', 'src/tsumsCollection.dat', 'dist/tsumsCollection.dat');
+      await node(log, 'tools/minify/library.js', 'src/tsumNames.dat', 'dist/tsumNames.dat');
+    },
   },
   // The license and the notices ride in the archive: dist/index.html inlines
   // Pico CSS, whose MIT notice has to travel with it.
@@ -309,7 +316,7 @@ async function main() {
         await sh((text) => process.stdout.write(text), 'adb', [
           '-s', device, 'push',
           'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
-          DEPLOY_DIR,
+          'dist/tsumsCollection.dat', 'dist/tsumNames.dat', DEPLOY_DIR,
         ]);
       } catch (err) {
         // Keep going so one bad emulator doesn't block the rest.

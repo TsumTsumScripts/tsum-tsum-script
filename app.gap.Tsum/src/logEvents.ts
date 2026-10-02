@@ -147,6 +147,7 @@ namespace Log {
     GameOverAssumed       = 'play.gameOverAssumed',
     GameOverConfirmed     = 'play.gameOverConfirmed',
     GameStart             = 'play.gameStart',
+    GamesLimitReached     = 'play.gamesLimitReached',
     GamingFast            = 'play.gamingFast',
     HudBack               = 'play.hudBack',
     MagicalTimeCancelled  = 'play.magicalTimeCancelled',
@@ -350,6 +351,26 @@ namespace Log {
     ToastStuck       = 'box.toastStuck',
   }
 
+  /** The Tsum List export: every owned tsum off the collection into a CSV. */
+  export const enum TsumList {
+    CardMissed      = 'tsumList.cardMissed',
+    CardRead        = 'tsumList.cardRead',
+    End             = 'tsumList.end',
+    Identified      = 'tsumList.identified',
+    NowQueued       = 'tsumList.nowQueued',
+    NowRefused      = 'tsumList.nowRefused',
+    NowWaiting      = 'tsumList.nowWaiting',
+    OwnedOnlyNotSet = 'tsumList.ownedOnlyNotSet',
+    PageMissed      = 'tsumList.pageMissed',
+    PageRead        = 'tsumList.pageRead',
+    PageTurnMissed  = 'tsumList.pageTurnMissed',
+    PortraitSaved   = 'tsumList.portraitSaved',
+    PortraitSettled = 'tsumList.portraitSettled',
+    Start           = 'tsumList.start',
+    Unnamed         = 'tsumList.unnamed',
+    WriteFailed     = 'tsumList.writeFailed',
+  }
+
   /** The per-round CSV. */
   export const enum Stats {
     ClippedGlyph    = 'stats.clippedGlyph',
@@ -460,6 +481,7 @@ namespace Log {
     RoundDelaySkipAsked        = 'settings.roundDelaySkipAsked',
     UnlockLevelsNowAsked       = 'settings.unlockLevelsNowAsked',
     BuyBoxesNowAsked           = 'settings.buyBoxesNowAsked',
+    ExportTsumListAsked        = 'settings.exportTsumListAsked',
     Saved                      = 'settings.saved',
     ShareCodeUndecodable       = 'settings.shareCodeUndecodable',
     ShareFieldIgnored          = 'settings.shareFieldIgnored',
@@ -489,6 +511,8 @@ namespace Log {
     PresetApplied  = 'quickBar.presetApplied',
     ReportAsked    = 'quickBar.reportAsked',
     ReportFailed   = 'quickBar.reportFailed',
+    UnlockNowAsked = 'quickBar.unlockNowAsked',
+    CopyShareAsked = 'quickBar.copyShareAsked',
     UnknownSetting = 'quickBar.unknownSetting',
   }
 }

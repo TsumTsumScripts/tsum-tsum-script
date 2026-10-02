@@ -148,6 +148,12 @@ class Tsum {
   maxRoundMs: number;
   /** What the play loop does when `maxRoundMs` runs out. */
   maxRoundAction: MaxRoundAction;
+  /** The "Stop after games" setting; 0 never stops. */
+  stopAfterGames: number;
+  /** What happens when `stopAfterGames` rounds have been played. */
+  stopAfterAction: StopAfterAction;
+  /** Rounds finished toward `stopAfterGames`; reset when it fires or changes. */
+  gamesTowardStop: number;
   /**
    * When the next round may start, epoch ms; 0 when nothing is waiting.
    *
@@ -157,6 +163,8 @@ class Tsum {
    */
   nextRoundAt: number;
   sendHearts: boolean;
+  /** Receive Hearts One By One. Like `sendHearts`, its job is added or removed live. */
+  receiveOneByOne: boolean;
   /** Step past the Ruby mails instead of opening them; untick them on Claim All. */
   keepRuby: boolean;
   /** Step past the Mission Clear medal mails instead of opening them. */
@@ -292,6 +300,8 @@ class Tsum {
    * counts the rounds whose figures were legible and no others.
    */
   runCoins: RunCoinTally;
+  /** How long this run and its rounds have taken, for the Quick Bar. */
+  runClock: RunClock;
 
   constructor(detect: boolean, logs: LogCatalogue) {
     this.debug = false;
@@ -375,10 +385,14 @@ class Tsum {
     this.roundDelayMs = 0;
     this.maxRoundMs = 0;
     this.maxRoundAction = MaxRoundAction.Coast;
+    this.stopAfterGames = 0;
+    this.stopAfterAction = StopAfterAction.AutoPlayOff;
+    this.gamesTowardStop = 0;
     // A new world per start(), so pressing Play always plays now rather than
     // resuming a wait the previous run was in.
     this.nextRoundAt = 0;
     this.sendHearts = false;
+    this.receiveOneByOne = false;
     this.keepRuby = false;
     this.skipMedals = false;
     this.sendHeartMaxDuring = 0;
@@ -436,6 +450,7 @@ class Tsum {
     this.baseCoinHits = 0;
     this._statsDebugShots = 0;
     this.runCoins = {rounds: 0, baseRounds: 0, baseTotal: 0, finalRounds: 0, finalTotal: 0};
+    this.runClock = {startedAt: Date.now(), rounds: 0, roundSec: 0};
     this.init(detect);
   }
 }

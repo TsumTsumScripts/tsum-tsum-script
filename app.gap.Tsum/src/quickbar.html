@@ -28,13 +28,17 @@
       the wiring follows. That is the point of the shape: the layout is meant to
       be iterated on directly, and quickbar.css is the other half of it.
 
-      The strip is a grid of three columns and two rows, the Report button over
-      both rows, and the coin readout. Column one is the skill name over its
-      level and the two bonus chips; column two is the scan stepper over the
-      chain stepper; column three is the preset over the bubble strategy. Every
-      stepper and toggle is exactly as wide as its own text, the first two
-      columns are as wide as their wider row, and the third takes what is left
-      -- it holds the two chips whose value is a word and can use it.
+      The strip is two pages of controls drawn in the same place, a side
+      column with the page toggle over the Report button, and a readout with
+      its own toggle between coins and times. Page one is a grid of three columns and two rows: column one is
+      the skill name over its level and the two bonus chips; column two is the
+      scan stepper over the chain stepper; column three is the preset over the
+      bubble strategy. Every stepper and toggle is exactly as wide as its own
+      text, the first two columns are as wide as their wider row, and the
+      third takes what is left -- it holds the two chips whose value is a word
+      and can use it. Page two is two plain rows of chips. Both pages occupy
+      one grid area, so the strip is as wide as the wider page and does not
+      move when the page changes.
 
       The rules the script does rely on:
         * a `data-key` is a SettingKey, and its cell holds either
@@ -51,17 +55,26 @@
         * `.qb-preset` is one of the two controls that are not a single setting,
           so it has no `data-key`: it draws the loaded preset's name into
           `.qb-preset-value` and opens the list of them when tapped;
-        * `.qb-report` is the other, and changes nothing at all: it asks the
-          engine to write an issue report of what is on screen. It is also the
-          one control live while the run is *going*, not only paused -- the
-          script names its rect to the host, which keeps that patch touchable;
+        * `.qb-unlock-now` and `.qb-copy-share` are actions on page two, not
+          settings, and have no `data-key` either;
+        * `.qb-report` changes nothing at all: it asks the
+          engine to write an issue report of what is on screen;
+        * `.qb-page-toggle` flips `<body data-page>` between `1` and `2`, which
+          is what the CSS shows a `.qb-page[data-page]` from. It and Report
+          share `.qb-side`, which with `.qb-readout-toggle` is the one patch
+          live while the run is *going*, not only paused -- the script names
+          its rect to the host, which keeps it touchable;
         * a cell with a `data-key` is given `data-when` -- `now` or `nextRound`
           -- while a round is being played, and the CSS colours it from that;
-        * the readouts are `#baseCoinAvg`, `#finalCoinAvg` and `#roundCount`;
+        * the readouts are `#baseCoinAvg`, `#finalCoinAvg` and `#roundCount`,
+          and on the times table `#avgRoundTime`, `#playedTime` and `#runTime`;
+        * `.qb-readout-toggle` flips `<body data-readout>` between `coins` and
+          `times`; it sits outside `.qb-controls`, so it is never disabled;
         * `<body>` carries `data-state`, which is what the CSS reads;
         * every control is a `<button>` inside `.qb-controls` -- that is what
-          quickbarPage.ts disables while the script is running, `.qb-report`
-          excepted, which it disables only while there is no run;
+          quickbarPage.ts disables while the script is running, `.qb-side`
+          excepted: the page toggle is never disabled, and Report only while
+          there is no run;
         * a label carries `data-i18n` naming a `UiText` key (src/strings.d.ts),
           and quickbarPage.ts fills its text in from the chosen language once the
           markup is up. The key is spelt out here because HTML cannot name a
@@ -84,6 +97,7 @@
     <script src="i18n.js"></script>
     <script src="uiEn.js"></script>
     <script src="uiZhTw.js"></script>
+    <script src="uiJa.js"></script>
     <!-- What this channel is allowed to offer, and the badge for what it is
          not; src/releaseStatus.ts. Ahead of the list that reads it. -->
     <script src="releaseStatus.js"></script>
@@ -91,6 +105,8 @@
     <script src="skillOptions.js"></script>
     <!-- The Bubble Strategy entries, shared the same way; src/bubbleOptions.ts. -->
     <script src="bubbleOptions.js"></script>
+    <!-- Stop after games' actions, shared the same way; src/stopAfterOptions.ts. -->
+    <script src="stopAfterOptions.js"></script>
     <!-- The named-configuration store the preset chip switches between, shared
          with the settings page; src/presets.ts. -->
     <script src="presets.js"></script>
@@ -106,17 +122,23 @@
     `data-dense` comes off the same push: `true` once the band the host gave the
     strip is too short for a name stacked over its number. quickbarPage.ts sets
     it; the rules are under *a short band* in quickbar.css.
+
+    `data-page` is which page of controls is showing, flipped by the page toggle.
+    `data-readout` is which table the readout shows, flipped by its own toggle.
   -->
-  <body data-state="idle" data-dense="false">
+  <body data-state="idle" data-dense="false" data-page="1" data-readout="coins">
     <div class="qb">
       <div class="qb-controls">
 
+        <div class="qb-pages">
+
         <!--
-          The grid: three columns of two rows, filled top row first. The cells
-          are in reading order, so the first three are the top row and the next
-          three the bottom, and swapping two cells is enough to move a control.
+          Page one, the grid: three columns of two rows, filled top row first.
+          The cells are in reading order, so the first three are the top row and
+          the next three the bottom, and swapping two cells is enough to move a
+          control.
         -->
-        <div class="qb-grid">
+        <div class="qb-page qb-grid" data-page="1">
 
           <!-- Top row: the skill name, the scan stepper, and the preset. -->
 
@@ -226,9 +248,88 @@
         </div>
 
         <!--
-          Report what is on screen. One button over both rows, at the
-          narrowest width its word fits in, because this is the only control
-          here that is not a setting and must not be mistaken for one.
+          Page two: the hearts chores and two one-off actions over Stop after
+          games. Each chip is as wide as its own word.
+
+          `.qb-unlock-now` and `.qb-copy-share` are actions, not settings, so
+          they carry no `data-key`; quickbarPage.ts finds them by class.
+          The Lvl chip (an open padlock) queues the level-cap sweep (`unlockLevelsNow`) and needs a
+          run; Copy code asks the settings page, which owns the share-code
+          format, to put the code on the clipboard.
+        -->
+        <div class="qb-page qb-rows" data-page="2">
+          <div class="qb-cluster">
+            <div class="qb-cell" data-key="sendHeartsAuto">
+              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.sendHearts">&#9829;&#65038; Send</button>
+            </div>
+            <div class="qb-cell" data-key="receiveHeartsOneByOne">
+              <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.receiveOneByOne">&#9829;&#65038; 1-by-1</button>
+            </div>
+            <div class="qb-cell">
+              <button class="qb-action qb-unlock-now" type="button">
+                <svg class="qb-action-glyph" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="5" y="11" width="14" height="10" rx="2"/>
+                  <path d="M8 11V7a4 4 0 0 1 7.6-1.7"/>
+                </svg>
+                <span data-i18n="qb.unlockNow">Lvl</span>
+              </button>
+            </div>
+            <div class="qb-cell">
+              <button class="qb-action qb-copy-share" type="button" data-i18n="qb.copyShare">Copy code</button>
+            </div>
+          </div>
+
+          <!--
+            Stop after games: how many rounds (0 = off), then what happens.
+            The action chip draws its option's short name, as Bubble does.
+          -->
+          <div class="qb-cluster">
+            <div class="qb-cell" data-key="stopAfterGames" data-min="0" data-max="999">
+              <div class="qb-stepper">
+                <button class="qb-step" type="button" data-step="-1">&minus;</button>
+                <span class="qb-readout">
+                  <span class="qb-name" data-i18n="qb.games">Games</span>
+                  <span class="qb-value">&mdash;</span>
+                </span>
+                <button class="qb-step" type="button" data-step="1">+</button>
+              </div>
+            </div>
+            <div class="qb-cell qb-cell-wide" data-key="stopAfterAction">
+              <button class="qb-select qb-wide" type="button"
+                      aria-haspopup="listbox" aria-expanded="false">
+                <span class="qb-readout qb-wide-readout">
+                  <span class="qb-name" data-i18n="qb.then">Then</span>
+                  <span class="qb-wide-value qb-select-value">&mdash;</span>
+                </span>
+                <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 9.5l6 6 6-6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <!--
+          The side column: the page toggle over Report, one row each. Stacked
+          rather than side by side so the page toggle costs the strip no width,
+          and together so the one rect named to the host keeps both pressable
+          mid-run (`qbNameHotspot`).
+
+          The page toggle is two dots, the lit one being the page on screen.
+          Its word is for screen readers only.
+        -->
+        <div class="qb-side">
+          <button class="qb-page-toggle" type="button">
+            <span class="qb-dot" aria-hidden="true"></span>
+            <span class="qb-dot" aria-hidden="true"></span>
+            <span class="qb-sr" data-i18n="qb.page">Page</span>
+          </button>
+
+        <!--
+          Report what is on screen: the warning triangle alone, its word kept
+          for screen readers, because this is the only control here that is not
+          a setting and must not be mistaken for one.
 
           Like the preset chip it carries no `data-key` -- it changes nothing --
           and quickbarPage.ts finds it by class. What it writes is the engine's
@@ -241,12 +342,11 @@
           press mid-round catches the live screen. The screens *before* it are
           copied from the router's trail either way.
         -->
-        <div class="qb-cell qb-cell-tall">
           <button class="qb-report" type="button">
             <svg class="qb-report-glyph" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 3.4L1.6 20.6h20.8zM12 10v4.4M12 17.4v.6"/>
             </svg>
-            <span class="qb-name qb-report-label" data-i18n="qb.report">Report</span>
+            <span class="qb-sr" data-i18n="qb.report">Report</span>
           </button>
         </div>
       </div>
@@ -256,14 +356,24 @@
         the script was last initialized" means. Shown whether or not the script
         is paused: this half is a readout, not a control.
 
+        Two tables in one chip, one showing at a time: coins, or times. The
+        dots on the chip's left edge are `.qb-readout-toggle`, which flips
+        `<body data-readout>` between `coins` and `times`. It is named to the
+        host with the side column, so it works mid-run too.
+
         A table because that is what the three are: a name against a figure,
         three times over. The figures share one right edge so their digits line
-        up down the block -- base over final is a comparison, and a comparison
-        wants a column -- and each name is its row's `<th>`, which is what a row
-        heading is. Rows are `.qb-stat`; the last is also `.qb-stat-rounds`,
-        which is how the CSS knows it is a count and not a coin figure.
+        up down the block, and each name is its row's `<th>`. Rows are
+        `.qb-stat`; the last is also `.qb-stat-rounds`, drawn quieter.
       -->
-      <table class="qb-stats">
+      <div class="qb-readouts">
+      <button class="qb-readout-toggle" type="button">
+        <span class="qb-dot" aria-hidden="true"></span>
+        <span class="qb-dot" aria-hidden="true"></span>
+        <span class="qb-sr" data-i18n="qb.readout">Coins or times</span>
+      </button>
+      <div class="qb-readout-tables">
+      <table class="qb-stats" data-readout="coins">
         <tbody>
           <tr class="qb-stat">
             <th class="qb-stat-label" scope="row" data-i18n="qb.base">Base</th>
@@ -279,6 +389,30 @@
           </tr>
         </tbody>
       </table>
+
+      <!--
+        The times: the average round (m:ss), the total time spent in rounds
+        (hh:mm), and how long the run has gone since start(), pauses included
+        (hh:mm).
+      -->
+      <table class="qb-stats" data-readout="times">
+        <tbody>
+          <tr class="qb-stat">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.avgRound">Avg</th>
+            <td class="qb-stat-value" id="avgRoundTime">&mdash;</td>
+          </tr>
+          <tr class="qb-stat">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.inRounds">Played</th>
+            <td class="qb-stat-value" id="playedTime">&mdash;</td>
+          </tr>
+          <tr class="qb-stat qb-stat-rounds">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.running">Run</th>
+            <td class="qb-stat-value" id="runTime">&mdash;</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      </div>
     </div>
 
     <!--
