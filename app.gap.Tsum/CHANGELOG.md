@@ -39,7 +39,7 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
-## [4.0a2]
+## [5.0a2]
 
 ### Summary
 
@@ -80,7 +80,7 @@ release note; they fold back in here when she ships.
   lock) and column x 511 (515 was the lock's edge). A capped single-tsum party was
   never seen, so Auto Unlock MyTsum Level never raised it.
 
-## [4.0a1]
+## [5.0a1]
 
 ### Summary
 
