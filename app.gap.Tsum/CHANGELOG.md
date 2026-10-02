@@ -80,11 +80,18 @@ release note; they fold back in here when she ships.
 - **NBC Set: 5s and 6s no longer read one short on the device** (a 6 rolled
   as 5+1 was rerolled). The host's `findContours` area is the outline's
   (`cv::contourArea`), 15-20% under the pixel count the test harness used, so
-  the smallest pip fell under `pipMinRel`; now 0.009, and the harness shim
-  traces outlines the same way.
+  the smallest pip fell under `pipMinRel`, and the device's capture draws pips
+  about a pixel smaller than a screen recording does, so 7s were still read
+  as 6 and rerolled. Now `pipMinRel` 0.006 / `pipMinFill` 0.45, which hold
+  with every pip shrunk a pixel; the harness shim traces outlines the same
+  way. Temporarily, each first roll's capture is saved to
+  `<storage>/tmp/nbc-dice-*.png` (`nbcSaveRoll`) to confirm on device.
 - **NBC Set: tsum size follows Oogie's dice.** The scale stays 1 until his
   first roll, then may only shrink after 7+ and only grow after under 7
-  (`Tsum.boardScaleTrend`), over a 9-read median. On a size sitting near a
+  (`Tsum.boardScaleTrend`), over a 9-read median. With the direction fixed
+  the 0.04 dead-band and the snap to 1 above 0.92 went: the scale takes the
+  nearest 0.05 step once 3 reads are in, where a 0.9 → 0.85 shrink had
+  waited 8s. On a size sitting near a
   step the free read flipped 0.9/1 up to 13 times in 10s; the radius read
   for sparse boards is only used while growing, since it reads low mid-clear.
 - **NBC Set: front-face pip no longer counted** (a 3 read as 4): top-face pips

@@ -60,10 +60,12 @@ var NbcDice = {
   // Pip blob: area against the face's bounding box, and how much of its own box
   // it fills. The skull engraved on every face is a sparse blob; a pip on a
   // shaded side face is taller than wide. Areas are `findContours`' outline
-  // areas: a 5's or 6's back pip measures 0.0106 that way.
-  pipMinRel: 0.009,
+  // areas. The device's capture draws pips about a pixel smaller than a screen
+  // recording (where these were measured), which put a 5's or 6's back pip
+  // under 0.009 / 0.55; these hold with every pip shrunk by a pixel.
+  pipMinRel: 0.006,
   pipMaxRel: 0.06,
-  pipMinFill: 0.55,
+  pipMinFill: 0.45,
   // Lowest a top-face pip's centre sits in the die's box (top-face pips reach
   // 0.7). The front face's top row shows at 0.9 and passes the ring test,
   // since that face is lit red too.
@@ -229,6 +231,22 @@ function nbcLook(ts: Tsum): NbcLook {
 
 // --- The roll --------------------------------------------------------------
 
+/**
+ * Temporary: the first roll's frame as the device captured it, to check pip
+ * reads against (`<storage>/tmp/nbc-dice-<time>-<left><right>.png`).
+ */
+function nbcSaveRoll(ts: Tsum, dice: number[]) {
+  const img = nbcCapture(ts, NbcDice.scan);
+  if (!img) { return; }
+  try {
+    saveImage(img, ts.storagePath + '/tmp/nbc-dice-' + Date.now() + '-' + dice.join('') + '.png');
+  } catch (e) {
+    // Diagnostics only.
+  } finally {
+    releaseImage(img);
+  }
+}
+
 /** Polls `done` for up to `ms`; whether it came true. */
 function nbcWaitFor(ts: Tsum, ms: number, done: () => boolean): boolean {
   const until = Date.now() + ms;
@@ -268,6 +286,7 @@ function nbcPlayDice(ts: Tsum) {
       const total = read[0] + read[1];
       const reroll = !rerolled && total < cfg.rerollBelow;
       logInfo(Log.Skill.NbcDice, { roll: rerolled ? 2 : 1, dice: read, total: total, reroll: reroll });
+      if (!rerolled) { nbcSaveRoll(ts, read); }
       if (!reroll) {
         // 7+ adds tsums and shrinks them all; under 7 takes some away and they
         // grow back towards full size. The reads say how far.

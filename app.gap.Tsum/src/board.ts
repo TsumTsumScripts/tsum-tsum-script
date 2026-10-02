@@ -388,16 +388,16 @@ Tsum.prototype.sampleMyTsumColor = function() {
 // How many usable size reads `boardScale` is the median of. Smooths over a
 // board read mid-clear without lagging a change by much more than a second.
 const BoardScaleWindow = 9;
-// Below this the tsums are taken as shrunk. Normal boards read 0.95 and up,
-// so they always play at exactly 1.
-const BoardScaleShrunk = 0.92;
+// Reads needed after a roll before the scale moves, so one taken while the
+// new tsums are still falling in cannot set it alone.
+const BoardScaleMinReads = 3;
 // The smallest scale the reads are trusted to; NBC Set bottoms out ~0.75.
 const BoardScaleMin = 0.6;
 
 /**
  * Read the tsums' size off this scan's gray and set `Config.boardScale` to the
- * median of the last few reads, in the direction `boardScaleTrend` allows.
- * Reset to 1 at each round's start.
+ * median of the last few reads, in 0.05 steps and only in the direction
+ * `boardScaleTrend` allows. Reset to 1 at each round's start.
  */
 Tsum.prototype.updateBoardScale = function(grayImg) {
   // Nothing can change, so no Hough pass.
@@ -406,19 +406,14 @@ Tsum.prototype.updateBoardScale = function(grayImg) {
   if (read === null) { return; }
   this.boardScaleReads.push(read);
   if (this.boardScaleReads.length > BoardScaleWindow) { this.boardScaleReads.shift(); }
-  const median = skillMedian(this.boardScaleReads);
-  const target = median < BoardScaleShrunk ? Math.max(BoardScaleMin, median) : 1;
-  // Moves only on a clear change, in 0.05 steps, so a median sitting on a step
-  // boundary does not flip the scale back and forth.
-  if (Math.abs(target - Config.boardScale) < 0.04) { return; }
-  // Only the way the skill said: the reads straddle a step on a board that
-  // has stopped changing, and following both ways flipped the scale every scan.
-  if (Math.sign(target - Config.boardScale) !== this.boardScaleTrend) { return; }
-  const scale = Math.round(target * 20) / 20;
-  if (scale !== Config.boardScale) {
-    logInfo(Log.Board.Scale, { from: Config.boardScale, to: scale, read: +read.toFixed(2) });
-    Config.boardScale = scale;
-  }
+  if (this.boardScaleReads.length < BoardScaleMinReads) { return; }
+  const median = Math.min(1, Math.max(BoardScaleMin, skillMedian(this.boardScaleReads)));
+  const scale = Math.round(median * 20) / 20;
+  // Only the way the skill said, which is also what stops a median sitting on
+  // a step boundary from flipping the scale back and forth.
+  if (Math.sign(scale - Config.boardScale) !== this.boardScaleTrend) { return; }
+  logInfo(Log.Board.Scale, { from: Config.boardScale, to: scale, read: +read.toFixed(2) });
+  Config.boardScale = scale;
 };
 
 Tsum.prototype.scanBoardQuick = function() {
