@@ -203,6 +203,22 @@ const StatsDigits: {[digit: string]: string[]} = {
         '.##....##.',
         '.###...##.',
         '...####...'],
+  // Second '6': the dimmed level-up counter at 17px draws a filled lower loop,
+  // which scored 0.02 above '8' under the shape above and failed the margin.
+  '6b': ['...#####..',
+        '..#######.',
+        '.###...##.',
+        '.###...##.',
+        '.##.......',
+        '########..',
+        '####..###.',
+        '####..###.',
+        '###....###',
+        '###....###',
+        '.##....###',
+        '.###..####',
+        '..#######.',
+        '...####...'],
   '7': ['##########',
         '##########',
         '.......###',
@@ -764,8 +780,10 @@ function statsMatchGlyph(rows: string[], aspect: number, slash?: boolean): {digi
   let best = -1;
   let second = -1;
   let digit = '';
-  for (const d in templates) {
-    const template = templates[d];
+  for (const key in templates) {
+    const template = templates[key];
+    // A key like '6b' is a second shape for digit '6'.
+    const d = key.charAt(0);
     let same = 0;
     for (let y = 0; y < StatsGlyphH; y++) {
       const got = rows[y];
@@ -784,7 +802,10 @@ function statsMatchGlyph(rows: string[], aspect: number, slash?: boolean): {digi
     if (off > 0.12) {
       score -= 0.35 * off;
     }
-    if (score > best) {
+    if (d === digit) {
+      // Shapes of the same digit do not compete: the margin is to another digit.
+      best = Math.max(best, score);
+    } else if (score > best) {
       second = best;
       best = score;
       digit = d;

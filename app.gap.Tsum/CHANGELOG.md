@@ -53,7 +53,7 @@ release note; they fold back in here when she ships.
 - Japanese (日本語) added as a language for the settings page, Quick Bar and log.
 - Copy with settings list option added: a copied settings code can carry a short list of its skill type and the settings changed from default.
 - Quick Bar gained a second page, switched by the dots beside Report: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout can switch to round/run times.
-- Round stats no longer lose the score and coins when the rank-up panel appears after a round.
+- Round stats no longer lose the score and coins when the rank-up panel appears after a round, and base coins read more reliably.
 
 ### Added
 
@@ -117,6 +117,9 @@ release note; they fold back in here when she ships.
 
 ### Fixed
 
+- **Base coins unread on a '6'.** The dimmed level-up counter draws a '6' with a
+  filled lower loop that led '8' by under the margin; it now has a second '6'
+  shape (`6b`), and the margin is measured to another digit.
 - **Rank-up panel stalled the score wait.** The ranking panel read `ClosePage`,
   which nothing taps during the wait; it now has its own page (`RankUp`) and
   `dismiss.rankUp` closes it.
