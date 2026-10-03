@@ -320,6 +320,22 @@ gPages.subscribe({
 });
 
 gPages.subscribe({
+  id: 'dismiss.rankUp',
+  category: PageCategory.Dismiss,
+  what: 'Close the ranking panel. It stands on the score tally until Close is '
+      + 'pressed, and the score wait takes no navigation taps -- so without this it '
+      + 'sat there until the wait gave up and the round\'s score and coins went '
+      + 'unread.',
+  pages: [PageName.RankUp],
+  every: true,
+  steps: [
+    { do: 'log', event: Log.Page.RankUpClosing, message: 'Rank up panel, closing it' },
+    { do: 'tap', anchor: PageAnchor.Back },
+    { do: 'settle', ms: PanelGoneSettleMs }
+  ]
+});
+
+gPages.subscribe({
   id: 'dismiss.eventMain',
   category: PageCategory.Dismiss,
   what: 'Press Close on the event\'s own page. Tapping the event\'s result '
