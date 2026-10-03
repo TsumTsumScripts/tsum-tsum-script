@@ -548,6 +548,8 @@ Tsum.prototype.openRound = function() {
     id: this.roundUid,
     round: this.roundNumber,
     myTsum: this.myTsum,
+    // The full name, as the build's (INTL/JP) library spells it; `myTsum` is the CSV's short one.
+    myTsumName: this.myTsumName,
     skill: statsSkillName(this.roundSettings ? this.roundSettings.skillType : this.skillType),
     // The CSV's `build` column: INTL and JP rounds only compare with their own.
     build: this.gameBuild(),
@@ -916,6 +918,8 @@ Tsum.prototype.taskPlayGameQuick = function() {
     id: this.roundUid,
     round: this.roundNumber,
     myTsum: this.myTsum,
+    // The full name, as the build's (INTL/JP) library spells it; `myTsum` is the CSV's short one.
+    myTsumName: this.myTsumName,
     skill: statsSkillName(this.roundSettings ? this.roundSettings.skillType : this.skillType),
     build: this.gameBuild(),
     seconds: outcome === null ? roundSeconds : outcome.seconds,
