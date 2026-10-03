@@ -21,6 +21,12 @@
 // The rule now: **a run dismantles its own world.** `stop()` only asks it to
 // end, and waits until it says it has.
 
+/**
+ * This script's fixed id, whatever folder it is installed in. GAP reads it
+ * after loading to pick this script's GAP Companion adapter.
+ */
+const GAP_SCRIPT_ID = 'app.gap.Tsum';
+
 /** True from the moment `start()` owns a world until `endRun()` has cleared it. */
 let gRunActive = false;
 
