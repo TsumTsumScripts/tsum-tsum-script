@@ -49,7 +49,7 @@ release note; they fold back in here when she ships.
 - Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums, and rerolls Oogie Boogie's dice only on a roll under 7.
 - Gaston and Coronation Day Elsa skills and the Delay Skill ReActivation setting are out of Beta.
 - Chains no longer break in a round's last seconds.
-- Round stats no longer lose the score and coins when the rank-up panel appears after a round.
+- Round stats no longer lose the score and coins when the rank-up panel appears after a round, and base coins read more reliably.
 - Auto Play Game setting moved from General to the Round tab.
 - Tsum app restart frequency now counts in minutes (30-minute steps) and sits under Device, out of Experimental.
 - Large tsums are now chained instead of popped, and bridge longer gaps.
@@ -205,6 +205,9 @@ release note; they fold back in here when she ships.
 
 ### Fixed
 
+- **Base coins unread on a '6'.** The dimmed level-up counter draws a '6' with a
+  filled lower loop that led '8' by under the margin; it now has a second '6'
+  shape (`6b`), and the margin is measured to another digit.
 - **Resume mid-round tapped the pause menu.** A paused run is parked inside its
   next touch, so on Resume the rest of a chain planned before the pause landed on
   the pause menu (Try Again, To Home Screen) before the loop pressed Continue.
