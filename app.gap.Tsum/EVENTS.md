@@ -14,10 +14,11 @@ format are the host's document --
 Names are declared once, in `src/scriptEvents.ts`, and reached through
 `ts.emit()`, which is silent on a host too old to have `emitEvent`.
 
-`5` event(s) from `5` call site(s).
+`6` event(s) from `6` call site(s).
 
 | event | emitted from | payload |
 |---|---|---|
+| `task.start` | `src/taskController.ts:93` | `task` |
 | `round.over` | `src/play.ts:367` | `id`, `seconds` |
 | `round.start` | `src/play.ts:545` | `id`, `round`, `myTsum`, `skill`, `build`, `settings` |
 | `round.end` | `src/play.ts:911` | `id`, `round`, `myTsum`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
@@ -25,6 +26,18 @@ Names are declared once, in `src/scriptEvents.ts`, and reached through
 | `run.stopped` | `src/index.ts:661` | `rounds` |
 
 ## The events
+
+### `task.start`
+
+`Emit.Task.Started` — The loop has switched to another job (`TaskName`, src/runPlan.ts, or a Now sweep's name): sending hearts, the mailbox, playing rounds. Emitted only when the job differs from the last one, so back-to-back rounds say it once. The companion app shows it as what the device is doing.
+
+| field | type |
+|---|---|
+| `task` | `string` |
+
+Emitted from:
+
+- `src/taskController.ts:93` — `emitScriptEvent(Emit.Task.Started, …)`
 
 ### `round.over`
 

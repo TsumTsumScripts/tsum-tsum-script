@@ -178,6 +178,8 @@ function quickBarState(): string {
       ? Math.round(coins.baseTotal / coins.baseRounds) : -1;
     state.finalCoinAvg = coins.finalRounds > 0
       ? Math.round(coins.finalTotal / coins.finalRounds) : -1;
+    // The run's medals; the companion app's Stats tab shows it.
+    state.medals = coins.medalTotal;
 
     // The time readout, in seconds; the page formats them. -1 is "no round yet".
     const clock = ts.runClock;

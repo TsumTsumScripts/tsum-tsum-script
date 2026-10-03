@@ -23,6 +23,17 @@ namespace Emit {
     Stopped = 'run.stopped',
   }
 
+  /** The task loop's jobs. */
+  export const enum Task {
+    /**
+     * The loop has switched to another job (`TaskName`, src/runPlan.ts, or a
+     * Now sweep's name): sending hearts, the mailbox, playing rounds. Emitted
+     * only when the job differs from the last one, so back-to-back rounds say
+     * it once. The companion app shows it as what the device is doing.
+     */
+    Started = 'task.start',
+  }
+
   /**
    * One played round.
    *

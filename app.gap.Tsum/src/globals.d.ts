@@ -960,6 +960,8 @@ interface RunCoinTally {
   baseTotal: number;
   finalRounds: number;
   finalTotal: number;
+  /** Medals over the rows that read a medal count (0 when none were earned). */
+  medalTotal: number;
 }
 
 /**
