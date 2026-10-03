@@ -33,6 +33,9 @@
     // so both sides of the start() bridge agree on the Settings shape.
     "src/shared.d.ts",
     "src/globals.d.ts",
+    // Every setting's default, shared with the settings page; a remote start
+    // fills from it (see remoteStartSettings, index.ts).
+    "src/settingDefaults.ts",
     "src/taskController.ts",
     // The run's task table, shared with the settings page (tsconfig.settings.json)
     // so the Run order card and buildRun describe one set of jobs.

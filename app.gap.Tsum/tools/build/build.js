@@ -73,6 +73,7 @@ const PAGE_SCRIPTS = [
   { file: 'build/bubbleOptions.js' },
   { file: 'build/stopAfterOptions.js' },
   { file: 'build/runPlan.js' },
+  { file: 'build/settingDefaults.js' },
   { file: 'build/qrCode.js', verify: 'names:qrMatrix' },
   { file: 'build/presets.js', verify: 'names:presetsLoad,presetMatchName' },
 ].map((job) => ({ in: job.file, out: job.file, ecma: 5, verify: job.verify }));

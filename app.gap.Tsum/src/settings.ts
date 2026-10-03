@@ -61,7 +61,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillType,
                         title: UiText.SettingSkillType,
                         help: UiText.SettingSkillTypeHelp,
-                        default: SkillType.Burst as SkillType,
+                        default: SettingDefaults[SettingKey.SkillType],
                         // One list, in src/skillOptions.ts, because the Quick
                         // Bar offers the same skills from its own compilation.
                         dropdown: SkillOptions
@@ -70,7 +70,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillLevel,
                         title: UiText.SettingSkillLevel,
                         help: UiText.SettingSkillLevelHelp,
-                        default: 6,
+                        default: SettingDefaults[SettingKey.SkillLevel],
                         step: 1,
                         max: 6,
                         min: 1
@@ -83,7 +83,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.LorcanaCard,
                         title: UiText.SettingLorcanaCard,
                         help: UiText.SettingLorcanaCardHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.LorcanaCard]
                     }
                 ]
             },
@@ -95,7 +95,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillAutoTap,
                         title: UiText.SettingSkillAutoTap,
                         help: UiText.SettingSkillAutoTapHelp,
-                        default: true
+                        default: SettingDefaults[SettingKey.SkillAutoTap]
                     },
                     {
                         // Stored in ms (a share code carries whole numbers
@@ -103,7 +103,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillSettleMs,
                         title: UiText.SettingSkillSettle,
                         help: UiText.SettingSkillSettleHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.SkillSettleMs],
                         step: 200,
                         max: 3000,
                         min: 0,
@@ -113,7 +113,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.NoSkillLastFeverSec,
                         title: UiText.SettingNoSkillLastFever,
                         help: UiText.SettingNoSkillLastFeverHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.NoSkillLastFeverSec],
                         step: 1,
                         max: 10,
                         min: 0
@@ -122,7 +122,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillWaitingTime,
                         title: UiText.SettingSkillWaitingTime,
                         help: UiText.SettingSkillWaitingTimeHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.SkillWaitingTime],
                         step: 1,
                         max: 15,
                         min: 0
@@ -132,7 +132,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillReactivationTenths,
                         title: UiText.SettingSkillReactivation,
                         help: UiText.SettingSkillReactivationHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.SkillReactivationTenths],
                         step: 5,
                         max: 300,
                         min: 0,
@@ -155,7 +155,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.MaxChainsPerScan,
                         title: UiText.SettingMaxChainsPerScan,
                         help: UiText.SettingMaxChainsPerScanHelp,
-                        default: 6,
+                        default: SettingDefaults[SettingKey.MaxChainsPerScan],
                         step: 1,
                         max: 12,
                         min: 1
@@ -164,7 +164,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.MaxChain,
                         title: UiText.SettingMaxChain,
                         help: UiText.SettingMaxChainHelp,
-                        default: 4,
+                        default: SettingDefaults[SettingKey.MaxChain],
                         step: 1,
                         max: 15,
                         min: 3
@@ -179,43 +179,43 @@ var tabs: TabSpec[] = [
                         key: SettingKey.BonusScore,
                         title: UiText.SettingBonusScore,
                         help: UiText.SettingBonusScoreHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusScore]
                     },
                     {
                         key: SettingKey.BonusCoin,
                         title: UiText.SettingBonusCoin,
                         help: UiText.SettingBonusCoinHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusCoin]
                     },
                     {
                         key: SettingKey.BonusExp,
                         title: UiText.SettingBonusExp,
                         help: UiText.SettingBonusExpHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusExp]
                     },
                     {
                         key: SettingKey.BonusTime,
                         title: UiText.SettingBonusTime,
                         help: UiText.SettingBonusTimeHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusTime]
                     },
                     {
                         key: SettingKey.BonusBubble,
                         title: UiText.SettingBonusBubble,
                         help: UiText.SettingBonusBubbleHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusBubble]
                     },
                     {
                         key: SettingKey.Bonus5to4,
                         title: UiText.SettingBonus5to4,
                         help: UiText.SettingBonus5to4Help,
-                        default: false
+                        default: SettingDefaults[SettingKey.Bonus5to4]
                     },
                     {
                         key: SettingKey.BonusCombo,
                         title: UiText.SettingBonusCombo,
                         help: UiText.SettingBonusComboHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusCombo]
                     }
                 ]
             }
@@ -232,7 +232,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.ReceiveAllHearts,
                         title: UiText.SettingReceiveAllHearts,
                         help: UiText.SettingReceiveAllHeartsHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.ReceiveAllHearts]
                     },
                     {
                         // The three "waiting time" rows share a title, so each
@@ -240,7 +240,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.ReceiveAllHeartsMinWait,
                         title: UiText.SettingRepeatWait,
                         help: UiText.SettingReceiveAllWaitHelp,
-                        default: 25,
+                        default: SettingDefaults[SettingKey.ReceiveAllHeartsMinWait],
                         step: 5,
                         max: 60,
                         min: 5
@@ -254,19 +254,19 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SendHeartsAuto,
                         title: UiText.SettingSendHeartsAuto,
                         help: UiText.SettingSendHeartsAutoHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.SendHeartsAuto]
                     },
                     {
                         key: SettingKey.SendHeartsToZeroScore,
                         title: UiText.SettingSendToZeroScore,
                         help: UiText.SettingSendToZeroScoreHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.SendHeartsToZeroScore]
                     },
                     {
                         key: SettingKey.SendHeartsMaxRuntime,
                         title: UiText.SettingSendMaxRuntime,
                         help: UiText.SettingSendMaxRuntimeHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.SendHeartsMaxRuntime],
                         step: 5,
                         max: 80,
                         min: 0
@@ -275,7 +275,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SendHeartsMinWait,
                         title: UiText.SettingRepeatWait,
                         help: UiText.SettingSendWaitHelp,
-                        default: 26,
+                        default: SettingDefaults[SettingKey.SendHeartsMinWait],
                         step: 5,
                         max: 60,
                         min: 1
@@ -289,37 +289,37 @@ var tabs: TabSpec[] = [
                         key: SettingKey.ReceiveHeartsOneByOne,
                         title: UiText.SettingReceiveOneByOne,
                         help: UiText.SettingReceiveOneByOneHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.ReceiveHeartsOneByOne]
                     },
                     {
                         key: SettingKey.ReceiveHeartsSkipFirst,
                         title: UiText.SettingSkipFirstPerson,
                         help: UiText.SettingSkipFirstPersonHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.ReceiveHeartsSkipFirst]
                     },
                     {
                         key: SettingKey.ReceiveHeartsSkipRuby,
                         title: UiText.SettingSkipRuby,
                         help: UiText.SettingSkipRubyHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.ReceiveHeartsSkipRuby]
                     },
                     {
                         key: SettingKey.ReceiveHeartsSkipMedals,
                         title: UiText.SettingSkipMedals,
                         help: UiText.SettingSkipMedalsHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.ReceiveHeartsSkipMedals]
                     },
                     {
                         key: SettingKey.ClaimAllWithoutCoins,
                         title: UiText.SettingClaimAllOldMails,
                         help: UiText.SettingClaimAllOldMailsHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.ClaimAllWithoutCoins]
                     },
                     {
                         key: SettingKey.MailOpenMax,
                         title: UiText.SettingMailOpenMax,
                         help: UiText.SettingMailOpenMaxHelp,
-                        default: 5,
+                        default: SettingDefaults[SettingKey.MailOpenMax],
                         step: 1,
                         max: 20,
                         min: 1
@@ -328,7 +328,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.MailMinWait,
                         title: UiText.SettingRepeatWait,
                         help: UiText.SettingMailWaitHelp,
-                        default: 5,
+                        default: SettingDefaults[SettingKey.MailMinWait],
                         step: 2,
                         max: 60,
                         min: 1
@@ -351,7 +351,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.LinkReachPercent,
                         title: UiText.SettingLinkReach,
                         help: UiText.SettingLinkReachHelp,
-                        default: 190,
+                        default: SettingDefaults[SettingKey.LinkReachPercent],
                         step: 10,
                         max: 350,
                         min: 150
@@ -360,7 +360,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.PrioritizeMyTsum,
                         title: UiText.SettingPrioritizeMyTsum,
                         help: UiText.SettingPrioritizeMyTsumHelp,
-                        default: true
+                        default: SettingDefaults[SettingKey.PrioritizeMyTsum]
                     }
                 ]
             },
@@ -371,7 +371,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.BubbleStrategy,
                         title: UiText.SettingBubbleStrategy,
                         help: UiText.SettingBubbleStrategyHelp,
-                        default: BubbleStrategy.OneMidChain as BubbleStrategy,
+                        default: SettingDefaults[SettingKey.BubbleStrategy],
                         // `src/bubbleOptions.ts`, as the skill row reads
                         // `SkillOptions`: the Quick Bar offers this list too, and
                         // it is a separate compilation, so the entries are shared
@@ -394,7 +394,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.HoldBubblesLastFeverSec,
                         title: UiText.SettingHoldBubblesLastFever,
                         help: UiText.SettingHoldBubblesLastFeverHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.HoldBubblesLastFeverSec],
                         step: 1,
                         max: 10,
                         min: 0,
@@ -403,7 +403,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.UseFan,
                         title: UiText.SettingUseFan,
                         help: UiText.SettingUseFanHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.UseFan]
                     }
                 ]
             }
@@ -433,7 +433,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.UnlockLevelHoursWait,
                         title: UiText.SettingUnlockLevel,
                         help: UiText.SettingUnlockLevelHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.UnlockLevelHoursWait],
                         min: 0,
                         max: 24,
                         step: 1,
@@ -449,7 +449,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.AutoUnlockMyTsumLevel,
                         title: UiText.SettingUnlockMyTsumLevel,
                         help: UiText.SettingUnlockMyTsumLevelHelp,
-                        default: false,
+                        default: SettingDefaults[SettingKey.AutoUnlockMyTsumLevel],
                     }
                 ]
             },
@@ -463,7 +463,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.BuyBoxHoursWait,
                         title: UiText.SettingBuyBox,
                         help: UiText.SettingBuyBoxHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.BuyBoxHoursWait],
                         min: 0,
                         max: 24,
                         step: 1,
@@ -475,7 +475,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.BuyBoxType,
                         title: UiText.SettingBuyBoxType,
                         help: UiText.SettingBuyBoxTypeHelp,
-                        default: BoxType.Premium as BoxType,
+                        default: SettingDefaults[SettingKey.BuyBoxType],
                         // `satisfies` for the same reason the skill and bubble
                         // dropdowns have it: a key that is not a BoxType would
                         // compile, match no tab in `BoxStore.order3`/`order4`,
@@ -493,7 +493,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.BuyBoxSize,
                         title: UiText.SettingBuyBoxSize,
                         help: UiText.SettingBuyBoxSizeHelp,
-                        default: BoxPurchaseSize.One as BoxPurchaseSize,
+                        default: SettingDefaults[SettingKey.BuyBoxSize],
                         // No `share` ids: a Chores row, so no code or preset
                         // carries it. `satisfies` for the reason the box
                         // dropdown above has it -- a key that is not a
@@ -509,7 +509,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.BuyBoxMaxPurchases,
                         title: UiText.SettingBuyBoxMax,
                         help: UiText.SettingBuyBoxMaxHelp,
-                        default: 10,
+                        default: SettingDefaults[SettingKey.BuyBoxMaxPurchases],
                         min: 1,
                         max: 50,
                         step: 1
@@ -553,7 +553,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SpecialScreenRatio,
                         title: UiText.SettingSpecialScreenRatio,
                         help: UiText.SettingSpecialScreenRatioHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.SpecialScreenRatio]
                     },
                     // {
                     //     // The game runs its self-dismissing screens off a frame
@@ -580,13 +580,13 @@ var tabs: TabSpec[] = [
                         key: SettingKey.AutoLaunchApp,
                         title: UiText.SettingAutoLaunchApp,
                         help: UiText.SettingAutoLaunchAppHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.AutoLaunchApp]
                     },
                     {
                         key: SettingKey.AutoPlayGame,
                         title: UiText.SettingAutoPlayGame,
                         help: UiText.SettingAutoPlayGameHelp,
-                        default: true,
+                        default: SettingDefaults[SettingKey.AutoPlayGame],
                         // Whether rounds are played at all, not how one is
                         // played -- see SHARE_TABS.
                         neverShared: true
@@ -606,7 +606,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.RoundDelayMinutes,
                         title: UiText.SettingRoundDelay,
                         help: UiText.SettingRoundDelayHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.RoundDelayMinutes],
                         step: 1,
                         max: 120,
                         min: 0,
@@ -623,7 +623,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.MaxRoundMinutes,
                         title: UiText.SettingMaxRound,
                         help: UiText.SettingMaxRoundHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.MaxRoundMinutes],
                         step: 1,
                         max: 60,
                         min: 0,
@@ -637,7 +637,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.MaxRoundAction,
                         title: UiText.SettingMaxRoundAction,
                         help: UiText.SettingMaxRoundActionHelp,
-                        default: MaxRoundAction.Coast as MaxRoundAction,
+                        default: SettingDefaults[SettingKey.MaxRoundAction],
                         // No `share` ids on the entries, unlike every other
                         // dropdown: the row is `neverShared`, so no code and no
                         // preset ever writes one. `satisfies` for the reason the
@@ -659,7 +659,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.StopAfterGames,
                         title: UiText.SettingStopAfterGames,
                         help: UiText.SettingStopAfterGamesHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.StopAfterGames],
                         step: 1,
                         max: 999,
                         min: 0,
@@ -669,7 +669,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.StopAfterAction,
                         title: UiText.SettingStopAfterAction,
                         help: UiText.SettingStopAfterActionHelp,
-                        default: StopAfterAction.AutoPlayOff as StopAfterAction,
+                        default: SettingDefaults[SettingKey.StopAfterAction],
                         // `src/stopAfterOptions.ts`, shared with the Quick Bar.
                         dropdown: StopAfterOptions,
                         neverShared: true
@@ -678,7 +678,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.TrackRoundStats,
                         title: UiText.SettingTrackRoundStats,
                         help: UiText.SettingTrackRoundStatsHelp,
-                        default: true,
+                        default: SettingDefaults[SettingKey.TrackRoundStats],
                         // Bookkeeping about rounds, not a rule one is played
                         // under -- see SHARE_TABS.
                         neverShared: true
@@ -697,7 +697,7 @@ var tabs: TabSpec[] = [
                         min: 0,
                         max: 120,
                         step: 6,
-                        default: 0
+                        default: SettingDefaults[SettingKey.TsumAppRestartFrequency]
                     }
                 ]
             },
@@ -790,14 +790,14 @@ var tabs: TabSpec[] = [
                         key: SettingKey.DebugLogs,
                         title: UiText.SettingDebugLogs,
                         help: UiText.SettingDebugLogsHelp,
-                        default: false,
+                        default: SettingDefaults[SettingKey.DebugLogs],
                         neverShared: true
                     },
                     {
                         key: SettingKey.DebugGame,
                         title: UiText.SettingDebugGame,
                         help: UiText.SettingDebugGameHelp,
-                        default: false,
+                        default: SettingDefaults[SettingKey.DebugGame],
                         neverShared: true
                     },
                     {
@@ -807,14 +807,14 @@ var tabs: TabSpec[] = [
                         key: SettingKey.Walkthrough,
                         title: UiText.SettingWalkthrough,
                         help: UiText.SettingWalkthroughHelp,
-                        default: false,
+                        default: SettingDefaults[SettingKey.Walkthrough],
                         neverShared: true
                     },
                     {
                         key: SettingKey.CollectUnknownScreens,
                         title: UiText.SettingCollectUnknownScreens,
                         help: UiText.SettingCollectUnknownScreensHelp,
-                        default: false,
+                        default: SettingDefaults[SettingKey.CollectUnknownScreens],
                         neverShared: true
                     },
                     {
@@ -826,7 +826,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.PageHistoryDepth,
                         title: UiText.SettingPageHistoryDepth,
                         help: UiText.SettingPageHistoryDepthHelp,
-                        default: 20,
+                        default: SettingDefaults[SettingKey.PageHistoryDepth],
                         step: 5,
                         max: 100,
                         min: 0,

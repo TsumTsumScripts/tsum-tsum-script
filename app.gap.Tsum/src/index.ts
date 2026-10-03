@@ -180,6 +180,17 @@ function lastRunSettings(): Partial<Settings> | null {
   }
 }
 
+/**
+ * What a start with no settings page runs with: `SettingDefaults` with the last
+ * run's settings on top, so a device that never ran the script still starts,
+ * and an old file missing newer keys gets their defaults. A global for GAP
+ * Companion's adapter.
+ */
+// noinspection JSUnusedGlobalSymbols
+function remoteStartSettings(): Settings {
+  return Object.assign({}, SettingDefaults, lastRunSettings() || {});
+}
+
 // --- Settings changed from GAP Companion -------------------------------------
 //
 // The phone can change any setting the settings page has. One that a run can
@@ -290,13 +301,11 @@ function rememberRemoteSetting(key: string, value: string | number | boolean): v
     const pending = readJsonObject(pendingPath);
     pending[key] = value;
     writeFile(pendingPath, JSON.stringify(pending));
-    // Only patched when there is one: a partial file would start a run on
-    // half a configuration.
-    const last = lastRunSettings() as { [key: string]: unknown } | null;
-    if (last !== null) {
-      last[key] = value;
-      writeFile(lastSettingsPath(), JSON.stringify(last));
-    }
+    // Written in full (defaults filled in), so a device that never ran the
+    // script still starts with this change.
+    const last = remoteStartSettings() as unknown as { [key: string]: unknown };
+    last[key] = value;
+    writeFile(lastSettingsPath(), JSON.stringify(last));
   } catch (e) {
     logWarn(Log.Run.RemoteSettingNotSaved, 'Could not save a setting changed from GAP Companion',
       { setting: key, errorText: '' + e });
@@ -305,15 +314,15 @@ function rememberRemoteSetting(key: string, value: string | number | boolean): v
 
 /**
  * Every remote setting's current value, as JSON `{active, values}`: the running
- * world's when there is a run, else the last run's, with pending remote changes
- * on top. A global for GAP Companion's adapter.
+ * world's when there is a run, else the next start's (`remoteStartSettings`),
+ * with pending remote changes on top. A global for GAP Companion's adapter.
  */
 // noinspection JSUnusedGlobalSymbols
 function remoteSettingsState(): string {
   const running = quickBarRunning();
   const values: { [key: string]: unknown } = {};
   const layers: { [key: string]: unknown }[] = [
-    (running ? ts!.settings : lastRunSettings() || {}) as unknown as { [key: string]: unknown },
+    (running ? ts!.settings : remoteStartSettings()) as unknown as { [key: string]: unknown },
     readJsonObject(remoteSettingsPath()),
   ];
   // Last, because a live key's value on the world (Quick Bar included) is newest.

@@ -59,6 +59,10 @@
     // lists what buildRun registers. Emits build/runPlan.js, loaded before
     // settings.js.
     "src/runPlan.ts",
+    // Every row's default, shared with the game bundle so a start with no page
+    // gets the same values. Emits build/settingDefaults.js, loaded before
+    // settings.js.
+    "src/settingDefaults.ts",
     // The QR encoder behind the share panel's scannable code. Emits
     // build/qrCode.js, loaded before settings.js. Not in the Quick Bar's
     // compilation: nothing there draws one yet.
