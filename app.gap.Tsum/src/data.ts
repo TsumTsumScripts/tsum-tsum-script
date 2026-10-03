@@ -485,6 +485,9 @@ const enum PageName {
   // waits to be closed.
   TsumLevelUp = 'TsumLevelUp',
   AccountLevelUp = 'AccountLevelUp',
+  // The leaderboard panel after a round that passes a friend ("Rank Up": the
+  // player's row with an up arrow over the one it displaced).
+  RankUp = 'RankUp',
   MagicalTime = 'MagicalTime',
   // The event's own page, seen after a round while an event card is active:
   // the event's result overlay is thrown over the score tally, any tap moves it
@@ -1943,6 +1946,24 @@ var Page = {
     back: {x: 540, y: 1652},
     next: {x: 540, y: 1652}
   },
+  // The ranking panel: two cyan-framed rows, the player's with an orange up
+  // arrow and the displaced friend's with a blue down arrow. The arrows and the
+  // cyan frame are the same for every account; names, scores and avatars are not.
+  // Without an entry it read `ClosePage`, which nothing taps during the score
+  // wait, so the tally stayed behind it until the wait gave up.
+  RankUp: {
+    name: PageName.RankUp,
+    colors: [
+      {x: 104, y:  730, r: 255, g: 186, b:  41, match: true, threshold: 80},  // up arrow
+      {x: 104, y: 1180, r:  66, g: 215, b: 255, match: true, threshold: 80},  // down arrow
+      {x: 540, y:  600, r:  33, g: 190, b: 222, match: true, threshold: 80},  // top row, cyan frame
+      {x: 540, y:  880, r:  25, g: 174, b: 214, match: true, threshold: 80},  // cyan gap between the rows
+      {x: 200, y:  780, r:  41, g:  73, b: 115, match: true, threshold: 80},  // top row, navy band
+      {x: 200, y: 1220, r:  41, g:  73, b: 115, match: true, threshold: 80}   // bottom row, navy band
+    ],
+    back: {x: 540, y: 1652},
+    next: {x: 540, y: 1652}
+  },
   // The event's own page, reached by tapping the result overlay away. Probed on
   // the one thing every event card draws the same: the yellow Card / Close /
   // How to Play row at the bottom, and the dark gaps between the three. Nothing
@@ -2251,6 +2272,12 @@ var PageProfiles: PageProfileMap = {
     note: 'The player\'s own rank going up. It arrives a moment after the score '
         + 'tally and sits on top of it until Close is pressed, so unlike '
         + '`TsumLevelUp` there is no window to wait out.'
+  },
+  RankUp: {
+    kind: PageKind.Permanent,
+    roles: [PageRole.PreTally],
+    note: 'The ranking panel after a round that passes a friend. Like '
+        + '`AccountLevelUp` it sits on the tally until Close is pressed.'
   },
   EventMain: {
     kind: PageKind.Permanent,
@@ -3244,6 +3271,9 @@ var PageRoutes: PageRouteMap = {
     { via: PageAnchor.Back, to: PageName.ScorePage, source: RouteSource.Handler }
   ],
   AccountLevelUp: [
+    { via: PageAnchor.Back, to: PageName.ScorePage, source: RouteSource.Handler }
+  ],
+  RankUp: [
     { via: PageAnchor.Back, to: PageName.ScorePage, source: RouteSource.Handler }
   ],
   // The event page's `back` is its Close. The result overlay that leads here

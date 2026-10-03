@@ -17,7 +17,7 @@ order. `settle` is a ceiling and not a cost -- it ends when the screen stops
 moving -- where `sleep` is spent in full, and is only used where there is no
 still frame to wait for.
 
-`31` subscriptions, `45` pages, `6` navigation destinations.
+`32` subscriptions, `46` pages, `6` navigation destinations.
 
 ## The pipeline
 
@@ -27,7 +27,7 @@ flowchart TD
   c0["<b>observe</b> &middot; priority 100<br/>2 subscriptions"]
   c1["<b>record</b> &middot; priority 80<br/>6 subscriptions"]
   c2["<b>guard</b> &middot; priority 60<br/>1 subscription"]
-  c3["<b>dismiss</b> &middot; priority 40<br/>9 subscriptions"]
+  c3["<b>dismiss</b> &middot; priority 40<br/>10 subscriptions"]
   c4["<b>navigate</b> &middot; priority 20<br/>11 subscriptions"]
   c5["<b>notify</b> &middot; priority 10<br/>2 subscriptions"]
   done(["caller gets the page name"])
@@ -55,7 +55,7 @@ there.
 | **observe** | 100 | 2 | Read-only state updates derived from the page itself. No taps and no expensive captures -- these describe the frame the recorders are about to measure, and they are the only band guaranteed to run whatever else the queue decides. |
 | **record** | 80 | 6 | Measurements and captures that are only valid while the screen is untouched: round statistics, corpus frames, debug shots. Everything below this line may tap. |
 | **guard** | 60 | 1 | Anything that is not a game screen at all (native dialogs, the root warning) is handled here, before the rest of the queue is allowed to act on what it sees. |
-| **dismiss** | 40 | 9 | Close the interruptions that stand between the script and where it is going -- offers, popups, error panels. |
+| **dismiss** | 40 | 10 | Close the interruptions that stand between the script and where it is going -- offers, popups, error panels. |
 | **navigate** | 20 | 11 | Move the app toward the goal the look was made with. Silent when the caller gave none -- every look outside navigate() -- and never on the goal page itself, so nothing can tap the script off its destination. |
 | **notify** | 10 | 2 | Logging and progress bookkeeping. Nothing here changes what is on screen or what anything else decides -- which is why this band runs even when something above it has acted: it is recording what was seen, not acting on it. |
 
@@ -70,7 +70,7 @@ going to.
 |---|---|---|---|---|---|---|---|---|
 | 1 | `observe.startupPhase` | observe | `enterStartupPhase()` | 0 | `RootDetection` | — | every look | — |
 | 2 | `observe.leftStartup` | observe | `leaveStartupPhase()` | 0 | `GamePlaying`, `GamePause`, `StartPage`, `TsumsPage`, `TsumTsumStorePage` | — | every look | — |
-| 3 | `record.feverTime` | record | `gFever.update()` | 0 | `GamePlaying`, `GamePause`, `ScorePage`, `HighScore`, `TsumLevelUp`, `AccountLevelUp`, `EventMain`, `EventCardReveal`, `EventGift`, `MagicalTime`, `StartPage`, `FriendPage`, `FriendInfo`, `ProfilePage`, `SquarePage`, `ClosePage`, `TapOpenPage`, `TapOpenPageDeprecated`, `TsumsPage`, `TsumSortOrder`, `RaiseLevelCap`, `LevelCapRaised`, `TsumTsumStorePage`, `ConfirmPurchasePage`, `BoxPurchasedPage`, `BoxPurchaseResult`, `NotEnoughCoins`, `BoxTenTimeRefused`, `OutOfMedals`, `RubyResetDifficulty`, `MailBox`, `Received`, `ReceiveHeart`, `ReceiveHeartWithoutCoins`, `ReceiveSkillTicket`, `ReceivePremiumTicket`, `GiftHeart`, `HeartSent`, `TodayMission`, `TodayMissions`, `RootDetection`, `NetworkDisable`, `NetworkTimeout`, `ExtraUpdate`, `unknown` | — | every look | — |
+| 3 | `record.feverTime` | record | `gFever.update()` | 0 | `GamePlaying`, `GamePause`, `ScorePage`, `HighScore`, `TsumLevelUp`, `AccountLevelUp`, `RankUp`, `EventMain`, `EventCardReveal`, `EventGift`, `MagicalTime`, `StartPage`, `FriendPage`, `FriendInfo`, `ProfilePage`, `SquarePage`, `ClosePage`, `TapOpenPage`, `TapOpenPageDeprecated`, `TsumsPage`, `TsumSortOrder`, `RaiseLevelCap`, `LevelCapRaised`, `TsumTsumStorePage`, `ConfirmPurchasePage`, `BoxPurchasedPage`, `BoxPurchaseResult`, `NotEnoughCoins`, `BoxTenTimeRefused`, `OutOfMedals`, `RubyResetDifficulty`, `MailBox`, `Received`, `ReceiveHeart`, `ReceiveHeartWithoutCoins`, `ReceiveSkillTicket`, `ReceivePremiumTicket`, `GiftHeart`, `HeartSent`, `TodayMission`, `TodayMissions`, `RootDetection`, `NetworkDisable`, `NetworkTimeout`, `ExtraUpdate`, `unknown` | — | every look | — |
 | 4 | `record.corpusUnknown` | record | `saveCorpusFrame()` | 0 | `unknown` | — | on arrival | — |
 | 5 | `record.baseCoins` | record | `sampleBaseCoins()` | 0 | `TsumLevelUp` | — | every look | — |
 | 6 | `record.myTsumLevelCap` | record | `noteLevelUpMyTsumCap()` | 0 | `TsumLevelUp` | — | every look | — |
@@ -80,25 +80,26 @@ going to.
 | 10 | `dismiss.magicalTime` | dismiss | log `play.magicalTimeCancelled` → tap `back` → sleep 500ms | 0 | `MagicalTime` | — | every look | — |
 | 11 | `dismiss.highScore` | dismiss | log `page.highScore.closing` → tap `back` → settle 2000ms | 0 | `HighScore` | — | every look | — |
 | 12 | `dismiss.accountLevelUp` | dismiss | log `page.accountLevelUp.closing` → tap `back` → settle 2000ms | 0 | `AccountLevelUp` | — | every look | — |
-| 13 | `dismiss.eventMain` | dismiss | log `page.eventMain.closing` → tap `back` → settle 2000ms | 0 | `EventMain` | — | every look | — |
-| 14 | `dismiss.eventCardReveal` | dismiss | log `page.eventCardReveal.closing` → tap `back` → settle 2000ms | 0 | `EventCardReveal` | — | every look | — |
-| 15 | `dismiss.eventGift` | dismiss | log `page.eventGift.closing` → tap `back` → settle 2000ms | 0 | `EventGift` | — | every look | — |
-| 16 | `dismiss.tallyCountUp` | dismiss | `markTallySkipTap()` → log `page.scorePage.skipping` → tap (540, 1000) → settle 1500ms | 0 | `ScorePage` | — | every look | `record.tallyRow` |
-| 17 | `dismiss.notEnoughCoins` | dismiss | log `box.noCoins` → tap `back` → settle 2000ms | 0 | `NotEnoughCoins` | — | every look | — |
-| 18 | `dismiss.resumeGame` | dismiss | log `page.gamePause.resuming` → tap `next` → sleep 500ms | 0 | `GamePause` | — | every look | — |
-| 19 | `nav.wait.transient` | navigate | wait the page out | 100 | `TsumLevelUp` | _any_ | every look | — |
-| 20 | `nav.move.tallyToGame` | navigate | `markTallyPlayPressed()` → tap `next` → settle 3000ms | 60 | `ScorePage` | GamePlaying | every look | `record.tallyRow` |
-| 21 | `nav.move.friendToGame` | navigate | tap `next` → settle 3000ms | 60 | `FriendPage` | GamePlaying | every look | — |
-| 22 | `nav.move.startToGame` | navigate | settle 1500ms → `checkGameItem()` → `openRound()` → tap `Button.outStart` → `awaitRoundStart()` | 60 | `StartPage` | GamePlaying | every look | `observe.leftStartup` |
-| 23 | `nav.move.toTsums` | navigate | tap `tsums` → settle 3000ms | 60 | `ProfilePage`, `FriendPage`, `StartPage` | TsumsPage | every look | — |
-| 24 | `nav.move.toMail` | navigate | tap `mail` → settle 3000ms | 60 | `FriendPage` | MailBox | every look | — |
-| 25 | `nav.move.toHome` | navigate | tap `home` → settle 3000ms | 60 | `SquarePage`, `FriendPage` | ProfilePage | every look | — |
-| 26 | `nav.move.toStore` | navigate | tap `store` → settle 3000ms | 60 | `TsumsPage` | TsumTsumStorePage | every look | — |
-| 27 | `nav.move.closePage` | navigate | tap `back` → tap (310, 1448) → settle 1500ms | 40 | `ClosePage` | _any_ | every look | — |
-| 28 | `nav.move.unknown` | navigate | `exitUnknownPage()` | 30 | `unknown` | _any_ | every look | `record.corpusUnknown` |
-| 29 | `nav.move.exit` | navigate | tap `back` → settle 1500ms | 0 | `StartPage`, `GamePlaying`, `MagicalTime`, `HighScore`, `AccountLevelUp`, `EventMain`, `EventCardReveal`, `EventGift`, `TsumLevelUp`, `ScorePage`, `TsumSortOrder`, `RaiseLevelCap`, `LevelCapRaised`, `TsumTsumStorePage`, `ConfirmPurchasePage`, `BoxPurchasedPage`, `BoxPurchaseResult`, `BoxTenTimeRefused`, `TsumsPage`, `ProfilePage`, `SquarePage`, `MailBox`, `Received`, `ReceiveHeart`, `ReceiveSkillTicket`, `ReceivePremiumTicket`, `GiftHeart`, `HeartSent`, `FriendInfo`, `TodayMission`, `TodayMissions`, `TapOpenPage`, `TapOpenPageDeprecated`, `OutOfMedals`, `RubyResetDifficulty`, `ExtraUpdate`, `NetworkDisable`, `NetworkTimeout` | _any_ | every look | — |
-| 30 | `notify.trail` | notify | `gPages.trail()` | 0 | `GamePlaying`, `GamePause`, `ScorePage`, `HighScore`, `TsumLevelUp`, `AccountLevelUp`, `EventMain`, `EventCardReveal`, `EventGift`, `MagicalTime`, `StartPage`, `FriendPage`, `FriendInfo`, `ProfilePage`, `SquarePage`, `ClosePage`, `TapOpenPage`, `TapOpenPageDeprecated`, `TsumsPage`, `TsumSortOrder`, `RaiseLevelCap`, `LevelCapRaised`, `TsumTsumStorePage`, `ConfirmPurchasePage`, `BoxPurchasedPage`, `BoxPurchaseResult`, `NotEnoughCoins`, `BoxTenTimeRefused`, `OutOfMedals`, `RubyResetDifficulty`, `MailBox`, `Received`, `ReceiveHeart`, `ReceiveHeartWithoutCoins`, `ReceiveSkillTicket`, `ReceivePremiumTicket`, `GiftHeart`, `HeartSent`, `TodayMission`, `TodayMissions`, `RootDetection`, `NetworkDisable`, `NetworkTimeout`, `ExtraUpdate`, `unknown` | — | on arrival | — |
-| 31 | `notify.forecast` | notify | `forecastEmit()` | 0 | `GamePlaying`, `GamePause`, `ScorePage`, `HighScore`, `TsumLevelUp`, `AccountLevelUp`, `EventMain`, `EventCardReveal`, `EventGift`, `MagicalTime`, `StartPage`, `FriendPage`, `FriendInfo`, `ProfilePage`, `SquarePage`, `ClosePage`, `TapOpenPage`, `TapOpenPageDeprecated`, `TsumsPage`, `TsumSortOrder`, `RaiseLevelCap`, `LevelCapRaised`, `TsumTsumStorePage`, `ConfirmPurchasePage`, `BoxPurchasedPage`, `BoxPurchaseResult`, `NotEnoughCoins`, `BoxTenTimeRefused`, `OutOfMedals`, `RubyResetDifficulty`, `MailBox`, `Received`, `ReceiveHeart`, `ReceiveHeartWithoutCoins`, `ReceiveSkillTicket`, `ReceivePremiumTicket`, `GiftHeart`, `HeartSent`, `TodayMission`, `TodayMissions`, `RootDetection`, `NetworkDisable`, `NetworkTimeout`, `ExtraUpdate`, `unknown` | — | every look | — |
+| 13 | `dismiss.rankUp` | dismiss | log `page.rankUp.closing` → tap `back` → settle 2000ms | 0 | `RankUp` | — | every look | — |
+| 14 | `dismiss.eventMain` | dismiss | log `page.eventMain.closing` → tap `back` → settle 2000ms | 0 | `EventMain` | — | every look | — |
+| 15 | `dismiss.eventCardReveal` | dismiss | log `page.eventCardReveal.closing` → tap `back` → settle 2000ms | 0 | `EventCardReveal` | — | every look | — |
+| 16 | `dismiss.eventGift` | dismiss | log `page.eventGift.closing` → tap `back` → settle 2000ms | 0 | `EventGift` | — | every look | — |
+| 17 | `dismiss.tallyCountUp` | dismiss | `markTallySkipTap()` → log `page.scorePage.skipping` → tap (540, 1000) → settle 1500ms | 0 | `ScorePage` | — | every look | `record.tallyRow` |
+| 18 | `dismiss.notEnoughCoins` | dismiss | log `box.noCoins` → tap `back` → settle 2000ms | 0 | `NotEnoughCoins` | — | every look | — |
+| 19 | `dismiss.resumeGame` | dismiss | log `page.gamePause.resuming` → tap `next` → sleep 500ms | 0 | `GamePause` | — | every look | — |
+| 20 | `nav.wait.transient` | navigate | wait the page out | 100 | `TsumLevelUp` | _any_ | every look | — |
+| 21 | `nav.move.tallyToGame` | navigate | `markTallyPlayPressed()` → tap `next` → settle 3000ms | 60 | `ScorePage` | GamePlaying | every look | `record.tallyRow` |
+| 22 | `nav.move.friendToGame` | navigate | tap `next` → settle 3000ms | 60 | `FriendPage` | GamePlaying | every look | — |
+| 23 | `nav.move.startToGame` | navigate | settle 1500ms → `checkGameItem()` → `openRound()` → tap `Button.outStart` → `awaitRoundStart()` | 60 | `StartPage` | GamePlaying | every look | `observe.leftStartup` |
+| 24 | `nav.move.toTsums` | navigate | tap `tsums` → settle 3000ms | 60 | `ProfilePage`, `FriendPage`, `StartPage` | TsumsPage | every look | — |
+| 25 | `nav.move.toMail` | navigate | tap `mail` → settle 3000ms | 60 | `FriendPage` | MailBox | every look | — |
+| 26 | `nav.move.toHome` | navigate | tap `home` → settle 3000ms | 60 | `SquarePage`, `FriendPage` | ProfilePage | every look | — |
+| 27 | `nav.move.toStore` | navigate | tap `store` → settle 3000ms | 60 | `TsumsPage` | TsumTsumStorePage | every look | — |
+| 28 | `nav.move.closePage` | navigate | tap `back` → tap (310, 1448) → settle 1500ms | 40 | `ClosePage` | _any_ | every look | — |
+| 29 | `nav.move.unknown` | navigate | `exitUnknownPage()` | 30 | `unknown` | _any_ | every look | `record.corpusUnknown` |
+| 30 | `nav.move.exit` | navigate | tap `back` → settle 1500ms | 0 | `StartPage`, `GamePlaying`, `MagicalTime`, `HighScore`, `AccountLevelUp`, `RankUp`, `EventMain`, `EventCardReveal`, `EventGift`, `TsumLevelUp`, `ScorePage`, `TsumSortOrder`, `RaiseLevelCap`, `LevelCapRaised`, `TsumTsumStorePage`, `ConfirmPurchasePage`, `BoxPurchasedPage`, `BoxPurchaseResult`, `BoxTenTimeRefused`, `TsumsPage`, `ProfilePage`, `SquarePage`, `MailBox`, `Received`, `ReceiveHeart`, `ReceiveSkillTicket`, `ReceivePremiumTicket`, `GiftHeart`, `HeartSent`, `FriendInfo`, `TodayMission`, `TodayMissions`, `TapOpenPage`, `TapOpenPageDeprecated`, `OutOfMedals`, `RubyResetDifficulty`, `ExtraUpdate`, `NetworkDisable`, `NetworkTimeout` | _any_ | every look | — |
+| 31 | `notify.trail` | notify | `gPages.trail()` | 0 | `GamePlaying`, `GamePause`, `ScorePage`, `HighScore`, `TsumLevelUp`, `AccountLevelUp`, `RankUp`, `EventMain`, `EventCardReveal`, `EventGift`, `MagicalTime`, `StartPage`, `FriendPage`, `FriendInfo`, `ProfilePage`, `SquarePage`, `ClosePage`, `TapOpenPage`, `TapOpenPageDeprecated`, `TsumsPage`, `TsumSortOrder`, `RaiseLevelCap`, `LevelCapRaised`, `TsumTsumStorePage`, `ConfirmPurchasePage`, `BoxPurchasedPage`, `BoxPurchaseResult`, `NotEnoughCoins`, `BoxTenTimeRefused`, `OutOfMedals`, `RubyResetDifficulty`, `MailBox`, `Received`, `ReceiveHeart`, `ReceiveHeartWithoutCoins`, `ReceiveSkillTicket`, `ReceivePremiumTicket`, `GiftHeart`, `HeartSent`, `TodayMission`, `TodayMissions`, `RootDetection`, `NetworkDisable`, `NetworkTimeout`, `ExtraUpdate`, `unknown` | — | on arrival | — |
+| 32 | `notify.forecast` | notify | `forecastEmit()` | 0 | `GamePlaying`, `GamePause`, `ScorePage`, `HighScore`, `TsumLevelUp`, `AccountLevelUp`, `RankUp`, `EventMain`, `EventCardReveal`, `EventGift`, `MagicalTime`, `StartPage`, `FriendPage`, `FriendInfo`, `ProfilePage`, `SquarePage`, `ClosePage`, `TapOpenPage`, `TapOpenPageDeprecated`, `TsumsPage`, `TsumSortOrder`, `RaiseLevelCap`, `LevelCapRaised`, `TsumTsumStorePage`, `ConfirmPurchasePage`, `BoxPurchasedPage`, `BoxPurchaseResult`, `NotEnoughCoins`, `BoxTenTimeRefused`, `OutOfMedals`, `RubyResetDifficulty`, `MailBox`, `Received`, `ReceiveHeart`, `ReceiveHeartWithoutCoins`, `ReceiveSkillTicket`, `ReceivePremiumTicket`, `GiftHeart`, `HeartSent`, `TodayMission`, `TodayMissions`, `RootDetection`, `NetworkDisable`, `NetworkTimeout`, `ExtraUpdate`, `unknown` | — | every look | — |
 
 ### What each one is for
 
@@ -114,6 +115,7 @@ going to.
 - **`dismiss.magicalTime`** — Cancel the offer to play on. OK spends a time ticket and, once those run out, rubies -- and the offer also stands between the round and the score page, so leaving it up costs the round's statistics as well.
 - **`dismiss.highScore`** — Close the new-record panel. Like the Magical Time offer it stands between the round and the score page, and it waits for input -- so left alone it holds the tally behind it until whatever is waiting for that gives up.
 - **`dismiss.accountLevelUp`** — Close the rank-up panel. The player levelling up drops this over the score tally a moment after the tally appears, and like the new-record panel it waits for input -- so the round's score and coins stay behind it until something presses Close.
+- **`dismiss.rankUp`** — Close the ranking panel. It stands on the score tally until Close is pressed, and the score wait takes no navigation taps -- so without this it sat there until the wait gave up and the round's score and coins went unread.
 - **`dismiss.eventMain`** — Press Close on the event's own page. Tapping the event's result overlay away (waitForScorePage does that blind: the overlay is event art) lands here, one screen further from the score tally the round is waiting to read, and Close is what puts the tally back in front.
 - **`dismiss.eventCardReveal`** — Tap the event's card reveal on. It is put up at the event's milestones on the way back to the tally and waits for input; the gift dialog it leads to has a handler of its own.
 - **`dismiss.eventGift`** — Press Close on the GET! gift dialog. The game's generic reward dialog, so it is closed wherever it shows, event or not -- the gift itself waits in the mailbox for the mail sweep.
@@ -166,6 +168,7 @@ roles put it in and in no other.
 | `HighScore` | permanent | `preTally` | — | — | — | New-record panel with a close button. |
 | `TsumLevelUp` | transient | `preTally` | 2900 ms | 1450 ms | **estimate** | The post-round panel listing what each tsum in the party earned -- the one with Close and Share. Not the banner that flashes over the board mid-round, which is an animation rather than a page and has no fingerprint, and not `AccountLevelUp`, which is the player ranking up. |
 | `AccountLevelUp` | permanent | `preTally` | — | — | — | The player's own rank going up. It arrives a moment after the score tally and sits on top of it until Close is pressed, so unlike `TsumLevelUp` there is no window to wait out. |
+| `RankUp` | permanent | `preTally` | — | — | — | The ranking panel after a round that passes a friend. Like `AccountLevelUp` it sits on the tally until Close is pressed. |
 | `MagicalTime` | permanent | `preTally` `interrupt` | — | — | — | The offer to play on for a time ticket, and the one page here that plainly runs a countdown: left alone it cancels itself. The script cancels it anyway (accepting spends tickets and then rubies), so the window is only used to keep the navigation band from tapping into the screen behind it. Ten seconds is the observed order of magnitude, not a timed figure -- see DEVELOPMENT.md on how to measure it. |
 | `EventMain` | permanent | `preTally` | — | — | — | The event's own page, reached by tapping the result overlay away. Close is what puts the score tally back in front. |
 | `EventCardReveal` | permanent | `preTally` | — | — | — | The event's card reveal, "Tap to Next" -- put up at its milestones on the way to the tally. Waits for input; any tap moves it on. |
@@ -227,7 +230,7 @@ harvested off a device and accumulated in `docs/transitions.json`. Two
 sources feed it: a recorded walkthrough, which carries the taps, and the
 page-change frames `PageRouter.saveHistoryShot` leaves behind, which do not.
 
-`4` distinct transition(s) over `4` of `44` pages, from `1` harvest(s), last 2026-08-25.
+`4` distinct transition(s) over `4` of `45` pages, from `1` harvest(s), last 2026-08-25.
 
 ```mermaid
 flowchart LR
@@ -267,7 +270,7 @@ own context passes in.
 ### Not yet observed
 
 Pages the table can recognise that no harvest has caught at either end of a
-transition. Absence of evidence: `GamePause`, `ScorePage`, `HighScore`, `AccountLevelUp`, `MagicalTime`, `EventMain`, `EventCardReveal`, `EventGift`, `FriendPage`, `FriendInfo`, `ProfilePage`, `SquarePage`, `ClosePage`, `TapOpenPage`, `TapOpenPageDeprecated`, `TsumsPage`, `TsumSortOrder`, `RaiseLevelCap`, `LevelCapRaised`, `TsumTsumStorePage`, `ConfirmPurchasePage`, `BoxPurchasedPage`, `BoxPurchaseResult`, `NotEnoughCoins`, `BoxTenTimeRefused`, `OutOfMedals`, `RubyResetDifficulty`, `MailBox`, `Received`, `ReceiveHeart`, `ReceiveHeartWithoutCoins`, `ReceiveSkillTicket`, `ReceivePremiumTicket`, `GiftHeart`, `HeartSent`, `TodayMission`, `TodayMissions`, `RootDetection`, `NetworkDisable`, `NetworkTimeout`, `ExtraUpdate`.
+transition. Absence of evidence: `GamePause`, `ScorePage`, `HighScore`, `AccountLevelUp`, `RankUp`, `MagicalTime`, `EventMain`, `EventCardReveal`, `EventGift`, `FriendPage`, `FriendInfo`, `ProfilePage`, `SquarePage`, `ClosePage`, `TapOpenPage`, `TapOpenPageDeprecated`, `TsumsPage`, `TsumSortOrder`, `RaiseLevelCap`, `LevelCapRaised`, `TsumTsumStorePage`, `ConfirmPurchasePage`, `BoxPurchasedPage`, `BoxPurchaseResult`, `NotEnoughCoins`, `BoxTenTimeRefused`, `OutOfMedals`, `RubyResetDifficulty`, `MailBox`, `Received`, `ReceiveHeart`, `ReceiveHeartWithoutCoins`, `ReceiveSkillTicket`, `ReceivePremiumTicket`, `GiftHeart`, `HeartSent`, `TodayMission`, `TodayMissions`, `RootDetection`, `NetworkDisable`, `NetworkTimeout`, `ExtraUpdate`.
 
 ## The queue, page by page
 
@@ -345,6 +348,18 @@ On a repeat look at the same page, 6 of these 7 run: the rest fire only when the
 |---|---|---|---|
 | 1 | `record.feverTime` | record | every look |
 | 2 | `dismiss.accountLevelUp` | dismiss | every look |
+| 3 | `nav.move.exit` | navigate | every look, any goal |
+| 4 | `notify.trail` | notify | on arrival |
+| 5 | `notify.forecast` | notify | every look |
+
+On a repeat look at the same page, 4 of these 5 run: the rest fire only when the page changes.
+
+#### `RankUp` <sub>permanent</sub>
+
+| # | subscription | band | when |
+|---|---|---|---|
+| 1 | `record.feverTime` | record | every look |
+| 2 | `dismiss.rankUp` | dismiss | every look |
 | 3 | `nav.move.exit` | navigate | every look, any goal |
 | 4 | `notify.trail` | notify | on arrival |
 | 5 | `notify.forecast` | notify | every look |

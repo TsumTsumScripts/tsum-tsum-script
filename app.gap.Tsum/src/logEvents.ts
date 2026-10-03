@@ -81,6 +81,7 @@ namespace Log {
     HistoryFrameFailed    = 'page.historyFrameFailed',
     Matched               = 'page.matched',
     Probed                = 'page.probed',
+    RankUpClosing         = 'page.rankUp.closing',
     Rejected              = 'page.rejected',
     SubscriptionCycle     = 'page.subscriptionCycle',
     SubscriptionThrew     = 'page.subscriptionThrew',
