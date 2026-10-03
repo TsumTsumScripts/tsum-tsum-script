@@ -60,6 +60,8 @@ class Tsum {
    * be wiped between the reading and the row it belongs on.
    */
   myTsum: string;
+  /** `myTsum`'s full name as the game build prints it ('' with it). */
+  myTsumName: string;
   myTsumColor: Color | null;
   myTsumIdx: number;
   boardClusters: Color[];
@@ -318,6 +320,7 @@ class Tsum {
     this.isStartupPhase = true;
     this.runTimes = 0;
     this.myTsum = '';
+    this.myTsumName = '';
     this.myTsumColor = null;
     this.myTsumIdx = -1;
     this.boardClusters = [];

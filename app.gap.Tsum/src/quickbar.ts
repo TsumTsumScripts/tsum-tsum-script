@@ -163,9 +163,10 @@ function quickBarState(): string {
     // copy of it there would be a list to keep in step.
     state.inRound = quickBarInRound(ts);
     state.nextRound = quickBarHeldKeys().join(' ');
-    // The tsum being played, as the pre-round screen identified it ('' until
-    // then, or when the match was unsure). The companion app shows it.
-    state.myTsum = ts.myTsum;
+    // The tsum being played, by its full name, as the pre-round screen
+    // identified it ('' until then, or when the match was unsure). The
+    // companion app shows it.
+    state.myTsum = ts.myTsumName;
 
     const coins = ts.runCoins;
     state.rounds = coins.rounds;

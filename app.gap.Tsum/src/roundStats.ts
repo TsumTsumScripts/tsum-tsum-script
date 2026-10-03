@@ -1664,6 +1664,7 @@ Tsum.prototype.identifyMyTsum = function() {
   // thresholds: an empty cell is honest, a coin flip between two lookalikes is
   // not. selectedTsum() has already said why on the null path.
   this.myTsum = selected !== null && selected.confident ? selected.short : '';
+  this.myTsumName = this.myTsum !== '' && selected !== null ? selected.full : '';
   if (selected === null) {
     return;
   }
