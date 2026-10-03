@@ -1259,8 +1259,40 @@ function pullLiveSettings(force?: boolean): void {
     if (document.hidden && force !== true) {
         return;
     }
+    // First, so a phone change saved for the next start is in the store before
+    // `takeStoredSettings` reads it.
+    iface.runScriptCallback(
+        'typeof remoteSettingsTake === "function" ? remoteSettingsTake() : ""', 'onRemoteSettings');
     iface.runScriptCallback(
         'typeof quickBarState === "function" ? quickBarState() : ""', 'onLiveSettings');
+}
+
+/**
+ * Settings changed from GAP Companion since the last pull (`remoteSettingsTake`,
+ * src/index.ts). Taken even with a save pending: the engine has already let go
+ * of them, so this is their only copy.
+ */
+// noinspection JSUnusedGlobalSymbols
+function onRemoteSettings(json: string): void {
+    var values: { [key: string]: SettingValue } | null;
+    try {
+        values = JSON.parse(json);
+    } catch (e) {
+        return;
+    }
+    if (values === null || typeof values !== 'object') {
+        return;
+    }
+    var moved = takeSettingValues(values);
+    if (moved.length > 0) {
+        logInfo(Log.Settings.RemoteRead, 'Took settings changed from GAP Companion onto the form',
+            {settings: moved.join(' ')});
+        // The strip draws from the store while no run is going.
+        var iface = bridge();
+        if (iface !== undefined && iface.broadcast !== undefined) {
+            iface.broadcast(PageMessage.Presets);
+        }
+    }
 }
 
 /**

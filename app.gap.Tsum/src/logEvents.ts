@@ -22,6 +22,8 @@ namespace Log {
     BundleIncomplete = 'run.bundleIncomplete',
     /** `saveLastRunSettings` could not write its file; the run goes on. */
     LastSettingsNotSaved = 'run.lastSettingsNotSaved',
+    /** `rememberRemoteSetting` could not write a GAP Companion change. */
+    RemoteSettingNotSaved = 'run.remoteSettingNotSaved',
     Start            = 'run.start',
     StartBusy        = 'run.startBusy',
     Stop             = 'run.stop',
@@ -498,6 +500,8 @@ namespace Log {
     ShareSlotsOverflow         = 'settings.shareSlotsOverflow',
     StartCommand               = 'settings.startCommand',
     StoreRead                  = 'settings.storeRead',
+    /** Took settings changed from GAP Companion (`remoteSettingsTake`). */
+    RemoteRead                 = 'settings.remoteRead',
     Unserializable             = 'settings.unserializable',
   }
 

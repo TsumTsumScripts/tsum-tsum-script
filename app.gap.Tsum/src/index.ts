@@ -180,6 +180,205 @@ function lastRunSettings(): Partial<Settings> | null {
   }
 }
 
+// --- Settings changed from GAP Companion -------------------------------------
+//
+// The phone can change any setting the settings page has. One that a run can
+// take (`LiveSettings`, src/quickbar.ts) goes onto the world like a Quick Bar
+// change. Every change is also kept for the next start in two files:
+//   last-settings-<device id>.json    patched, so a remote start replays it
+//   remote-settings-<device id>.json  pending, until the settings page takes
+//                                     it (`remoteSettingsTake`) into its store,
+//                                     so a Play from the page does not undo it
+
+/** How a setting's value is checked; enum values go through `quickBarEnumValid`. */
+const enum RemoteKind {
+  Bool = 'bool',
+  Int = 'int',
+  Enum = 'enum',
+}
+
+/**
+ * Every setting the phone may change. Left out: `locale` (the page's language)
+ * and the one-shot keys (`LastSettingsOneShot`).
+ */
+const RemoteSettingKinds: { [key: string]: RemoteKind } = {
+  [SettingKey.DebugLogs]: RemoteKind.Bool,
+  [SettingKey.DebugGame]: RemoteKind.Bool,
+  [SettingKey.CollectUnknownScreens]: RemoteKind.Bool,
+  [SettingKey.Walkthrough]: RemoteKind.Bool,
+  [SettingKey.SpecialScreenRatio]: RemoteKind.Bool,
+  [SettingKey.DeviceFps]: RemoteKind.Int,
+  [SettingKey.PageHistoryDepth]: RemoteKind.Int,
+  [SettingKey.AutoLaunchApp]: RemoteKind.Bool,
+  [SettingKey.AutoPlayGame]: RemoteKind.Bool,
+  [SettingKey.TrackRoundStats]: RemoteKind.Bool,
+  [SettingKey.ClickAssist]: RemoteKind.Bool,
+  [SettingKey.RoundDelayMinutes]: RemoteKind.Int,
+  [SettingKey.MaxRoundMinutes]: RemoteKind.Int,
+  [SettingKey.MaxRoundAction]: RemoteKind.Enum,
+  [SettingKey.StopAfterGames]: RemoteKind.Int,
+  [SettingKey.StopAfterAction]: RemoteKind.Enum,
+  [SettingKey.BubbleStrategy]: RemoteKind.Enum,
+  [SettingKey.HoldBubblesLastFeverSec]: RemoteKind.Int,
+  [SettingKey.UseFan]: RemoteKind.Bool,
+  [SettingKey.MaxChainsPerScan]: RemoteKind.Int,
+  [SettingKey.MaxChain]: RemoteKind.Int,
+  [SettingKey.LinkReachPercent]: RemoteKind.Int,
+  [SettingKey.PrioritizeMyTsum]: RemoteKind.Bool,
+  [SettingKey.BonusScore]: RemoteKind.Bool,
+  [SettingKey.BonusCoin]: RemoteKind.Bool,
+  [SettingKey.BonusExp]: RemoteKind.Bool,
+  [SettingKey.BonusTime]: RemoteKind.Bool,
+  [SettingKey.BonusBubble]: RemoteKind.Bool,
+  [SettingKey.Bonus5to4]: RemoteKind.Bool,
+  [SettingKey.BonusCombo]: RemoteKind.Bool,
+  [SettingKey.SkillWaitingTime]: RemoteKind.Int,
+  [SettingKey.SkillSettleMs]: RemoteKind.Int,
+  [SettingKey.SkillReactivationTenths]: RemoteKind.Int,
+  [SettingKey.SkillLevel]: RemoteKind.Int,
+  [SettingKey.SkillType]: RemoteKind.Enum,
+  [SettingKey.SkillAutoTap]: RemoteKind.Bool,
+  [SettingKey.LorcanaCard]: RemoteKind.Bool,
+  [SettingKey.NoSkillLastFeverSec]: RemoteKind.Int,
+  [SettingKey.UnlockLevelHoursWait]: RemoteKind.Int,
+  [SettingKey.AutoUnlockMyTsumLevel]: RemoteKind.Bool,
+  [SettingKey.BuyBoxHoursWait]: RemoteKind.Int,
+  [SettingKey.BuyBoxType]: RemoteKind.Enum,
+  [SettingKey.BuyBoxSize]: RemoteKind.Enum,
+  [SettingKey.BuyBoxMaxPurchases]: RemoteKind.Int,
+  [SettingKey.ReceiveAllHearts]: RemoteKind.Bool,
+  [SettingKey.ReceiveAllHeartsMinWait]: RemoteKind.Int,
+  [SettingKey.ReceiveHeartsOneByOne]: RemoteKind.Bool,
+  [SettingKey.ReceiveHeartsSkipFirst]: RemoteKind.Bool,
+  [SettingKey.ReceiveHeartsSkipRuby]: RemoteKind.Bool,
+  [SettingKey.ReceiveHeartsSkipMedals]: RemoteKind.Bool,
+  [SettingKey.ClaimAllWithoutCoins]: RemoteKind.Bool,
+  [SettingKey.MailOpenMax]: RemoteKind.Int,
+  [SettingKey.MailMinWait]: RemoteKind.Int,
+  [SettingKey.SendHeartsAuto]: RemoteKind.Bool,
+  [SettingKey.SendHeartsToZeroScore]: RemoteKind.Bool,
+  [SettingKey.SendHeartsMaxRuntime]: RemoteKind.Int,
+  [SettingKey.SendHeartsMinWait]: RemoteKind.Int,
+  [SettingKey.TsumAppRestartFrequency]: RemoteKind.Int,
+} satisfies Record<Exclude<SettingKey, SettingKey.Locale | SettingKey.UnlockLevelsFirst
+  | SettingKey.BuyBoxesFirst | SettingKey.TsumListOnly>, RemoteKind>;
+
+/** `<script folder>/remote-settings-<device id>.json`, or '' without the natives. */
+function remoteSettingsPath(): string {
+  const last = lastSettingsPath();
+  return last === '' ? '' : last.replace(/last-settings-([^/]*)$/, 'remote-settings-$1');
+}
+
+/** A JSON object file as an object; {} when missing or unreadable. */
+function readJsonObject(path: string): { [key: string]: unknown } {
+  try {
+    const text = path === '' ? '' : readFile(path);
+    const parsed = text === '' ? null : JSON.parse(text);
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+/** Writes one remote change into both files (see above). Never throws. */
+function rememberRemoteSetting(key: string, value: string | number | boolean): void {
+  try {
+    const pendingPath = remoteSettingsPath();
+    if (pendingPath === '') {
+      return;
+    }
+    const pending = readJsonObject(pendingPath);
+    pending[key] = value;
+    writeFile(pendingPath, JSON.stringify(pending));
+    // Only patched when there is one: a partial file would start a run on
+    // half a configuration.
+    const last = lastRunSettings() as { [key: string]: unknown } | null;
+    if (last !== null) {
+      last[key] = value;
+      writeFile(lastSettingsPath(), JSON.stringify(last));
+    }
+  } catch (e) {
+    logWarn(Log.Run.RemoteSettingNotSaved, 'Could not save a setting changed from GAP Companion',
+      { setting: key, errorText: '' + e });
+  }
+}
+
+/**
+ * Every remote setting's current value, as JSON `{active, values}`: the running
+ * world's when there is a run, else the last run's, with pending remote changes
+ * on top. A global for GAP Companion's adapter.
+ */
+// noinspection JSUnusedGlobalSymbols
+function remoteSettingsState(): string {
+  const running = quickBarRunning();
+  const values: { [key: string]: unknown } = {};
+  const layers: { [key: string]: unknown }[] = [
+    (running ? ts!.settings : lastRunSettings() || {}) as unknown as { [key: string]: unknown },
+    readJsonObject(remoteSettingsPath()),
+  ];
+  // Last, because a live key's value on the world (Quick Bar included) is newest.
+  if (running) {
+    layers.push(JSON.parse(quickBarState()));
+  }
+  for (const layer of layers) {
+    for (const key in layer) {
+      if (RemoteSettingKinds.hasOwnProperty(key)) {
+        values[key] = layer[key];
+      }
+    }
+  }
+  return JSON.stringify({ active: running, values: values });
+}
+
+/**
+ * Changes one setting for GAP Companion. Answers JSON `{ok, value, applies}`
+ * (`now`, `nextRound` or `nextStart`) or `{ok: false, why}`.
+ */
+// noinspection JSUnusedGlobalSymbols
+function remoteSettingsApply(key: string, value: string | number | boolean): string {
+  const kind = RemoteSettingKinds.hasOwnProperty(key) ? RemoteSettingKinds[key] : undefined;
+  if (kind === undefined) {
+    return JSON.stringify({ ok: false, why: 'unknown setting' });
+  }
+  const typed = kind === RemoteKind.Bool ? typeof value === 'boolean'
+    : kind === RemoteKind.Int ? typeof value === 'number' && Math.floor(value) === value
+      : typeof value === 'string';
+  if (!typed || !quickBarEnumValid(key as SettingKey, value)) {
+    return JSON.stringify({ ok: false, why: 'invalid value' });
+  }
+  let taken = value;
+  let applies = 'nextStart';
+  const when = LiveSettings[key];
+  if (quickBarRunning() && when !== undefined && when !== LiveWhen.Restart) {
+    const res = JSON.parse(quickBarApply(key as SettingKey, value));
+    if (res.ok !== true) {
+      return JSON.stringify(res);
+    }
+    taken = res.value;
+    applies = quickBarHoldsBack(key as SettingKey) ? 'nextRound' : 'now';
+  }
+  rememberRemoteSetting(key, taken);
+  return JSON.stringify({ ok: true, value: taken, applies: applies });
+}
+
+/**
+ * The pending remote changes, as a JSON object, and clears them. Called by the
+ * settings page, which takes them into its store.
+ */
+// noinspection JSUnusedGlobalSymbols
+function remoteSettingsTake(): string {
+  const path = remoteSettingsPath();
+  const pending = readJsonObject(path);
+  if (path !== '' && Object.keys(pending).length > 0) {
+    try {
+      writeFile(path, '{}');
+    } catch (e) {
+      // Taken again next time, which is harmless.
+    }
+  }
+  return JSON.stringify(pending);
+}
+
 /**
  * Builds the world one run plays in: the `Tsum`, the tuning `start()` maps onto
  * it, the router binding and the task set. Everything here is undone by
