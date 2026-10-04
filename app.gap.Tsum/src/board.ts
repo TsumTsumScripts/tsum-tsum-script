@@ -602,7 +602,7 @@ Tsum.prototype.scanBoardQuick = function() {
     const animating = this.bubbleHoldUntil - GameBubbleConfig.holdAfterSkillMs
       + LargeTsum.skillQuietMs > Date.now();
     let large: LargeCircle[] = [];
-    if (animating || !skillLooksForLargeTsums(this)) {
+    if (animating) {
       gLargePrev = [];
     } else {
       // A large tsum barely moves, so a hit counts only if the scan before it
