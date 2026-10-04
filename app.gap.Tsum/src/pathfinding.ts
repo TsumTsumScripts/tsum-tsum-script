@@ -640,6 +640,8 @@ var LargeTsum = {
   skillQuietMs: 1500,
   // A hit repeats the last scan's within this many px (`scanBoardQuick`).
   sameSpot: 8,
+  // Scans in a row a hit has to repeat before it is used.
+  confirmScans: 3,
 };
 
 // Ring offsets from a centre, in grid steps of `LargeTsum.step` (4px), so

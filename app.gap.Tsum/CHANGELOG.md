@@ -63,7 +63,7 @@ release note; they fold back in here when she ships.
   and drops the stray circle inside it. `findTsums` samples it with the rest
   and `buildTsumNeighbors` reaches `LargeTsum.grow` farther for it, as the game
   does. Bubbles on a large tsum are not popped. A large *dark* tsum goes unseen.
-  A hit must repeat on the next scan, and none is taken for 1.5s after a skill
+  A hit must repeat at the same spot for 3 scans running, and none is taken for 1.5s after a skill
   (`LargeTsum.skillQuietMs`), whose animation dims the board. Nothing here is
   per skill: a large tsum can turn up under any of them.
   `board.largeTsums` logs what was found. Checked on one recording only.

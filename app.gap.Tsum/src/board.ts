@@ -605,11 +605,22 @@ Tsum.prototype.scanBoardQuick = function() {
     if (animating) {
       gLargePrev = [];
     } else {
-      // A large tsum barely moves, so a hit counts only if the scan before it
-      // had one there too; a flat patch of board is gone by the next scan.
+      // A large tsum barely moves, so a hit counts once it has been found at
+      // the same spot for `LargeTsum.confirmScans` scans running; the flat
+      // patches a refill leaves are gone within two.
       const found = findLargeTsums(srcImg, circles);
-      large = found.filter(function(f) { return pointInLarge(f, gLargePrev, LargeTsum.sameSpot / LargeTsum.radius); });
+      for (let i = 0; i < found.length; i++) {
+        found[i].seen = 1;
+        for (let j = 0; j < gLargePrev.length; j++) {
+          const dx = found[i].x - gLargePrev[j].x, dy = found[i].y - gLargePrev[j].y;
+          if (dx * dx + dy * dy <= LargeTsum.sameSpot * LargeTsum.sameSpot) {
+            found[i].seen = (gLargePrev[j].seen || 1) + 1;
+            break;
+          }
+        }
+      }
       gLargePrev = found;
+      large = found.filter(function(f) { return (f.seen || 0) >= LargeTsum.confirmScans; });
     }
     // A bubble-pass circle on a large tsum is the tsum, not a bubble.
     this.gameBubbles = findGameBubbles(grayImg, srcImg, circles).filter(function(b) {

@@ -705,6 +705,8 @@ interface TsumPoint extends TsumTexture {
 /** A large tsum `findLargeTsums` found: its circle and `BoardPoint.grow`. */
 interface LargeCircle extends HoughCircle {
   grow: number;
+  /** Scans in a row it has been found at this spot (`scanBoardQuick`). */
+  seen?: number;
 }
 
 /** One colour cluster from `classifyTsums`: a running mean plus its members. */
