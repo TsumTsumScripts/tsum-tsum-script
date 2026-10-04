@@ -1962,6 +1962,17 @@ declare function pauseScript(): void;
  */
 declare function emitEvent(name: string, data?: unknown): void;
 
+/**
+ * Live debug data for a dev tool on the host's trace stream (host 3.1+). A
+ * string is taken as JSON already built and passed on unparsed; anything else
+ * is JSON-encoded. Dropped when nobody is attached. Reach for it through
+ * `traceSend` (src/trace.ts), which guards for an older host.
+ */
+declare function emitTrace(kind: string, data?: unknown): void;
+
+/** Whether a trace consumer is connected (host 3.1+). A host call: cache it. */
+declare function traceAttached(): boolean;
+
 // The settings WebView reaches `start` and `stop` by name
 // through `JavaScriptInterface.runScript(<source string>)`. They are declared
 // -- not just implemented -- as plain global functions in index.ts, which is

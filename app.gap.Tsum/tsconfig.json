@@ -63,6 +63,9 @@
     "src/logsEn.ts",
     "src/logsZhTw.ts",
     "src/logsJa.ts",
+    // The trace stream's vocabulary and gate. Read by the logger below, but only
+    // from inside functions, so its slot is for reading order.
+    "src/trace.ts",
     // The structured logger. Reads `Config.debugLogs` and the message
     // catalogue above, and every other file logs through it -- but only
     // from inside a function, so its slot here is for reading order.

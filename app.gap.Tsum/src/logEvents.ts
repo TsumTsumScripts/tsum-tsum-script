@@ -460,6 +460,8 @@ namespace Log {
   /** The logger itself. */
   export const enum Log {
     Unserializable = 'log.unserializable',
+    /** A `traceSend` builder threw; the trace was skipped. */
+    TraceFailed = 'log.traceFailed',
   }
 
   /**

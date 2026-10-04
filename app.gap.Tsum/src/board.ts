@@ -294,6 +294,16 @@ Tsum.prototype.popBubbleOverflow = function() {
 
 Tsum.prototype.link = function(paths, board) {
   let isBubble = false;
+  traceSend(Trace.Kind.BoardPaths, function() {
+    const half = Config.tsumWidth / 2;
+    return {
+      // One array of [centre x, centre y] per chain, in drawing order.
+      paths: paths.map(function(path) {
+        return path.map(function(p) { return [Math.round(p.x + half), Math.round(p.y + half)]; });
+      }),
+      clusters: paths.map(function(path) { return path.length > 0 ? +path[0].tsumIdx : -1; }),
+    };
+  });
   // Overloading (burst skills): erased MyTsums keep counting into the gauge
   // for a moment after the drag, and firing the skill right as the gauge tops
   // off lets the rest of that count spill into the next gauge instead of
@@ -717,6 +727,24 @@ Tsum.prototype.scanBoardQuick = function() {
   }
   logDebug(Log.Board.Recognized, { tsums: board.length });
   logDebug(Log.Board.RecognitionTime, { durationMs: Date.now() - startTime });
+  // Compact arrays: a scan is ~50 tsums, several times a second.
+  traceSend(Trace.Kind.BoardScan, () => {
+    const half = Config.tsumWidth / 2;
+    return {
+      width: this.playResizeWidth,
+      height: this.playResizeHeight,
+      tsumWidth: Config.tsumWidth,
+      // [cluster, centre x, centre y]
+      tsums: board.map(function(t) { return [+t.tsumIdx, Math.round(t.x + half), Math.round(t.y + half)]; }),
+      // [h, s, v] per cluster index, and how many tsums each holds.
+      clusters: this.boardClusters.map(function(c) { return [Math.round(c.b), Math.round(c.g), Math.round(c.r)]; }),
+      sizes: this.boardClusterSizes,
+      myTsumIdx: this.myTsumIdx,
+      // [x, y, radius, tsums its pop would take]
+      bubbles: this.gameBubbles.map(function(b) { return [Math.round(b.x), Math.round(b.y), Math.round(b.r), b.near || 0]; }),
+      durationMs: Date.now() - startTime,
+    };
+  });
 
   return board;
 }
