@@ -270,9 +270,10 @@ While one is connected:
   was read from (`frame`). Nothing here asks for them except the board scan, which
   forces its own frame past the host's rate limit.
 
-`npm run trace:view` in the development toolkit draws all of it: the board scan
-over its frame, and the screen with its taps and marks. Frames are ~250 KB/s, so
-`--out` leaves them out unless told otherwise.
+The GAP Devkit's **Live debug** tab (host repo, `tools/gap-devkit`) draws all of
+it: the board scan over its frame with a slider back through earlier scans, and
+the screen with its taps and marks. Frames are ~250 KB/s, so its recordings leave
+them out unless asked.
 
 ```
 adb forward tcp:21026 tcp:21026
