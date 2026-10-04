@@ -595,7 +595,11 @@ Tsum.prototype.scanBoardQuick = function() {
     // which would stall the link cadence and the combo timer with it. Bubbles
     // are big and drift slowly, so a position a second old still lands. Each
     // carries how many of this scan's tsums its pop would take (`near`).
-    const large = findLargeTsums(srcImg, circles);
+    // Not while a skill's animation is on: it dims the board and, for Sulley,
+    // draws a giant one, and both read as large tsums.
+    const animating = this.bubbleHoldUntil - GameBubbleConfig.holdAfterSkillMs
+      + LargeTsum.skillQuietMs > Date.now();
+    const large = animating ? [] : findLargeTsums(srcImg, circles);
     // A bubble-pass circle on a large tsum is the tsum, not a bubble.
     this.gameBubbles = findGameBubbles(grayImg, srcImg, circles).filter(function(b) {
       return !pointInLarge(b, large, 1);

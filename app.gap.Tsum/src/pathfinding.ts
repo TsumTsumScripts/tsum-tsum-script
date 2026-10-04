@@ -625,7 +625,7 @@ var LargeTsum = {
   // colour, and the share of the two inner rings (0.55 and 0.8 of the radius)
   // that has to be.
   tolerance: 55,
-  minFlat: 0.78,
+  minFlat: 0.82,
   // The ring at 1.3 radii has to differ from it for at least this share: a
   // tsum ends, a patch of board does not.
   minEdge: 0.5,
@@ -636,6 +636,8 @@ var LargeTsum = {
   // found once at most; more is a cluster of small ones.
   maxInside: 1,
   dupReach: 0.8,
+  // Detection is skipped this long after a skill activation (`scanBoardQuick`).
+  skillQuietMs: 1500,
 };
 
 // Ring offsets from a centre, in grid steps of `LargeTsum.step` (4px), so
