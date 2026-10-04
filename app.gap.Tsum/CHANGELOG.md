@@ -49,6 +49,7 @@ release note; they fold back in here when she ships.
 - Gaston and Coronation Day Elsa skills and the Delay Skill ReActivation setting are out of Beta.
 - Chains no longer break in a round's last seconds.
 - Round stats no longer lose the score and coins when the rank-up panel appears after a round, and base coins read more reliably.
+- Auto Play Game setting moved from General to the Round tab.
 
 ### Added
 

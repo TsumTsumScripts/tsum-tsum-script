@@ -149,6 +149,19 @@ var tabs: TabSpec[] = [
         title: UiText.TabRound,
         groups: [
             {
+                rows: [
+                    {
+                        key: SettingKey.AutoPlayGame,
+                        title: UiText.SettingAutoPlayGame,
+                        help: UiText.SettingAutoPlayGameHelp,
+                        default: true,
+                        // Whether rounds are played at all, not how one is
+                        // played -- see SHARE_TABS.
+                        neverShared: true
+                    }
+                ]
+            },
+            {
                 title: UiText.GroupChains,
                 rows: [
                     {
@@ -581,15 +594,6 @@ var tabs: TabSpec[] = [
                         title: UiText.SettingAutoLaunchApp,
                         help: UiText.SettingAutoLaunchAppHelp,
                         default: false
-                    },
-                    {
-                        key: SettingKey.AutoPlayGame,
-                        title: UiText.SettingAutoPlayGame,
-                        help: UiText.SettingAutoPlayGameHelp,
-                        default: true,
-                        // Whether rounds are played at all, not how one is
-                        // played -- see SHARE_TABS.
-                        neverShared: true
                     },
                     // {
                     //     key: SettingKey.ClickAssist,

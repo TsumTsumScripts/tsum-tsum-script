@@ -785,7 +785,7 @@ What keeps that honest:
   what could travel — it *is* what a code carries, and therefore what a preset
   is: **how a round is played**, and nothing else. That is `SHARE_TABS`
   (Gameplay and Skills) less the rows on them that shape the *run* rather than
-  the round, which say so with `neverShared` — Auto Play Game, the
+  the round, which say so with `neverShared` — Auto Play Game (on Round), the
   between-rounds delay, Track round statistics, and the Max Round Duration pair
   (how long the run will spend on one round). A setting's position in the
   list is its identity on the wire — the character that names it, and its bit in
