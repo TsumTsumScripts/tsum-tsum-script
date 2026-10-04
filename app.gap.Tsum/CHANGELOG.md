@@ -59,7 +59,9 @@ release note; they fold back in here when she ships.
 - **Trace stream** (`src/trace.ts`, host 3.1+). With a consumer on the host's
   trace port, every log record (debug included, flood guard bypassed) plus
   `board.scan` and `board.paths` snapshots stream live via `emitTrace`; the log
-  file is unchanged. Unwatched, it costs one `traceAttached()` call a second.
+  file is unchanged. The host adds every capture (`frame.*`) and touch
+  (`input.*`), `board.scan` names its frame, and the hearts sweep sends `marks`.
+  Unwatched, it costs one `traceAttached()` call a second.
 - **App restart frequency** stored in minutes (was hours; a saved `6` is now 6 min), moved from Experimental to Device.
 - **Last run settings.** `start()` writes its settings, minus the one-shot
   flags, to `last-settings-<getDeviceId()>.json` in the script folder; a failed

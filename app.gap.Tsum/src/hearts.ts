@@ -115,6 +115,13 @@ Tsum.prototype.readHeartColumn = function(img) {
       start = -1;
     }
   }
+  const self = this;
+  traceMarks('hearts.column', function() {
+    return hearts.map(function(h) {
+      const p = self.toRealXY(h.x, h.y);
+      return { x: p.x, y: p.y, r: 24, t: 'heart' };
+    });
+  });
   return hearts;
 }
 

@@ -740,6 +740,8 @@ Tsum.prototype.scanBoardQuick = function() {
       clusters: this.boardClusters.map(function(c) { return [Math.round(c.b), Math.round(c.g), Math.round(c.r)]; }),
       sizes: this.boardClusterSizes,
       myTsumIdx: this.myTsumIdx,
+      // The frame this was read from, when the viewer got it (`frame.square`).
+      frame: this.squareFrame,
       // [x, y, radius, tsums its pop would take]
       bubbles: this.gameBubbles.map(function(b) { return [Math.round(b.x), Math.round(b.y), Math.round(b.r), b.near || 0]; }),
       durationMs: Date.now() - startTime,

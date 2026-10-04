@@ -40,6 +40,8 @@ class Tsum {
    * already begun is finished, so no finger is left resting on the game.
    */
   gestureOpen: boolean;
+  /** Trace frame id of the latest play-square capture; 0 when it was not sent. */
+  squareFrame: number;
   /**
    * A level-cap sweep asked for from the settings page is waiting for its turn.
    * Raised by `queueUnlockSweep` (src/index.ts), lowered when the sweep takes
@@ -316,6 +318,7 @@ class Tsum {
     this.autoLaunch = false;
     this.isRunning = true;
     this.gestureOpen = false;
+    this.squareFrame = 0;
     this.yieldAsked = false;
     this.isStartupPhase = true;
     this.runTimes = 0;
@@ -539,7 +542,10 @@ Tsum.prototype.screenshot = function() {
 }
 
 Tsum.prototype.playScreenshotSquare = function() {
-  return getScreenshotModify(
+  // Every square capture goes to a trace viewer, so a scan's findings land on
+  // the frame they were read from (`board.scan`'s `frame`).
+  traceFrameAsk();
+  const img = getScreenshotModify(
     this.playOffsetX,
     this.playOffsetY,
     this.playWidth,
@@ -548,6 +554,8 @@ Tsum.prototype.playScreenshotSquare = function() {
     this.playResizeHeight,
     100
   );
+  this.squareFrame = traceFrameOf();
+  return img;
 }
 
 /**

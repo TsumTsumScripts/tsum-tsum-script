@@ -1973,6 +1973,15 @@ declare function emitTrace(kind: string, data?: unknown): void;
 /** Whether a trace consumer is connected (host 3.1+). A host call: cache it. */
 declare function traceAttached(): boolean;
 
+/**
+ * The next capture is sent to the trace viewer whatever the rate limit says
+ * (host 3.1+), so findings can be drawn on the frame they were read from.
+ */
+declare function traceWantFrame(): void;
+
+/** Id of the frame sent for the latest capture, or 0 if it was not sent (host 3.1+). */
+declare function traceFrameId(): number;
+
 // The settings WebView reaches `start` and `stop` by name
 // through `JavaScriptInterface.runScript(<source string>)`. They are declared
 // -- not just implemented -- as plain global functions in index.ts, which is

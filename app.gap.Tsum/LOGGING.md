@@ -262,7 +262,17 @@ While one is connected:
   `myTsumIdx`, `bubbles` as `[x, y, r, near]`, `durationMs`.
 - **`board.paths`**, once per link batch: the chains about to be drawn, each as
   `[x, y]` centres, and each chain's cluster.
+- **`marks`**: points and boxes a chore found, in real screen pixels
+  (`traceMarks`, `src/trace.ts`) — the hearts sweep marks each heart it reads.
 - `forecast.state` is built as it is with Debug logs on.
+- **The host adds frames and taps itself**: `frame.square` / `frame.screen` for
+  every capture and `input.*` for every touch. `board.scan` names the frame it
+  was read from (`frame`). Nothing here asks for them except the board scan, which
+  forces its own frame past the host's rate limit.
+
+`npm run trace:view` in the development toolkit draws all of it: the board scan
+over its frame, and the screen with its taps and marks. Frames are ~250 KB/s, so
+`--out` leaves them out unless told otherwise.
 
 ```
 adb forward tcp:21026 tcp:21026
