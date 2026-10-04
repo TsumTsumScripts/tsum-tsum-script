@@ -45,7 +45,7 @@ release note; they fold back in here when she ships.
 
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
 - Quick Bar "Last round" button added: stops the script once the current round is over.
-- Disney Villains (Set) now plays properly, records score and coins in the stats file, and works with Auto Unlock MyTsum Level.
+- Disney Villains (Set) now plays properly, records score and coins in the stats file, and works with Auto Unlock MyTsum Level. Its own skill setting (Alpha) keeps it chaining when its skill turns the tsums into big neon villains.
 - Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums, and rerolls Oogie Boogie's dice only on a roll under 7.
 - Gaston and Coronation Day Elsa skills and the Delay Skill ReActivation setting are out of Beta.
 - Chains no longer break in a round's last seconds.
@@ -76,6 +76,10 @@ release note; they fold back in here when she ships.
   declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture
   disc, bubble pass and link reach. Other skills skip the read and stay at 1.
+- **Disney Villains (Set)** (`SkillType.VillainsSet`, Alpha). A burst declaring
+  `colorBlur` 15 and the new `SkillHandler.chromaCap` 80, which caps each
+  tsum's sampled saturation in `findTsums`. Its neon board split one villain
+  over many clusters; offline, linkable tsums per board 6.4 -> 10.9.
 - **NBC Set: Oogie Boogie's dice.** Any touch during his roll rerolls it once.
   Each board scan looks for his green cut-in (`SkillHandler.watchScan`); from
   there every touch is held, both dice are read at rest (`nbcLook`), and a first

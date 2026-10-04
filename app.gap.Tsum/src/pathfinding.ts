@@ -762,6 +762,7 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
     const textures = readTextures(grayImg, points);
 
     const results: TsumPoint[] = [];
+    const chromaCap = skillChromaCap(ts!);
     for (let k = 0; k < points.length; k++) {
       const p = points[k];
       const base = k * CrossPoints;
@@ -775,7 +776,7 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
       }
       const c = chromaFeature({
         b: sumb / CrossPoints,
-        g: sumg / CrossPoints,
+        g: Math.min(chromaCap, sumg / CrossPoints),
         r: sumr / CrossPoints
       });
       results.push({

@@ -109,6 +109,8 @@ var SkillsDeclared: SkillOption[] = [
      status: ReleaseStatus.Production, group: UiText.SkillGroupBurst},
     {key: SkillType.NightmareSet, share: 'N', title: UiText.SkillNightmareSet,
      status: ReleaseStatus.Beta, group: UiText.SkillGroupBurst},
+    {key: SkillType.VillainsSet, share: 'v', title: UiText.SkillVillainsSet,
+     status: ReleaseStatus.Alpha, group: UiText.SkillGroupBurst},
     // Two buttons rather than one, but the clear at the end of it is a burst.
     {key: SkillType.PairTsum, share: 'p', title: UiText.SkillPairTsum,
      status: ReleaseStatus.Production, group: UiText.SkillGroupBurst},

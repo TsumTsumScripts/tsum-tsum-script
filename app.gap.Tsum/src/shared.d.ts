@@ -96,6 +96,12 @@ declare const enum SkillType {
    * follows their size -- see `src/skills/nbcSet.ts`.
    */
   NightmareSet = 'nbc_set',
+  /**
+   * Disney Villains (Set). Plays as a burst, but its skill turns the board into
+   * big neon villains, so the colour read is tuned for them -- see
+   * `src/skills/villainsSet.ts`.
+   */
+  VillainsSet = 'villains_set',
   PairTsum = 'pair_tsum',
   /** Offered in the dropdown; short-circuited in useSkill, so it has no handler. */
   NoSkill = 'nokill',
