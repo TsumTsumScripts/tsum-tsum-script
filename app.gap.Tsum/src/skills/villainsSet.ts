@@ -16,6 +16,7 @@ registerSkill({
   bareTapActivates: true,
   colorBlur: 15,
   chromaCap: 80,
+  noLargeTsums: true,
   afterActivate: function(ts) {
     skillRandomizeAndWait(ts);
   }

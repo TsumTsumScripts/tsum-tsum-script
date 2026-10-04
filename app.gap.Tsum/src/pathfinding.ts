@@ -638,6 +638,8 @@ var LargeTsum = {
   dupReach: 0.8,
   // Detection is skipped this long after a skill activation (`scanBoardQuick`).
   skillQuietMs: 1500,
+  // A hit repeats the last scan's within this many px (`scanBoardQuick`).
+  sameSpot: 8,
 };
 
 // Ring offsets from a centre, in grid steps of `LargeTsum.step` (4px), so

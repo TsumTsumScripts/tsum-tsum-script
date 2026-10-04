@@ -546,6 +546,8 @@ Tsum.prototype.waitOutEdgeWash = function(grayImg) {
 
 /** Large tsums the last scan found, so `board.largeTsums` is logged on a change. */
 var gLargeSeen = 0;
+/** The large tsums the scan before found, which a hit has to repeat. */
+var gLargePrev: LargeCircle[] = [];
 
 Tsum.prototype.scanBoardQuick = function() {
   // load game tsums
@@ -599,7 +601,16 @@ Tsum.prototype.scanBoardQuick = function() {
     // draws a giant one, and both read as large tsums.
     const animating = this.bubbleHoldUntil - GameBubbleConfig.holdAfterSkillMs
       + LargeTsum.skillQuietMs > Date.now();
-    const large = animating ? [] : findLargeTsums(srcImg, circles);
+    let large: LargeCircle[] = [];
+    if (animating || !skillLooksForLargeTsums(this)) {
+      gLargePrev = [];
+    } else {
+      // A large tsum barely moves, so a hit counts only if the scan before it
+      // had one there too; a flat patch of board is gone by the next scan.
+      const found = findLargeTsums(srcImg, circles);
+      large = found.filter(function(f) { return pointInLarge(f, gLargePrev, LargeTsum.sameSpot / LargeTsum.radius); });
+      gLargePrev = found;
+    }
     // A bubble-pass circle on a large tsum is the tsum, not a bubble.
     this.gameBubbles = findGameBubbles(grayImg, srcImg, circles).filter(function(b) {
       return !pointInLarge(b, large, 1);

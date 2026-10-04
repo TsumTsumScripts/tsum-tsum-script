@@ -141,6 +141,9 @@ interface SkillHandler {
   // On a board of dark, vivid tsums the saturation swings more than the hue,
   // so capping it lets hue decide the clusters.
   chromaCap?: number;
+  // Large tsums are not looked for (`findLargeTsums`): this skill's board
+  // reads as them when none is there.
+  noLargeTsums?: boolean;
   // The last activation is still in effect, so a tap now would waste the
   // gauge: Gaston's window is a timed mode, and an activation inside it only
   // restarts the animation over the seconds it had left. While this answers
@@ -238,6 +241,12 @@ function skillWatchScan(ts: Tsum, img: NativeImage): boolean {
 function skillColorBlur(ts: Tsum): number {
   const handler = SkillHandlers[ts.skillType];
   return handler && handler.colorBlur ? handler.colorBlur : TsumColorBlur;
+}
+
+// Whether large tsums are looked for. See `SkillHandler.noLargeTsums`.
+function skillLooksForLargeTsums(ts: Tsum): boolean {
+  const handler = SkillHandlers[ts.skillType];
+  return !(handler && handler.noLargeTsums);
 }
 
 // The colour sample's saturation cap. See `SkillHandler.chromaCap`.
