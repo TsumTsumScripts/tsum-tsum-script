@@ -475,16 +475,16 @@ function buildBoardGray(img: NativeImage): NativeImage {
 }
 
 // Game bubbles are circles too, just a good deal bigger than a tsum, so they
-// come out of the same grayscale Hough pass at a larger radius -- the very same
-// pass, now: `grayImg` is the board gray the scan already built for findTsums.
-// Locating them therefore costs no screenshot and no second blur, which is the
-// point: the taps have to land while the chain is still going off.
+// come out of the scan's own board gray at a larger radius -- no screenshot and
+// no second blur, which is the point: the taps have to land while the chain is
+// still going off. Two passes: `param2` over the whole square, and a looser one
+// over the bottom band (`bandFrom`) where bubbles pile up, kept only where the
+// circle looks like a bubble (`bubbleLooks` on `img`, the scan's colour frame).
 //
 // `tsums` are that scan's tsum circles (centres, as `findTsums` returns them);
 // each bubble is handed the count of them inside its blast, which is what a pop
-// of it is worth -- see `GameBubbleConfig.blastReach`. A caller without a tsum
-// pass (Gaston's hemmed capture) leaves `near` unset.
-function findGameBubbles(grayImg: NativeImage, tsums?: Point[]): GameBubble[] {
+// of it is worth -- see `GameBubbleConfig.blastReach`.
+function findGameBubbles(grayImg: NativeImage, img: NativeImage, tsums: Point[]): GameBubble[] {
   const cfg = GameBubbleConfig;
   // houghCircles returns centres, unlike the board points findTsums feeds the
   // pathfinder (those are shifted to a tsum's top-left corner).
@@ -492,22 +492,90 @@ function findGameBubbles(grayImg: NativeImage, tsums?: Point[]): GameBubble[] {
   const found = houghCircles(grayImg, 3, 1, scaledPx(cfg.minDist), cfg.param1, cfg.param2,
                              scaledPx(cfg.minRadius), scaledPx(cfg.maxRadius));
   const out: GameBubble[] = [];
-  for (const k in found) {
-    const b = found[k];
-    // `radius` is the native's own field name -- see `HoughCircle`. This read
-    // `found[k].r` and so stored `undefined` until that was declared properly.
-    const bubble: GameBubble = {x: b.x, y: b.y, r: b.radius};
-    if (tsums) {
-      const reach = b.radius + cfg.blastReach * tsumSpan();
-      let near = 0;
-      for (let i = 0; i < tsums.length; i++) {
-        const dx = tsums[i].x - b.x;
-        const dy = tsums[i].y - b.y;
-        if (dx * dx + dy * dy <= reach * reach) { near++; }
-      }
-      bubble.near = near;
+  for (let k = 0; k < found.length; k++) {
+    out.push({x: found[k].x, y: found[k].y, r: found[k].radius});
+  }
+  const bandFrom = getImageSize(grayImg).height * cfg.bandFrom;
+  const band = houghCircles(grayImg, 3, 1, scaledPx(cfg.minDist), cfg.param1, cfg.bandParam2,
+                            scaledPx(cfg.minRadius), scaledPx(cfg.bandMaxRadius));
+  const low: GameBubble[] = [];
+  for (let k = 0; k < band.length; k++) {
+    const b = band[k];
+    if (b.y < bandFrom || bubbleNear(b, out, scaledPx(cfg.minDist))) { continue; }
+    low.push({x: b.x, y: b.y, r: b.radius, band: true});
+  }
+  const kept = bubbleLooks(img, low);
+  for (let k = 0; k < kept.length; k++) { out.push(kept[k]); }
+  const reachBase = cfg.blastReach * tsumSpan();
+  for (let k = 0; k < out.length; k++) {
+    const b = out[k];
+    const reach = b.r + reachBase;
+    let near = 0;
+    for (let i = 0; i < tsums.length; i++) {
+      const dx = tsums[i].x - b.x;
+      const dy = tsums[i].y - b.y;
+      if (dx * dx + dy * dy <= reach * reach) { near++; }
     }
-    out.push(bubble);
+    b.near = near;
+  }
+  return out;
+}
+
+/** Whether `p` lies within `dist` of any of `bubbles`. */
+function bubbleNear(p: Point, bubbles: GameBubble[], dist: number): boolean {
+  for (let k = 0; k < bubbles.length; k++) {
+    const dx = bubbles[k].x - p.x;
+    const dy = bubbles[k].y - p.y;
+    if (dx * dx + dy * dy < dist * dist) { return true; }
+  }
+  return false;
+}
+
+/**
+ * `circles` less those that don't look like a bubble inside: too much dark
+ * (a tsum's hair or outline) or near-white (a pale tsum) in the disc at 0.7 of
+ * the radius. See `GameBubbleConfig.darkMax`/`whiteMax`. One colour read for
+ * all of them.
+ */
+function bubbleLooks(img: NativeImage, circles: GameBubble[]): GameBubble[] {
+  const cfg = GameBubbleConfig;
+  const size = getImageSize(img);
+  const pts: Point[] = [];
+  const per: number[] = [];
+  for (let k = 0; k < circles.length; k++) {
+    const c = circles[k];
+    const r = 0.7 * (c.r || cfg.minRadius);
+    let n = 0;
+    for (let dx = -r; dx <= r; dx += 2) {
+      for (let dy = -r; dy <= r; dy += 2) {
+        if (dx * dx + dy * dy > r * r) { continue; }
+        const x = Math.round(c.x + dx);
+        const y = Math.round(c.y + dy);
+        if (x < 0 || y < 0 || x >= size.width || y >= size.height) { continue; }
+        pts.push({ x: x, y: y });
+        n++;
+      }
+    }
+    per.push(n);
+  }
+  if (pts.length === 0) { return circles; }
+  const colors = getImageColors(img, pts);
+  const out: GameBubble[] = [];
+  let at = 0;
+  for (let k = 0; k < circles.length; k++) {
+    let dark = 0;
+    let white = 0;
+    for (let n = 0; n < per[k]; n++) {
+      const c = colors[at + n];
+      const hi = Math.max(c.r, c.g, c.b);
+      const lo = Math.min(c.r, c.g, c.b);
+      if (hi < 64) { dark++; }
+      if (hi > 217 && hi - lo < 0.25 * hi) { white++; }
+    }
+    at += per[k];
+    if (per[k] === 0 || (dark <= cfg.darkMax * per[k] && white <= cfg.whiteMax * per[k])) {
+      out.push(circles[k]);
+    }
   }
   return out;
 }

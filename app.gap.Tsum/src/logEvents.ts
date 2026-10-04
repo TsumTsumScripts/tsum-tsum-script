@@ -132,6 +132,8 @@ namespace Log {
     Cleared        = 'bubble.cleared',
     Found          = 'bubble.found',
     Generated      = 'bubble.generated',
+    /** A Mid Chain strategy popped the bubbles past `overflowKeep` -- the overflow pop. */
+    Overflow       = 'bubble.overflow',
     /** A pop refused because a fever is about to end -- the fever hold. */
     Held           = 'bubble.held',
     /** A pop refused because a skill fired inside `holdAfterSkillMs` -- the burst hold. */

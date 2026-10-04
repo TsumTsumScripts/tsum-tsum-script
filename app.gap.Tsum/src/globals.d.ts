@@ -758,7 +758,7 @@ interface GameBubble {
   near?: number;
   /**
    * Found by the bottom-band pass rather than the Hough pass proper
-   * (`gastonBubbles`): planned round and tapped like any other, logged apart.
+   * (`findGameBubbles`, `gastonBubbles`): tapped like any other, logged apart.
    */
   band?: boolean;
   /**
@@ -1328,8 +1328,13 @@ interface Tsum {
   bubblesHeldForFever(): boolean;
   /** Start the hold on the Bubble Strategy's pops from an activation at `activatedAt`. */
   holdBubblesAfterSkill(activatedAt: number): void;
-  /** Is the hold after a skill activation still standing? Asked per pop. */
-  bubblesHeldAfterSkill(): boolean;
+  /**
+   * Is the hold after a skill activation still standing? Asked per pop.
+   * `holdMs` defaults to the strategy's hold (short under All Bubbles ASAP).
+   */
+  bubblesHeldAfterSkill(holdMs?: number): boolean;
+  /** Mid Chain strategies: pop all but the richest few once a pile builds. */
+  popBubbleOverflow(): void;
   /** How many bubbles the Bubble Strategy setting allows one pop to spend. */
   bubbleTapBudget(): number;
   /**

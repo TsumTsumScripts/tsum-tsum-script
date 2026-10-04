@@ -88,6 +88,19 @@ var GameBubbleConfig = {
   param1: 20,
   param2: 26,
 
+  // A second, looser pass over the bottom of the square (below `bandFrom` of
+  // its height), where bubbles settle in a packed row that `param2` mostly
+  // misses -- 3 of 6 found on a Villains Set pile-up, 6 of 6 with this pass.
+  // It also takes a tsum now and then; a tap on one is ignored by the game.
+  bandFrom: 0.68,
+  bandParam2: 14,
+  bandMaxRadius: 20,
+  // A band circle is kept only if it looks like a bubble inside: under
+  // `darkMax` of the disc (at 0.7 radius) darker than value 64, and under
+  // `whiteMax` near-white. See `bubbleLooks`.
+  darkMax: 0.03,
+  whiteMax: 0.4,
+
   // How long after a skill activation the Bubble Strategy pops nothing, ms.
   //
   // A skill's burst is what *makes* most bubbles, and it empties the board
@@ -106,6 +119,23 @@ var GameBubbleConfig = {
   // is lost by waiting -- every scan re-finds the bubbles, so this only ever
   // moves which chain spends them.
   holdAfterSkillMs: 2000,
+  // The same hold for pops that want board space rather than a good blast:
+  // All Bubbles ASAP and the overflow pop. Just long enough for the skill
+  // animation to stop eating taps. At 2s, a skill firing every few seconds
+  // (Villains Set) held every pop for ~30% of the round.
+  shortHoldAfterSkillMs: 600,
+
+  // The overflow pop, for the two Mid Chain strategies: once a scan sees
+  // `overflowAt` bubbles, all but the `overflowKeep` richest are popped at
+  // once, ripe or not. Hoarding one or two for a chain pays; a pile of them
+  // just takes board space the tsums need.
+  overflowAt: 4,
+  overflowKeep: 2,
+
+  // All Bubbles ASAP's blind sweep runs when a scan sees this many bubbles: a
+  // pile that size is a packed row the Hough pass only half finds. It covers
+  // the bottom band only (`bandFrom`), where piles form.
+  pileUpSweepAt: 4,
 
   // What a pop is worth: the tsums within `blastReach` tsum widths past the
   // bubble's edge, counted off the same scan (`GameBubble.near`). The

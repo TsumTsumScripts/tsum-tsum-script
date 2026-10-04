@@ -130,9 +130,9 @@ declare const enum BubbleStrategy {
   /** Every bubble the last scan found, popped as a chain lands. */
   AllMidChain = 'all_mid_chain',
   /**
-   * Every bubble, popped as soon as it is seen -- no waiting for a chain -- plus
-   * the periodic blind sweep, which is what the old "Clear Bubbles" switch did
-   * on its own. For boards where a bubble left sitting is in the way.
+   * Every bubble, popped as soon as it is seen -- no waiting for a chain, nor
+   * for it to be worth much -- plus a blind sweep of the bottom band when a
+   * pile builds. For boards where a bubble left sitting is in the way.
    */
   AllAsap = 'all_asap',
 }

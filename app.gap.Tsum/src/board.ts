@@ -109,8 +109,16 @@ Tsum.prototype.holdBubblesAfterSkill = function(activatedAt) {
   this.bubbleHoldUntil = activatedAt + GameBubbleConfig.holdAfterSkillMs;
 };
 
-Tsum.prototype.bubblesHeldAfterSkill = function() {
-  const remainingMs = this.bubbleHoldUntil - Date.now();
+// `holdMs` defaults to the strategy's own hold: short under All Bubbles ASAP,
+// which wants board space rather than a good blast.
+Tsum.prototype.bubblesHeldAfterSkill = function(holdMs) {
+  const cfg = GameBubbleConfig;
+  if (typeof holdMs !== 'number') {
+    holdMs = this.bubbleStrategy === BubbleStrategy.AllAsap
+      ? cfg.shortHoldAfterSkillMs : cfg.holdAfterSkillMs;
+  }
+  // `bubbleHoldUntil` is stamped with the long hold; shift it to this one.
+  const remainingMs = this.bubbleHoldUntil - cfg.holdAfterSkillMs + holdMs - Date.now();
   if (remainingMs <= 0) { return false; }
   logDebug(Log.Bubble.HeldAfterSkill, {
     remainingMs: remainingMs,
@@ -213,6 +221,14 @@ Tsum.prototype.ripeGameBubbles = function(bubbles) {
   return ripe;
 };
 
+/** Tap one bubble at its scan position, and mark it popped. */
+function tapGameBubble(ts: Tsum, b: GameBubble): void {
+  const x = Math.floor(ts.playOffsetX + b.x * ts.playWidth / ts.playResizeWidth);
+  const y = Math.floor(ts.playOffsetY + b.y * ts.playHeight / ts.playResizeHeight);
+  tap(x, y, GameBubbleConfig.tapDuring);
+  b.popped = true;
+}
+
 // Tap the bubbles the last board scan found. Taps only -- the positions were
 // worked out at scan time -- so this stays inside the window where the chain is
 // still clearing. A tap that misses costs nothing: it is not a drag, so it
@@ -226,13 +242,14 @@ Tsum.prototype.ripeGameBubbles = function(bubbles) {
 Tsum.prototype.popGameBubbles = function(limit) {
   const all = this.gameBubbles;
   if (!all || all.length === 0 || !this.isRunning) { return; }
-  const cfg = GameBubbleConfig;
   // An explicit `limit` is an override and stands on its own -- the ceilings in
   // bubbleTapBudget are what the *setting* allows, not a hard cap on callers.
   const override = typeof limit === 'number';
   const budget = override ? limit : this.bubbleTapBudget();
   if (budget <= 0) { return; }
-  const bubbles = override ? all : this.ripeGameBubbles(all);
+  // All Bubbles ASAP takes every one: it wants the space, not the best blast.
+  const asap = this.bubbleStrategy === BubbleStrategy.AllAsap;
+  const bubbles = override || asap ? all : this.ripeGameBubbles(all);
   const held = all.length - bubbles.length;
   const count = Math.min(bubbles.length, budget);
   if (count <= 0) {
@@ -245,19 +262,34 @@ Tsum.prototype.popGameBubbles = function(limit) {
     });
     return;
   }
-  for (let i = 0; i < count; i++) {
-    const b = bubbles[i];
-    const x = Math.floor(this.playOffsetX + b.x * this.playWidth / this.playResizeWidth);
-    const y = Math.floor(this.playOffsetY + b.y * this.playHeight / this.playResizeHeight);
-    tap(x, y, cfg.tapDuring);
-    b.popped = true;
-  }
+  for (let i = 0; i < count; i++) { tapGameBubble(this, bubbles[i]); }
   logDebug(Log.Bubble.Popped, { popped: count, seen: all.length, held: held });
   // A bubble only pops once, and one left behind is one this strategy is
   // deliberately saving for the next chain -- either way this list is spent:
   // the board has moved, so the positions in it are no longer where anything
   // is. The next scan finds whatever is still there.
   this.gameBubbles = [];
+};
+
+// The overflow pop, for the two Mid Chain strategies: a scan that sees
+// `overflowAt` bubbles or more pops all but the `overflowKeep` richest now,
+// ripe or not, so a fast tsum cannot bury the board in them. What is kept
+// stays in the list for `link`'s mid-chain pop. Held like the strategy's own
+// pops, but only for the short hold after a skill.
+Tsum.prototype.popBubbleOverflow = function() {
+  const cfg = GameBubbleConfig;
+  const all = this.gameBubbles;
+  if (!all || all.length < cfg.overflowAt || !this.isRunning) { return; }
+  if (this.bubbleStrategy === BubbleStrategy.AllAsap || skillClaimsBubbles(this)
+      || this.bubblesHeldForFever() || this.bubblesHeldAfterSkill(cfg.shortHoldAfterSkillMs)) {
+    return;
+  }
+  const sorted = all.slice().sort(function(a, b) { return (b.near || 0) - (a.near || 0); });
+  const kept = sorted.slice(0, cfg.overflowKeep);
+  const extra = sorted.slice(cfg.overflowKeep, cfg.overflowKeep + cfg.maxTapsAsap);
+  for (let i = 0; i < extra.length; i++) { tapGameBubble(this, extra[i]); }
+  logDebug(Log.Bubble.Overflow, { popped: extra.length, kept: kept.length, seen: all.length });
+  this.gameBubbles = kept;
 };
 
 Tsum.prototype.link = function(paths, board) {
@@ -298,7 +330,9 @@ Tsum.prototype.link = function(paths, board) {
     // after an activation as the strategy's pops are, since an explicit count
     // is an override to `popGameBubbles`.
     const pops = skillPopBubblesAfterChain(this, path.length);
-    if (pops > 0 && !this.bubblesHeldAfterSkill()) { this.popGameBubbles(pops); }
+    if (pops > 0 && !this.bubblesHeldAfterSkill(GameBubbleConfig.holdAfterSkillMs)) {
+      this.popGameBubbles(pops);
+    }
     // Linking a full batch of chains can take several seconds; check between
     // chains so a gauge that fills mid-batch fires right away.
     //
@@ -316,6 +350,11 @@ Tsum.prototype.link = function(paths, board) {
   return isBubble;
 }
 
+/** Logical y where the bottom bubble band (`GameBubbleConfig.bandFrom`) starts. */
+function bubbleBandTopY(): number {
+  return PlayAreaTopY + GameBubbleConfig.bandFrom * 1080;
+}
+
 /**
  * The blind sweep: ~50 taps over the whole play area on a fixed grid.
  *
@@ -323,7 +362,7 @@ Tsum.prototype.link = function(paths, board) {
  * gated on it. A skill that turns tsums into bubbles, or ends on a board
  * covered in them, is not hoarding anything for a chain that will not come --
  * it declares that with `sweepsBubbles` and calls this. The play loop's own
- * periodic sweep is the one caller that *is* gated, to `BubbleStrategy.AllAsap`.
+ * pile-up sweep is the one caller that *is* gated, to `BubbleStrategy.AllAsap`.
  *
  * Blind because it needs no capture: it is far too slow to land inside a chain
  * (that is `popGameBubbles`), so it runs where there is time for it.
@@ -499,7 +538,7 @@ Tsum.prototype.scanBoardQuick = function() {
   // load game tsums
   const startTime = Date.now();
   let srcImg = this.playScreenshotSquare();
-  const board = [];
+  const board: BoardPoint[] = [];
   // Owned here rather than inside either pass, so the two Hough passes below
   // share one image and exactly one release covers it -- including when a
   // native call throws mid-scan, which the task controller swallows and
@@ -543,7 +582,7 @@ Tsum.prototype.scanBoardQuick = function() {
     // which would stall the link cadence and the combo timer with it. Bubbles
     // are big and drift slowly, so a position a second old still lands. Each
     // carries how many of this scan's tsums its pop would take (`near`).
-    this.gameBubbles = findGameBubbles(grayImg, points);
+    this.gameBubbles = findGameBubbles(grayImg, srcImg, points);
     // Each one's first sighting, carried over from earlier scans -- what
     // `ripeGameBubbles` ages it by. Run on an empty list too: that is what
     // lets old sightings go.

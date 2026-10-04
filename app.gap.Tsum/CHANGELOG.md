@@ -52,9 +52,14 @@ release note; they fold back in here when she ships.
 - Round stats no longer lose the score and coins when the rank-up panel appears after a round.
 - Auto Play Game setting moved from General to the Round tab.
 - Tsum app restart frequency now counts in minutes (30-minute steps) and sits under Device, out of Experimental.
+- Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, and the Mid Chain strategies no longer let them pile up.
 
 ### Added
 
+- **Trace stream** (`src/trace.ts`, host 3.1+). With a consumer on the host's
+  trace port, every log record (debug included, flood guard bypassed) plus
+  `board.scan` and `board.paths` snapshots stream live via `emitTrace`; the log
+  file is unchanged. Unwatched, it costs one `traceAttached()` call a second.
 - **App restart frequency** stored in minutes (was hours; a saved `6` is now 6 min), moved from Experimental to Device.
 - **Last run settings.** `start()` writes its settings, minus the one-shot
   flags, to `last-settings-<getDeviceId()>.json` in the script folder; a failed
@@ -88,6 +93,17 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
+- **Bubble popping.** Measured on a Villains Set recording: the scan found
+  about half of a packed bottom row, and the 2s post-skill hold blocked pops
+  for ~30% of the round.
+  - `findGameBubbles` adds a looser bottom-band pass (`bandFrom`) filtered by
+    `bubbleLooks`; both moved out of Gaston, which now shares them.
+  - All Bubbles ASAP skips `ripeGameBubbles` and holds only
+    `shortHoldAfterSkillMs` (600ms) after a skill. Its blind sweep fires when a
+    scan sees `pileUpSweepAt` bubbles (was: two "bubble events") and covers the
+    bottom band only.
+  - One/All Mid Chain: `popBubbleOverflow` pops all but the `overflowKeep` (2)
+    richest once a scan sees `overflowAt` (4).
 - **Quick Bar enum checks.** `quickBarApply` refuses a value an enum setting
   lacks (skill, bubble strategy, box type/size, the two stop actions) with
   `{ok:false, why:"invalid value"}` and a `quickBar.invalidValue` warning.
