@@ -206,7 +206,7 @@ one.
 
 That is the Skills, Round and Gameplay tabs. Everything else stays as you
 have it, whichever preset you load — your language, the run settings on General
-(**Auto Play Game**, the **wait between rounds**, **Track round statistics**),
+(the **wait between rounds**, **Track round statistics**),
 the mailbox, the hearts, the chore schedules, the box buying. Those describe your account, and you should not
 have to re-set them to try a different setup.
 
@@ -271,7 +271,7 @@ It carries **how a round is played, and nothing else** — the chain and board
 settings, which items are set, and how the skill is used. Nothing about your
 account or about your run travels with it, and none of it is touched by applying
 one: your language, the mailbox, the hearts, the chores, the box buying and the
-developer options, and the run settings on General: **Auto Play Game**, the
+developer options, and **Auto Play Game** (on Round), and the run settings on General: the
 **wait between rounds**, **Track round statistics** and **Max round duration**
 with the action beside it. Someone else's code cannot stop your script playing,
 keep it waiting, turn your statistics off, or make it stop after a few minutes.
