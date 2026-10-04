@@ -22,7 +22,7 @@ var Config: TsumConfig = {
   //
   // 25 is measured, not guessed: nearest-neighbour distances between detected
   // circles on corpus/GamePlaying sit in a tight band at 24-26px. The rest of
-  // the detector already agreed -- findTsums looks for radius 8-14 circles
+  // the detector already agreed -- findTsumCircles looks for radius 8-14 circles
   // (diameter 16-28) no closer than minDist 22, which is a ~25px tsum.
   tsumWidth: 25,
   screenResize: 200,

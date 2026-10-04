@@ -10,15 +10,22 @@ function getDistance(t1: Point, t2: Point): number {
 /**
  * Adjacency list over one colour group: `neighbors[i]` holds the indices of the
  * tsums within linking range of `tsums[i]`.
+ *
+ * `maxDistSq` is the reach between two normal tsums. A large tsum
+ * (`BoardPoint.grow`) is that much wider, so a pair reaches the average of
+ * their growths farther: a large tsum bridges gaps normal ones cannot.
  */
 function buildTsumNeighbors(tsums: Point[], maxDistSq: number): number[][] {
   const neighbors: number[][] = [];
+  const grow: number[] = [];
   for (let i = 0; i < tsums.length; i++) {
     neighbors.push([]);
+    grow.push((tsums[i] as BoardPoint).grow || 1);
   }
   for (let i = 0; i < tsums.length; i++) {
     for (let j = i + 1; j < tsums.length; j++) {
-      if (getDistance(tsums[i], tsums[j]) <= maxDistSq) {
+      const g = (grow[i] + grow[j]) / 2;
+      if (getDistance(tsums[i], tsums[j]) <= (g === 1 ? maxDistSq : maxDistSq * g * g)) {
         neighbors[i].push(j);
         neighbors[j].push(i);
       }
@@ -481,19 +488,35 @@ function buildBoardGray(img: NativeImage): NativeImage {
 // over the bottom band (`bandFrom`) where bubbles pile up, kept only where the
 // circle looks like a bubble (`bubbleLooks` on `img`, the scan's colour frame).
 //
-// `tsums` are that scan's tsum circles (centres, as `findTsums` returns them);
-// each bubble is handed the count of them inside its blast, which is what a pop
-// of it is worth -- see `GameBubbleConfig.blastReach`.
-function findGameBubbles(grayImg: NativeImage, img: NativeImage, tsums: Point[]): GameBubble[] {
+// `tsums` are that scan's tsum circles (centres, as `findTsumCircles` returns
+// them); each bubble is handed the count of them inside its blast, which is what
+// a pop of it is worth -- see `GameBubbleConfig.blastReach`.
+//
+// A large tsum is drawn at a bubble's size, so this pass finds it too. A circle
+// of the Hough pass proper that does not look like a bubble inside (a face's
+// dark, or a pale tsum's white -- `bubbleLooks`) is a large tsum: it comes back
+// in `large` instead of `bubbles`, to be linked rather than popped.
+function findGameBubbles(grayImg: NativeImage, img: NativeImage, tsums: Point[]):
+    { bubbles: GameBubble[], large: LargeCircle[] } {
   const cfg = GameBubbleConfig;
   // houghCircles returns centres, unlike the board points findTsums feeds the
   // pathfinder (those are shifted to a tsum's top-left corner).
   // Bubbles shrink with the tsums (`Config.boardScale`).
   const found = houghCircles(grayImg, 3, 1, scaledPx(cfg.minDist), cfg.param1, cfg.param2,
                              scaledPx(cfg.minRadius), scaledPx(cfg.maxRadius));
+  const looks = bubbleLookMask(img, found.map(function(f) {
+    return {x: f.x, y: f.y, r: f.radius};
+  }));
+  const normalR = BoardScaleRead.radiusPerWidth * tsumSpan();
   const out: GameBubble[] = [];
+  const large: LargeCircle[] = [];
   for (let k = 0; k < found.length; k++) {
-    out.push({x: found[k].x, y: found[k].y, r: found[k].radius});
+    if (looks[k]) {
+      out.push({x: found[k].x, y: found[k].y, r: found[k].radius});
+    } else {
+      const grow = Math.min(LargeTsum.maxGrow, Math.max(1, found[k].radius / normalR));
+      large.push({x: found[k].x, y: found[k].y, radius: found[k].radius, grow: grow});
+    }
   }
   const bandFrom = getImageSize(grayImg).height * cfg.bandFrom;
   const band = houghCircles(grayImg, 3, 1, scaledPx(cfg.minDist), cfg.param1, cfg.bandParam2,
@@ -518,7 +541,7 @@ function findGameBubbles(grayImg: NativeImage, img: NativeImage, tsums: Point[])
     }
     b.near = near;
   }
-  return out;
+  return {bubbles: out, large: large};
 }
 
 /** Whether `p` lies within `dist` of any of `bubbles`. */
@@ -538,6 +561,12 @@ function bubbleNear(p: Point, bubbles: GameBubble[], dist: number): boolean {
  * all of them.
  */
 function bubbleLooks(img: NativeImage, circles: GameBubble[]): GameBubble[] {
+  const looks = bubbleLookMask(img, circles);
+  return circles.filter(function(_c, k) { return looks[k]; });
+}
+
+/** `bubbleLooks`' verdict per circle: true where it looks like a bubble inside. */
+function bubbleLookMask(img: NativeImage, circles: GameBubble[]): boolean[] {
   const cfg = GameBubbleConfig;
   const size = getImageSize(img);
   const pts: Point[] = [];
@@ -558,9 +587,9 @@ function bubbleLooks(img: NativeImage, circles: GameBubble[]): GameBubble[] {
     }
     per.push(n);
   }
-  if (pts.length === 0) { return circles; }
+  if (pts.length === 0) { return circles.map(function() { return true; }); }
   const colors = getImageColors(img, pts);
-  const out: GameBubble[] = [];
+  const out: boolean[] = [];
   let at = 0;
   for (let k = 0; k < circles.length; k++) {
     let dark = 0;
@@ -573,9 +602,7 @@ function bubbleLooks(img: NativeImage, circles: GameBubble[]): GameBubble[] {
       if (hi > 217 && hi - lo < 0.25 * hi) { white++; }
     }
     at += per[k];
-    if (per[k] === 0 || (dark <= cfg.darkMax * per[k] && white <= cfg.whiteMax * per[k])) {
-      out.push(circles[k]);
-    }
+    out.push(per[k] === 0 || (dark <= cfg.darkMax * per[k] && white <= cfg.whiteMax * per[k]));
   }
   return out;
 }
@@ -599,6 +626,31 @@ var TsumCircle = {
   minRadius: 8,
   maxRadius: 14,
 };
+
+// Large tsums (`findGameBubbles` finds them in the bubble pass).
+var LargeTsum = {
+  // A large tsum's size against a normal one never counts for more than this:
+  // the circle's radius is a noisy read, and the reach it buys is the
+  // game's to accept, not ours.
+  maxGrow: 1.6,
+  // A normal tsum circle this near a large tsum's centre (in its radii) is the
+  // large one's own face, found twice.
+  dupReach: 0.8,
+};
+
+/** `circles` less those that sit inside one of `large`. */
+function dropInsideLarge(circles: HoughCircle[], large: LargeCircle[]): HoughCircle[] {
+  if (large.length === 0) { return circles; }
+  return circles.filter(function(c) {
+    for (let i = 0; i < large.length; i++) {
+      const reach = LargeTsum.dupReach * large[i].radius;
+      const dx = c.x - large[i].x;
+      const dy = c.y - large[i].y;
+      if (dx * dx + dy * dy <= reach * reach) { return false; }
+    }
+    return true;
+  });
+}
 
 /** A size in play-square px, scaled to the tsums on this board. */
 function scaledPx(px: number): number {
@@ -692,29 +744,39 @@ function findTsumCount(grayImg: NativeImage): number {
  * HSV image and clustered separately in classifyTsums. The same gray is read a
  * second time for each tsum's texture -- see the texture axes below.
  */
-function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
+function findTsumCircles(img: NativeImage, grayImg: NativeImage): HoughCircle[] {
+  const minRadius = scaledPx(TsumCircle.minRadius);
+  const points = houghCircles(grayImg, 3, TsumCircle.dp, scaledPx(TsumCircle.minDist),
+    TsumCircle.param1, TsumCircle.param2, minRadius, scaledPx(TsumCircle.maxRadius));
+  if (ts!.debug) {
+    const debugImg = clone(img);
+    try {
+      for (let d = 0; d < points.length; d++) {
+        const pt = points[d];
+        drawCircle(debugImg, pt.x, pt.y, minRadius, 255, 0, 0, 1);
+      }
+      saveImage(debugImg, ts!.storagePath + "/tmp/" + ts!.runTimes + "-detectedHoughCircles.jpg");
+    } finally {
+      releaseImage(debugImg);
+    }
+  }
+  return points;
+}
+
+/**
+ * Sample each circle's colour and texture: `circles` from `findTsumCircles`,
+ * then the large tsums from `splitLargeTsums`, which carry their `grow`.
+ */
+function findTsums(img: NativeImage, grayImg: NativeImage,
+                   circles: HoughCircle[], large: LargeCircle[]): TsumPoint[] {
   // Every native image allocated here must be released even when a native
   // call throws mid-scan: the task controller swallows task errors and
   // retries, so a leak on this hot path would silently recur on every scan.
   // `grayImg` is deliberately not on that list -- the caller allocated it.
   const hsvImg = clone(img);
   let localImg: NativeImage | null = null;
-  let debugImg: NativeImage | null = null;
   try {
-    const minRadius = scaledPx(TsumCircle.minRadius);
-    const points = houghCircles(grayImg, 3, TsumCircle.dp, scaledPx(TsumCircle.minDist),
-      TsumCircle.param1, TsumCircle.param2, minRadius, scaledPx(TsumCircle.maxRadius));
-
-    if (ts!.debug) {
-      debugImg = clone(img);
-      for (let d = 0; d < points.length; d++) {
-        const pt = points[d];
-        drawCircle(debugImg, pt.x, pt.y, minRadius, 255, 0, 0, 1);
-      }
-      saveImage(debugImg, ts!.storagePath + "/tmp/" + ts!.runTimes + "-detectedHoughCircles.jpg");
-      releaseImage(debugImg);
-      debugImg = null;
-    }
+    const points: HoughCircle[] = circles.concat(large);
 
     // Heavy blur to smear out face features, then a 5-pixel cross average at
     // the circle center.
@@ -787,6 +849,7 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
         b: c.b, g: c.g, r: c.r,
         contrast: textures[k].contrast, peak: textures[k].peak,
         local: {b: lb / CrossPoints, g: lg / CrossPoints, r: lr / CrossPoints},
+        grow: (p as LargeCircle).grow,
       });
     }
 
@@ -796,7 +859,6 @@ function findTsums(img: NativeImage, grayImg: NativeImage): TsumPoint[] {
 
     return results;
   } finally {
-    if (debugImg != null) { releaseImage(debugImg); }
     if (localImg != null) { releaseImage(localImg); }
     releaseImage(hsvImg);
   }

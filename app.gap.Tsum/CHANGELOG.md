@@ -52,10 +52,17 @@ release note; they fold back in here when she ships.
 - Round stats no longer lose the score and coins when the rank-up panel appears after a round.
 - Auto Play Game setting moved from General to the Round tab.
 - Tsum app restart frequency now counts in minutes (30-minute steps) and sits under Device, out of Experimental.
+- Large tsums are now chained instead of popped, and bridge longer gaps.
 - Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, and the Mid Chain strategies no longer let them pile up.
 
 ### Added
 
+- **Large tsums.** Drawn at bubble size, they fell out of the tsum pass and
+  into the bubble pass, which tapped them. `findGameBubbles` now returns
+  circles that do not look like a bubble inside (`bubbleLookMask`) as `large`;
+  `findTsums` samples them with the rest, and `buildTsumNeighbors` reaches
+  `BoardPoint.grow` farther for them (capped by `LargeTsum.maxGrow`).
+  `board.largeTsums` logs what was read. Untested live.
 - **Trace stream** (`src/trace.ts`, host 3.1+). With a consumer on the host's
   trace port, every log record (debug included, flood guard bypassed) plus
   `board.scan` and `board.paths` snapshots stream live via `emitTrace`; the log

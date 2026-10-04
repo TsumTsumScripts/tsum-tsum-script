@@ -586,13 +586,21 @@ Tsum.prototype.scanBoardQuick = function() {
     if (skillScalesBoard(this)) {
       this.updateBoardScale(grayImg);
     }
-    const points = findTsums(srcImg, grayImg);
+    const circles = findTsumCircles(srcImg, grayImg);
     // Read bubble positions off this same capture and remember them, so popping
     // one after a chain is taps only -- no screenshot in the middle of a batch,
     // which would stall the link cadence and the combo timer with it. Bubbles
     // are big and drift slowly, so a position a second old still lands. Each
     // carries how many of this scan's tsums its pop would take (`near`).
-    this.gameBubbles = findGameBubbles(grayImg, srcImg, points);
+    const seen = findGameBubbles(grayImg, srcImg, circles);
+    this.gameBubbles = seen.bubbles;
+    // Large tsums come out of the bubble pass: they are sampled and planned
+    // with the rest, and wider-reaching (`buildTsumNeighbors`).
+    if (seen.large.length > 0) {
+      logDebug(Log.Board.LargeTsums, { count: seen.large.length,
+        grow: seen.large.map(function(l) { return +l.grow.toFixed(2); }) });
+    }
+    const points = findTsums(srcImg, grayImg, dropInsideLarge(circles, seen.large), seen.large);
     // Each one's first sighting, carried over from earlier scans -- what
     // `ripeGameBubbles` ages it by. Run on an empty list too: that is what
     // lets old sightings go.
@@ -712,6 +720,7 @@ Tsum.prototype.scanBoardQuick = function() {
           y: p.y - (Config.tsumWidth / 2),
           local: p.local,
           contrast: p.contrast,
+          grow: p.grow,
         });
         if (this.debug) {
           drawCircle(srcImg, p.x, p.y, 4, dbg[0], dbg[1], dbg[2], 0);

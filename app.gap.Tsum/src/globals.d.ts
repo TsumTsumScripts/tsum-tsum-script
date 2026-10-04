@@ -698,6 +698,13 @@ interface TsumPoint extends TsumTexture {
    * overlay on one tsum from the tsum beside it (Elsa's ice).
    */
   local: Color;
+  /** A large tsum's size against a normal one; absent on a normal tsum. */
+  grow?: number;
+}
+
+/** A large tsum `splitLargeTsums` took out of the bubble pass: its circle and `BoardPoint.grow`. */
+interface LargeCircle extends HoughCircle {
+  grow: number;
 }
 
 /** One colour cluster from `classifyTsums`: a running mean plus its members. */
@@ -726,6 +733,12 @@ interface BoardPoint {
   local?: Color;
   /** `TsumTexture.contrast`, likewise. */
   contrast?: number;
+  /**
+   * Set on a large tsum only: its size against a normal one, 1..`LargeTsum.maxGrow`.
+   * It reaches that much farther to each side, which is what lets it bridge
+   * a gap normal tsums cannot (`buildTsumNeighbors`).
+   */
+  grow?: number;
 }
 
 /**
