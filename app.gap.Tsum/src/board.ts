@@ -109,12 +109,13 @@ Tsum.prototype.holdBubblesAfterSkill = function(activatedAt) {
   this.bubbleHoldUntil = activatedAt + GameBubbleConfig.holdAfterSkillMs;
 };
 
-// `holdMs` defaults to the strategy's own hold: short under All Bubbles ASAP,
-// which wants board space rather than a good blast.
+// `holdMs` defaults to the strategy's own hold: short under All Bubbles ASAP
+// and Save One, which want board space rather than a good blast.
 Tsum.prototype.bubblesHeldAfterSkill = function(holdMs) {
   const cfg = GameBubbleConfig;
   if (typeof holdMs !== 'number') {
     holdMs = this.bubbleStrategy === BubbleStrategy.AllAsap
+        || this.bubbleStrategy === BubbleStrategy.SaveOne
       ? cfg.shortHoldAfterSkillMs : cfg.holdAfterSkillMs;
   }
   // `bubbleHoldUntil` is stamped with the long hold; shift it to this one.
@@ -144,6 +145,8 @@ Tsum.prototype.bubbleTapBudget = function() {
   switch (this.bubbleStrategy) {
     case BubbleStrategy.AllMidChain: return GameBubbleConfig.maxTapsMidChain;
     case BubbleStrategy.AllAsap: return GameBubbleConfig.maxTapsAsap;
+    // The one bubble `popBubbleOverflow` kept.
+    case BubbleStrategy.SaveOne: return 1;
     // One Bubble Mid Chain, and anything a stale setting or a hand-written
     // start() puts here: the stingiest reading, which is the safe one to be
     // wrong in -- a bubble left on the board is a bubble the next chain can
@@ -271,22 +274,25 @@ Tsum.prototype.popGameBubbles = function(limit) {
   this.gameBubbles = [];
 };
 
-// The overflow pop, for the two Mid Chain strategies: a scan that sees
+// The overflow pop, for every strategy but All Bubbles ASAP: a scan that sees
 // `overflowAt` bubbles or more pops all but the `overflowKeep` richest now,
-// ripe or not, so a fast tsum cannot bury the board in them. What is kept
-// stays in the list for `link`'s mid-chain pop. Held like the strategy's own
-// pops, but only for the short hold after a skill.
+// ripe or not, so a fast tsum cannot bury the board in them. Save One is the
+// same pop kept to one, from two. What is kept stays in the list for `link`'s
+// mid-chain pop. Held like the strategy's own pops, but only for the short
+// hold after a skill.
 Tsum.prototype.popBubbleOverflow = function() {
   const cfg = GameBubbleConfig;
   const all = this.gameBubbles;
-  if (!all || all.length < cfg.overflowAt || !this.isRunning) { return; }
+  const saveOne = this.bubbleStrategy === BubbleStrategy.SaveOne;
+  const keep = saveOne ? 1 : cfg.overflowKeep;
+  if (!all || all.length < (saveOne ? 2 : cfg.overflowAt) || !this.isRunning) { return; }
   if (this.bubbleStrategy === BubbleStrategy.AllAsap || skillClaimsBubbles(this)
       || this.bubblesHeldForFever() || this.bubblesHeldAfterSkill(cfg.shortHoldAfterSkillMs)) {
     return;
   }
   const sorted = all.slice().sort(function(a, b) { return (b.near || 0) - (a.near || 0); });
-  const kept = sorted.slice(0, cfg.overflowKeep);
-  const extra = sorted.slice(cfg.overflowKeep, cfg.overflowKeep + cfg.maxTapsAsap);
+  const kept = sorted.slice(0, keep);
+  const extra = sorted.slice(keep, keep + cfg.maxTapsAsap);
   for (let i = 0; i < extra.length; i++) { tapGameBubble(this, extra[i]); }
   logDebug(Log.Bubble.Overflow, { popped: extra.length, kept: kept.length, seen: all.length });
   this.gameBubbles = kept;

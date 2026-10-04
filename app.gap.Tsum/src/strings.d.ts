@@ -222,11 +222,13 @@ declare const enum UiText {
   // --- dropdown entries ---------------------------------------------------
   BubbleOneMidChain = 'bubble.oneMidChain',
   BubbleAllMidChain = 'bubble.allMidChain',
+  BubbleSaveOne = 'bubble.saveOne',
   BubbleAllAsap = 'bubble.allAsap',
   /* The Quick Bar's names for the same three: its chip is a few characters
      wide, where the full names above are an ellipsis. See `BubbleOption.short`. */
   BubbleOneMidChainShort = 'bubble.oneMidChain.short',
   BubbleAllMidChainShort = 'bubble.allMidChain.short',
+  BubbleSaveOneShort = 'bubble.saveOne.short',
   BubbleAllAsapShort = 'bubble.allAsap.short',
 
   /** The Skill Type dropdown's three headings -- see `src/skillOptions.ts`. */
@@ -388,6 +390,7 @@ declare const enum UiText {
   // --- one board scan, chip by chip ---------------------------------------
   FlowScan = 'flow.scan',
   FlowPopAll = 'flow.popAll',
+  FlowPopAllButOne = 'flow.popAllButOne',
   /** Chains up to `{max}` long at `{reach}`% reach. */
   FlowPlan = 'flow.plan',
   FlowMyTsumFirst = 'flow.myTsumFirst',

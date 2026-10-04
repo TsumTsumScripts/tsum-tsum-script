@@ -3487,6 +3487,8 @@ function roundFlowChips(values: { [key: string]: SettingValue }): string[] {
     chips.push(i18nText(UiText.FlowScan));
     if (strategy === BubbleStrategy.AllAsap) {
         chips.push(i18nText(UiText.FlowPopAll));
+    } else if (strategy === BubbleStrategy.SaveOne) {
+        chips.push(i18nText(UiText.FlowPopAllButOne));
     }
     chips.push(i18nFormat(UiText.FlowPlan, {
         max: num(SettingKey.MaxChain),
@@ -3504,6 +3506,7 @@ function roundFlowChips(values: { [key: string]: SettingValue }): string[] {
             {sec: num(SettingKey.HoldBubblesLastFeverSec)}));
     }
     chips.push(i18nText(strategy === BubbleStrategy.OneMidChain
+            || strategy === BubbleStrategy.SaveOne
         ? UiText.FlowLinkOneBubble
         : strategy === BubbleStrategy.AllMidChain
             ? UiText.FlowLinkAllBubbles

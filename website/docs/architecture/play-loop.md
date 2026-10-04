@@ -23,7 +23,7 @@ flowchart TD
   link["link(): drag each chain; pop bubbles per the Bubble Strategy"]
   skill{"useSkill(board)?<br/>gauge full, not in fever hold-off"}
   choreo["the skill's afterActivate choreography"]
-  extras["Lorcana card · periodic blind sweep (All Bubbles ASAP) · periodic fan"]
+  extras["Lorcana card · pile-up sweep (All Bubbles ASAP) · periodic fan"]
   live{"watchRoundEnd(): is the HUD still there?"}
   over["finishRoundStats() · emit round.end · start the delay"]
   delay --> whistle --> nav --> open --> scan --> stall
@@ -77,14 +77,17 @@ https://github.com/game-automation-platform/game-automation-scripts/blob/main/ap
    tsums out of a chain drawn too fast. Bubbles are spent inside chains
    according to the **Bubble Strategy** — a bubble popped while a chain is
    clearing takes a bigger area with it, so the loop hoards them and
-   `bubbleTapBudget` says how many a chain may pop.
+   `bubbleTapBudget` says how many a chain may pop. Right after the scan,
+   *All Bubbles ASAP* pops every bubble and the other strategies pop any
+   overflow (`popBubbleOverflow`: all but one under *Save One*, all but two
+   past four under the Mid Chain ones).
 6. **Skill.** `while (useSkill(board))`: the shared core checks the gauge,
    respects the fever hold-off, taps the button and hands over to the skill's
    choreography ([Add a skill](../guides/add-a-skill)). A skill that turns
    tsums into bubbles sweeps them itself and says so with `sweepsBubbles`.
-7. **Extras.** Tap the Lorcana card if it is up; run the blind bubble sweep if
-   the strategy is *All Bubbles ASAP* and no skill has a standing claim on the
-   bubbles; use the Fan every fourth turn if the setting is on and the gauge is
+7. **Extras.** Tap the Lorcana card if it is up; sweep the bottom band blind if
+   the strategy is *All Bubbles ASAP*, the scan saw a pile, and no skill has a
+   standing claim on the bubbles; use the Fan every fourth turn if the setting is on and the gauge is
    not about to fill anyway.
 8. **Liveness.** `watchRoundEnd` asks whether the HUD is still there. A burst
    skill's animation covers the same pixels, so an unreadable frame is played

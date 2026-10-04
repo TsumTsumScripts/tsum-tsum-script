@@ -7,6 +7,8 @@ docs), then drop its rows here.
 
 | Added | For | Where | Used |
 |:--|:--|:--|:--|
+| `BubbleStrategy.SaveOne`, `UiText.BubbleSaveOne` / `BubbleSaveOneShort` / `FlowPopAllButOne`, share slot `s` | Save One bubble strategy | `src/shared.d.ts`, `src/bubbleOptions.ts`, `src/strings.d.ts`, `src/ui*.ts`, `src/quickbar.ts`, `src/settings.ts`, `src/board.ts` | used |
+| `GameBubbleConfig.bandFrom` / `bandParam2` / `bandMaxRadius` / `darkMax` / `whiteMax`, `bubbleLooks`, `bubbleNear`, `shortHoldAfterSkillMs`, `overflowAt` / `overflowKeep`, `pileUpSweepAt`, `popBubbleOverflow`, `bubbleBandTopY`, `Log.Bubble.Overflow` | Faster bubble popping | `src/data.ts`, `src/pathfinding.ts`, `src/board.ts`, `src/play.ts`, `src/logEvents.ts` | used |
 | `SettingKey.TsumListOnly` (start flag, no row) | Tsum List export: a run started for it stops after | `src/shared.d.ts`, `src/runPlan.ts`, `src/index.ts` | used |
 | `RowKey.ExportTsumList` + `GroupTsumList`/`SettingExportTsumList` strings | Tsum List Now button | `src/settings.d.ts`, `src/settings.ts`, `src/strings.d.ts`, `src/uiEn.ts` | used |
 | `CollectionSortDialog.ownedOnly*`, `sortCollection`'s `ownedOnly` | Tsum List: owned tsums only | `src/data.ts`, `src/levelCap.ts` | used |

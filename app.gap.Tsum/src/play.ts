@@ -738,7 +738,8 @@ Tsum.prototype.taskPlayGameQuick = function() {
     }
     // All Bubbles ASAP: spend them where they are, before a chain can earn
     // them. The other two strategies leave the list for `link` to spend on the
-    // first long chain of this batch -- less any overflow, popped now.
+    // first long chain of this batch -- less any overflow, popped now (Save
+    // One: all but one).
     bubblesSeen = this.gameBubbles.length;
     if (this.bubbleStrategy === BubbleStrategy.AllAsap) {
       this.popGameBubbles();

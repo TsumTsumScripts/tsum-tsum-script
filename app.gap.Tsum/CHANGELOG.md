@@ -53,10 +53,14 @@ release note; they fold back in here when she ships.
 - Auto Play Game setting moved from General to the Round tab.
 - Tsum app restart frequency now counts in minutes (30-minute steps) and sits under Device, out of Experimental.
 - Large tsums are now chained instead of popped, and bridge longer gaps.
-- Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, and the Mid Chain strategies no longer let them pile up.
+- Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, the Mid Chain strategies no longer let them pile up, and a new Save One strategy pops all but one.
 
 ### Added
 
+- **Save One bubble strategy** (`BubbleStrategy.SaveOne`, share `s`, chip
+  "Save 1"). `popBubbleOverflow` with keep 1 from 2 bubbles, right after each
+  scan; the kept (richest) one is the budget-1 mid-chain pop. Short
+  post-skill hold, as ASAP.
 - **Large tsums.** About 1.85x a normal tsum across, too big for either circle
   pass, so they were missed or read as a stray small tsum. `findLargeTsums`
   now finds one by its flat colour from middle to rim (a colour grid, no Hough)

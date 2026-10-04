@@ -189,10 +189,12 @@ i18nRegister(Locale.Japanese, '日本語', {
 
     [UiText.BubbleOneMidChain]: 'チェーン中にボムを1つ',
     [UiText.BubbleAllMidChain]: 'チェーン中にボムを全部',
+    [UiText.BubbleSaveOne]: 'ボムを1つ残す',
     [UiText.BubbleAllAsap]: 'ボムをすぐ全部',
     // クイックバーのチップ用。数文字の幅しかない。
     [UiText.BubbleOneMidChainShort]: '途中1つ',
     [UiText.BubbleAllMidChainShort]: '途中全部',
+    [UiText.BubbleSaveOneShort]: '1つ残す',
     [UiText.BubbleAllAsapShort]: 'すぐ全部',
 
     [UiText.ButtonCopy]: 'コピー',
@@ -284,6 +286,7 @@ i18nRegister(Locale.Japanese, '日本語', {
 
     [UiText.FlowScan]: '盤面をスキャン',
     [UiText.FlowPopAll]: 'ボムをすべて割る',
+    [UiText.FlowPopAllButOne]: 'ボムを1つ残して割る',
     [UiText.FlowPlan]: 'チェーンを計画（最長 {max}、距離 {reach}%）',
     [UiText.FlowMyTsumFirst]: 'マイツム優先',
     [UiText.FlowKeep]: '上位 {count} 本を採用',

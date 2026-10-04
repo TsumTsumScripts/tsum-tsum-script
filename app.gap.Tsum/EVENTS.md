@@ -21,7 +21,7 @@ Names are declared once, in `src/scriptEvents.ts`, and reached through
 | `task.start` | `src/taskController.ts:93` | `task` |
 | `round.over` | `src/play.ts:367` | `id`, `seconds` |
 | `round.start` | `src/play.ts:545` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `settings` |
-| `round.end` | `src/play.ts:913` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
+| `round.end` | `src/play.ts:910` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
 | `run.started` | `src/index.ts:86` | `version`, `skill`, `locale` |
 | `run.stopped` | `src/index.ts:661` | `rounds` |
 
@@ -91,7 +91,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/play.ts:913` — `this.emit(Emit.Round.End, …)`
+- `src/play.ts:910` — `this.emit(Emit.Round.End, …)`
 
 ### `run.started`
 

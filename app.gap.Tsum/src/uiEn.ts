@@ -197,11 +197,13 @@ i18nRegister(Locale.English, 'English', {
 
     [UiText.BubbleOneMidChain]: 'One Bubble Mid Chain',
     [UiText.BubbleAllMidChain]: 'All Bubbles Mid Chain',
+    [UiText.BubbleSaveOne]: 'Save One',
     [UiText.BubbleAllAsap]: 'All Bubbles ASAP',
     // The Quick Bar's chip. "Mid" is mid-chain and "Now" is as soon as they
     // land, so the three read as a scale from one bubble to all of them.
     [UiText.BubbleOneMidChainShort]: '1 mid',
     [UiText.BubbleAllMidChainShort]: 'All mid',
+    [UiText.BubbleSaveOneShort]: 'Save 1',
     [UiText.BubbleAllAsapShort]: 'All now',
 
     [UiText.SkillGroupBurst]: 'Burst',
@@ -331,6 +333,7 @@ i18nRegister(Locale.English, 'English', {
 
     [UiText.FlowScan]: 'scan the board',
     [UiText.FlowPopAll]: 'pop every bubble',
+    [UiText.FlowPopAllButOne]: 'pop every bubble but one',
     [UiText.FlowPlan]: 'plan chains (up to {max} long, {reach}% reach)',
     [UiText.FlowMyTsumFirst]: 'MyTsum first',
     [UiText.FlowKeep]: 'keep {count}',

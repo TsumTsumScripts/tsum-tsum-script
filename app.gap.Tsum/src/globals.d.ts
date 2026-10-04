@@ -1348,7 +1348,7 @@ interface Tsum {
    * `holdMs` defaults to the strategy's hold (short under All Bubbles ASAP).
    */
   bubblesHeldAfterSkill(holdMs?: number): boolean;
-  /** Mid Chain strategies: pop all but the richest few once a pile builds. */
+  /** All but All Bubbles ASAP: pop all but the richest few once a pile builds (Save One: all but one). */
   popBubbleOverflow(): void;
   /** How many bubbles the Bubble Strategy setting allows one pop to spend. */
   bubbleTapBudget(): number;

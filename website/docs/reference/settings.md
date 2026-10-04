@@ -77,7 +77,7 @@ settings". Close the panel instead and the run carries on where it left off.
 |:--|:--|
 | Link reach (% of a tsum) | How far apart two tsums may be and still be linked. Too low and no long chain exists; too high and the game refuses the drag. |
 | Link MyTsum first | Prefer chains of your own tsum, which fills the skill gauge faster. |
-| Bubble Strategy | What to do with bubbles the board leaves lying about. A bubble popped while a chain is clearing takes a bigger area with it, so one spent off a chain is wasted. `One Bubble Mid Chain` (default) pops exactly one as a chain lands. `All Bubbles Mid Chain` pops every bubble the last scan found, still only as a chain lands. `All Bubbles ASAP` pops them as soon as seen and runs the old blind sweep as well. Skills that turn tsums into bubbles clear up after themselves whatever this says. |
+| Bubble Strategy | What to do with bubbles the board leaves lying about. A bubble popped while a chain is clearing takes a bigger area with it, so one spent off a chain is wasted. `One Bubble Mid Chain` (default) pops exactly one as a chain lands. `All Bubbles Mid Chain` pops every bubble the last scan found, still only as a chain lands. Both Mid Chain options pop all but two at once when four or more pile up. `Save One` pops every bubble as soon as seen except the best one, which goes on the next long chain. `All Bubbles ASAP` pops them as soon as seen and sweeps the bottom of the board when a pile builds. Skills that turn tsums into bubbles clear up after themselves whatever this says. |
 | Hold bubbles last fever seconds | Leave every bubble alone this near the end of a fever, so they are there to refill the gauge after it. 0 never holds. |
 | Use Fan? | Shake the board with the Fan every few scans. Opinions differ; try it. |
 
@@ -135,7 +135,7 @@ the floating bar opens it.
 | Chain | Maximum chain number |
 | +Coin, 5>4 | Those two bonus items |
 | Preset | Not one setting: which saved configuration is loaded |
-| Bubble | Bubble strategy, short: **1 mid**, **All mid**, **All now** |
+| Bubble | Bubble strategy, short: **1 mid**, **All mid**, **Save 1**, **All now** |
 | Report | Saves a report of what is on screen. The one control that works while the script is still playing |
 
 - **The controls work while the script is paused.** Press ⏸ and they come

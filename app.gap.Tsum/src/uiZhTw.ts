@@ -194,10 +194,12 @@ i18nRegister(Locale.Taiwan, '中文', {
 
     [UiText.BubbleOneMidChain]: '連線時戳一顆',
     [UiText.BubbleAllMidChain]: '連線時全戳',
+    [UiText.BubbleSaveOne]: '保留一顆',
     [UiText.BubbleAllAsap]: '盡快全戳',
     // 快捷列的短名：晶片只有幾個字的寬度。
     [UiText.BubbleOneMidChainShort]: '連線一顆',
     [UiText.BubbleAllMidChainShort]: '連線全戳',
+    [UiText.BubbleSaveOneShort]: '留一顆',
     [UiText.BubbleAllAsapShort]: '盡快全戳',
 
     // [UiText.SkillGroupBurst]: '消除系',
@@ -321,6 +323,7 @@ i18nRegister(Locale.Taiwan, '中文', {
 
     [UiText.FlowScan]: '掃描版面',
     [UiText.FlowPopAll]: '戳破所有泡泡',
+    [UiText.FlowPopAllButOne]: '留一顆，其餘戳破',
     [UiText.FlowPlan]: '規劃連線（最長 {max} 顆・距離 {reach}%）',
     [UiText.FlowMyTsumFirst]: '我的 Tsum 優先',
     [UiText.FlowKeep]: '取前 {count} 條',
