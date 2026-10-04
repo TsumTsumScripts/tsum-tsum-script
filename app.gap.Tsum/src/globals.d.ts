@@ -702,7 +702,7 @@ interface TsumPoint extends TsumTexture {
   grow?: number;
 }
 
-/** A large tsum `splitLargeTsums` took out of the bubble pass: its circle and `BoardPoint.grow`. */
+/** A large tsum `findLargeTsums` found: its circle and `BoardPoint.grow`. */
 interface LargeCircle extends HoughCircle {
   grow: number;
 }
@@ -734,7 +734,7 @@ interface BoardPoint {
   /** `TsumTexture.contrast`, likewise. */
   contrast?: number;
   /**
-   * Set on a large tsum only: its size against a normal one, 1..`LargeTsum.maxGrow`.
+   * Set on a large tsum only: its size against a normal one, `LargeTsum.grow`.
    * It reaches that much farther to each side, which is what lets it bridge
    * a gap normal tsums cannot (`buildTsumNeighbors`).
    */

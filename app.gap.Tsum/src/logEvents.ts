@@ -115,7 +115,7 @@ namespace Log {
     DeadScan         = 'board.deadScan',
     /** The scan waited out the last seconds' edge wash (`waitOutEdgeWash`). */
     EdgeWash         = 'board.edgeWash',
-    /** Large tsums read off the bubble pass and added to the board (`splitLargeTsums`). */
+    /** Large tsums found on the board (`findLargeTsums`). */
     LargeTsums       = 'board.largeTsums',
     LinkReach        = 'board.linkReach',
     MyTsumColor      = 'board.myTsumColor',

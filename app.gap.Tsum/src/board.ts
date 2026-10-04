@@ -592,15 +592,18 @@ Tsum.prototype.scanBoardQuick = function() {
     // which would stall the link cadence and the combo timer with it. Bubbles
     // are big and drift slowly, so a position a second old still lands. Each
     // carries how many of this scan's tsums its pop would take (`near`).
-    const seen = findGameBubbles(grayImg, srcImg, circles);
-    this.gameBubbles = seen.bubbles;
-    // Large tsums come out of the bubble pass: they are sampled and planned
-    // with the rest, and wider-reaching (`buildTsumNeighbors`).
-    if (seen.large.length > 0) {
-      logDebug(Log.Board.LargeTsums, { count: seen.large.length,
-        grow: seen.large.map(function(l) { return +l.grow.toFixed(2); }) });
+    const large = findLargeTsums(srcImg, circles);
+    // A bubble-pass circle on a large tsum is the tsum, not a bubble.
+    this.gameBubbles = findGameBubbles(grayImg, srcImg, circles).filter(function(b) {
+      return !pointInLarge(b, large, 1);
+    });
+    // Large tsums are sampled and planned with the rest, and reach farther
+    // (`buildTsumNeighbors`).
+    if (large.length > 0) {
+      logDebug(Log.Board.LargeTsums, { count: large.length,
+        at: large.map(function(l) { return [Math.round(l.x), Math.round(l.y)]; }) });
     }
-    const points = findTsums(srcImg, grayImg, dropInsideLarge(circles, seen.large), seen.large);
+    const points = findTsums(srcImg, grayImg, dropInsideLarge(circles, large), large);
     // Each one's first sighting, carried over from earlier scans -- what
     // `ripeGameBubbles` ages it by. Run on an empty list too: that is what
     // lets old sightings go.

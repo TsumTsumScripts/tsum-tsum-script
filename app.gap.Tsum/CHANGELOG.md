@@ -57,12 +57,13 @@ release note; they fold back in here when she ships.
 
 ### Added
 
-- **Large tsums.** Drawn at bubble size, they fell out of the tsum pass and
-  into the bubble pass, which tapped them. `findGameBubbles` now returns
-  circles that do not look like a bubble inside (`bubbleLookMask`) as `large`;
-  `findTsums` samples them with the rest, and `buildTsumNeighbors` reaches
-  `BoardPoint.grow` farther for them (capped by `LargeTsum.maxGrow`).
-  `board.largeTsums` logs what was read. Untested live.
+- **Large tsums.** About 1.85x a normal tsum across, too big for either circle
+  pass, so they were missed or read as a stray small tsum. `findLargeTsums`
+  now finds one by its flat colour from middle to rim (a colour grid, no Hough)
+  and drops the stray circle inside it. `findTsums` samples it with the rest
+  and `buildTsumNeighbors` reaches `LargeTsum.grow` farther for it, as the game
+  does. Bubbles on a large tsum are not popped. A large *dark* tsum goes unseen.
+  `board.largeTsums` logs what was found. Checked on one recording only.
 - **Trace stream** (`src/trace.ts`, host 3.1+). With a consumer on the host's
   trace port, every log record (debug included, flood guard bypassed) plus
   `board.scan` and `board.paths` snapshots stream live via `emitTrace`; the log

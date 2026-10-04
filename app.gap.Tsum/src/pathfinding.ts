@@ -488,35 +488,19 @@ function buildBoardGray(img: NativeImage): NativeImage {
 // over the bottom band (`bandFrom`) where bubbles pile up, kept only where the
 // circle looks like a bubble (`bubbleLooks` on `img`, the scan's colour frame).
 //
-// `tsums` are that scan's tsum circles (centres, as `findTsumCircles` returns
-// them); each bubble is handed the count of them inside its blast, which is what
-// a pop of it is worth -- see `GameBubbleConfig.blastReach`.
-//
-// A large tsum is drawn at a bubble's size, so this pass finds it too. A circle
-// of the Hough pass proper that does not look like a bubble inside (a face's
-// dark, or a pale tsum's white -- `bubbleLooks`) is a large tsum: it comes back
-// in `large` instead of `bubbles`, to be linked rather than popped.
-function findGameBubbles(grayImg: NativeImage, img: NativeImage, tsums: Point[]):
-    { bubbles: GameBubble[], large: LargeCircle[] } {
+// `tsums` are that scan's tsum circles (centres, as `findTsums` returns them);
+// each bubble is handed the count of them inside its blast, which is what a pop
+// of it is worth -- see `GameBubbleConfig.blastReach`.
+function findGameBubbles(grayImg: NativeImage, img: NativeImage, tsums: Point[]): GameBubble[] {
   const cfg = GameBubbleConfig;
   // houghCircles returns centres, unlike the board points findTsums feeds the
   // pathfinder (those are shifted to a tsum's top-left corner).
   // Bubbles shrink with the tsums (`Config.boardScale`).
   const found = houghCircles(grayImg, 3, 1, scaledPx(cfg.minDist), cfg.param1, cfg.param2,
                              scaledPx(cfg.minRadius), scaledPx(cfg.maxRadius));
-  const looks = bubbleLookMask(img, found.map(function(f) {
-    return {x: f.x, y: f.y, r: f.radius};
-  }));
-  const normalR = BoardScaleRead.radiusPerWidth * tsumSpan();
   const out: GameBubble[] = [];
-  const large: LargeCircle[] = [];
   for (let k = 0; k < found.length; k++) {
-    if (looks[k]) {
-      out.push({x: found[k].x, y: found[k].y, r: found[k].radius});
-    } else {
-      const grow = Math.min(LargeTsum.maxGrow, Math.max(1, found[k].radius / normalR));
-      large.push({x: found[k].x, y: found[k].y, radius: found[k].radius, grow: grow});
-    }
+    out.push({x: found[k].x, y: found[k].y, r: found[k].radius});
   }
   const bandFrom = getImageSize(grayImg).height * cfg.bandFrom;
   const band = houghCircles(grayImg, 3, 1, scaledPx(cfg.minDist), cfg.param1, cfg.bandParam2,
@@ -541,7 +525,7 @@ function findGameBubbles(grayImg: NativeImage, img: NativeImage, tsums: Point[])
     }
     b.near = near;
   }
-  return {bubbles: out, large: large};
+  return out;
 }
 
 /** Whether `p` lies within `dist` of any of `bubbles`. */
@@ -561,12 +545,6 @@ function bubbleNear(p: Point, bubbles: GameBubble[], dist: number): boolean {
  * all of them.
  */
 function bubbleLooks(img: NativeImage, circles: GameBubble[]): GameBubble[] {
-  const looks = bubbleLookMask(img, circles);
-  return circles.filter(function(_c, k) { return looks[k]; });
-}
-
-/** `bubbleLooks`' verdict per circle: true where it looks like a bubble inside. */
-function bubbleLookMask(img: NativeImage, circles: GameBubble[]): boolean[] {
   const cfg = GameBubbleConfig;
   const size = getImageSize(img);
   const pts: Point[] = [];
@@ -587,9 +565,9 @@ function bubbleLookMask(img: NativeImage, circles: GameBubble[]): boolean[] {
     }
     per.push(n);
   }
-  if (pts.length === 0) { return circles.map(function() { return true; }); }
+  if (pts.length === 0) { return circles; }
   const colors = getImageColors(img, pts);
-  const out: boolean[] = [];
+  const out: GameBubble[] = [];
   let at = 0;
   for (let k = 0; k < circles.length; k++) {
     let dark = 0;
@@ -602,7 +580,9 @@ function bubbleLookMask(img: NativeImage, circles: GameBubble[]): boolean[] {
       if (hi > 217 && hi - lo < 0.25 * hi) { white++; }
     }
     at += per[k];
-    out.push(per[k] === 0 || (dark <= cfg.darkMax * per[k] && white <= cfg.whiteMax * per[k]));
+    if (per[k] === 0 || (dark <= cfg.darkMax * per[k] && white <= cfg.whiteMax * per[k])) {
+      out.push(circles[k]);
+    }
   }
   return out;
 }
@@ -627,29 +607,161 @@ var TsumCircle = {
   maxRadius: 14,
 };
 
-// Large tsums (`findGameBubbles` finds them in the bubble pass).
+// Large tsums: about 1.85x a normal tsum across (radius ~24 in the play square,
+// measured off a recording), so neither circle pass can return one -- the tsum
+// pass stops at 14, the bubble pass at 22 -- and a Hough pass at that size is
+// too noisy to trust. What gives one away is that it is one flat colour from
+// its middle nearly to its rim, which two normal tsums side by side are not.
+// `findLargeTsums` looks for exactly that.
 var LargeTsum = {
-  // A large tsum's size against a normal one never counts for more than this:
-  // the circle's radius is a noisy read, and the reach it buys is the
-  // game's to accept, not ours.
-  maxGrow: 1.6,
-  // A normal tsum circle this near a large tsum's centre (in its radii) is the
-  // large one's own face, found twice.
+  radius: 24,
+  // Its size against a normal tsum: how much farther it reaches
+  // (`buildTsumNeighbors`). The game accepted a large-to-small link of 1.77x
+  // the two radii; a normal pair at `Config.linkReach` is 1.7x.
+  grow: 1.85,
+  // The colour grid is read every `step` px and centres tried every other cell.
+  step: 4,
+  // Colour distance (BGR) inside which a sample counts as the tsum's own
+  // colour, and the share of the two inner rings (0.55 and 0.8 of the radius)
+  // that has to be.
+  tolerance: 55,
+  minFlat: 0.78,
+  // The ring at 1.3 radii has to differ from it for at least this share: a
+  // tsum ends, a patch of board does not.
+  minEdge: 0.5,
+  // Dimmer than this (max channel) is a hole in the board or a pile of dark
+  // tsums, not a flat tsum. Costs a large *dark* tsum, which goes unseen.
+  minValue: 150,
+  // Normal tsum circles within 0.8 of the radius of a large one. A face is
+  // found once at most; more is a cluster of small ones.
+  maxInside: 1,
   dupReach: 0.8,
 };
+
+// Ring offsets from a centre, in grid steps of `LargeTsum.step` (4px), so
+// every sample is a lookup into the one colour grid. Inner: radius ~13 and ~19;
+// outer: ~31.
+const LargeRingInner: number[][] = [
+  [3, 1], [1, 3], [-1, 3], [-3, 1], [-3, -1], [-1, -3], [1, -3], [3, -1], [2, 2], [-2, 2], [-2, -2], [2, -2],
+  [4, 2], [2, 4], [-2, 4], [-4, 2], [-4, -2], [-2, -4], [2, -4], [4, -2], [5, 0], [0, 5], [-5, 0], [0, -5],
+];
+const LargeRingOuter: number[][] = [
+  [6, 5], [5, 6], [-5, 6], [-6, 5], [-6, -5], [-5, -6], [5, -6], [6, -5], [8, 0], [0, 8], [-8, 0], [0, -8],
+];
+
+/**
+ * Large tsums on the board, centres and `LargeTsum.grow`.
+ *
+ * One batched colour read of the light-blurred frame on a 4px grid, then each
+ * candidate centre (every 8px) is tested on that grid: flat colour at 0.55 and
+ * 0.8 of the radius, a different colour past the rim, bright enough to be a
+ * tsum, and at most `maxInside` of `circles` (the normal tsum pass) inside it.
+ * Neighbouring hits are merged, best first. Skipped on a shrunk board
+ * (`Config.boardScale`), where the radius would be wrong.
+ */
+function findLargeTsums(img: NativeImage, circles: HoughCircle[]): LargeCircle[] {
+  const L = LargeTsum;
+  if (Config.boardScale < 0.95) { return []; }
+  const size = getImageSize(img);
+  const cols = Math.floor(size.width / L.step);
+  const rows = Math.floor(size.height / L.step);
+  const blurred = clone(img);
+  let grid: Color[];
+  try {
+    smooth(blurred, 1, LocalSampleBlur);
+    const pts: Point[] = [];
+    for (let gy = 0; gy < rows; gy++) {
+      for (let gx = 0; gx < cols; gx++) { pts.push({x: gx * L.step, y: gy * L.step}); }
+    }
+    grid = getImageColors(blurred, pts);
+  } finally {
+    releaseImage(blurred);
+  }
+  const tolSq = L.tolerance * L.tolerance;
+
+  // The share of `ring` samples within tolerance of `ref` (all of them when
+  // `outside` is false; those past it when true), or -1 when too many fall
+  // off the frame to say.
+  function share(gx: number, gy: number, ring: number[][], ref: Color, differ: boolean): number {
+    let n = 0, hit = 0;
+    for (let k = 0; k < ring.length; k++) {
+      const x = gx + ring[k][0], y = gy + ring[k][1];
+      if (x < 0 || y < 0 || x >= cols || y >= rows) { continue; }
+      const c = grid[y * cols + x];
+      const db = c.b - ref.b, dg = c.g - ref.g, dr = c.r - ref.r;
+      const far = db * db + dg * dg + dr * dr > tolSq;
+      n++;
+      if (far === differ) { hit++; }
+    }
+    return n < ring.length * 0.8 ? -1 : hit / n;
+  }
+
+  function median(v: number[]): number {
+    v.sort(function(a, b) { return a - b; });
+    return v[v.length >> 1];
+  }
+
+  const hits: { score: number, gx: number, gy: number }[] = [];
+  for (let gy = 5; gy < rows; gy += 2) {
+    for (let gx = 5; gx < cols; gx += 2) {
+      // The reference colour: the median of the inner ring, per channel.
+      const bs: number[] = [], gs: number[] = [], rs: number[] = [];
+      for (let k = 0; k < LargeRingInner.length; k++) {
+        const x = gx + LargeRingInner[k][0], y = gy + LargeRingInner[k][1];
+        if (x < 0 || y < 0 || x >= cols || y >= rows) { continue; }
+        const c = grid[y * cols + x];
+        bs.push(c.b); gs.push(c.g); rs.push(c.r);
+      }
+      if (bs.length < LargeRingInner.length * 0.8) { continue; }
+      const ref = {b: median(bs), g: median(gs), r: median(rs)};
+      if (Math.max(ref.b, ref.g, ref.r) < L.minValue) { continue; }
+      const flat = share(gx, gy, LargeRingInner, ref, false);
+      if (flat < L.minFlat) { continue; }
+      if (share(gx, gy, LargeRingOuter, ref, true) < L.minEdge) { continue; }
+      hits.push({score: flat, gx: gx, gy: gy});
+    }
+  }
+  hits.sort(function(a, b) { return b.score - a.score; });
+
+  const out: LargeCircle[] = [];
+  const apart = (L.radius + 2) * (L.radius + 2);
+  const inside = L.dupReach * L.radius;
+  for (let h = 0; h < hits.length; h++) {
+    const x = hits[h].gx * L.step, y = hits[h].gy * L.step;
+    let near = false;
+    for (let i = 0; i < out.length && !near; i++) {
+      const dx = out[i].x - x, dy = out[i].y - y;
+      near = dx * dx + dy * dy < apart;
+    }
+    if (near) { continue; }
+    let faces = 0;
+    for (let i = 0; i < circles.length; i++) {
+      const dx = circles[i].x - x, dy = circles[i].y - y;
+      if (dx * dx + dy * dy <= inside * inside) { faces++; }
+    }
+    if (faces > L.maxInside) { continue; }
+    out.push({x: x, y: y, radius: L.radius, grow: L.grow});
+  }
+  return out;
+}
 
 /** `circles` less those that sit inside one of `large`. */
 function dropInsideLarge(circles: HoughCircle[], large: LargeCircle[]): HoughCircle[] {
   if (large.length === 0) { return circles; }
   return circles.filter(function(c) {
-    for (let i = 0; i < large.length; i++) {
-      const reach = LargeTsum.dupReach * large[i].radius;
-      const dx = c.x - large[i].x;
-      const dy = c.y - large[i].y;
-      if (dx * dx + dy * dy <= reach * reach) { return false; }
-    }
-    return true;
+    return !pointInLarge(c, large, LargeTsum.dupReach);
   });
+}
+
+/** Whether `p` lies within `reach` of a large tsum's radius from its centre. */
+function pointInLarge(p: Point, large: LargeCircle[], reach: number): boolean {
+  for (let i = 0; i < large.length; i++) {
+    const r = reach * large[i].radius;
+    const dx = p.x - large[i].x;
+    const dy = p.y - large[i].y;
+    if (dx * dx + dy * dy <= r * r) { return true; }
+  }
+  return false;
 }
 
 /** A size in play-square px, scaled to the tsums on this board. */
@@ -765,7 +877,7 @@ function findTsumCircles(img: NativeImage, grayImg: NativeImage): HoughCircle[] 
 
 /**
  * Sample each circle's colour and texture: `circles` from `findTsumCircles`,
- * then the large tsums from `splitLargeTsums`, which carry their `grow`.
+ * then the large tsums from `findLargeTsums`, which carry their `grow`.
  */
 function findTsums(img: NativeImage, grayImg: NativeImage,
                    circles: HoughCircle[], large: LargeCircle[]): TsumPoint[] {
