@@ -544,6 +544,9 @@ Tsum.prototype.waitOutEdgeWash = function(grayImg) {
   return true;
 };
 
+/** Large tsums the last scan found, so `board.largeTsums` is logged on a change. */
+var gLargeSeen = 0;
+
 Tsum.prototype.scanBoardQuick = function() {
   // load game tsums
   const startTime = Date.now();
@@ -599,8 +602,11 @@ Tsum.prototype.scanBoardQuick = function() {
     });
     // Large tsums are sampled and planned with the rest, and reach farther
     // (`buildTsumNeighbors`).
-    if (large.length > 0) {
-      logDebug(Log.Board.LargeTsums, { count: large.length,
+    // Info, but only when the count changes: the debug records never reach the
+    // log file, and this is the line that says whether the detector sees any.
+    if (large.length !== gLargeSeen) {
+      gLargeSeen = large.length;
+      logInfo(Log.Board.LargeTsums, { count: large.length,
         at: large.map(function(l) { return [Math.round(l.x), Math.round(l.y)]; }) });
     }
     const points = findTsums(srcImg, grayImg, dropInsideLarge(circles, large), large);
