@@ -43,7 +43,7 @@ release note; they fold back in here when she ships.
 
 - Tsum List export added (Chores > Tsum List > Now): writes every Tsum you own, with its level, skill level, progress to the next skill level and month acquired, to a CSV.
 
-## [4.0b1]
+## [4.0]
 
 ### Summary
 
@@ -57,7 +57,7 @@ release note; they fold back in here when she ships.
 
 ### Added
 
-- **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`, Beta). A burst
+- **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`). A burst
   declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture
   disc, bubble pass and link reach. Other skills skip the read and stay at 1.
