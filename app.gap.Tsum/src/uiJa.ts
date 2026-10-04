@@ -160,7 +160,7 @@ i18nRegister(Locale.Japanese, '日本語', {
     [UiText.SettingSendToZeroScoreHelp]: 'スコアのない友だち（休止中や自動送信の人）にも送ります。',
     [UiText.SettingSendMaxRuntime]: '最大実行時間（分）',
     [UiText.SettingSendMaxRuntimeHelp]: '0 なら毎回1位から送ります。',
-    [UiText.SettingAppRestartFrequency]: 'ツムツムの再起動間隔（時間）',
+    [UiText.SettingAppRestartFrequency]: 'ツムツムの再起動間隔（分）',
     [UiText.SettingAppRestartFrequencyHelp]: '長時間の実行中、この間隔でゲームを再起動します。0 = オフ。自動起動が必要です。',
     [UiText.SettingBuildDate]: 'ビルド日: $BUILD_DATE',
     [UiText.SettingDebugLogs]: 'デバッグログ',

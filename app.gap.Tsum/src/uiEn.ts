@@ -168,7 +168,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.SettingSendToZeroScoreHelp]: 'Also friends with no score (inactive or auto-senders).',
     [UiText.SettingSendMaxRuntime]: 'Max run time (min)',
     [UiText.SettingSendMaxRuntimeHelp]: '0 starts from the first place every time.',
-    [UiText.SettingAppRestartFrequency]: 'Tsum app restart frequency (hours)',
+    [UiText.SettingAppRestartFrequency]: 'Tsum app restart frequency (min)',
     [UiText.SettingAppRestartFrequencyHelp]: 'Restarts the game this often on long runs. 0 = off; needs Auto Launch.',
     [UiText.SettingBuildDate]: 'Build date: $BUILD_DATE',
     [UiText.SettingDebugLogs]: 'Debug logs',

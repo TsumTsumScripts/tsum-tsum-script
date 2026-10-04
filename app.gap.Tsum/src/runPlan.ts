@@ -115,7 +115,7 @@ function runTaskTable(settings: RunSettings): TaskSpec[] {
   if (on(SettingKey.AutoLaunchApp) && num(SettingKey.TsumAppRestartFrequency) > 0) {
     // The one job that waits a whole interval first: the app was just started.
     jobs.push({ name: TaskName.AppRestart, priority: JobPriority.AppRestart,
-      intervalMs: num(SettingKey.TsumAppRestartFrequency) * hours, dueAtStart: false });
+      intervalMs: num(SettingKey.TsumAppRestartFrequency) * minutes, dueAtStart: false });
   }
   if (on(SettingKey.ClickAssist)) {
     jobs.push({ name: TaskName.ClickAssist, priority: JobPriority.ClickAssist,

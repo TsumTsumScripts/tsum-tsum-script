@@ -568,6 +568,16 @@ var tabs: TabSpec[] = [
                         help: UiText.SettingSpecialScreenRatioHelp,
                         default: SettingDefaults[SettingKey.SpecialScreenRatio]
                     },
+                    {
+                        // Minutes, in 30-minute steps.
+                        key: SettingKey.TsumAppRestartFrequency,
+                        title: UiText.SettingAppRestartFrequency,
+                        help: UiText.SettingAppRestartFrequencyHelp,
+                        min: 0,
+                        max: 7200,
+                        step: 30,
+                        default: SettingDefaults[SettingKey.TsumAppRestartFrequency]
+                    },
                     // {
                     //     // The game runs its self-dismissing screens off a frame
                     //     // counter, so the durations in PageProfiles are quoted at
@@ -686,22 +696,6 @@ var tabs: TabSpec[] = [
                         // Bookkeeping about rounds, not a rule one is played
                         // under -- see SHARE_TABS.
                         neverShared: true
-                    }
-                ]
-            },
-            {
-                title: UiText.GroupExperimental,
-                help: UiText.GroupExperimentalHelp,
-                warn: true,
-                rows: [
-                    {
-                        key: SettingKey.TsumAppRestartFrequency,
-                        title: UiText.SettingAppRestartFrequency,
-                        help: UiText.SettingAppRestartFrequencyHelp,
-                        min: 0,
-                        max: 120,
-                        step: 6,
-                        default: SettingDefaults[SettingKey.TsumAppRestartFrequency]
                     }
                 ]
             },

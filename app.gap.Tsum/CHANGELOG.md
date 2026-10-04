@@ -51,9 +51,11 @@ release note; they fold back in here when she ships.
 - Chains no longer break in a round's last seconds.
 - Round stats no longer lose the score and coins when the rank-up panel appears after a round.
 - Auto Play Game setting moved from General to the Round tab.
+- Tsum app restart frequency now counts in minutes (30-minute steps) and sits under Device, out of Experimental.
 
 ### Added
 
+- **App restart frequency** stored in minutes (was hours; a saved `6` is now 6 min), moved from Experimental to Device.
 - **Last run settings.** `start()` writes its settings, minus the one-shot
   flags, to `last-settings-<getDeviceId()>.json` in the script folder; a failed
   write only warns. `lastRunSettings()` reads it back, or null.

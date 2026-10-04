@@ -165,7 +165,7 @@ i18nRegister(Locale.Taiwan, '中文', {
     [UiText.SettingSendToZeroScoreHelp]: '也送給沒有分數的好友（不玩或自動送心的人）。',
     [UiText.SettingSendMaxRuntime]: '執行時間上限(分)',
     [UiText.SettingSendMaxRuntimeHelp]: '0 將從第一名開始送。',
-    [UiText.SettingAppRestartFrequency]: '定時重啟Tsum app（時）',
+    [UiText.SettingAppRestartFrequency]: '定時重啟Tsum app（分）',
     [UiText.SettingAppRestartFrequencyHelp]: '長時間執行時每隔這麼久重開遊戲。0 表示關閉；需開啟自動開啟。',
     [UiText.SettingBuildDate]: '建造日期: $BUILD_DATE',
     [UiText.SettingDebugLogs]: '调试日志',
