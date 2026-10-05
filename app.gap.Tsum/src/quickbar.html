@@ -68,7 +68,7 @@
           its rect to the host, which keeps it touchable;
         * a cell with a `data-key` is given `data-when` -- `now` or `nextRound`
           -- while a round is being played, and the CSS colours it from that;
-        * the readouts are `#baseCoinAvg`, `#finalCoinAvg` and `#roundCount`,
+        * the readouts are `#baseCoinAvg`, `#finalCoinAvg`, `#medalAvg` and `#roundCount`,
           and on the times table `#avgRoundTime`, `#playedTime` and `#runTime`;
         * `.qb-readout-toggle` flips `<body data-readout>` between `coins` and
           `times`; it sits outside `.qb-controls`, so it is never disabled;
@@ -371,8 +371,8 @@
         `<body data-readout>` between `coins` and `times`. It is named to the
         host with the side column, so it works mid-run too.
 
-        A table because that is what the three are: a name against a figure,
-        three times over. The figures share one right edge so their digits line
+        A table because that is what the rows are: a name against a figure,
+        over and over (four for coins, three for times). The figures share one right edge so their digits line
         up down the block, and each name is its row's `<th>`. Rows are
         `.qb-stat`; the last is also `.qb-stat-rounds`, drawn quieter.
       -->
@@ -392,6 +392,10 @@
           <tr class="qb-stat">
             <th class="qb-stat-label" scope="row" data-i18n="qb.final">Final</th>
             <td class="qb-stat-value" id="finalCoinAvg">&mdash;</td>
+          </tr>
+          <tr class="qb-stat qb-stat-medals">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.medals">Medals</th>
+            <td class="qb-stat-value" id="medalAvg">&mdash;</td>
           </tr>
           <tr class="qb-stat qb-stat-rounds">
             <th class="qb-stat-label" scope="row" data-i18n="qb.rounds">Rounds</th>

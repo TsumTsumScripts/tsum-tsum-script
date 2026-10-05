@@ -381,6 +381,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.QbReport]: 'Report',
     [UiText.QbBase]: 'Base',
     [UiText.QbFinal]: 'Final',
+    [UiText.QbMedals]: 'Medals',
     [UiText.QbRounds]: 'Rounds',
     [UiText.QbAvgRound]: 'Avg',
     [UiText.QbInRounds]: 'Played',

@@ -2109,6 +2109,7 @@ Tsum.prototype.finishRoundStats = function() {
       this.runCoins.finalTotal += finalCoins;
     }
     if (medals !== null) {
+      this.runCoins.medalRounds++;
       this.runCoins.medalTotal += medals;
     }
   } finally {
