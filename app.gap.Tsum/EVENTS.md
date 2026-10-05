@@ -14,7 +14,7 @@ format are the host's document --
 Names are declared once, in `src/scriptEvents.ts`, and reached through
 `ts.emit()`, which is silent on a host too old to have `emitEvent`.
 
-`6` event(s) from `6` call site(s).
+`11` event(s) from `11` call site(s).
 
 | event | emitted from | payload |
 |---|---|---|
@@ -22,8 +22,13 @@ Names are declared once, in `src/scriptEvents.ts`, and reached through
 | `round.over` | `src/play.ts:367` | `id`, `seconds` |
 | `round.start` | `src/play.ts:545` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `settings` |
 | `round.end` | `src/play.ts:910` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
+| `workflow.end` | `src/gapWorkflow.ts:586` | `id`, `rev`, `status`, `reason`, `loop`, `index` |
+| `workflow.start` | `src/gapWorkflow.ts:641` | `id`, `rev`, `name`, `total` |
+| `workflow.node` | `src/gapWorkflow.ts:683` | `id`, `loop`, `index`, `nodeId`, `node` |
+| `workflow.loop` | `src/gapWorkflow.ts:697` | `id`, `loop` |
+| `workflow.nodeFailed` | `src/gapWorkflow.ts:742` | `id`, `loop`, `index`, `nodeId`, `node`, `error`, `tries` |
 | `run.started` | `src/index.ts:86` | `version`, `skill`, `locale` |
-| `run.stopped` | `src/index.ts:661` | `rounds` |
+| `run.stopped` | `src/index.ts:686` | `rounds` |
 
 ## The events
 
@@ -93,6 +98,85 @@ Emitted from:
 
 - `src/play.ts:910` — `this.emit(Emit.Round.End, …)`
 
+### `workflow.end`
+
+`Emit.Workflow.End` — The workflow is over: `status` is ended, failed or terminated, `reason` why.
+
+| field | type |
+|---|---|
+| `id` | `string` |
+| `rev` | `number` |
+| `status` | `string` |
+| `reason` | `string` |
+| `loop` | `number` |
+| `index` | `number` |
+
+Emitted from:
+
+- `src/gapWorkflow.ts:586` — `gapWorkflowHooksOf().emit('workflow.end', …)`
+
+### `workflow.start`
+
+`Emit.Workflow.Start` — A workflow passed its check and its first node is next.
+
+| field | type |
+|---|---|
+| `id` | `string` |
+| `rev` | `number` |
+| `name` | `string` |
+| `total` | `number` |
+
+Emitted from:
+
+- `src/gapWorkflow.ts:641` — `gapWorkflowHooksOf().emit('workflow.start', …)`
+
+### `workflow.node`
+
+`Emit.Workflow.Node` — A node's first call in this pass (not repeated for again, wait or a retry).
+
+| field | type |
+|---|---|
+| `id` | `string` |
+| `loop` | `number` |
+| `index` | `number` |
+| `nodeId` | `string` |
+| `node` | `string` |
+
+Emitted from:
+
+- `src/gapWorkflow.ts:683` — `gapWorkflowHooksOf().emit('workflow.node', …)`
+
+### `workflow.loop`
+
+`Emit.Workflow.Loop` — Pass `loop` (2 or more) begins at the first node.
+
+| field | type |
+|---|---|
+| `id` | `string` |
+| `loop` | `number` |
+
+Emitted from:
+
+- `src/gapWorkflow.ts:697` — `gapWorkflowHooksOf().emit('workflow.loop', …)`
+
+### `workflow.nodeFailed`
+
+`Emit.Workflow.NodeFailed` — A node failed its last try and was skipped.
+
+| field | type |
+|---|---|
+| `id` | `string` |
+| `loop` | `number` |
+| `index` | `number` |
+| `nodeId` | `string` |
+| `node` | `string` |
+| `error` | `string` |
+| `tries` | `number` |
+
+Emitted from:
+
+- `src/gapWorkflow.ts:742` — `gapWorkflowHooksOf().emit('workflow.nodeFailed', …)`
+
 ### `run.started`
 
 `Emit.Run.Started` — A run has been asked for and its world is about to be built.
@@ -117,4 +201,4 @@ Emitted from:
 
 Emitted from:
 
-- `src/index.ts:661` — `emitScriptEvent(Emit.Run.Stopped, …)`
+- `src/index.ts:686` — `emitScriptEvent(Emit.Run.Stopped, …)`

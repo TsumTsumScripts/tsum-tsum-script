@@ -140,7 +140,10 @@ function quickBarState(): string {
     // settings panel is the only thing that moves them, and it reads this back.
     state[SettingKey.MaxRoundMinutes] = Math.round(ts.maxRoundMs / 60000);
     state[SettingKey.MaxRoundAction] = ts.maxRoundAction;
-    state[SettingKey.StopAfterGames] = ts.stopAfterGames;
+    // In a workflow the world holds 0 (`buildRun`); the page is shown its own
+    // value, so it neither adopts the 0 nor pushes its value back.
+    state[SettingKey.StopAfterGames] = gWorkflowRun
+      ? ts.settings.stopAfterGames : ts.stopAfterGames;
     state[SettingKey.StopAfterAction] = ts.stopAfterAction;
     // A span rather than the instant it ends at, so a page counting it down
     // needs the two clocks to agree about nothing. 0 is "nothing is resting".
@@ -151,6 +154,13 @@ function quickBarState(): string {
     // "Stop after this round" (`stopAfterThisRound`, src/index.ts). A run-time
     // flag, not a `SettingKey`, so neither page stores it.
     state.stopAfterThisRound = ts.wrapUpAsked;
+    // A GAP Companion workflow's progress: `workflowStep` is what the strip's
+    // readout fits, `workflow` the whole line. Both absent outside one.
+    const progress = workflowProgress();
+    if (progress !== null) {
+      state.workflowStep = progress.step;
+      state.workflow = progress.line;
+    }
 
     // What the strip marks its cells from: whether a round is on, and which
     // settings that round will not take. Not `SettingKey`s themselves, so the
@@ -208,6 +218,10 @@ function quickBarApply(key: SettingKey, value: string | number | boolean): strin
       { setting: key, value: value });
     return JSON.stringify({ ok: false, why: 'invalid value' });
   }
+  if (quickBarWorkflowOwns(key)) {
+    logWarn(Log.Workflow.SettingRefused, 'A running workflow owns this setting', { setting: key });
+    return JSON.stringify({ ok: false, why: 'workflow' });
+  }
   const applied = quickBarApplyOne(ts!, key, value);
   if (applied === undefined) {
     logWarn(Log.QuickBar.UnknownSetting, 'The Quick Bar named a setting it cannot change',
@@ -219,6 +233,14 @@ function quickBarApply(key: SettingKey, value: string | number | boolean): strin
     { setting: key, value: applied, takesEffect: held ? 'nextRound' : 'now' });
   quickBarSayHeldBack(ts!, held ? 1 : 0);
   return JSON.stringify({ ok: true, value: applied });
+}
+
+/**
+ * Whether a running workflow owns `key`, so neither page may change it:
+ * Stop after games, which `buildRun` forces to 0 for one.
+ */
+function quickBarWorkflowOwns(key: string): boolean {
+  return gWorkflowRun && quickBarRunning() && key === SettingKey.StopAfterGames;
 }
 
 /**
@@ -803,7 +825,8 @@ function quickBarSetRoundDelay(tsum: Tsum, delayMs: number): void {
  */
 function quickBarSyncJob(tsum: Tsum, name: TaskName, key: SettingKey, on: boolean): void {
   const controller = gTaskController;
-  if (controller === undefined) {
+  // A workflow run has no chore jobs: its nodes call the chores.
+  if (controller === undefined || gWorkflowRun) {
     return;
   }
   if (!on) {

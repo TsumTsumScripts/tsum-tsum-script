@@ -3407,6 +3407,7 @@ function taskLabel(name: TaskName): string {
         case TaskName.UnlockLevel: return i18nText(UiText.RunUnlockLevel);
         case TaskName.BuyBoxes: return i18nText(UiText.RunBuyBoxes);
         case TaskName.PlayRound: return i18nText(UiText.RunPlayRound);
+        case TaskName.Workflow: return i18nText(UiText.RunWorkflow);
     }
 }
 
@@ -3434,6 +3435,8 @@ function taskDetail(name: TaskName, values: { [key: string]: SettingValue }): st
                 size: optionLabelOf(SettingKey.BuyBoxSize, values[SettingKey.BuyBoxSize]),
                 max: num(SettingKey.BuyBoxMaxPurchases)
             });
+        // Only a GAP Companion start registers it (`workflowTaskTable`).
+        case TaskName.Workflow: return i18nText(UiText.RunWorkflowDetail);
         case TaskName.PlayRound: {
             // The delay is not a second interval: the task still comes round
             // every 3s and returns until the wait is up (`taskPlayGameQuick`),
@@ -4366,6 +4369,9 @@ function bootstrap(): void {
     // Wired once: the app bar and the panel under it are not re-rendered, and
     // their labels are `localiseChrome`'s, which every render calls.
     bindPresets();
+    // The engine's copy for GAP Companion's Import from device, current even
+    // before the first save on this device.
+    presetsSendMirror(presetsLoad());
 
     checkShareSlots();
     loadSettings(settings);

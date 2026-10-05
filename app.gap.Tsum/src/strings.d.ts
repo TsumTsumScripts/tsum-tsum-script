@@ -375,6 +375,9 @@ declare const enum UiText {
   /** Which box, at what size: `{box}`, `{boxes}` at a time, up to `{max}`. */
   RunBuyBoxesDetail = 'run.buyBoxes.detail',
   RunPlayRound = 'run.playRound',
+  /** A GAP Companion workflow run's one job; never on the card, which shows a normal run. */
+  RunWorkflow = 'run.workflow',
+  RunWorkflowDetail = 'run.workflow.detail',
   /** Waits `{minutes}` between rounds. Prefixed to the item list, so it ends in a space. */
   RunPlayRoundDelay = 'run.playRound.delay',
   RunPlayRoundCap = 'run.playRound.cap',
@@ -453,6 +456,8 @@ declare const enum UiText {
   QbAvgRound = 'qb.avgRound',
   QbInRounds = 'qb.inRounds',
   QbRunning = 'qb.running',
+  /** The readout's row for a GAP Companion workflow's progress (`L2 3/5`). */
+  QbStep = 'qb.step',
 }
 
 /**

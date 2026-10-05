@@ -62,6 +62,12 @@ settings -- the task table, the Now sweeps -- and the loop is driven one
 only advances the clock by that job's duration (`durationsMs`). The Now sweeps
 keep their real bodies; what they call on the run is stubbed, and `standAside`
 says how many times that stub reports a round in the way before the sweep goes.
+Three more keys, for the GAP Companion workflow run (`presets/workflow.json`):
+`workflow` is a node list, synced and armed the way `startWorkflow` arms it, so
+`buildRun` registers the workflow table instead of the chore table; `after`
+names page entry points called once the run is built (`stopAfterThisRound`);
+`inRoundTicks` keeps a round on screen for that many ticks, which is what Stop
+after this round stands aside for.
 
 `order` is the sequence the jobs first ran in; `picks` is every pick, with the
 clock offset.

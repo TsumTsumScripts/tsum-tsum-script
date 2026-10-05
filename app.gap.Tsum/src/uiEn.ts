@@ -318,6 +318,8 @@ i18nRegister(Locale.English, 'English', {
     [UiText.RunBuyBoxes]: 'Buy boxes',
     [UiText.RunBuyBoxesDetail]: '{box}, {size}, up to {max} purchases. Stops on Sold Out or too few Coins; never spends Rubies.',
     [UiText.RunPlayRound]: 'Play a round',
+    [UiText.RunWorkflow]: 'Run a workflow',
+    [UiText.RunWorkflowDetail]: 'Started from GAP Companion: its steps replace the jobs above.',
     [UiText.RunPlayRoundDelay]: 'Waits {minutes} min between rounds. ',
     [UiText.RunPlayRoundCap]: 'Gives up on a round after {minutes} min: {action}. ',
     [UiText.RunPlayRoundStopAfter]: 'After {games} games: {action}. ',
@@ -380,4 +382,5 @@ i18nRegister(Locale.English, 'English', {
     [UiText.QbAvgRound]: 'Avg',
     [UiText.QbInRounds]: 'Played',
     [UiText.QbRunning]: 'Run',
+    [UiText.QbStep]: 'Step',
 } satisfies UiStrings);

@@ -382,6 +382,31 @@ namespace Log {
     Start           = 'tsumList.start',
     Unnamed         = 'tsumList.unnamed',
     WriteFailed     = 'tsumList.writeFailed',
+    /** `tsum_list_<device id>.json`, the list Select Tsum reads, was written. */
+    FileWritten     = 'tsumList.fileWritten',
+  }
+
+  /** A GAP Companion workflow run (src/workflow.ts). */
+  export const enum Workflow {
+    End             = 'workflow.end',
+    Loop            = 'workflow.loop',
+    Node            = 'workflow.node',
+    NodeFailed      = 'workflow.nodeFailed',
+    /** Select Tsum (src/myTsumSelect.ts): the target was already the MyTsum. */
+    SelectTsumAlready = 'workflow.selectTsum.already',
+    /** Select Tsum: MyTsum Set took (the button greyed out). */
+    SelectTsumDone    = 'workflow.selectTsum.done',
+    /** Select Tsum: a step failed; `reason` says which. The node is retried. */
+    SelectTsumFailed  = 'workflow.selectTsum.failed',
+    /** Select Tsum: the card at the listed position is another tsum. */
+    SelectTsumStale   = 'workflow.selectTsum.stale',
+    /** Select Tsum: going to the listed page and slot. */
+    SelectTsumStart   = 'workflow.selectTsum.start',
+    /** `presetsMirror` could not write the presets file. */
+    PresetsNotSaved = 'workflow.presetsNotSaved',
+    /** A setting the workflow owns (`stopAfterGames`) was refused. */
+    SettingRefused  = 'workflow.settingRefused',
+    Start           = 'workflow.start',
   }
 
   /** The per-round CSV. */
