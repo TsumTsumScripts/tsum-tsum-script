@@ -209,7 +209,7 @@ that runs against this one's build: `DEVELOPMENT.md` § The development toolkit.
 | `tools/codemap/` | Checks this file against the tree | `npm run map:check` |
 | `tools/i18n/` | What each language is missing, which `UiText` keys nothing names any more, and — the one thing it fails on — a `data-i18n` in the markup naming no key. The rest the compiler already catches | `npm run i18n:check` |
 | `tools/liveSettings/` | **When each setting reaches a run in progress**, checked by running the built bundle in a vm rather than by reading it: that every `SHARE_SLOTS` row has an answer, that the switch and the reported state match it, and that the value survives the round trip. It cannot decide *which* kind a setting is — that judgement is what the table records | `npm run live:check` |
-| `tools/release/` | Cuts a release: builds the channel, names the archive from `config.json` and `package.json`, writes it and a running per-channel `CHANGELOG.md` into the catalogue, and prunes past `HistoryLimit`. The release note is not taken on trust — `review.js` shows it as the app will render it and waits to be told. `prerelease.js` does the same for testers, to the R2 folder in `config.json`'s `Prerelease` | `npm run release:alpha`, `release:beta`, `release:production`, `prerelease:alpha`, `prerelease:beta` |
+| `tools/release/` | Cuts a release: builds the channel, names the archive from `config.json` and `package.json`, writes it and a running per-channel `CHANGELOG.md` into the catalogue, and prunes past `HistoryLimit`. The release note is not taken on trust — `review.js` shows it as the app will render it and waits to be told. | `npm run release:alpha`, `release:beta`, `release:production` |
 | `tools/build/` | **The build, as a dependency graph.** Each step declares what it `needs` and anything whose needs are met runs, up to one job per core — ~16s of sequential steps down to ~4s, the length of the longest chain. The doc and check steps are `optional`: they print findings and never block a build. `build.sh` and `build.ps1` translate flags into this and do nothing else | `npm run build`, `buildAndAdb`, `buildAndAdb:beta`; `--channel`, `--adb`, `--device`, `--jobs` |
 | `tools/inline/` | Folds `pico.css`, `index.css` and `settings.js` into one `dist/index.html`, so the page needs no network | run by `tools/build/` |
 | `tools/minify/` | terser over both built scripts, **whitespace only** — `compress` and `mangle` are off, so nothing is renamed or rewritten, and it evaluates what it produced. Also copies `src/tsums.dat` into `dist/` without its `#` header | run by `tools/build/` |
@@ -449,8 +449,6 @@ Run from `app.gap.Tsum/`.
 | `npm run i18n:check` | What each language is missing, and a `data-i18n` naming no key |
 | `npm run live:check` | Every `SHARE_SLOTS` row has a `LiveSettings` answer, and the value survives the round trip (also run by the build) |
 | `npm run release:alpha` | Build the Alpha channel and publish it to the catalogue. `npm run release:beta` and `npm run release:production` are the other two. `-- --dry-run` shows the entry without writing it |
-| `npm run prerelease:alpha` | Build Alpha and publish it to the testers' R2 folder (the folder's catalogue beside the zip), not the catalogue repo |
-| `npm run prerelease:beta` | The same for Beta |
 
 The contributor site is its own package with its own scripts, run from
 `website/` and listed in `website/README.md`.

@@ -87,8 +87,6 @@ release note; they fold back in here when she ships.
   Quick Bar page two's bottom row is Games and Then; its bonus chips are gone.
 - `round.start` and `round.end` carry `build`, and `round.end` also `myTsum` and
   `skill`, so a live consumer can file a round without waiting for its CSV row.
-- `prerelease:alpha`/`prerelease:beta` build and publish a tester build to the
-  R2 folder.
 - **Japanese** (`ja-JP`): `src/uiJa.ts`, `src/logsJa.ts`. Bubbles are ボム; skill,
   box and Quick Bar labels stay English, as in zh-TW.
 - **Copy with settings list**: a page-only localStorage switch

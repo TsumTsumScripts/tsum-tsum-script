@@ -1097,24 +1097,6 @@ npm run release:alpha -- --dry-run # show the entry, write nothing
 npm run release:alpha -- --yes     # skip the note review, publish the Summary as it stands
 ```
 
-### Pre-releases to testers
-
-```bash
-npm run prerelease:alpha             # build Alpha and publish it to the R2 testers' folder
-npm run prerelease:beta
-npm run prerelease:alpha -- --dry-run  # build, write build/prerelease/alpha/alpha.json, upload nothing
-npm run prerelease:alpha -- --keep-old # don't delete zips past HistoryLimit from R2
-```
-
-`tools/release/prerelease.js` publishes to `<Prerelease.BaseUrl>/<alpha|beta>/`
-(config.json), **not** the catalogue repo, so only testers who added that
-folder's `alpha.json` / `beta.json` as a source see it. It reviews the note and
-builds like `release:*`, then reads the folder's catalogue from R2 to keep its
-`Versions` history, uploads the zip, checks the public zip hashes to `Hash`,
-uploads the catalogue last and checks it too. Needs `rclone` with the `r2:`
-remote. The app side of the folder (APKs, starter, GAP Stats) is in
-`game-automation-app/docs/PRERELEASE.md`.
-
 Each one builds its channel and writes three files into the catalogue repository:
 
 ```
@@ -1142,7 +1124,6 @@ about what this is, and there is one number to bump rather than two:
 | `Catalogue` | where a release is published, relative to the package |
 | `Channels.<name>` | `Name` (what the app shows), `Archive` (the zip's base name), `Directory` (under `Catalogue`), `Note` (a line appended to every release note on that channel) |
 | `MessageMaxChars` | the note is read on a phone; over this, the release refuses rather than shipping a card that scrolls |
-| `Prerelease` | `Remote` (rclone path) and `BaseUrl` (its public address) of the testers' folders; `prerelease:*` writes to `<folder>/<channel>/` |
 | `HistoryLimit` | how many builds stay installable (default 5); older archives are deleted from the catalogue on the next release |
 | `MinHost`, `MaxHost` | the app versions a build runs on, both optional and inclusive; a channel may set its own. Written into `metadata.json` and each `Versions` row, and the app will not download or run a build outside them. Raise `MinHost` when the script starts using an API a newer app added |
 
