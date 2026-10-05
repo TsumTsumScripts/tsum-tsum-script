@@ -293,6 +293,7 @@ declare const enum UiText {
   ChromeRestartNow = 'chrome.restartNow',
   ChromeThemeToLight = 'chrome.themeToLight',
   ChromeThemeToDark = 'chrome.themeToDark',
+  ChromeMoreTabs = 'chrome.moreTabs',
 
   // --- the share panel ----------------------------------------------------
   ShareCopied = 'share.copied',
