@@ -702,9 +702,16 @@ It still uses `gPages.peek` rather than `detect`, because a broadcast would hand
 the frozen play loop a page it never looked at and queue a Continue on the pause
 menu it is about to open.
 
-There is no resume hook and none is wanted: the play loop's next
-`gPages.detect` sees `GamePause` and `dismiss.resumeGame` presses Continue, the
-same as for any other way onto that screen.
+`onResume()` is the counterpart, evaluated through the same gate **before** the
+flag lifts. Leaving Continue to the play loop was not enough: a paused run is
+parked *inside* its next touch, usually mid-chain, and lifting the flag landed
+that touch and the rest of the batch on the pause menu -- Try Again included --
+before the loop looked again. So `onPause` remembers the pause (`ts.pauses`,
+`pausedAt`, `pausedInRound`), `onResume` presses Continue and waits for the
+board while the run is still frozen, and `link` drops the rest of a batch a
+pause landed under. The paused time is credited to `roundStartedAt`, so Max
+Round Duration does not count it. `dismiss.resumeGame` still covers every other
+way onto the pause menu.
 
 `onPause` is the only caller of that button, and the Max Round Duration cap
 (`src/play.ts`) deliberately is not a second one: pausing the game stops its
@@ -719,8 +726,8 @@ a touch) waited on itself: the logger's old spacing sleep did exactly that on
 the second of two lines inside 10ms, and a preset or the skill sheet writes two.
 The logger no longer sleeps, the host now lets an `Eval` through the gate and
 answers it off that thread, and `npm run live:check` fails on any gated call
-from an entry point (`entry`). `onPause` is the one exception, and it is the
-host that makes it one. `detectMyTsum` (the Debug tab's Detect button) is the
+from an entry point (`entry`). `onPause` and `onResume` are the exceptions, and
+it is the host that makes them so. `detectMyTsum` (the Debug tab's Detect button) is the
 other, by construction rather than by exemption: it refuses a live run before
 it sleeps, so the one `sleep()` it makes — waiting for the closed panel to
 leave the frame — runs through the opened gate with no Resume behind it.

@@ -12,6 +12,7 @@
 //                            averages, as one JSON string
 //   quickBarApply(key, ...)  one setting, onto the running world
 //   onPause()                the host's pause hook (below)
+//   onResume()               its resume hook, the counterpart
 //
 // The first two are read by the settings page as well, which is why the apply
 // itself is `quickBarApplyOne`, a function of its own. What a live setting
@@ -63,8 +64,15 @@
 // back -- the round carries on with the script frozen beside it. Frozen first,
 // nothing here is racing anything.
 //
-// Resuming needs no counterpart: the play loop's next detect sees `GamePause`
-// and `dismiss.resumeGame` presses Continue, as it does for any other way in.
+// ## onResume
+//
+// The counterpart, evaluated through the same gate **before** the flag lifts.
+// A paused run is parked inside the touch it was about to make -- usually the
+// next step of a chain planned before the pause. Leaving Continue to the play
+// loop meant that touch, and the rest of the batch, landed on the pause menu
+// first, where Try Again and To Home Screen are. So `onPause` remembers the
+// pause, and `onResume` presses Continue and waits for the board while the run
+// is still frozen. The batch then sees `pauses` moved and stops (board.ts).
 
 /** Nothing is applied to a world that is not there; the page shows values only. */
 function quickBarRunning(): boolean {
@@ -878,19 +886,100 @@ function onPause(): string {
   if (!quickBarRunning()) {
     return 'no run';
   }
+  const t = ts!;
+  t.pauses++;
+  t.pausedAt = Date.now();
+  // A round with its clock running counts even when the game is not in front
+  // (the front watch pauses then): it comes back on the pause menu.
+  t.pausedInRound = t.roundStartedAt !== 0;
   const def = gPages.peek(1, 0);
   if (def === null) {
     return 'nothing recognised on screen';
   }
   if (def.name === PageName.GamePause) {
+    t.pausedInRound = true;
     return 'the round is already paused';
   }
   if (def.name !== PageName.GamePlaying) {
     return 'not in a round (' + def.name + ')';
   }
+  t.pausedInRound = true;
   // `back` and `next` are both the round's Pause button -- see PageRoutes in
   // data.ts, which declares the GamePlaying -> GamePause edge it presses.
-  ts!.tap(def.back);
+  t.tap(def.back);
   logInfo(Log.QuickBar.PausedRound, 'Paused the round so the Quick Bar can be used');
   return 'paused the round';
+}
+
+/** Longest wait for the pause menu once the overlay is gone. */
+const ResumeMenuWaitMs = 1500;
+/** Longest wait for the board after Continue, re-press included. */
+const ResumeBoardWaitMs = 4000;
+/** Continue still up this long after a press: the press was missed. */
+const ResumeRepressMs = 1500;
+/** The game counts back in after the menu closes; same as `dismiss.resumeGame`. */
+const ResumeCountInMs = 500;
+const ResumePollMs = 100;
+
+/** Peeks until a page in `names` shows or `ms` runs out; the last look either way. */
+function resumePeek(t: Tsum, names: string[], ms: number): PageDef | null {
+  const deadline = Date.now() + ms;
+  for (;;) {
+    const def = gPages.peek(1, 0);
+    if ((def !== null && names.indexOf(def.name) >= 0) || Date.now() >= deadline) {
+      return def;
+    }
+    t.sleep(ResumePollMs);
+  }
+}
+
+/**
+ * Called by the host before the pause lifts, and gated in for it.
+ *
+ * Puts back the round `onPause` paused: presses Continue (twice if the first
+ * press is missed), waits for the board, and credits the paused time to the
+ * round's clock so Max Round Duration does not count it. Anything it cannot
+ * resolve is left to the play loop, as before. The string goes to the host log.
+ */
+function onResume(): string {
+  if (!quickBarRunning()) {
+    return 'no run';
+  }
+  const t = ts!;
+  const pausedMs = t.pausedAt > 0 ? Date.now() - t.pausedAt : 0;
+  t.pausedAt = 0;
+  if (t.roundStartedAt !== 0) {
+    t.roundStartedAt += pausedMs;
+  }
+  // Only a round we know of is worth waiting for: the menu can take a moment
+  // to show once the overlay has gone.
+  const waitMs = t.pausedInRound ? ResumeMenuWaitMs : 0;
+  let def = resumePeek(t, [PageName.GamePause, PageName.GamePlaying], waitMs);
+  if (def === null || def.name !== PageName.GamePause) {
+    return t.pausedInRound
+      ? 'paused in a round, found ' + (def === null ? 'nothing recognised' : def.name)
+      : 'not in a round';
+  }
+  const startedAt = Date.now();
+  let presses = 0;
+  while (def !== null && def.name === PageName.GamePause
+      && Date.now() - startedAt < ResumeBoardWaitMs) {
+    if (presses === 0 || Date.now() - startedAt >= ResumeRepressMs * presses) {
+      // `next` is Continue -- the menu's only exit (PageRoutes, data.ts).
+      t.tap(def.next);
+      presses++;
+    }
+    t.sleep(ResumePollMs);
+    def = gPages.peek(1, 0);
+  }
+  const back = def !== null && def.name === PageName.GamePlaying;
+  const detail = { presses: presses, pausedMs: pausedMs, ms: Date.now() - startedAt,
+    page: def === null ? '' : def.name };
+  if (!back) {
+    logWarn(Log.QuickBar.ResumeFailed, detail);
+    return 'pressed Continue ' + presses + 'x, board not back';
+  }
+  t.sleep(ResumeCountInMs);
+  logInfo(Log.QuickBar.ResumedRound, detail);
+  return 'pressed Continue, round back';
 }

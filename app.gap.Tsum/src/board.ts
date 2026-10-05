@@ -31,6 +31,7 @@ Tsum.prototype.linkTsums = function(path) {
   // linked, logged against the plan.
   const counted = skillReadsChainCounter(this);
   const moveDuring = 10;
+  const pauses = this.pauses;
   for (let j = 0; j < path.length; j++) {
     const point = path[j];
     const x = Math.floor(this.playOffsetX + (point.x + Config.tsumWidth / 2) * this.playWidth / this.playResizeWidth);
@@ -39,6 +40,11 @@ Tsum.prototype.linkTsums = function(path) {
       tapDown(x, y, grabDuring);
     }
     moveTo(x, y, moveDuring);
+    // Paused mid-drag: the rest of the path is off a board from before it.
+    if (this.pauses !== pauses) {
+      tapUp(x, y, releaseDuring);
+      return;
+    }
     if (j === path.length - 1) {
       if (counted) {
         this.sleep(ChainCounterConfig.settleMs);
@@ -333,6 +339,7 @@ Tsum.prototype.link = function(paths, board) {
   // Choreographed skills can't ride blind taps (activating without the
   // follow-up aiming wastes the skill) and go through maybeAutoTapSkill,
   // which verifies readiness before handing over to useSkill.
+  const pauses = this.pauses;
   for (const i in paths) {
     const path = paths[i];
     // >= 7 should be correct, but practically the real chain is always shorter
@@ -341,6 +348,12 @@ Tsum.prototype.link = function(paths, board) {
       isBubble = true;
     }
     this.linkTsums(path);
+    // A pause under this batch: what is left was planned before it, so the
+    // next scan re-plans off the board the round came back to.
+    if (this.pauses !== pauses) {
+      logInfo(Log.Board.BatchPaused, { drawn: +i + 1, planned: paths.length });
+      break;
+    }
     // Pop what the last scan saw the moment a long chain lands: with Tiara
     // Minnie+ a bubble popped as a chain goes off clears a bigger area, which
     // is the whole reason bubbles are worth saving for a chain at all. How many

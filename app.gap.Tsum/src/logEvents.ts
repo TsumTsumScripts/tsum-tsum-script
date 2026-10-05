@@ -111,6 +111,8 @@ namespace Log {
   export const enum Board {
     /** A play-loop chain drawn, with what the game's counter said it linked (`readsChainCounter` skills only). */
     ChainDrawn       = 'board.chainDrawn',
+    /** A pause landed mid-batch; the rest of the batch was dropped. */
+    BatchPaused      = 'board.batchPaused',
     Clusters         = 'board.clusters',
     DeadScan         = 'board.deadScan',
     /** The scan waited out the last seconds' edge wash (`waitOutEdgeWash`). */
@@ -550,6 +552,10 @@ namespace Log {
     Applied        = 'quickBar.applied',
     ApplyFailed    = 'quickBar.applyFailed',
     PausedRound    = 'quickBar.pausedRound',
+    /** `onResume` pressed Continue and the board came back. */
+    ResumedRound   = 'quickBar.resumedRound',
+    /** `onResume` could not get the board back; the play loop takes over. */
+    ResumeFailed   = 'quickBar.resumeFailed',
     /** The whistle: what a round in progress could not take is on now. */
     PendingApplied = 'quickBar.pendingApplied',
     PresetApplied  = 'quickBar.presetApplied',
