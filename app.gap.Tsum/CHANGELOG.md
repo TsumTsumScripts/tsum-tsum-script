@@ -54,7 +54,7 @@ release note; they fold back in here when she ships.
 - Copy with settings list option added: a copied settings code can carry a short list of its skill type and the settings changed from default.
 - Quick Bar gained a second page, switched by the dots beside Report: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout can switch to round/run times.
 - Round stats no longer lose the score and coins when the rank-up panel appears after a round, and base coins read more reliably.
-- Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, orange switches, a light and dark theme, and tabs that show how many are off-screen.
+- Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen.
 
 ### Added
 
@@ -117,9 +117,15 @@ release note; they fold back in here when she ships.
   `quickbar.css` use only `src/gapTokens.css` (the kit's tokens, copied
   verbatim). Fonts are Latin woff2 subsets in `src/fonts/`, inlined by the
   build as data URIs. Dark is the default theme.
+- **Design kit v2.** Tokens re-copied; fonts are now Inter / Inter Display
+  (opsz instances, subset with fonttools) plus IBM Plex Mono. Blue `tap` edge
+  marks tappable, solid `selected` marks on; settings groups are flat
+  read-only cards and controls inside them are fill only. Text sizes kept a
+  step above the kit's so legibility matches. Quick Bar reaches full size at
+  460dp (was 440) because Inter runs wider than Plex.
 - Settings tabs scroll as pills with "+N" overflow cues (`updateTabOverflow`);
   stepper buttons turn dashed at the row's min/max (`syncStepLimits`).
-- Quick Bar toggles are orange with a check box; "applies now" is green,
+- Quick Bar toggles are solid blue with a check; "applies now" is green,
   "next round" amber; coin and time figures use the data colours.
 
 ### Fixed
