@@ -55,6 +55,7 @@ release note; they fold back in here when she ships.
 - Large tsums are now chained instead of popped, and bridge longer gaps.
 - Tsum List export and Unlock Level now jump straight to the first page of the Tsum collection instead of paging back one at a time.
 - Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, the Mid Chain strategies no longer let them pile up, and new Save One and Save One Mid Chain strategies pop all but one (on sight, or as a chain lands).
+- Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, orange switches, a light and dark theme, and tabs that show how many are off-screen.
 
 ### Added
 
@@ -161,6 +162,14 @@ release note; they fold back in here when she ships.
   smoke. Villains (Set)'s smoke read Active at the button, so `while (useSkill())`
   re-fired every ~300ms and drew no chains for up to 9s per window. The Quick
   Bar's grey strip hides that chrome, so the side margins at y 1700 back it up.
+- **GAP Design System** on both pages. Pico is gone: `index.css` and
+  `quickbar.css` use only `src/gapTokens.css` (the kit's tokens, copied
+  verbatim). Fonts are Latin woff2 subsets in `src/fonts/`, inlined by the
+  build as data URIs. Dark is the default theme.
+- Settings tabs scroll as pills with "+N" overflow cues (`updateTabOverflow`);
+  stepper buttons turn dashed at the row's min/max (`syncStepLimits`).
+- Quick Bar toggles are orange with a check box; "applies now" is green,
+  "next round" amber; coin and time figures use the data colours.
 
 ### Fixed
 

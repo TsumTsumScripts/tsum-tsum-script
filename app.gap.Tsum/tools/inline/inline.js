@@ -3,8 +3,8 @@
 //
 //   node tools/inline/inline.js build/index.html dist/index.html
 //
-// Run by build.sh / build.ps1 on the staged settings page: `pico.css`,
-// `index.css` and `settings.js` go in, and what comes out is the single
+// Run by build.sh / build.ps1 on the staged settings page: the GAP token and
+// font sheets, `index.css` and `settings.js` go in, and what comes out is the single
 // `dist/index.html` the device loads from file://. That is not a size
 // optimisation -- the page is opened from local storage on a phone that is
 // often offline, so an asset it has to fetch is an asset it does not get.
