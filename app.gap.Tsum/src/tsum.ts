@@ -449,7 +449,8 @@ class Tsum {
     this.baseCoinReads = 0;
     this.baseCoinHits = 0;
     this._statsDebugShots = 0;
-    this.runCoins = {rounds: 0, baseRounds: 0, baseTotal: 0, finalRounds: 0, finalTotal: 0};
+    this.runCoins = {rounds: 0, baseRounds: 0, baseTotal: 0, finalRounds: 0, finalTotal: 0,
+      medalRounds: 0, medalTotal: 0};
     this.runClock = {startedAt: Date.now(), rounds: 0, roundSec: 0};
     this.init(detect);
   }

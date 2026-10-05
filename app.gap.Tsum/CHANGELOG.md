@@ -52,12 +52,13 @@ release note; they fold back in here when she ships.
 - Settings page reorganized: Skills, Round (chain limits and bonuses) and Hearts are the first three tabs, the run settings moved to General, and setting descriptions are shorter.
 - Japanese (日本語) added as a language for the settings page, Quick Bar and log.
 - Copy with settings list option added: a copied settings code can carry a short list of its skill type and the settings changed from default.
-- Quick Bar gained a second page, switched by the dots beside Report: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout can switch to round/run times.
+- Quick Bar gained a second page, switched by the dots beside Report: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout can switch to round/run times and shows the average medals earned.
 - Round stats no longer lose the score and coins when the rank-up panel appears after a round, and base coins read more reliably.
 - Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen.
 
 ### Added
 
+- **Quick Bar Medals row**: average medals per round, from the tally's medal reading, under Base and Final; a dash until a round earns some. The readout type is smaller so four rows fit the band.
 - **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`). A burst
   declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture

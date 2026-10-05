@@ -589,6 +589,7 @@ function qbRender(): void {
     }
     qbSetStat('baseCoinAvg', qbState.baseCoinAvg);
     qbSetStat('finalCoinAvg', qbState.finalCoinAvg);
+    qbSetStat('medalAvg', qbState.medalAvg);
     qbSetStat('roundCount', qbState.rounds);
     qbSetTime('avgRoundTime', qbState.avgRoundSec, false);
     qbSetTime('playedTime', qbState.playedSec, true);
