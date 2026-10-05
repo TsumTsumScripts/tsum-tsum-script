@@ -196,7 +196,8 @@ const WorkflowTsumNodes: GapWorkflowNodeDef[] = [
   {
     type: 'restartApp', label: 'Restart app', params: [],
     // Not `taskTsumAppRestart`: that one needs Auto launch and ignores a live
-    // round. Force-stop, launch the build this device plays, wait for it.
+    // round. Force-stop, launch the build this device plays, wait for it, then
+    // walk the startup screens to the friend list so the next node starts there.
     run: workflowChore(function(run) {
       const build = run.gameBuild();
       run.invalidateAppOn();
@@ -205,7 +206,12 @@ const WorkflowTsumNodes: GapWorkflowNodeDef[] = [
       run.invalidateAppOn();
       run.isStartupPhase = true;
       startTsumTsumApp(build);
-      return run.awaitAppUp() ? 'done' : { fail: 'app-not-up' };
+      if (!run.awaitAppUp()) {
+        return { fail: 'app-not-up' };
+      }
+      // False only when the run is stopping; the chore wrapper handles that.
+      gPages.navigate(PageName.FriendPage);
+      return 'done';
     }),
   },
   {
