@@ -24,7 +24,6 @@
 
     /* Page-local sizes that are layout, not design tokens. */
     --page-width: 720px;
-    --select-max: 220px;
 }
 
 /* --- Base ------------------------------------------------------------------ */
@@ -377,6 +376,7 @@ p {
 
 .group-help {
     margin-top: var(--space-1);
+    overflow-wrap: anywhere;
     font-size: 13px;
     line-height: 18px;
     color: var(--ink-muted);
@@ -439,6 +439,8 @@ p {
 .row-label {
     flex: 1 1 140px;
     min-width: 0;
+    /* File paths and other unbroken strings still wrap. */
+    overflow-wrap: anywhere;
 }
 
 .row-title {
@@ -596,7 +598,7 @@ p {
     align-items: center;
     gap: var(--space-2);
     min-width: 160px;
-    max-width: var(--select-max);
+    max-width: 100%;
     height: var(--size-control);
     margin: 0;
     padding: 0 10px 0 14px;
@@ -979,6 +981,12 @@ p {
     font-variant-numeric: tabular-nums;
 }
 
+.run-what,
+.run-detail,
+.run-note {
+    overflow-wrap: anywhere;
+}
+
 .run-what {
     font-size: 15px;
     line-height: 22px;
@@ -1039,7 +1047,7 @@ p {
 }
 
 .run-chip {
-    white-space: nowrap;
+    overflow-wrap: anywhere;
 }
 
 .run-chip + .run-chip::before {
