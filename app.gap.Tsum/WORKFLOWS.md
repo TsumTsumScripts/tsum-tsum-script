@@ -71,7 +71,7 @@ so the scheduler's five-throws restart can never loop.
 | `tsum.sendHearts` | `taskSendHearts` once. `toZeroScore` sets `sentToZero`; `maxRuntime` (minutes) sets `sendHeartMaxDuring` |
 | `tsum.selectTsum` | `selectMyTsum(tsum)`: straight to the card the Tsum List places it at, then MyTsum Set (below) |
 | `tsum.skill` | `preset:<id>`: the synced preset's round keys (`WorkflowPresetKeys`, the adapter's `presets.fields`) through `applyLiveSettings`; `skill:<id>`: `skillType`. Next-round keys land at the next whistle, as from the Quick Bar |
-| `tsum.playRounds` | `taskPlayGameQuick` until `rounds` more rounds finished, counted by the change in `ts.runClock.rounds` (not the return value). Answers `wait` during the round delay or while a Now sweep waits, unless a round is already on the board |
+| `tsum.playRounds` | `taskPlayGameQuick` until `rounds` more rounds finished, counted by the change in `ts.runClock.rounds` (not the return value). Answers `wait` during the round delay or while a Now sweep waits, unless a round is already on the board. Detail: `N/M rounds`, or `playing round N of M` while one plays |
 | `loop`, `stop` | The library: `loop {times}` (0 = forever) restarts at the first node; `stop` ends the workflow. Running off the end is an implicit stop |
 
 Option lists: `tsums` (below) and `skills`, every skill this build has a handler
