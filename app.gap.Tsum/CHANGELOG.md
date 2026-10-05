@@ -65,7 +65,8 @@ release note; they fold back in here when she ships.
   goes straight to the card's listed page and slot, confirms it with one read
   (`tsum-list-stale` otherwise) and taps MyTsum Set (its position still to
   verify on a device, INTL and JP). Pages mirror presets to
-  `presets-<device id>.json` for Import. `npm run workflow:check`.
+  `presets-<device id>.json` for Import. `npm run workflow:check`. Restart app
+  walks the startup screens to the friend list before handing off.
 - **Save One Mid Chain bubble strategy** (`BubbleStrategy.SaveOneMidChain`,
   share `S`, chip "Save 1 mid"). `popGameBubbles` on a long chain taps all but
   the richest (`richestFirst`), ripe or not; short post-skill hold; the

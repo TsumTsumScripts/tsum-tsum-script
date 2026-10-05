@@ -66,7 +66,7 @@ so the scheduler's five-throws restart can never loop.
 
 | Node | Does |
 |:--|:--|
-| `restartApp` | Force-stops the build this device plays, launches it (`startTsumTsumApp`) and waits for a known screen (`awaitAppUp`). Not `taskTsumAppRestart`, which needs Auto launch and ignores a live round. Fails with `app-not-up` |
+| `restartApp` | Force-stops the build this device plays, launches it (`startTsumTsumApp`), waits for a known screen (`awaitAppUp`), then walks the startup screens to the friend list (`navigate(FriendPage)`) before the next node. Not `taskTsumAppRestart`, which needs Auto launch and ignores a live round. Fails with `app-not-up` |
 | `tsum.receiveHearts` | `mode` `claimAll`: `taskReceiveAllItems`; `oneByOne`: `taskReceiveOneItem`. `skipRuby` / `skipMedals` set `keepRuby` / `skipMedals` for the call |
 | `tsum.sendHearts` | `taskSendHearts` once. `toZeroScore` sets `sentToZero`; `maxRuntime` (minutes) sets `sendHeartMaxDuring` |
 | `tsum.selectTsum` | `selectMyTsum(tsum)`: straight to the card the Tsum List places it at, then MyTsum Set (below) |
