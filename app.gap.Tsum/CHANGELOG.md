@@ -130,10 +130,12 @@ release note; they fold back in here when she ships.
 ### Changed
 
 - **Collection scrubber.** The track under the grid jumps to the first page
-  when tapped at its left end (`CollectionGrid.scrubFirst`). `rewindCollection`
-  taps it first, keeping the chevron bursts as fallback. Select My Tsum still
-  walks forward from page 1: new tsums can add pages, so the end is no fixed
-  reference. Untested on a device.
+  when tapped at its left end, the last at its right (`CollectionGrid.scrubFirst`
+  / `scrubLast`). `rewindCollection` taps it first, keeping the chevron bursts
+  as fallback; `skipCollectionToEnd` is new. Select My Tsum comes from the last
+  page and turns back (`tsumListTurnPage(run, true)`) when that is fewer turns
+  and the last card is still the list's last tsum (`selectMyTsumEndMatches`);
+  otherwise it walks from page 1. Untested on a device.
 - **Bubble popping.** Measured on a Villains Set recording: the scan found
   about half of a packed bottom row, and the 2s post-skill hold blocked pops
   for ~30% of the round.

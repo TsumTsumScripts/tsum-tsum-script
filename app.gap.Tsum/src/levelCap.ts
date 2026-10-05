@@ -473,6 +473,21 @@ Tsum.prototype.rewindCollection = function() {
     'The collection would not go back to its first page', {pages: turned});
   return false;
 }
+
+/** Jump to the collection's last page with the scrubber's right end. */
+Tsum.prototype.skipCollectionToEnd = function() {
+  this.awaitCollectionLoaded();
+  for (let i = 0; i < UnlockSortAttempts && this.isRunning; i++) {
+    if (this.collectionAtLastPage()) {
+      return true;
+    }
+    this.tap(CollectionGrid.scrubLast);
+    this.settleScreen(UnlockPageTurnSettleMs);
+    this.awaitCollectionLoaded();
+  }
+  return this.collectionAtLastPage();
+}
+
 /**
  * Which of the eight cards on this page are at their level cap.
  *

@@ -7,8 +7,10 @@
 //
 //   already the MyTsum (ts.myTsum)            done, nothing navigated
 //   collection, Date acquired, owned only,    the export's opening (tsumList.ts)
-//   rewind
-//   turn `page` pages                         tsumListTurnPage
+//   rewind, turn `page` pages                 tsumListTurnPage; or, when
+//                                             nearer the end and the last card
+//                                             is still the list's last tsum,
+//                                             scrub to the last page, turn back
 //   tap the card, wait for its portrait       tsumListSelectCard
 //   ONE confirming read                       identifyCollectionTsum; another
 //                                             tsum, or no confident read, means
@@ -64,7 +66,7 @@ function selectMyTsum(short: string): GapWorkflowResult {
     return selectMyTsumFailed('sort failed', fields);
   }
   try {
-    return selectMyTsumOnGrid(run, short, row.name, page, slot, fields);
+    return selectMyTsumOnGrid(run, short, row.name, page, slot, file.tsums, fields);
   } finally {
     run.restoreCollectionSort(previous, CollectionSort.DateAcquired);
   }
@@ -72,20 +74,10 @@ function selectMyTsum(short: string): GapWorkflowResult {
 
 /** The part on the sorted collection; the caller puts the sort back. */
 function selectMyTsumOnGrid(run: Tsum, short: string, name: string, page: number, slot: number,
-                            fields: LogFields): GapWorkflowResult {
-  run.rewindCollection();
-  for (let p = 0; p < page; p++) {
-    if (!run.isRunning) {
-      return 'wait';
-    }
-    run.awaitCollectionLoaded();
-    // Fewer pages than the list says: the collection is not the one listed.
-    if (run.collectionAtLastPage()) {
-      return selectMyTsumStale(fields, { atPage: p });
-    }
-    if (!tsumListTurnPage(run)) {
-      return selectMyTsumFailed('page turn failed', fields);
-    }
+                            tsums: TsumListFile['tsums'], fields: LogFields): GapWorkflowResult {
+  const reached = selectMyTsumGoToPage(run, page, tsums, fields);
+  if (reached !== null) {
+    return reached;
   }
   run.awaitCollectionLoaded();
   if (run.readCollectionCards()[slot] === 'empty') {
@@ -119,6 +111,70 @@ function selectMyTsumOnGrid(run: Tsum, short: string, name: string, page: number
   run.myTsumName = name !== '' ? name : id.full;
   logInfo(Log.Workflow.SelectTsumDone, 'MyTsum set', fields);
   return 'done';
+}
+
+/**
+ * Brings the grid to `page`; null once there. From the last page (the
+ * scrubber's right end) when that is fewer turns, but only if that page ends
+ * on the list's last tsum. New tsums are appended, so any since the export
+ * fail that check, and the walk from page 1 (unaffected by them) runs instead.
+ */
+function selectMyTsumGoToPage(run: Tsum, page: number, tsums: TsumListFile['tsums'],
+                              fields: LogFields): GapWorkflowResult | null {
+  const listed = tsums.length;
+  const lastPage = Math.floor((listed - 1) / SelectMyTsumPerPage);
+  const fromEnd = lastPage - page;
+  if (fromEnd < page && run.skipCollectionToEnd() &&
+      selectMyTsumEndMatches(run, tsums[listed - 1].tsum, (listed - 1) % SelectMyTsumPerPage)) {
+    for (let p = 0; p < fromEnd; p++) {
+      if (!run.isRunning) {
+        return 'wait';
+      }
+      run.awaitCollectionLoaded();
+      if (!tsumListTurnPage(run, true)) {
+        return selectMyTsumFailed('page turn failed', fields);
+      }
+    }
+    return null;
+  }
+  run.rewindCollection();
+  for (let p = 0; p < page; p++) {
+    if (!run.isRunning) {
+      return 'wait';
+    }
+    run.awaitCollectionLoaded();
+    // Fewer pages than the list says: the collection is not the one listed.
+    if (run.collectionAtLastPage()) {
+      return selectMyTsumStale(fields, { atPage: p });
+    }
+    if (!tsumListTurnPage(run)) {
+      return selectMyTsumFailed('page turn failed', fields);
+    }
+  }
+  return null;
+}
+
+/**
+ * Does the last page end at `slot` with `short`? A card-count check first
+ * (one capture), then one portrait read of that last card.
+ */
+function selectMyTsumEndMatches(run: Tsum, short: string, slot: number): boolean {
+  const cards = run.readCollectionCards();
+  for (let i = 0; i < cards.length; i++) {
+    if ((cards[i] !== 'empty') !== (i <= slot)) {
+      logDebug(Log.Workflow.SelectTsumEndChanged, { want: short, slot: slot, emptyAt: i });
+      return false;
+    }
+  }
+  if (!tsumListSelectCard(run, slot)) {
+    return false;
+  }
+  const id = run.identifyCollectionTsum();
+  if (id !== null && id.confident && id.short === short) {
+    return true;
+  }
+  logDebug(Log.Workflow.SelectTsumEndChanged, { want: short, read: id === null ? null : id.short });
+  return false;
 }
 
 /** Logs a failed step; the runner retries the node, then skips it. */

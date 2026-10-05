@@ -400,6 +400,8 @@ namespace Log {
     SelectTsumFailed  = 'workflow.selectTsum.failed',
     /** Select Tsum: the card at the listed position is another tsum. */
     SelectTsumStale   = 'workflow.selectTsum.stale',
+    /** Select Tsum: the last page no longer ends on the list's last tsum; walking from page 1. */
+    SelectTsumEndChanged = 'workflow.selectTsum.endChanged',
     /** Select Tsum: going to the listed page and slot. */
     SelectTsumStart   = 'workflow.selectTsum.start',
     /** `presetsMirror` could not write the presets file. */
