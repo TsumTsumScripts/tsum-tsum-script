@@ -13,12 +13,11 @@ modified since the fork.
 Both shipped pages (dist/index.html, dist/quickbar.html) embed Latin subsets
 of these fonts, unrenamed, as part of the page:
 
-  IBM Plex Sans, IBM Plex Mono
-  Copyright © 2017 IBM Corp. with Reserved Font Name "Plex"
+  Inter, Inter Display
+  Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)
 
-  Space Grotesk
-  Copyright 2020 The Space Grotesk Project Authors
-  (https://github.com/floriankarsten/space-grotesk)
+  IBM Plex Mono
+  Copyright © 2017 IBM Corp. with Reserved Font Name "Plex"
 
 They are licensed under the SIL Open Font License, Version 1.1:
 

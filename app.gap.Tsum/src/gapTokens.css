@@ -1,8 +1,132 @@
-/*
- * GAP Design System tokens, copied verbatim from the design kit's
- * design-system/tokens.css. Do not edit by hand: re-copy when the kit changes.
- * Dark is the default (:root); light is [data-theme="light"].
- */
-:root,[data-theme="dark"]{--bg:#0a0e13;--surface:#141a22;--surface-raised:#1d252f;--surface-sunken:#0f141a;--border:#36424f;--border-strong:#76818f;--divider:#29323d;--ink:#f3f6f9;--ink-muted:#aab4c0;--ink-disabled:#6b7480;--accent:#f28a35;--accent-ink:#ff9d4d;--accent-soft:#3b2410;--on-accent:#1a0e04;--success:#3dd9b3;--success-soft:#0e3a30;--warning:#f6c350;--warning-soft:#3a2d0c;--danger:#ff7b74;--danger-soft:#3f1918;--danger-fill:#ff7b74;--on-danger:#1f0605;--info:#6cb8ff;--info-soft:#0f2d4a;--data-coin:#f0bf45;--data-medal:#c39bff;--data-time:#5fcdf2;--data-round:var(--accent-ink);--vip:var(--data-medal);--vip-soft:#2c1f47;--focus:#8cc4ff;--scrim:rgba(3, 5, 8, 0.72);--shadow-raised:0 1px 0 rgba(255, 255, 255, 0.04) inset;--shadow-overlay:0 12px 32px rgba(0, 0, 0, 0.6);}
-[data-theme="light"]{--bg:#e9edf2;--surface:#ffffff;--surface-raised:#ffffff;--surface-sunken:#f3f5f8;--border:#bcc5d0;--border-strong:#6f7a88;--divider:#dde2e8;--ink:#0d131a;--ink-muted:#4a5462;--ink-disabled:#9aa2ad;--accent:#f28a35;--accent-ink:#a3450a;--accent-soft:#fde9d7;--on-accent:#1a0e04;--success:#0a7259;--success-soft:#d9f3ec;--warning:#7f5300;--warning-soft:#fcefc8;--danger:#bf2d27;--danger-soft:#fce4e2;--danger-fill:#c62f29;--on-danger:#ffffff;--info:#1a5fb4;--info-soft:#dfecfb;--data-coin:#9a6600;--data-medal:#7a45d6;--data-time:#0a6f93;--data-round:var(--accent-ink);--vip:var(--data-medal);--vip-soft:#efe6fd;--focus:#1a5fb4;--scrim:rgba(13, 19, 26, 0.5);--shadow-raised:0 1px 2px rgba(13, 19, 26, 0.08);--shadow-overlay:0 12px 32px rgba(13, 19, 26, 0.18);}
-:root{--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--radius-sm:6px;--radius-md:10px;--radius-lg:16px;--radius-xl:24px;--radius-pill:999px;--size-touch:48px;--size-control:40px;--size-button:48px;--size-bar:64px;--font-display:"Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;--font-sans:"IBM Plex Sans", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", sans-serif;--font-mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;}
+/* GAP design tokens v2 — generated from tokens.json. Do not edit by hand. */
+:root, [data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0e12;
+  --bg-glow: #788caa48;
+  --card-top: #252c36;
+  --card-bottom: #181d24;
+  --card-static: #161a21;
+  --card-static-edge: #2d3540;
+  --inset: #0f1318;
+  --divider: #2d3540;
+  --disc: #2c3542;
+  --on-disc: #e3e9f2;
+  --edge-strong: #b0b8c3;
+  --ink: #f3f6ff;
+  --ink-muted: #b0b8c3;
+  --tap: #56bdff;
+  --tap-soft: #56bdff24;
+  --selected: #3aa8ff;
+  --on-selected: #04121f;
+  --focus-ring: #3aa8ff40;
+  --success: #3ddcb6;
+  --warning: #f7c552;
+  --idle: #b1b9d8;
+  --danger: #ff8079;
+  --success-band: #3ddcb629;
+  --warning-band: #f7c55229;
+  --idle-band: #b1b9d829;
+  --danger-band: #ff807929;
+  --success-selected: #3ddcb6;
+  --on-success-selected: #04201a;
+  --warning-selected: #f7c552;
+  --on-warning-selected: #1f1600;
+  --idle-selected: #c3c9dc;
+  --on-idle-selected: #0a1030;
+  --danger-selected: #ff8079;
+  --on-danger-selected: #2a0705;
+  --danger-fill: #ff8079;
+  --on-danger-fill: #2a0705;
+  --data-coin: #f0bf45;
+  --data-medal: #c9a2ff;
+  --data-time: #5cc0ff;
+  --data-round: #56bdff;
+  --bar-top: #2238aa;
+  --bar-bottom: #22054d;
+  --on-bar: #f5f5f4;
+  --bar-divider: #9da4ae;
+  --bar-stop: #ffa29b;
+  --bar-pause: #f7c552;
+  --scrim: #04060aa8;
+  --shadow-tap-glow: 0 0 0 1px #56bdff59, 0 0 18px #56bdff38;
+  --shadow-card: 0 10px 30px #00000059;
+  --shadow-float: 0 12px 30px #00000073;
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #e8ecf7;
+  --bg-glow: #7891eb40;
+  --card-top: #ffffff;
+  --card-bottom: #f3f5fd;
+  --card-static: #f4f6fc;
+  --card-static-edge: #d6dcf0;
+  --inset: #e9edf9;
+  --divider: #d3daf2;
+  --disc: #e0e7ff;
+  --on-disc: #2b3f9e;
+  --edge-strong: #5a69a6;
+  --ink: #0c1330;
+  --ink-muted: #4a5478;
+  --tap: #1d5fc4;
+  --tap-soft: #e3edfc;
+  --selected: #1d5fc4;
+  --on-selected: #ffffff;
+  --focus-ring: #1d5fc433;
+  --success: #0a7259;
+  --warning: #7f5300;
+  --idle: #4a5478;
+  --danger: #bf2d27;
+  --success-band: #d9f3ec;
+  --warning-band: #fcefc8;
+  --idle-band: #e6e9f3;
+  --danger-band: #fce4e2;
+  --success-selected: #3ddcb6;
+  --on-success-selected: #04201a;
+  --warning-selected: #f7c552;
+  --on-warning-selected: #1f1600;
+  --idle-selected: #c3c9dc;
+  --on-idle-selected: #0a1030;
+  --danger-selected: #ff8079;
+  --on-danger-selected: #2a0705;
+  --danger-fill: #c62f29;
+  --on-danger-fill: #ffffff;
+  --data-coin: #9a6600;
+  --data-medal: #7a45d6;
+  --data-time: #1d5fc4;
+  --data-round: #1d5fc4;
+  --bar-top: #ffffff;
+  --bar-bottom: #e9edf6;
+  --on-bar: #0c1330;
+  --bar-divider: #7884b6;
+  --bar-stop: #bf2d27;
+  --bar-pause: #7f5300;
+  --scrim: #0c133061;
+  --shadow-tap-glow: 0 0 0 1px #1d5fc42e, 0 6px 16px #1d5fc429;
+  --shadow-card: 0 8px 22px #1e2d6e1a;
+  --shadow-float: 0 10px 24px #1e2d6e2e;
+}
+:root {
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+  --space-6: 16px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-card: 18px;
+  --radius-dialog: 22px;
+  --radius-sheet: 24px;
+  --radius-pill: 999px;
+  --size-control: 32px;
+  --size-button: 40px;
+  --size-input: 44px;
+  --size-bar: 62px;
+  --bar-inset-x: 26px;
+  --bar-inset-bottom: 14px;
+  --bar-zone: 104px;
+  --font-display: "Inter Display", "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}

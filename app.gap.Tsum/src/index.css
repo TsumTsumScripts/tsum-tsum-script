@@ -5,7 +5,11 @@
  * (gapTokens.css, copied from the design kit). The components are the kit's:
  * AppBar, scrolling Tabs, SectionHeader over a ListGroup of ListRows, Switch,
  * Stepper, Select with a BottomSheet picker, TextField, Button, Badge and
- * InlineAlert. Their specs are in the kit's design-system/components/*.md.
+ * InlineAlert. Their specs are in the kit's design-system/components.md (v2).
+ *
+ * v2's three signals: a blue `tap` edge is tappable, solid `selected` is on or
+ * current, red is destructive. Controls inside a card are fill only. Text sizes
+ * stay a step above the kit's so the page reads as it did on a phone.
  *
  * Dark is the default theme; settings.ts sets `data-theme` on <html>.
  *
@@ -46,7 +50,7 @@ body {
     margin: 0;
     /* Keeps the last row clear of the phone's gesture bar. */
     padding-bottom: env(safe-area-inset-bottom, 0);
-    background: var(--bg);
+    background: var(--bg) radial-gradient(420px 260px at 20% 0%, var(--bg-glow), transparent 70%) no-repeat;
     color: var(--ink);
     font-family: var(--font-sans);
     font-size: 15px;
@@ -72,14 +76,14 @@ p {
 }
 
 :focus-visible {
-    outline: 2px solid var(--focus);
+    outline: 2.5px solid var(--selected);
     outline-offset: 2px;
 }
 
 .container {
     max-width: var(--page-width);
     margin: 0 auto;
-    padding: 0 var(--space-4);
+    padding: 0 var(--space-5);
 }
 
 .icon {
@@ -103,11 +107,11 @@ p {
     z-index: 3;
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-3);
     height: var(--size-bar);
-    padding: 0 var(--space-2) 0 var(--space-4);
+    padding: 0 var(--space-5);
     background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--divider);
 }
 
 .app-title {
@@ -122,31 +126,30 @@ p {
     color: var(--ink-muted);
 }
 
-/* IconButton: a 48px round target holding one 24px icon. */
+/* The kit's round header button: 40px, tap-soft with the blue edge. */
 .icon-button {
     flex: none;
     display: grid;
     place-items: center;
-    width: var(--size-touch);
-    height: var(--size-touch);
+    width: var(--size-button);
+    height: var(--size-button);
     margin: 0;
     padding: 0;
     border: 0;
-    border-radius: var(--radius-pill);
-    background: transparent;
+    border-radius: 50%;
+    background: var(--tap-soft);
+    box-shadow: inset 0 0 0 1.5px var(--tap);
     color: var(--ink);
-    transition: background-color .12s;
 }
 
-.icon-button:hover,
 .icon-button:active {
-    background: var(--surface-raised);
+    background: var(--disc);
 }
 
 .icon-button .icon {
     grid-area: 1 / 1;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
 }
 
 /* The moon offers dark, the sun offers light. */
@@ -170,27 +173,29 @@ p {
     gap: var(--space-2);
     min-width: 0;
     max-width: 180px;
-    height: var(--size-control);
-    margin: 0 var(--space-1) 0 0;
-    padding: 0 10px 0 var(--space-3);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-md);
-    background: var(--surface-sunken);
+    height: var(--size-button);
+    margin: 0;
+    padding: 0 var(--space-4) 0 var(--space-5);
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: var(--tap-soft);
+    box-shadow: inset 0 0 0 1.5px var(--tap);
     color: var(--ink);
     font-size: 14px;
     font-weight: 600;
 }
 
 .preset-select:disabled {
-    border-style: dashed;
-    border-color: var(--border);
-    color: var(--ink-disabled);
+    background: transparent;
+    box-shadow: none;
+    outline: 1.5px dashed var(--edge-strong);
+    outline-offset: -1.5px;
+    color: var(--ink-muted);
     cursor: not-allowed;
 }
 
 .preset-select[aria-expanded="true"] {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent);
+    box-shadow: inset 0 0 0 2.5px var(--selected), 0 0 0 4px var(--focus-ring);
 }
 
 .preset-name {
@@ -205,7 +210,7 @@ p {
 .preset-caret {
     width: 18px;
     height: 18px;
-    color: var(--ink-muted);
+    color: var(--tap);
 }
 
 /* Floats over the tab bar under the app bar, so it opens where it was asked
@@ -214,20 +219,20 @@ p {
     position: sticky;
     top: var(--size-bar);
     z-index: 4;
-    padding: var(--space-4);
-    background: var(--surface-raised);
-    border-bottom: 1px solid var(--border);
-    box-shadow: var(--shadow-overlay);
+    padding: var(--space-5);
+    background: linear-gradient(160deg, var(--card-top), var(--card-bottom));
+    border-bottom: 1.5px solid var(--edge-strong);
+    box-shadow: var(--shadow-float);
 }
 
 .preset-input {
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-5);
 }
 
 .preset-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: var(--space-3);
 }
 
 /* Close is the escape, so it sits apart from the actions. */
@@ -237,17 +242,17 @@ p {
 
 /* --- Tabs: the scrolling variant -------------------------------------------
 
-   Outlined pills; the active one is tinted with an accent edge and a bold
-   label. When tabs run past an edge, the edge fades and a "+N" button says how
+   Pills with the blue tap edge; the active one is solid `selected` with a
+   bold label. When tabs run past an edge, the edge fades and a "+N" button says how
    many are hidden there. */
 
 .tab-strip {
     position: sticky;
     top: var(--size-bar);
     z-index: 2;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-4) var(--space-5);
     background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--divider);
 }
 
 .tab-scroll {
@@ -259,7 +264,7 @@ p {
 .tab-bar {
     position: relative;
     display: flex;
-    gap: var(--space-2);
+    gap: var(--space-3);
     padding: 2px 0;
     overflow-x: auto;
     scrollbar-width: none;
@@ -273,27 +278,28 @@ p {
     flex: none;
     display: inline-flex;
     align-items: center;
-    height: var(--size-control);
+    height: var(--size-button);
     margin: 0;
-    padding: 0 var(--space-4);
-    border: 1px solid var(--border-strong);
+    padding: 0 var(--space-6);
+    border: 0;
     border-radius: var(--radius-pill);
-    background: var(--surface);
+    background: var(--tap-soft);
+    box-shadow: inset 0 0 0 1.5px var(--tap);
     color: var(--ink);
     font-size: 15px;
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
-    transition: background-color .12s, border-color .12s;
+    transition: background-color .12s;
 }
 
-.tab-button:hover {
-    background: var(--surface-raised);
+.tab-button:active {
+    background: var(--disc);
 }
 
 .tab-button[aria-selected="true"] {
-    background: var(--accent-soft);
-    border-color: var(--accent);
-    color: var(--accent-ink);
+    background: var(--selected);
+    box-shadow: none;
+    color: var(--on-selected);
     font-weight: 700;
 }
 
@@ -333,12 +339,12 @@ p {
     align-items: center;
     height: 32px;
     margin: 0;
-    padding: 0 var(--space-2) 0 10px;
+    padding: 0 var(--space-3) 0 var(--space-4);
     transform: translateY(-50%);
-    border: 1px solid var(--border-strong);
+    border: 1.5px solid var(--edge-strong);
     border-radius: var(--radius-pill);
-    background: var(--surface-raised);
-    box-shadow: var(--shadow-overlay);
+    background: linear-gradient(160deg, var(--card-top), var(--card-bottom));
+    box-shadow: var(--shadow-float);
     color: var(--ink);
     font-size: 13px;
     font-weight: 700;
@@ -347,30 +353,33 @@ p {
 }
 
 .tab-more:hover {
-    border-color: var(--accent);
-    color: var(--accent-ink);
+    border-color: var(--tap);
+    color: var(--tap);
 }
 
 .tab-more-left {
     left: 0;
-    padding: 0 10px 0 6px;
+    padding: 0 var(--space-4) 0 var(--space-2);
 }
 
 .tab-more-right {
     right: 0;
 }
 
-/* --- Groups: SectionHeader over a ListGroup -------------------------------- */
+/* --- Groups: a section heading over a read-only card -----------------------
+
+   Settings groups are read-only cards: flat, hairline edge, no glow. */
 
 .group {
-    padding-top: var(--space-6);
+    padding-top: calc(var(--space-6) + var(--space-3));
 }
 
+/* title-section, a step up. */
 .group-title {
     font-family: var(--font-display);
     font-size: 18px;
     line-height: 24px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--ink);
 }
 
@@ -383,26 +392,24 @@ p {
 }
 
 .group-rows {
-    margin-top: var(--space-3);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-raised);
+    margin-top: var(--space-4);
+    background: var(--card-static);
+    border: 1px solid var(--card-static-edge);
+    border-radius: var(--radius-card);
 }
 
 /* A group that can break things: a danger edge, and its note as an alert. */
 .group-warn .group-rows {
-    border-color: var(--danger);
+    border: 1.5px solid var(--danger);
 }
 
 .group-warn .group-help {
     display: flex;
     gap: var(--space-3);
-    margin-top: var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--danger);
-    border-radius: var(--radius-md);
-    background: var(--danger-soft);
+    margin-top: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--danger-band);
     color: var(--ink);
     font-size: 14px;
     line-height: 20px;
@@ -427,9 +434,9 @@ p {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-3);
+    gap: var(--space-3) var(--space-4);
     min-height: 60px;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-4) var(--space-5);
 }
 
 .setting-row:not(:first-child) {
@@ -447,7 +454,7 @@ p {
     display: block;
     font-size: 15px;
     line-height: 22px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--ink);
 }
 
@@ -468,7 +475,7 @@ p {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: var(--space-2);
+    gap: var(--space-3);
     max-width: 100%;
     margin-inline-start: auto;
 }
@@ -484,8 +491,8 @@ p {
 
 /* --- Switch ----------------------------------------------------------------
 
-   Off: a sunken track with a strong edge and a small thumb. On: an orange
-   track, a large thumb and a check -- position, size and the check all
+   Off: a tap-soft track with the blue edge and a small grey thumb. On: solid
+   `selected`, a large thumb and a check -- position, size and the check all
    change, not only the colour. */
 
 .setting-switch {
@@ -496,11 +503,12 @@ p {
     width: 52px;
     height: 32px;
     margin: 0;
-    border: 2px solid var(--border-strong);
+    border: 0;
     border-radius: var(--radius-pill);
-    background: var(--surface-sunken);
+    background: var(--tap-soft);
+    box-shadow: inset 0 0 0 1.5px var(--tap);
     cursor: pointer;
-    transition: background-color .15s, border-color .15s;
+    transition: background-color .15s;
 }
 
 .setting-switch::before,
@@ -514,30 +522,30 @@ p {
 }
 
 .setting-switch::before {
-    left: 6px;
+    left: 8px;
     width: 16px;
     height: 16px;
-    background: var(--border-strong);
+    background: var(--ink-muted);
 }
 
 .setting-switch:checked {
-    border-color: var(--accent);
-    background: var(--accent);
+    background: var(--selected);
+    box-shadow: none;
 }
 
 .setting-switch:checked::before {
-    left: 22px;
+    left: 24px;
     width: 24px;
     height: 24px;
-    background: var(--on-accent);
+    background: var(--on-selected);
 }
 
 .setting-switch:checked::after {
-    left: 26px;
+    left: 28px;
     width: 16px;
     height: 16px;
     border-radius: 0;
-    background: var(--accent);
+    background: var(--selected);
     -webkit-mask: var(--icon-check) center / contain no-repeat;
     mask: var(--icon-check) center / contain no-repeat;
 }
@@ -547,7 +555,9 @@ p {
     cursor: not-allowed;
 }
 
-/* --- TextField ------------------------------------------------------------- */
+/* --- TextField -------------------------------------------------------------
+
+   Fill only inside a card; the preset panel is on the page, so it has the edge. */
 
 .setting-text,
 .preset-input,
@@ -557,18 +567,22 @@ p {
     width: 100%;
     min-width: 0;
     margin: 0;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-md);
-    background: var(--surface-sunken);
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: var(--tap-soft);
     color: var(--ink);
     font-size: 15px;
+}
+
+.preset-input {
+    box-shadow: inset 0 0 0 1.5px var(--tap);
 }
 
 .setting-text,
 .preset-input,
 .report-note {
-    height: var(--size-control);
-    padding: 0 var(--space-3);
+    height: var(--size-input);
+    padding: 0 var(--space-5);
 }
 
 .row-control .setting-text {
@@ -580,8 +594,11 @@ p {
 .report-note:focus,
 .share-code:focus {
     outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent);
+    box-shadow: inset 0 0 0 2px var(--selected);
+}
+
+.preset-input:focus {
+    box-shadow: inset 0 0 0 2.5px var(--selected), 0 0 0 4px var(--focus-ring);
 }
 
 ::placeholder {
@@ -590,8 +607,8 @@ p {
 
 /* --- Select ----------------------------------------------------------------
 
-   Not a <select>: see `tpl-select` in index.html. A bordered sunken field with
-   a chevron, so it reads as a control. */
+   Not a <select>: see `tpl-select` in index.html. The kit's in-card dropdown
+   trigger: tap-soft fill and a blue chevron. */
 
 .setting-select {
     display: flex;
@@ -599,28 +616,28 @@ p {
     gap: var(--space-2);
     min-width: 160px;
     max-width: 100%;
-    height: var(--size-control);
+    height: var(--size-button);
     margin: 0;
-    padding: 0 10px 0 14px;
-    border: 1px solid var(--border-strong);
+    padding: 0 var(--space-4) 0 var(--space-5);
+    border: 0;
     border-radius: var(--radius-md);
-    background: var(--surface-sunken);
+    background: var(--tap-soft);
     color: var(--ink);
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
     text-align: left;
 }
 
 .setting-select:disabled {
-    border-style: dashed;
-    border-color: var(--border);
-    color: var(--ink-disabled);
+    background: transparent;
+    outline: 1.5px dashed var(--edge-strong);
+    outline-offset: -1.5px;
+    color: var(--ink-muted);
     cursor: not-allowed;
 }
 
 .setting-select[aria-expanded="true"] {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent);
+    box-shadow: inset 0 0 0 2px var(--selected);
 }
 
 /* Name and status badge side by side; only the name ellipsises. */
@@ -642,7 +659,7 @@ p {
 .select-caret {
     width: 20px;
     height: 20px;
-    color: var(--ink-muted);
+    color: var(--tap);
 }
 
 /* The picker: a BottomSheet over a scrim, parked on <body> so nothing clips it. */
@@ -663,15 +680,14 @@ p {
 
 .select-list {
     position: relative;
-    max-height: 82%;
+    max-height: 85%;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: var(--space-2) var(--space-2) var(--space-5);
-    background: var(--surface-raised);
-    border: 1px solid var(--border);
-    border-bottom: 0;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    box-shadow: var(--shadow-overlay);
+    padding: var(--space-3) var(--space-3) var(--space-6);
+    background: linear-gradient(160deg, var(--card-top), var(--card-bottom));
+    border-top: 1.5px solid var(--edge-strong);
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    box-shadow: var(--shadow-float);
 }
 
 /* The grab handle. */
@@ -680,19 +696,20 @@ p {
     display: block;
     width: 40px;
     height: 4px;
-    margin: 0 auto var(--space-3);
+    margin: 0 auto var(--space-5);
     border-radius: 4px;
-    background: var(--border-strong);
+    background: var(--ink-muted);
+    opacity: .7;
 }
 
 .select-option {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
     width: 100%;
-    min-height: var(--size-touch);
+    min-height: var(--size-input);
     margin: 0;
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-3) var(--space-4);
     border: 0;
     border-radius: var(--radius-md);
     background: transparent;
@@ -703,15 +720,14 @@ p {
 }
 
 .select-option:hover {
-    background: var(--surface-sunken);
+    background: var(--tap-soft);
 }
 
-/* Selected: tint, accent edge, bold label and a check -- never colour alone. */
+/* Selected: tint, blue edge, bold label and a check -- never colour alone. */
 .select-option[aria-selected="true"] {
-    background: var(--accent-soft);
-    box-shadow: inset 0 0 0 1px var(--accent);
-    color: var(--accent-ink);
-    font-weight: 600;
+    background: var(--tap-soft);
+    box-shadow: inset 0 0 0 1.5px var(--tap);
+    font-weight: 800;
 }
 
 .select-option[aria-selected="true"]::after {
@@ -720,22 +736,22 @@ p {
     width: 20px;
     height: 20px;
     margin-inline-start: auto;
-    background: currentColor;
+    background: var(--tap);
     -webkit-mask: var(--icon-check) center / contain no-repeat;
     mask: var(--icon-check) center / contain no-repeat;
 }
 
 /* A heading over a block of options: a label, not tiny grey caps. */
 .select-group {
-    padding: var(--space-3) var(--space-3) var(--space-1);
+    padding: var(--space-5) var(--space-4) var(--space-1);
     color: var(--ink-muted);
     font-size: 13px;
     line-height: 18px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .select-group:not(:first-child) {
-    margin-top: var(--space-2);
+    margin-top: var(--space-3);
     border-top: 1px solid var(--divider);
 }
 
@@ -743,16 +759,17 @@ p {
 
    `data-status` is set by settings.ts (`drawStatusFlag`) on a sheet option, the
    closed dropdown and a row title. Alpha is "needs a look" (warning), Beta is
-   informational. The text beside it stays `ink`. */
+   the neutral `idle` status (v2 has no info colour). The text beside it stays
+   `ink`. */
 
 [data-status="alpha"] {
     --status: var(--warning);
-    --status-soft: var(--warning-soft);
+    --status-soft: var(--warning-band);
 }
 
 [data-status="beta"] {
-    --status: var(--info);
-    --status-soft: var(--info-soft);
+    --status: var(--idle);
+    --status-soft: var(--idle-band);
 }
 
 .select-flag {
@@ -760,8 +777,8 @@ p {
     display: inline-flex;
     align-items: center;
     height: 20px;
-    margin-inline-start: var(--space-2);
-    padding: 0 6px;
+    margin-inline-start: var(--space-3);
+    padding: 0 var(--space-2);
     border-radius: var(--radius-sm);
     background: var(--status-soft);
     color: var(--status);
@@ -779,24 +796,25 @@ p {
 
 /* --- Stepper ---------------------------------------------------------------
 
-   40px outlined buttons either side of the number. The fine pair (dropped when
-   the step is already 1) has no fill, so four buttons do not read as one row
-   of equals. At a limit a button turns dashed. */
+   40px tap-soft buttons with blue glyphs either side of the number (fill only:
+   they sit in a card). The fine pair (dropped when the step is already 1) has
+   no fill, so four buttons do not read as one row of equals. At a limit a
+   button turns dashed and dim. */
 
 .stepper {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-    gap: var(--space-2);
+    gap: var(--space-1);
 }
 
 .stepper .setting-number {
     width: 56px;
-    height: var(--size-control);
+    height: var(--size-button);
     margin: 0;
     padding: 0;
-    border: 1px solid transparent;
+    border: 0;
     border-radius: var(--radius-md);
     background: transparent;
     color: var(--ink);
@@ -810,9 +828,8 @@ p {
 
 .stepper .setting-number:focus {
     outline: none;
-    border-color: var(--accent);
-    background: var(--surface-sunken);
-    box-shadow: 0 0 0 1px var(--accent);
+    background: var(--tap-soft);
+    box-shadow: inset 0 0 0 2px var(--selected);
 }
 
 .stepper .setting-number::-webkit-inner-spin-button,
@@ -823,47 +840,50 @@ p {
 
 .step {
     flex: none;
-    min-width: var(--size-control);
-    height: var(--size-control);
+    min-width: var(--size-button);
+    height: var(--size-button);
     margin: 0;
     padding: 0 var(--space-1);
-    border: 1px solid var(--border-strong);
+    border: 0;
     border-radius: var(--radius-md);
-    background: var(--surface);
-    color: var(--ink);
-    font-size: 14px;
-    font-weight: 600;
+    background: var(--tap-soft);
+    color: var(--tap);
+    font-size: 15px;
+    font-weight: 800;
     font-variant-numeric: tabular-nums;
     transition: background-color .12s;
 }
 
-.step:hover {
-    background: var(--surface-raised);
+.step:active {
+    background: var(--disc);
 }
 
 .step-fine {
     background: transparent;
-    color: var(--ink-muted);
+    box-shadow: inset 0 0 0 1.5px var(--tap-soft);
+    font-size: 13px;
 }
 
 .step:disabled {
-    border-style: dashed;
-    border-color: var(--border);
     background: transparent;
-    color: var(--ink-disabled);
+    box-shadow: none;
+    outline: 1.5px dashed var(--edge-strong);
+    outline-offset: -1.5px;
+    color: var(--ink-muted);
+    opacity: .45;
     cursor: not-allowed;
 }
 
 /* --- Buttons ---------------------------------------------------------------
 
-   `.row-button` is the small secondary Button. The variants below are the
-   kit's primary, danger-outline and ghost. */
+   `.row-button` is the kit's secondary Button (tap-soft, blue edge). The
+   variants below are primary (solid `selected`), danger-soft and link. */
 
 .row-buttons,
 .share-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: var(--space-3);
 }
 
 .row-button,
@@ -872,67 +892,63 @@ p {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: var(--size-control);
+    height: var(--size-button);
     margin: 0;
-    padding: 0 var(--space-4);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-md);
-    background: var(--surface);
+    padding: 0 var(--space-6);
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: var(--tap-soft);
+    box-shadow: inset 0 0 0 1.5px var(--tap);
     color: var(--ink);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 800;
     white-space: nowrap;
-    transition: background-color .12s, border-color .12s;
+    transition: background-color .12s;
 }
 
-.row-button:hover,
-.share-actions button:hover {
-    background: var(--surface-raised);
-    border-color: var(--ink-muted);
+.row-button:active,
+.share-actions button:active {
+    background: var(--disc);
 }
 
 .preset-primary,
 .share-actions .share-apply {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: var(--on-accent);
+    background: var(--selected);
+    box-shadow: none;
+    color: var(--on-selected);
 }
 
-.preset-primary:hover,
-.share-actions .share-apply:hover {
-    border-color: var(--accent);
-    background: var(--accent);
+.preset-primary:active,
+.share-actions .share-apply:active {
+    background: var(--selected);
     filter: brightness(1.06);
 }
 
 .preset-danger {
-    border-color: var(--danger);
-    background: transparent;
+    background: var(--danger-band);
+    box-shadow: inset 0 0 0 1.5px var(--danger);
     color: var(--danger);
 }
 
-.preset-danger:hover {
-    border-color: var(--danger);
-    background: var(--danger-soft);
+.preset-danger:active {
+    background: var(--danger-band);
+    filter: brightness(1.15);
 }
 
 .preset-quiet {
-    padding: 0 var(--space-3);
-    border-color: transparent;
+    padding: 0 var(--space-5);
     background: transparent;
-    color: var(--accent-ink);
+    box-shadow: none;
+    color: var(--tap);
 }
 
-.preset-quiet:hover {
-    border-color: transparent;
-    background: var(--accent-soft);
+.preset-quiet:active {
+    background: var(--tap-soft);
 }
 
 .row-button:disabled,
 .share-actions button:disabled {
-    border: 1px dashed var(--border);
-    background: var(--surface-sunken);
-    color: var(--ink-disabled);
+    opacity: .45;
     filter: none;
     cursor: not-allowed;
 }
@@ -956,10 +972,10 @@ p {
 /* Number, job, interval; the detail spans the last two columns. */
 .run-step {
     display: grid;
-    grid-template-columns: 24px 1fr auto;
+    grid-template-columns: 28px 1fr auto;
     align-items: center;
-    column-gap: var(--space-3);
-    padding: var(--space-2) 0;
+    column-gap: var(--space-4);
+    padding: var(--space-3) 0;
 }
 
 .run-step + .run-step {
@@ -971,13 +987,13 @@ p {
     content: counter(run-step);
     display: grid;
     place-items: center;
-    width: 24px;
-    height: 24px;
-    border: 1px solid var(--border-strong);
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background: var(--surface-sunken);
-    font-size: 12px;
-    font-weight: 700;
+    background: var(--disc);
+    color: var(--on-disc);
+    font-size: 13px;
+    font-weight: 800;
     font-variant-numeric: tabular-nums;
 }
 
@@ -1013,7 +1029,7 @@ p {
 }
 
 .run-note {
-    margin-top: var(--space-2);
+    margin-top: var(--space-3);
     font-size: 13px;
     line-height: 18px;
     color: var(--ink-muted);
@@ -1021,27 +1037,25 @@ p {
 
 /* Nothing will play: a state to know about, so a warning alert. */
 .run-order-warn .run-note {
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--warning);
-    border-radius: var(--radius-md);
-    background: var(--warning-soft);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--warning-band);
     color: var(--ink);
     font-size: 14px;
     line-height: 20px;
 }
 
 .run-flow-title {
-    margin: var(--space-4) 0 var(--space-2);
+    margin: var(--space-6) 0 var(--space-3);
     font-size: 13px;
     line-height: 18px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .run-flow {
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--surface-sunken);
+    padding: var(--space-3) var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--inset);
     font-size: 13px;
     line-height: 24px;
 }
@@ -1059,12 +1073,12 @@ p {
 
 /* A sibling after its row, so it shares the row's padding and no divider. */
 .share-panel {
-    padding: 0 var(--space-4) var(--space-4);
+    padding: 0 var(--space-5) var(--space-5);
 }
 
 .share-code {
-    padding: var(--space-2) var(--space-3);
-    margin-bottom: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    margin-bottom: var(--space-5);
     font-family: var(--font-mono);
     font-size: 13px;
     line-height: 18px;
@@ -1073,12 +1087,12 @@ p {
 }
 
 .report-note {
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-5);
 }
 
 .share-status,
 .preset-status {
-    margin-top: var(--space-2);
+    margin-top: var(--space-3);
     font-size: 13px;
     line-height: 18px;
     color: var(--ink);
@@ -1092,6 +1106,7 @@ p {
 
 .share-error {
     color: var(--danger);
+    font-weight: 700;
 }
 
 /* The one literal colour on the page: a QR only scans at full contrast, so it
@@ -1100,7 +1115,7 @@ p {
 .share-qr {
     display: block;
     max-width: 100%;
-    margin: var(--space-3) auto var(--space-1);
+    margin: var(--space-5) auto var(--space-1);
     border-radius: var(--radius-sm);
     background: #ffffff;
     image-rendering: pixelated;
@@ -1109,21 +1124,20 @@ p {
 /* --- Page foot -------------------------------------------------------------
 
    The restart note is a warning alert: it says a change applies later. Reset
-   is the danger-outline Button, full width. */
+   is the danger-soft Button, full width. */
 
 .page-foot {
-    padding-top: var(--space-6);
-    padding-bottom: var(--space-8);
+    padding-top: calc(var(--space-6) + var(--space-3));
+    padding-bottom: calc(var(--space-6) * 2);
 }
 
 .restart-note {
     display: flex;
     gap: var(--space-3);
-    margin-bottom: var(--space-4);
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--warning);
-    border-radius: var(--radius-md);
-    background: var(--warning-soft);
+    margin-bottom: var(--space-6);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--warning-band);
     color: var(--ink);
     font-size: 14px;
     line-height: 20px;
@@ -1142,13 +1156,13 @@ p {
 .reset-button {
     display: flex;
     width: 100%;
-    height: var(--size-button);
-    border-color: var(--danger);
-    background: transparent;
+    height: var(--size-input);
+    background: var(--danger-band);
+    box-shadow: inset 0 0 0 1.5px var(--danger);
     color: var(--danger);
     font-size: 15px;
 }
 
-.reset-button:hover {
-    background: var(--danger-soft);
+.reset-button:active {
+    filter: brightness(1.15);
 }
