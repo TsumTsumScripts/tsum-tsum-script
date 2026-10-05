@@ -652,15 +652,15 @@ function tsumListSelectCard(run: Tsum, slot: number): boolean {
 }
 
 /**
- * Turn to the next page, or the previous one with `back`. A turn is proved by
- * the first card's portrait changing; a tap that landed mid-animation turns
- * nothing, so it is tried again. Shared with Select My Tsum (src/myTsumSelect.ts).
+ * Turn to the next page. A turn is proved by the first card's portrait
+ * changing; a tap that landed mid-animation turns nothing, so it is tried
+ * again. Shared with Select My Tsum (src/myTsumSelect.ts).
  */
-function tsumListTurnPage(run: Tsum, back?: boolean): boolean {
+function tsumListTurnPage(run: Tsum): boolean {
   const before = run.myTsumSignature(tsumListCellRect(0));
   let turned = false;
   for (let i = 0; i < TsumListAttempts && !turned && run.isRunning; i++) {
-    run.tap(back ? CollectionGrid.prevPage : CollectionGrid.nextPage);
+    run.tap(CollectionGrid.nextPage);
     run.settleScreen(UnlockPageTurnSettleMs);
     const after = run.myTsumSignature(tsumListCellRect(0));
     turned = before === null || after === null || myTsumSimilarity(myTsumPrepare(before), myTsumPrepare(after)) < 0.98;
