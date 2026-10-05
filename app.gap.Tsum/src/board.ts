@@ -110,12 +110,13 @@ Tsum.prototype.holdBubblesAfterSkill = function(activatedAt) {
 };
 
 // `holdMs` defaults to the strategy's own hold: short under All Bubbles ASAP
-// and Save One, which want board space rather than a good blast.
+// and the Save One pair, which want board space rather than a good blast.
 Tsum.prototype.bubblesHeldAfterSkill = function(holdMs) {
   const cfg = GameBubbleConfig;
   if (typeof holdMs !== 'number') {
-    holdMs = this.bubbleStrategy === BubbleStrategy.AllAsap
-        || this.bubbleStrategy === BubbleStrategy.SaveOne
+    const s = this.bubbleStrategy;
+    holdMs = s === BubbleStrategy.AllAsap || s === BubbleStrategy.SaveOne
+        || s === BubbleStrategy.SaveOneMidChain
       ? cfg.shortHoldAfterSkillMs : cfg.holdAfterSkillMs;
   }
   // `bubbleHoldUntil` is stamped with the long hold; shift it to this one.
@@ -144,6 +145,8 @@ Tsum.prototype.bubbleTapBudget = function() {
   if (this.bubblesHeldForFever()) { return 0; }
   switch (this.bubbleStrategy) {
     case BubbleStrategy.AllMidChain: return GameBubbleConfig.maxTapsMidChain;
+    // All but the richest -- `popGameBubbles` leaves that one out.
+    case BubbleStrategy.SaveOneMidChain: return GameBubbleConfig.maxTapsMidChain;
     case BubbleStrategy.AllAsap: return GameBubbleConfig.maxTapsAsap;
     // The one bubble `popBubbleOverflow` kept.
     case BubbleStrategy.SaveOne: return 1;
@@ -220,9 +223,13 @@ Tsum.prototype.ripeGameBubbles = function(bubbles) {
       ripe.push(b);
     }
   }
-  ripe.sort(function(a, b) { return (b.near || 0) - (a.near || 0); });
-  return ripe;
+  return richestFirst(ripe);
 };
+
+/** A copy of `bubbles`, most tsums in the blast first. */
+function richestFirst(bubbles: GameBubble[]): GameBubble[] {
+  return bubbles.slice().sort(function(a, b) { return (b.near || 0) - (a.near || 0); });
+}
 
 /** Tap one bubble at its scan position, and mark it popped. */
 function tapGameBubble(ts: Tsum, b: GameBubble): void {
@@ -251,8 +258,12 @@ Tsum.prototype.popGameBubbles = function(limit) {
   const budget = override ? limit : this.bubbleTapBudget();
   if (budget <= 0) { return; }
   // All Bubbles ASAP takes every one: it wants the space, not the best blast.
+  // Save One Mid Chain takes every one but the richest, ripe or not.
   const asap = this.bubbleStrategy === BubbleStrategy.AllAsap;
-  const bubbles = override || asap ? all : this.ripeGameBubbles(all);
+  const saveOne = !override && this.bubbleStrategy === BubbleStrategy.SaveOneMidChain;
+  const bubbles = override || asap ? all
+    : saveOne ? richestFirst(all).slice(1)
+    : this.ripeGameBubbles(all);
   const held = all.length - bubbles.length;
   const count = Math.min(bubbles.length, budget);
   if (count <= 0) {
@@ -290,7 +301,7 @@ Tsum.prototype.popBubbleOverflow = function() {
       || this.bubblesHeldForFever() || this.bubblesHeldAfterSkill(cfg.shortHoldAfterSkillMs)) {
     return;
   }
-  const sorted = all.slice().sort(function(a, b) { return (b.near || 0) - (a.near || 0); });
+  const sorted = richestFirst(all);
   const kept = sorted.slice(0, keep);
   const extra = sorted.slice(keep, keep + cfg.maxTapsAsap);
   for (let i = 0; i < extra.length; i++) { tapGameBubble(this, extra[i]); }

@@ -229,6 +229,7 @@ const QuickBarEnumValues: { [key: string]: { [value: string]: true } } = {
   [SettingKey.BubbleStrategy]: {
     [BubbleStrategy.OneMidChain]: true,
     [BubbleStrategy.AllMidChain]: true,
+    [BubbleStrategy.SaveOneMidChain]: true,
     [BubbleStrategy.SaveOne]: true,
     [BubbleStrategy.AllAsap]: true,
   } satisfies Record<BubbleStrategy, true>,

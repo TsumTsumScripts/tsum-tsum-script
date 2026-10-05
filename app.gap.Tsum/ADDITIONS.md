@@ -7,6 +7,7 @@ docs), then drop its rows here.
 
 | Added | For | Where | Used |
 |:--|:--|:--|:--|
+| `BubbleStrategy.SaveOneMidChain`, `UiText.BubbleSaveOneMidChain` / `BubbleSaveOneMidChainShort` / `FlowLinkAllButOne`, share slot `S`, `richestFirst` | Save One Mid Chain bubble strategy | `src/shared.d.ts`, `src/bubbleOptions.ts`, `src/strings.d.ts`, `src/ui*.ts`, `src/quickbar.ts`, `src/settings.ts`, `src/board.ts` | used |
 | `BubbleStrategy.SaveOne`, `UiText.BubbleSaveOne` / `BubbleSaveOneShort` / `FlowPopAllButOne`, share slot `s` | Save One bubble strategy | `src/shared.d.ts`, `src/bubbleOptions.ts`, `src/strings.d.ts`, `src/ui*.ts`, `src/quickbar.ts`, `src/settings.ts`, `src/board.ts` | used |
 | `GameBubbleConfig.bandFrom` / `bandParam2` / `bandMaxRadius` / `darkMax` / `whiteMax`, `bubbleLooks`, `bubbleNear`, `shortHoldAfterSkillMs`, `overflowAt` / `overflowKeep`, `pileUpSweepAt`, `popBubbleOverflow`, `bubbleBandTopY`, `Log.Bubble.Overflow` | Faster bubble popping | `src/data.ts`, `src/pathfinding.ts`, `src/board.ts`, `src/play.ts`, `src/logEvents.ts` | used |
 | `SettingKey.TsumListOnly` (start flag, no row) | Tsum List export: a run started for it stops after | `src/shared.d.ts`, `src/runPlan.ts`, `src/index.ts` | used |

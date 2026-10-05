@@ -80,7 +80,8 @@ https://github.com/game-automation-platform/game-automation-scripts/blob/main/ap
    `bubbleTapBudget` says how many a chain may pop. Right after the scan,
    *All Bubbles ASAP* pops every bubble and the other strategies pop any
    overflow (`popBubbleOverflow`: all but one under *Save One*, all but two
-   past four under the Mid Chain ones).
+   past four under the Mid Chain ones; *Save One Mid Chain*'s chain pop is
+   all but one).
 6. **Skill.** `while (useSkill(board))`: the shared core checks the gauge,
    respects the fever hold-off, taps the button and hands over to the skill's
    choreography ([Add a skill](../guides/add-a-skill)). A skill that turns

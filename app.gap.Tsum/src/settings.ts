@@ -3510,6 +3510,8 @@ function roundFlowChips(values: { [key: string]: SettingValue }): string[] {
         ? UiText.FlowLinkOneBubble
         : strategy === BubbleStrategy.AllMidChain
             ? UiText.FlowLinkAllBubbles
+            : strategy === BubbleStrategy.SaveOneMidChain
+            ? UiText.FlowLinkAllButOne
             : UiText.FlowLink));
     if (on(SettingKey.UseFan)) {
         chips.push(i18nText(UiText.FlowFan));

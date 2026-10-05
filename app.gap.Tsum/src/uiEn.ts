@@ -197,12 +197,14 @@ i18nRegister(Locale.English, 'English', {
 
     [UiText.BubbleOneMidChain]: 'One Bubble Mid Chain',
     [UiText.BubbleAllMidChain]: 'All Bubbles Mid Chain',
+    [UiText.BubbleSaveOneMidChain]: 'Save One Mid Chain',
     [UiText.BubbleSaveOne]: 'Save One',
     [UiText.BubbleAllAsap]: 'All Bubbles ASAP',
     // The Quick Bar's chip. "Mid" is mid-chain and "Now" is as soon as they
     // land, so the three read as a scale from one bubble to all of them.
     [UiText.BubbleOneMidChainShort]: '1 mid',
     [UiText.BubbleAllMidChainShort]: 'All mid',
+    [UiText.BubbleSaveOneMidChainShort]: 'Save 1 mid',
     [UiText.BubbleSaveOneShort]: 'Save 1',
     [UiText.BubbleAllAsapShort]: 'All now',
 
@@ -340,6 +342,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.FlowTapSkill]: 'tap the skill if it filled',
     [UiText.FlowHoldBubblesFever]: 'hold bubbles in a fever\'s last {sec}s',
     [UiText.FlowLinkOneBubble]: 'link them (one bubble mid-chain)',
+    [UiText.FlowLinkAllButOne]: 'link them (all but one bubble mid-chain)',
     [UiText.FlowLinkAllBubbles]: 'link them (every bubble mid-chain)',
     [UiText.FlowLink]: 'link them',
     [UiText.FlowFan]: 'fan every 4th scan',

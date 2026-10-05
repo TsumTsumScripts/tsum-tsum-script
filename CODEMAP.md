@@ -409,7 +409,8 @@ Four rules the tables cannot carry:
   wants spent it asks for per chain through `popBubblesAfterChain`). The overflow pop
   (`popBubbleOverflow`) is part of every strategy but All Bubbles ASAP, not an
   exception: past `overflowAt` bubbles the Mid Chain ones keep only the richest
-  `overflowKeep`, and Save One always keeps just one. A new tap on a bubble that reads none of these silently
+  `overflowKeep`, and Save One always keeps just one (Save One Mid Chain does
+  the same as its chain pop). A new tap on a bubble that reads none of these silently
   undoes the setting.
 - **A mode of a screen is not a page, and must not be read as one.** `variant`
   is documentation and tooling *by contract* (`PageDef` in `src/globals.d.ts`) —

@@ -189,11 +189,13 @@ i18nRegister(Locale.Japanese, '日本語', {
 
     [UiText.BubbleOneMidChain]: 'チェーン中にボムを1つ',
     [UiText.BubbleAllMidChain]: 'チェーン中にボムを全部',
+    [UiText.BubbleSaveOneMidChain]: 'チェーン中にボムを1つ残す',
     [UiText.BubbleSaveOne]: 'ボムを1つ残す',
     [UiText.BubbleAllAsap]: 'ボムをすぐ全部',
     // クイックバーのチップ用。数文字の幅しかない。
     [UiText.BubbleOneMidChainShort]: '途中1つ',
     [UiText.BubbleAllMidChainShort]: '途中全部',
+    [UiText.BubbleSaveOneMidChainShort]: '途中1つ残す',
     [UiText.BubbleSaveOneShort]: '1つ残す',
     [UiText.BubbleAllAsapShort]: 'すぐ全部',
 
@@ -293,6 +295,7 @@ i18nRegister(Locale.Japanese, '日本語', {
     [UiText.FlowTapSkill]: 'ゲージが満タンならスキルをタップ',
     [UiText.FlowHoldBubblesFever]: 'フィーバー最後の {sec} 秒はボムを残す',
     [UiText.FlowLinkOneBubble]: 'つなぐ（チェーン中にボムを1つ）',
+    [UiText.FlowLinkAllButOne]: 'つなぐ（チェーン中にボムを1つ残して割る）',
     [UiText.FlowLinkAllBubbles]: 'つなぐ（チェーン中にボムを全部）',
     [UiText.FlowLink]: 'つなぐ',
     [UiText.FlowFan]: '4スキャンごとにファン',

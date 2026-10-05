@@ -194,11 +194,13 @@ i18nRegister(Locale.Taiwan, '中文', {
 
     [UiText.BubbleOneMidChain]: '連線時戳一顆',
     [UiText.BubbleAllMidChain]: '連線時全戳',
+    [UiText.BubbleSaveOneMidChain]: '連線時留一顆',
     [UiText.BubbleSaveOne]: '保留一顆',
     [UiText.BubbleAllAsap]: '盡快全戳',
     // 快捷列的短名：晶片只有幾個字的寬度。
     [UiText.BubbleOneMidChainShort]: '連線一顆',
     [UiText.BubbleAllMidChainShort]: '連線全戳',
+    [UiText.BubbleSaveOneMidChainShort]: '連線留一顆',
     [UiText.BubbleSaveOneShort]: '留一顆',
     [UiText.BubbleAllAsapShort]: '盡快全戳',
 
@@ -330,6 +332,7 @@ i18nRegister(Locale.Taiwan, '中文', {
     [UiText.FlowTapSkill]: '技能滿了就點',
     [UiText.FlowHoldBubblesFever]: 'Fever 最後 {sec} 秒保留泡泡',
     [UiText.FlowLinkOneBubble]: '連線（順手戳一顆泡泡）',
+    [UiText.FlowLinkAllButOne]: '連線（順手戳到只剩一顆泡泡）',
     [UiText.FlowLinkAllBubbles]: '連線（順手戳掉泡泡）',
     [UiText.FlowLink]: '連線',
     [UiText.FlowFan]: '每 4 次搧風',

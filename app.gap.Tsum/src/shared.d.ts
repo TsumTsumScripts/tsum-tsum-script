@@ -136,6 +136,11 @@ declare const enum BubbleStrategy {
   /** Every bubble the last scan found, popped as a chain lands. */
   AllMidChain = 'all_mid_chain',
   /**
+   * Every bubble but the richest, popped as a long chain lands -- Save One's
+   * pop, timed like the Mid Chain strategies. The one kept stays on the board.
+   */
+  SaveOneMidChain = 'save_one_mid_chain',
+  /**
    * Every bubble but one, popped as soon as it is seen; the one kept (the
    * richest) is spent on the next long chain, as One Mid Chain spends it.
    */

@@ -222,12 +222,14 @@ declare const enum UiText {
   // --- dropdown entries ---------------------------------------------------
   BubbleOneMidChain = 'bubble.oneMidChain',
   BubbleAllMidChain = 'bubble.allMidChain',
+  BubbleSaveOneMidChain = 'bubble.saveOneMidChain',
   BubbleSaveOne = 'bubble.saveOne',
   BubbleAllAsap = 'bubble.allAsap',
   /* The Quick Bar's names for the same three: its chip is a few characters
      wide, where the full names above are an ellipsis. See `BubbleOption.short`. */
   BubbleOneMidChainShort = 'bubble.oneMidChain.short',
   BubbleAllMidChainShort = 'bubble.allMidChain.short',
+  BubbleSaveOneMidChainShort = 'bubble.saveOneMidChain.short',
   BubbleSaveOneShort = 'bubble.saveOne.short',
   BubbleAllAsapShort = 'bubble.allAsap.short',
 
@@ -400,6 +402,7 @@ declare const enum UiText {
   /** Hold every bubble in a fever's last `{sec}` seconds. */
   FlowHoldBubblesFever = 'flow.holdBubblesFever',
   FlowLinkOneBubble = 'flow.linkOneBubble',
+  FlowLinkAllButOne = 'flow.linkAllButOne',
   FlowLinkAllBubbles = 'flow.linkAllBubbles',
   FlowLink = 'flow.link',
   FlowFan = 'flow.fan',
