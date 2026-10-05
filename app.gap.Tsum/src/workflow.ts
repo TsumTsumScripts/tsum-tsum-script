@@ -329,6 +329,8 @@ const WorkflowTsumNodes: GapWorkflowNodeDef[] = [
       if (!inRound && (run.roundDelayRemainingMs() > 0 || !run.mayContinue())) {
         return 'wait';
       }
+      // taskPlayGameQuick plays the whole round, so this is what shows meanwhile.
+      ctx.setDetail('playing round ' + (played + 1) + ' of ' + target);
       run.taskPlayGameQuick();
       return 'again';
     },
