@@ -1549,8 +1549,10 @@ interface Tsum {
   collectionLoadingCards(): number;
   /** Wait for the grid's placeholder cards to load; false when they did not in time. */
   awaitCollectionLoaded(): boolean;
-  /** Tap the left arrow until the collection is back on its first page. */
+  /** Back to the collection's first page: the scrubber's left end, then the left arrow. */
   rewindCollection(): boolean;
+  /** Jump to the collection's last page with the scrubber's right end. */
+  skipCollectionToEnd(): boolean;
   /** Which of the eight cards on this collection page are at their level cap. */
   readCappedCards(): boolean[];
   /** Select card `slot` and raise its tsum's cap; false stops the sweep. */
