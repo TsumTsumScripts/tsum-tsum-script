@@ -247,6 +247,7 @@ i18nRegister(Locale.Taiwan, '中文', {
     [UiText.ChromeRestartNow]: '立即重启TsumTsum脚本',
     [UiText.ChromeThemeToLight]: '切換為淺色模式',
     [UiText.ChromeThemeToDark]: '切換為深色模式',
+    [UiText.ChromeMoreTabs]: '顯示更多分頁',
 
     [UiText.ShareCopied]: '設定碼已複製，貼給別人即可。',
     [UiText.ShareCopyFailed]: '無法存取剪貼簿，請手動複製下方的設定碼。',

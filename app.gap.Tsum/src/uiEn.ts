@@ -253,6 +253,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.ChromeRestartNow]: 'Restart TsumTsum script now',
     [UiText.ChromeThemeToLight]: 'Switch to light mode',
     [UiText.ChromeThemeToDark]: 'Switch to dark mode',
+    [UiText.ChromeMoreTabs]: 'Show more tabs',
 
     [UiText.ShareCopied]: 'Settings code copied. Paste it to whoever wants it.',
     [UiText.ShareCopyFailed]: 'No clipboard access here - copy the code below by hand.',

@@ -266,12 +266,15 @@ cannot be read as markup. The contract between the two halves is the class names
 `querySelector` rather than by position, so re-nesting anything inside a template
 is safe.
 
-Styling is [Pico CSS](https://picocss.com), copied out of `node_modules` at build
-time and inlined — **never a CDN**: the page is opened from `file://` on a device
-that is often offline, so an asset it has to fetch is an asset it does not get.
-`tools/inline/inline.js` is what folds `pico.css`, `index.css` and `settings.js`
-into the single `dist/index.html`. The theme is Pico's `data-theme` on the root
-element: the page opens in whatever `prefers-color-scheme` says, keeps following
+Styling is the **GAP Design System**: `src/gapTokens.css` is the kit's token
+sheet copied verbatim, and `index.css` / `quickbar.css` build its components
+from those tokens alone. The fonts are Latin subsets in `src/fonts/`, which the
+build turns into `font-*.css` sheets of data URIs. Everything is inlined —
+**never a CDN**: the page is opened from `file://` on a device that is often
+offline, so an asset it has to fetch is an asset it does not get.
+`tools/inline/inline.js` is what folds the sheets and `settings.js` into the
+single `dist/index.html`. The theme is `data-theme` on the root element (dark
+when the device has no preference): the page opens in whatever `prefers-color-scheme` says, keeps following
 the device, and stops following it the moment the toggle in the app bar is used.
 
 #### The page runs in an overlay, which costs it two browser habits

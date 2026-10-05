@@ -54,6 +54,7 @@ release note; they fold back in here when she ships.
 - Copy with settings list option added: a copied settings code can carry a short list of its skill type and the settings changed from default.
 - Quick Bar gained a second page, switched by the dots beside Report: heart sending and one-by-one receiving, Unlock now, Copy settings code and the other bonus items; the coin readout can switch to round/run times.
 - Round stats no longer lose the score and coins when the rank-up panel appears after a round, and base coins read more reliably.
+- Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, orange switches, a light and dark theme, and tabs that show how many are off-screen.
 
 ### Added
 
@@ -112,6 +113,14 @@ release note; they fold back in here when she ships.
 - `sortCollection` can also set "Show owned Tsums only" and returns the dialog's
   previous state; `restoreCollectionSort` puts both back.
 - `collectionOffersRaise` is split out of `raiseSelectedLevelCap`.
+- **GAP Design System** on both pages. Pico is gone: `index.css` and
+  `quickbar.css` use only `src/gapTokens.css` (the kit's tokens, copied
+  verbatim). Fonts are Latin woff2 subsets in `src/fonts/`, inlined by the
+  build as data URIs. Dark is the default theme.
+- Settings tabs scroll as pills with "+N" overflow cues (`updateTabOverflow`);
+  stepper buttons turn dashed at the row's min/max (`syncStepLimits`).
+- Quick Bar toggles are orange with a check box; "applies now" is green,
+  "next round" amber; coin and time figures use the data colours.
 
 ### Fixed
 

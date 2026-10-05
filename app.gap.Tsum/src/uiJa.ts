@@ -209,6 +209,7 @@ i18nRegister(Locale.Japanese, '日本語', {
     [UiText.ChromeRestartNow]: 'ツムツムスクリプトを今すぐ再起動',
     [UiText.ChromeThemeToLight]: 'ライトモードに切り替え',
     [UiText.ChromeThemeToDark]: 'ダークモードに切り替え',
+    [UiText.ChromeMoreTabs]: '他のタブを表示',
 
     [UiText.ShareCopied]: '設定コードをコピーしました。必要な人に貼り付けて渡してください。',
     [UiText.ShareCopyFailed]: 'クリップボードを使えません。下のコードを手動でコピーしてください。',

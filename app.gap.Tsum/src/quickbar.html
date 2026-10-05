@@ -87,6 +87,10 @@
       offline. Pico is deliberately *not* used -- this page is at most 62dp tall
       and wants none of it.
     -->
+    <!-- GAP Design System tokens, and its sans face as a data URI (built from
+         src/fonts/). The strip is always the dark theme: it sits on the game. -->
+    <link rel="stylesheet" href="gapTokens.css">
+    <link rel="stylesheet" href="font-sans.css">
     <link rel="stylesheet" href="quickbar.css">
     <!--
       The language catalogues, shared with the settings page. English first: it
@@ -146,7 +150,7 @@
             <button class="qb-select" type="button" aria-haspopup="listbox" aria-expanded="false">
               <span class="qb-select-value">&mdash;</span>
               <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 9.5l6 6 6-6"/>
+                <path d="M6 9l6 6 6-6"/>
               </svg>
             </button>
           </div>
@@ -176,7 +180,7 @@
                 <span class="qb-wide-value qb-preset-value">&mdash;</span>
               </span>
               <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 9.5l6 6 6-6"/>
+                <path d="M6 9l6 6 6-6"/>
               </svg>
             </button>
           </div>
@@ -241,7 +245,7 @@
                 <span class="qb-wide-value qb-select-value">&mdash;</span>
               </span>
               <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 9.5l6 6 6-6"/>
+                <path d="M6 9l6 6 6-6"/>
               </svg>
             </button>
           </div>
@@ -302,7 +306,7 @@
                   <span class="qb-wide-value qb-select-value">&mdash;</span>
                 </span>
                 <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6 9.5l6 6 6-6"/>
+                  <path d="M6 9l6 6 6-6"/>
                 </svg>
               </button>
             </div>
@@ -344,7 +348,7 @@
         -->
           <button class="qb-report" type="button">
             <svg class="qb-report-glyph" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 3.4L1.6 20.6h20.8zM12 10v4.4M12 17.4v.6"/>
+              <path d="M12 3.5L21.5 20h-19zM12 10v4.5M12 17.2v.3"/>
             </svg>
             <span class="qb-sr" data-i18n="qb.report">Report</span>
           </button>
