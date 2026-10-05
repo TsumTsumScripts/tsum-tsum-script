@@ -2645,11 +2645,10 @@ var CollectionGrid = {
   ],
   /**
    * The page scrubber: the thin track under the grid (y ~1478), whose touch
-   * zone spans the screen. A tap at its far left jumps to the first page, at
-   * its far right to the last; between, it lands proportionally.
+   * zone spans the screen. A tap at its far left jumps to the first page (its
+   * far right, to the last).
    */
   scrubFirst: {x: 20, y: 1500},
-  scrubLast: {x: 1060, y: 1500},
   /**
    * Four points on each card's body, low and to the sides where no tsum art
    * reaches (the top corners take the card's border colour, which varies). A
