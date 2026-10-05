@@ -64,6 +64,9 @@ class Tsum {
   myTsumIdx: number;
   boardClusters: Color[];
   boardClusterSizes: number[];
+  boardScaleReads: number[];
+  boardScaleTrend: number;
+  edgeWashBackoffUntil: number;
   storagePath: string;
   originScreenWidth: number;
   originScreenHeight: number;
@@ -99,6 +102,12 @@ class Tsum {
   comboItem: boolean;
   sentToZero: boolean;
   skillInterval: number;
+  /** The "Wait for Settle" setting: the most ms the board is watched before the activation tap; 0 fires at once. */
+  skillSettleMs: number;
+  /** "Delay Skill ReActivation" in ms: no activation this soon after the last one; 0 is off. */
+  skillReactivationMs: number;
+  /** When `useSkill` last tapped the skill button; 0 before the first. */
+  skillActivatedAt: number;
   skillLevel: number;
   /** `SkillType.Unset` until start() reads the setting. */
   skillType: SkillType;
@@ -139,6 +148,12 @@ class Tsum {
   maxRoundMs: number;
   /** What the play loop does when `maxRoundMs` runs out. */
   maxRoundAction: MaxRoundAction;
+  /** The "Stop after games" setting; 0 never stops. */
+  stopAfterGames: number;
+  /** What happens when `stopAfterGames` rounds have been played. */
+  stopAfterAction: StopAfterAction;
+  /** Rounds finished toward `stopAfterGames`; reset when it fires or changes. */
+  gamesTowardStop: number;
   /**
    * When the next round may start, epoch ms; 0 when nothing is waiting.
    *
@@ -148,6 +163,8 @@ class Tsum {
    */
   nextRoundAt: number;
   sendHearts: boolean;
+  /** Receive Hearts One By One. Like `sendHearts`, its job is added or removed live. */
+  receiveOneByOne: boolean;
   /** Step past the Ruby mails instead of opening them; untick them on Claim All. */
   keepRuby: boolean;
   /** Step past the Mission Clear medal mails instead of opening them. */
@@ -158,10 +175,10 @@ class Tsum {
   receiveCheckLimit: number;
   /** What the play loop may do with the bubbles on the board. */
   bubbleStrategy: BubbleStrategy;
-  /** Scans still to go before a mid-chain pop is worth taking again. */
-  bubbleSettleScans: number;
-  /** Consecutive scans that saw a bubble with too few tsums in its blast. */
-  bubbleUnripeScans: number;
+  /** Epoch ms the hold after a skill activation lifts; 0 means none stands. */
+  bubbleHoldUntil: number;
+  /** Bubbles seen on recent scans with their first sightings -- what a bubble's age is read from. */
+  bubbleSightings: GameBubble[];
   /** Pop no bubble while a fever has this many seconds left; 0 never holds. */
   holdBubblesLastFeverSec: number;
   noSkillLastFeverSec: number;
@@ -248,12 +265,19 @@ class Tsum {
   roundEndedAt: number;
   roundBaseCoins: number;
   /**
-   * Whether the tally the round ended on drew a medals row. Set by
-   * `waitForScorePage` off the frame that says the count-up has finished, and
-   * read by `finishRoundStats` -- the row moves the coin figure, so which
-   * rectangle holds it is this flag.
+   * The tally's button row as the last look at it read it, written by
+   * `record.tallyRow` on every look. `dismiss.tallyCountUp` taps while
+   * `buttons` is off, `nav.move.tallyToGame` presses Play only when `play` is
+   * on, and `finishRoundStats` reads `medals` to know which rectangle holds
+   * the coin figure. Stale off the tally; nothing reads it there.
    */
-  roundMedalsRow: boolean;
+  tallyRow: TallyRow;
+  /**
+   * The count-up skip taps: when the last went out, and how many this round
+   * (`beginRoundStats` zeroes it; `waitForScorePage` reports it).
+   */
+  tallySkipTapAt: number;
+  tallySkipTaps: number;
   /**
    * The settings this round is being played under -- a copy of `settings` taken
    * by `beginRoundStats`, and what `writeRoundStats` writes its columns from.
@@ -276,6 +300,8 @@ class Tsum {
    * counts the rounds whose figures were legible and no others.
    */
   runCoins: RunCoinTally;
+  /** How long this run and its rounds have taken, for the Quick Bar. */
+  runClock: RunClock;
 
   constructor(detect: boolean, logs: LogCatalogue) {
     this.debug = false;
@@ -328,10 +354,16 @@ class Tsum {
     this.comboItem = false;
     this.sentToZero = false;
     this.skillInterval = 3000;
+    this.skillSettleMs = 0;
+    this.skillReactivationMs = 0;
+    this.skillActivatedAt = 0;
     this.skillLevel = 3;
     this.skillType = SkillType.Unset;
     // Bubble positions from the last board scan, tapped after a long chain.
     this.gameBubbles = [];
+    this.boardScaleReads = [];
+    this.boardScaleTrend = 0;
+    this.edgeWashBackoffUntil = 0;
     // Optional safety poll: fire the skill the instant it's ready, even mid-link,
     // rather than only at the end of each board-scan cycle (see maybeAutoTapSkill).
     this.skillAutoTap = false;
@@ -353,10 +385,14 @@ class Tsum {
     this.roundDelayMs = 0;
     this.maxRoundMs = 0;
     this.maxRoundAction = MaxRoundAction.Coast;
+    this.stopAfterGames = 0;
+    this.stopAfterAction = StopAfterAction.AutoPlayOff;
+    this.gamesTowardStop = 0;
     // A new world per start(), so pressing Play always plays now rather than
     // resuming a wait the previous run was in.
     this.nextRoundAt = 0;
     this.sendHearts = false;
+    this.receiveOneByOne = false;
     this.keepRuby = false;
     this.skipMedals = false;
     this.sendHeartMaxDuring = 0;
@@ -370,8 +406,8 @@ class Tsum {
     };
     this.receiveCheckLimit = 5;
     this.bubbleStrategy = BubbleStrategy.OneMidChain;
-    this.bubbleSettleScans = 0;
-    this.bubbleUnripeScans = 0;
+    this.bubbleHoldUntil = 0;
+    this.bubbleSightings = [];
     this.holdBubblesLastFeverSec = 0;
     this.noSkillLastFeverSec = 0;
     this.lorcanaCard = false;
@@ -406,12 +442,15 @@ class Tsum {
     this.roundStartedAt = 0;
     this.roundEndedAt = 0;
     this.roundBaseCoins = -1;
-    this.roundMedalsRow = false;
+    this.tallyRow = {buttons: false, medals: false, play: false};
+    this.tallySkipTapAt = 0;
+    this.tallySkipTaps = 0;
     this.roundSettings = undefined;
     this.baseCoinReads = 0;
     this.baseCoinHits = 0;
     this._statsDebugShots = 0;
     this.runCoins = {rounds: 0, baseRounds: 0, baseTotal: 0, finalRounds: 0, finalTotal: 0};
+    this.runClock = {startedAt: Date.now(), rounds: 0, roundSec: 0};
     this.init(detect);
   }
 }
@@ -694,14 +733,14 @@ Tsum.prototype.tapDown = function(xy, during) {
   tapDown(rxy.x, rxy.y, during);
 }
 
-Tsum.prototype.moveTo = function(xy, during) {
+Tsum.prototype.moveTo = function(xy, during, wait) {
   // Only inside a gesture this object began: a dropped tapDown drops its drag.
   if (!this.gestureOpen) { return; }
   if (during === undefined) {
     during = 50;
   }
   const rxy = this.toRealXYs(xy);
-  moveTo(rxy.x, rxy.y, during);
+  moveTo(rxy.x, rxy.y, during, !!wait);
 }
 
 Tsum.prototype.tapUp = function(xy, during) {
@@ -744,7 +783,9 @@ Tsum.prototype.dragList = function(x, path, settleMs, sample) {
     this.moveTo({x: x, y: path[i]}, i === last ? 500 : 50);
   }
   this.tapUp({x: x, y: path[last]}, 100);
-  this.sleep(settleMs);
+  // A budget, not a rest: ends when the list stops. Less the settle's lead, so a
+  // screen that never reads still costs what the old fixed rest did.
+  this.settleScreen(settleMs - ScreenSettle.leadMs);
 
   let moved = 0;
   const second = this.screenshot();

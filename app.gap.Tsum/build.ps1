@@ -4,7 +4,7 @@
 # and had drifted -- this one wrote CRLF into dist/*.html, built its archive with
 # a different tool, and pushed only when both -ADB and -Device were given. They
 # translate flags now and nothing else, so there is one build and both shells run
-# it. -ADB on its own pushes to the connected device, as build.sh has always done.
+# it. -ADB on its own pushes to every connected emulator, as build.sh does.
 #
 #   .\build.ps1 [-Channel Alpha] [-ADB] [-Device SERIAL]
 

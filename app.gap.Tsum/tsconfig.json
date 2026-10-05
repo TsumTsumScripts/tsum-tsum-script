@@ -59,6 +59,7 @@
     "src/logs.ts",
     "src/logsEn.ts",
     "src/logsZhTw.ts",
+    "src/logsJa.ts",
     // The structured logger. Reads `Config.debugLogs` and the message
     // catalogue above, and every other file logs through it -- but only
     // from inside a function, so its slot here is for reading order.
@@ -83,6 +84,8 @@
     "src/levelCap.ts",
     // Borrows `awaitPage` from levelCap.ts, which is why it follows it.
     "src/boxes.ts",
+    // Walks the collection with levelCap.ts's helpers, so it follows it too.
+    "src/tsumList.ts",
     // Attaches to Tsum.prototype and constructs its singleton (`gFever`) at
     // load time, so it follows tsum.ts and precedes pageHandlers.ts, whose
     // observe.feverTime feeds it.
@@ -92,6 +95,10 @@
     // sits between the two -- though only for reading order, since everything
     // it exports is a function or a plain object rather than a class.
     "src/lorcana.ts",
+    // The game's chain counter, read after a drag. Plain functions and a table;
+    // here for reading order, before the drags that read it (board.ts is the
+    // play loop's, gaston.ts the window's).
+    "src/chainCounter.ts",
     // skillCore.ts declares the registry the skill files register into at load
     // time, so it has to be concatenated ahead of them.
     "src/skills/skillCore.ts",
@@ -108,10 +115,10 @@
     "src/skills/cabbageMickey.ts",
     "src/skills/cptLy.ts",
     "src/skills/lightningMcQueenPlus.ts",
+    "src/skills/nbcSet.ts",
     "src/skills/formalBeast.ts",
     "src/skills/tiaraMinniePlus.ts",
     "src/skills/coronationElsa.ts",
-    "src/skills/coronationElsaLegacy.ts",
     "src/skills/rapunzelPlus.ts",
     "src/skills/lorcanaAurora.ts",
     "src/skills/gaston.ts",

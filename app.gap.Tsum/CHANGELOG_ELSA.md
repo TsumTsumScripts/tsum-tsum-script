@@ -7,6 +7,123 @@ per version, so the day she ships her Summary lines fold back into that
 file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 `CHANGELOG_0.x.md` with everything else of that time.
 
+## [3.0b5]
+
+### Summary
+
+- Coronation Elsa Legacy skill removed; use Coronation Day Elsa.
+
+### Removed
+
+- **`src/skills/coronationElsaLegacy.ts`**, `SkillType.CoronationElsaLegacy`,
+  its `skill.elsaLegacy.*` log events, dropdown entry and share letter `E`.
+
+## [3.0b4]
+
+### Summary
+
+- Coronation Day Elsa skill improved: each freeze window opens with a burst of long chains, chains are placed so their ice overlaps, the ice breaks early less often, bubbles are popped all through the window, lookalike tsums are chained less often by mistake and ice-coloured tsums like Dumbo or light-blue tsums are no longer tapped as ice, the whole window is used, and the tap sweep at its end and chains after TIME UP are gone.
+
+### Added
+
+- **The salvo** (`elsaSalvo()`, `salvo*`): twice per window, the first on
+  its first look with no ice to touch, up to 4 of the play loop's own chains
+  (`calculatePaths`, max 5, full reach) back to back; the careful sweep then
+  chains what it left. Firing on every ice-free look made ~5 salvos a window
+  and 9 of 16 early breaks followed one. At 0:55 of `02-41-53.mp4` four such chains froze a
+  fresh board whole in 0.3s for a count of 72. `skill.elsa.salvo`;
+  `salvos`/`salvoChains` on `skill.elsa.done`.
+- **Two salvos a window** (`salvos` 2). The second runs on the next look,
+  around the first one's ice, and hands over to the sweep if it finds under
+  two chains. Picked on a Debug-tab A/B (`elsaSalvos`, now removed).
+  `salvo` (1-based) on `skill.elsa.salvo`.
+
+### Changed
+
+- **Ice-alikes match the range they were learned over** (`iceAlikeMatch`),
+  not their first read, and only +5 brighter (`valUp`). A light-blue live
+  tsum learned at s 100 read s 60-98 in play and was taken for ice on 44 of
+  160 scans between windows: 19 leftover breaks tapped live tsums. Replayed
+  over six rounds: 318 vs 264 of 432 live reads matched, no ice-like
+  cluster (v >= 220, s <= 75) whitelisted. `skill.elsa.iceAlike` logs the
+  range.
+- **A kind read that darkens nothing clears its colour** (`elsaKindVerdict`).
+  A dead chain now only nominates a colour as mixed; its next kind read
+  confirms or clears it, and a chain drawn off a kind read no longer
+  nominates. 251 of 436 kind reads darkened nothing, and their chains died
+  14% of the time against ~9% for sweep chains -- a hop, not a kind.
+- **Overlap scoring and the salvo are always on.** Both were A/B tested
+  behind temporary Debug-tab settings (`elsaOverlap`, `elsaSalvo`), now
+  removed with their strings and flags.
+- **Elsa's window matches the game's.** On video the background is light
+  blue from tap + 1.77s to tap + 12.18s (32 windows); the script ran
+  1.5-11.5s, so its first chain could land under the animation and the last
+  0.7s went to the play loop. `leadInMs` 1800, `durationMs` +300 (10300 at
+  level 6).
+- **Overlap needs room** (`overlapClearPx` 25): only a chain whose drag keeps
+  a tsum width from read ice earns its overlap. With salvo and overlap on,
+  16 of 164 scored chains were followed by an early break, 2 of 90 unscored.
+  Ice broken per window was ~109-130 (game's shatter counts) against ~63-89
+  in earlier games.
+- **Elsa places bands over standing ice.** With ice read, every row is
+  planned and the chain whose band line crosses the most ice wins
+  (`overlap`, `overlapBandPx` 18), lowest row breaking ties; ice-free boards
+  pick as before. An overlapping band doubles ice without spending the free
+  tsums later chains need. `overlap` on `skill.elsa.pass`.
+- **Pacing Elsa's chains was tried and dropped.** A band grows with the time
+  since the last freeze, so fewer, bigger bands were tested (`chainGapMs`
+  and a Debug setting): a 1.5s gap scored 3.7M against 16.0M at no gap.
+  Overlap on scored 15.2M at TIME UP against 13.7M off, one game each.
+- **The ice-lookalike paint read was tried and removed.** It rested the
+  finger on a head and took circles that lightened as live, to rescue pale
+  tsums read as ice. On video the game darkens the *other* kinds instead and
+  ice stays bright too, so it could not tell a lookalike from ice (0 rescued
+  in a round) and its reads cost ~4 chains a window.
+- **Elsa reads which tsums are one kind where two share a colour** (`kind`,
+  `elsaKindChain`). A cluster that produced a dead chain this round
+  (`elsaMixed`) gets its later chains a finger-down read on the head; members
+  that darken are another kind, and the chain is replanned over the rest. In
+  one round cream Coronation Elsas and pale-pink tsums shared a cluster and
+  22% of chains never linked. `skill.elsa.kind`; `kindChains`/`kindLifts` on
+  `skill.elsa.done`.
+- **A board whose ice hides its tsums is broken, not chained.** Frozen tsums
+  drop out of the scan, so a look reading under 80% of the board with 15 or
+  fewer free (`hiddenIceFraction`, `hiddenIceFreeMax`) drew chains over
+  unseen ice: all 11 traceable unplanned breaks in run mugrir5i9h followed
+  one. It now breaks the pile as a frozen-out board; `hidden` on
+  `skill.elsa.pass`.
+- **No leftover breaks before a round's first window.** No ice can exist
+  then, but pale tsums read as ice fired six aimed breaks at nothing in
+  one round and were left out of the play loop's chains.
+- **Bubbles are popped on every look, ice or not** (up to `bubblePopRounds` 3
+  pop-and-recapture rounds). They were popped only on an ice-free look, so
+  after a window's first chain -- or from its start, over a leftover band --
+  every bubble stood as an obstacle and a hole in the bands. A pop does not
+  set the pile off; only a bubble on an ice read (`bubbleIceGap`) is left.
+  `postBurstPopMaxIced` is gone. `skill.elsa.pass` logs `popped`/`bubbles`.
+- **The paint floor read is shared** (`skillFloorRead`, `skillMedian` in
+  `skillCore.ts`); Gaston calls it unchanged.
+
+### Fixed
+
+- **A second run no longer plays a lookalike tsum as ice.** Elsa's per-round
+  state (ice-alike whitelist, window flag, mixed clusters) was keyed on the
+  round number, which restarts at 1 every run while globals persist. A run's
+  round 1 kept the last run's whitelist and never learned its own, and
+  treated between-window ice reads as leftover from the start. On
+  `dumbo.mp4`, Dumbo (centre hue 86-90 against the box's 88 floor) was half
+  read as ice: 21 starved looks and 33 aimed taps in one window. Now keyed
+  on `logRoundKey()` (run id + round); Legacy too.
+- **Elsa stops at TIME UP.** The game dims the board and no page marks it,
+  so two looks in a row whose scan averages under value 100
+  (`dimValueMax`, `elsaBoardValue`) end the window with no more taps. Never
+  two in a row during play across 2,781 in-window scans; caught 4 of 4
+  windows open at TIME UP. `dim` on `skill.elsa.roundOver`.
+- **Elsa's closing break no longer sweeps the board.** With under 8 ice read
+  it added a blind grid of ~25 taps (1.4s), which the user saw as a bubble
+  sweep and which pushed 7 of 25 closing breaks past the window's end. Every
+  break is aimed taps only; `blindStep` is gone.
+
 ## [2.0]
 
 ### Summary

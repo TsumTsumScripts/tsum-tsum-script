@@ -443,11 +443,11 @@ So `LiveWhen.NextRound` is what a setting gets unless it argues otherwise:
 the pre-round screen. `LiveWhen.Now` is earned by being **read fresh, during
 play, by the pass that wants it** — so a board already dealt is not being
 reinterpreted, it is simply played differently from the next scan on. Of the
-twenty-four rows a preset carries:
+twenty-five rows a preset carries:
 
 | | Rows | Why |
 |:--|:--|:--|
-| `Now` (12) | `maxChain`, `maxChainsPerScan`, `linkReachPercent`, `prioritizeMyTsum`, `useFan`, `bubbleStrategy`, `holdBubblesLastFeverSec`, `skillWaitingTime`, `skillAutoTap`, `noSkillLastFeverSec`, `skillLevel`, `roundDelayMinutes` | each has a read site inside the play loop, per scan, per pop or per activation. `LiveSettings` names them one by one. `roundDelayMinutes` is the odd one — it governs the gap, so there is no round to be halfway through, and `quickBarSetRoundDelay` deliberately re-bases a rest already running |
+| `Now` (13) | `maxChain`, `maxChainsPerScan`, `linkReachPercent`, `prioritizeMyTsum`, `useFan`, `bubbleStrategy`, `holdBubblesLastFeverSec`, `skillWaitingTime`, `skillSettleMs`, `skillAutoTap`, `noSkillLastFeverSec`, `skillLevel`, `roundDelayMinutes` | each has a read site inside the play loop, per scan, per pop or per activation. `LiveSettings` names them one by one. `roundDelayMinutes` is the odd one — it governs the gap, so there is no round to be halfway through, and `quickBarSetRoundDelay` deliberately re-bases a rest already running |
 | `NextRound` (10) | `skillType`, `lorcanaCard`, `bonus5to4`, the five other bonus items, `trackRoundStats` | the round committed to all of them before it began. The items are read only by `openRound`'s item screen, which is the next round's; `skillType` and `lorcanaCard` are the tsum on the board; `bonus5to4` is an item *and* `uniqueTsumCount`; and a stats row is opened at the whistle, so flipping the flag mid-round writes a partial row or drops a begun one |
 | `Restart` (2) | `autoPlayGame`, `clickAssist` | they decide which tasks a run registers |
 
@@ -536,6 +536,12 @@ guard under both.
 It is a **third compilation** (`tsconfig.quickbar.json` → `dist/quickbar.html`). The host
 finds it by name: `quickbar.html` beside `index.html`, and a script without one
 simply has no Quick Bar button.
+
+**The strip never calls `runScript`.** The host counts a `runScript` as a run,
+so one finishing while the script is stopped flips the state back to idle, and
+that transition clears every banner. Everything the strip evaluates, its log
+lines and `showBanner` included, goes through `runScriptCallback`, with
+`qbIgnoreAnswer` where nothing needs the answer.
 
 It is built the opposite way round from the settings page, on purpose. There the
 schema is the source of truth and `settings.ts` renders it; here **the markup is**
@@ -951,7 +957,7 @@ The couplings that are easy to miss:
 ```bash
 npm run typecheck      # both compilations: the game bundle and the settings UI
 npm run build          # → dist/index.js, dist/index.html, dist/tsums.dat, LICENSE + NOTICE, <archive>.zip + .sha256
-npm run buildAndAdb    # build, then adb push to the device
+npm run buildAndAdb    # build, then adb push to every connected emulator
 npm run adb            # push an existing dist/ without rebuilding
 ```
 
@@ -1119,6 +1125,7 @@ about what this is, and there is one number to bump rather than two:
 | `Channels.<name>` | `Name` (what the app shows), `Archive` (the zip's base name), `Directory` (under `Catalogue`), `Note` (a line appended to every release note on that channel) |
 | `MessageMaxChars` | the note is read on a phone; over this, the release refuses rather than shipping a card that scrolls |
 | `HistoryLimit` | how many builds stay installable (default 5); older archives are deleted from the catalogue on the next release |
+| `MinHost`, `MaxHost` | the app versions a build runs on, both optional and inclusive; a channel may set its own. Written into `metadata.json` and each `Versions` row, and the app will not download or run a build outside them. Raise `MinHost` when the script starts using an API a newer app added |
 
 `metadata.json` is written from the bytes that were just built — the `Hash` is
 taken from the archive being copied, not from the sidecar — so an entry cannot
@@ -1210,7 +1217,7 @@ Two paths onto a device, and they are not the same thing:
 | Chains are poor / short | `pathfinding.ts` → `calculatePaths`, `findLongestTsumPath` |
 | A skill misfires | `src/skills/<name>.ts`, then `useSkill` in `skillCore.ts` |
 | A chore taps the wrong thing in the store, or buys nothing | `BoxStore` in `data.ts` first -- the tab row and the purchase buttons both move, and it says how each is read -- then `taskBuyBoxes` and its helpers in `boxes.ts` |
-| Bubbles are tapped too eagerly, or not at all | `Tsum.bubbleTapBudget` / `bubblePopChainLength` / `popGameBubbles` in `board.ts` and the Bubble Strategy setting; `ripeGameBubbles` and `GameBubbleConfig.minTsumsInBlast` for a bubble popped in the hole a burst left (`bubble.unripe` in the log), `settleScansAfterSkill` for the hold after a choreographed one; `clearAllBubbles` and `sweepsBubbles` for the skills that override it |
+| Bubbles are tapped too eagerly, or not at all | `Tsum.bubbleTapBudget` / `bubblePopChainLength` / `popGameBubbles` in `board.ts` and the Bubble Strategy setting; `ripeGameBubbles` with `GameBubbleConfig.minTsumsInBlast` for a bubble popped in the hole a burst left and `minAgeMs` for one popped the moment it appears (`bubble.unripe` in the log, with each bubble's `near` and `age`), `GameBubbleConfig.holdAfterSkillMs` for the hold after any activation (`bubble.heldAfterSkill`, and `skill.blindTapFired` for a blind-tapped burst); `clearAllBubbles` and `sweepsBubbles` for the skills that override it |
 | Add a new skill | `src/skills/`, `tsconfig.json`, `settings.ts` dropdown |
 | Add a setting | `settings.ts` (`settings` array) **and** `index.ts` (`start`) |
 | Add a background job | `index.ts` → `gTaskController.newTask` in `buildRun`, task body in its own `src/` file (see `mail.ts`, `boxes.ts`) |

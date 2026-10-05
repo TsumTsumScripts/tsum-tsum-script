@@ -22,7 +22,8 @@ interface SkillHandler {
   // A bare tap on the skill button is a complete activation: no aiming, no
   // follow-up, and a tap while the gauge is still filling is a no-op the game
   // ignores. Lets the play loop fire these blind instead of paying for a gauge
-  // check (see Tsum.link and maybeAutoTapSkill).
+  // check (see Tsum.link and maybeAutoTapSkill) -- unless "Wait for Settle" is
+  // set, which needs to know the gauge is full before it watches the board.
   bareTapActivates?: boolean;
   // The skill has two halves on two buttons (Pair Tsum): gameSkill2 counts
   // towards readiness and gets its own activation tap.
@@ -67,8 +68,10 @@ interface SkillHandler {
   // array at all and no pass can plan over it. Declared rather than set for the
   // duration of a choreography so every scan of the round agrees: the scans
   // between windows are the ones the ice-alike whitelist learns from, and a
-  // colour it never saw there is a colour it cannot exonerate later.
-  extraClusterSlots?: number;
+  // colour it never saw there is a colour it cannot exonerate later. A
+  // function is asked once per scan, for a skill that wants them only part of
+  // the round.
+  extraClusterSlots?: number | ((ts: Tsum) => number);
   // The choreography clears bubbles itself, with `clearAllBubbles`.
   //
   // That call is the deliberate override of the Bubble Strategy setting: the
@@ -118,6 +121,34 @@ interface SkillHandler {
   // between the scan and the first drag of the batch -- so whatever it does
   // comes out of combo time and has to stay cheap.
   orderPaths?: (ts: Tsum, paths: TsumPath[], board: BoardPoint[]) => TsumPath[];
+  // The play loop's chains read the game's chain counter after each drag and
+  // log it (`board.chainDrawn`, chainCounter.ts): what the game linked against
+  // what was planned. For a skill whose own drags are being measured the
+  // same way, so the two can be compared on the same boards; it costs each
+  // chain a capture and `ChainCounterConfig.settleMs`, which is why not every
+  // skill. A function is asked once per chain.
+  readsChainCounter?: boolean | ((ts: Tsum) => boolean);
+  // The skill changes how big the tsums are, so each scan reads their size
+  // and scales the board read to it (`updateBoardScale`, `Config.boardScale`).
+  // Costs a Hough pass per scan, which is why not every skill.
+  scalesBoard?: boolean;
+  // Width of the box blur a tsum's colour is sampled through, in play-square
+  // px at scale 1 (default `TsumColorBlur`). Narrower keeps a packed
+  // neighbour's colour out of the sample, for a roster whose tsums blur
+  // together at the default.
+  colorBlur?: number;
+  // The last activation is still in effect, so a tap now would waste the
+  // gauge: Gaston's window is a timed mode, and an activation inside it only
+  // restarts the animation over the seconds it had left. While this answers
+  // true the play loop neither reads the gauge nor taps; the choreography that
+  // knows the window's clock is the one to answer.
+  stillRunning?: (ts: Tsum) => boolean;
+  // Sees each board scan's capture before anything is planned or tapped, and
+  // returns true if it acted on it (the scan then captures again). For a skill
+  // whose activation can set off a follow-up the play loop must not touch
+  // through: NBC Set's Oogie Boogie, whose dice any touch rerolls. Runs on
+  // every scan, so it has to stay cheap.
+  watchScan?: (ts: Tsum, img: NativeImage) => boolean;
   // Runs after the gauge check but before the activation tap -- settle waits and
   // pre-taps that have to land while the skill is not yet running.
   beforeActivate?: (ts: Tsum) => void;
@@ -163,6 +194,46 @@ function skillBareTapActivates(skillType: SkillType): boolean {
 function skillSweepsBubbles(skillType: SkillType): boolean {
   const handler = SkillHandlers[skillType];
   return !!(handler && handler.sweepsBubbles);
+}
+
+// Whether the skill's last activation is still running, so a tap would be
+// wasted. See `SkillHandler.stillRunning`; every other skill is never running.
+// The "Delay Skill ReActivation" setting holds any skill the same way for that
+// long after `useSkill`'s last tap.
+function skillStillRunning(ts: Tsum): boolean {
+  if (ts.skillReactivationMs > 0 && ts.skillActivatedAt > 0
+      && Date.now() - ts.skillActivatedAt < ts.skillReactivationMs) {
+    return true;
+  }
+  const handler = SkillHandlers[ts.skillType];
+  return !!(handler && handler.stillRunning && handler.stillRunning(ts));
+}
+
+// Whether the play loop reads the chain counter after each of its drags. See
+// `SkillHandler.readsChainCounter`; every other skill's drags go unmeasured.
+function skillReadsChainCounter(ts: Tsum): boolean {
+  const handler = SkillHandlers[ts.skillType];
+  const reads = handler && handler.readsChainCounter;
+  return typeof reads === 'function' ? reads(ts) : !!reads;
+}
+
+// Whether each scan reads the tsums' size. See `SkillHandler.scalesBoard`;
+// every other skill plays at `Config.boardScale` 1.
+function skillScalesBoard(ts: Tsum): boolean {
+  const handler = SkillHandlers[ts.skillType];
+  return !!(handler && handler.scalesBoard);
+}
+
+// Whether the skill acted on this scan's capture. See `SkillHandler.watchScan`.
+function skillWatchScan(ts: Tsum, img: NativeImage): boolean {
+  const handler = SkillHandlers[ts.skillType];
+  return !!(handler && handler.watchScan && handler.watchScan(ts, img));
+}
+
+// The colour sample's blur width. See `SkillHandler.colorBlur`.
+function skillColorBlur(ts: Tsum): number {
+  const handler = SkillHandlers[ts.skillType];
+  return handler && handler.colorBlur ? handler.colorBlur : TsumColorBlur;
 }
 
 // Whether bubbles on the board belong to the skill rather than to the Bubble
@@ -241,7 +312,8 @@ function skillMaxChain(ts: Tsum): number {
 // claimed off the setting instead (`lorcanaExtraClusterSlots`, src/lorcana.ts).
 function skillClusterSlots(ts: Tsum): number {
   const handler = SkillHandlers[ts.skillType];
-  const extra = handler && handler.extraClusterSlots;
+  const slots = handler && handler.extraClusterSlots;
+  const extra = typeof slots === 'function' ? slots(ts) : slots;
   return ts.uniqueTsumCount - 1 + (typeof extra === 'number' ? extra : 0)
     + lorcanaExtraClusterSlots(ts);
 }
@@ -259,6 +331,51 @@ function skillOrderPaths(ts: Tsum, paths: TsumPath[], board: BoardPoint[]): Tsum
   const handler = SkillHandlers[ts.skillType];
   if (!handler || !handler.orderPaths) { return paths; }
   return handler.orderPaths(ts, paths, board);
+}
+
+/** The lower median of `values`. */
+function skillMedian(values: number[]): number {
+  const sorted = values.slice().sort(function(a, b) { return a - b; });
+  return sorted[(sorted.length - 1) >> 1];
+}
+
+/**
+ * Each circle's floor: the median darkest channel over a (2*grid+1)^2 grid
+ * `step` px apart round its centre, from one play-square capture. With a
+ * finger on a tsum the game paints the other tsums of its kind pale, which
+ * lifts their floor; a read before the grab and one after gives the rise.
+ */
+function skillFloorRead(ts: Tsum, board: BoardPoint[], grid: number, step: number): number[] {
+  const half = Config.tsumWidth / 2;
+  const pts: Point[] = [];
+  for (let c = 0; c < board.length; c++) {
+    for (let i = -grid; i <= grid; i++) {
+      for (let j = -grid; j <= grid; j++) {
+        pts.push({
+          x: Math.round(board[c].x + half + i * step),
+          y: Math.round(board[c].y + half + j * step),
+        });
+      }
+    }
+  }
+  const img = ts.playScreenshotSquare();
+  let colors: Color[];
+  try {
+    colors = getImageColors(img, pts);
+  } finally {
+    releaseImage(img);
+  }
+  const per = (2 * grid + 1) * (2 * grid + 1);
+  const out: number[] = [];
+  for (let c = 0; c < board.length; c++) {
+    const floors: number[] = [];
+    for (let k = 0; k < per; k++) {
+      const col = colors[c * per + k];
+      floors.push(Math.min(col.r, col.g, col.b));
+    }
+    out.push(skillMedian(floors));
+  }
+  return out;
 }
 
 // The skill button reads one of these colors while the gauge is not yet full.
@@ -292,7 +409,38 @@ function classifySkillGauge(c: Color): SkillReadiness {
   return SkillReadiness.Far;
 }
 
+// The bottom chrome, either side of the fever bar. Disney Villains (Set) paints
+// the whole screen in smoke while its skill runs -- bright green, later purple
+// -- which reads Active at the button, so the play loop re-fired it every
+// ~300ms and drew no chains for the whole window. Normal chrome is cyan
+// (0,202,232) and fever chrome dark teal (0,44,54).
+//
+// The Quick Bar's translucent grey strip covers the bottom pair (its top is
+// ~y 1734), so the side margins beside the skill and fan buttons back them up.
+// The smoke there is patchier, hence the looser test.
+const SkillSmokeProbes: Coord[] = [
+  {x: 300, y: 1885}, {x: 780, y: 1885},  // bottom chrome
+  {x: 30, y: 1700}, {x: 1050, y: 1700}   // side margins, above the Quick Bar
+];
+
+function isSkillSmoke(c: Color): boolean {
+  const green = c.g >= 150 && c.r <= 60 && c.b <= 100;   // ~(0,220,0)
+  const purple = c.g <= 40 && c.r >= 100 && c.b >= 150;  // ~(160,0,220)
+  return green || purple;
+}
+
+function isSkillSmokeLoose(c: Color): boolean {
+  const green = c.g >= 110 && c.g - c.r >= 70 && c.g - c.b >= 50;
+  const purple = c.g <= 50 && c.r >= 60 && c.b >= 110 && c.b - c.g >= 90;
+  return green || purple;
+}
+
 Tsum.prototype.checkSkillReadiness = function(img, skillButton) {
+  const smoke = this.getColors(img, SkillSmokeProbes);
+  if ((isSkillSmoke(smoke[0]) && isSkillSmoke(smoke[1]))
+      || (isSkillSmokeLoose(smoke[2]) && isSkillSmokeLoose(smoke[3]))) {
+    return SkillReadiness.Far;
+  }
   return classifySkillGauge(this.getColor(img, skillButton));
 };
 
@@ -366,6 +514,9 @@ const SkillOverloadCooldownMs = 1500;
 // -- nothing here knows whether it fired, which is the whole point of that path.
 Tsum.prototype.maybeAutoTapSkill = function(board) {
   if (!this.skillAutoTap) { return false; }
+  // Before the interval stamp, so the first probe after the window closes is
+  // not put off by one more interval.
+  if (skillStillRunning(this)) { return false; }
   const now = Date.now();
   const handler = SkillHandlers[this.skillType];
   const overload = !!(handler && handler.overloadProbe);
@@ -373,10 +524,30 @@ Tsum.prototype.maybeAutoTapSkill = function(board) {
   const interval = overload ? SkillOverloadProbeIntervalMs : this.skillAutoTapInterval;
   if (now - this._lastSkillAutoTap < interval) { return false; }
   this._lastSkillAutoTap = now;
-  if (skillBareTapActivates(this.skillType)) {
-    // A bare tap is a complete activation for burst skills, and it's a no-op
-    // while the gauge isn't full -- skip the screenshots entirely.
+  // A bare tap is a complete activation for burst skills, and it's a no-op
+  // while the gauge isn't full -- skip the screenshots entirely. Not with a
+  // "Wait for Settle" set: a blind tap cannot wait for the board, since nothing
+  // knows whether it fired, so those skills take the gauge read and `useSkill`
+  // below instead, where the settle wait sits before the tap. Same for "Delay
+  // Skill ReActivation": the delay runs from a tap known to have fired.
+  if (skillBareTapActivates(this.skillType) && this.skillSettleMs <= 0
+      && this.skillReactivationMs <= 0) {
     this.tap(Button.gameSkill1, 10);
+    // Did that one take? Nothing else here knows, and the Bubble Strategy's
+    // next pop would land in the hole the burst is about to leave. One ~2.4ms
+    // crop of the button after the tap: still Active means it was full, so
+    // the tap fired it (the animation reads Active too). Asked only with
+    // bubbles on the board and no hold standing: those are what the hold is
+    // for, since the bubbles the burst itself makes are new to the next scan
+    // and `ripeGameBubbles` holds them by age. The scan's bubbles go with the
+    // hold: their positions and blast counts were read off the board being
+    // cleared.
+    if (this.gameBubbles.length > 0 && Date.now() >= this.bubbleHoldUntil
+        && this.checkSkillReadinessFast() === SkillReadiness.Active) {
+      logDebug(Log.Skill.BlindTapFired, { bubbles: this.gameBubbles.length });
+      this.holdBubblesAfterSkill(Date.now());
+      this.gameBubbles = [];
+    }
     return false;
   }
   // One readiness read before the full useSkill probe (findPage plus a double
@@ -488,6 +659,14 @@ Tsum.prototype.useSkill = function(board, fast) {
     return false;
   }
 
+  // A skill whose last activation is still running says so, and a full gauge
+  // waits for it: the tap would only restart the animation over the window's
+  // remaining seconds. See `SkillHandler.stillRunning`.
+  if (skillStillRunning(this)) {
+    logDebug(Log.Skill.StillRunning, { skill: this.skillType });
+    return false;
+  }
+
   const handler = SkillHandlers[this.skillType];
   const usesSecondButton = !!(handler && handler.usesSecondButton);
 
@@ -520,11 +699,42 @@ Tsum.prototype.useSkill = function(board, fast) {
     }
   }
 
+  // "Wait for Settle": the gauge fills off a chain, and the loop chains fast
+  // enough that the board is often half empty and still refilling when it
+  // does. Fired then, the skill clears very little. The setting is the most
+  // this waits: `settleBoard` hands back as soon as the tsums have landed, so a
+  // board already refilled costs three reads. No floor -- the default 500ms one
+  // guards a skill's own cut-in, and nothing has fired yet. Ahead of the fever
+  // hold-off so that still reads a fresh frame, and ahead of `beforeActivate`
+  // so a handler's own pre-taps and baseline reads stay right before the tap.
+  // Applies on the overload path too: the setting is explicit, and a tsum that
+  // wants the fill instant leaves it 0.
+  //
+  // A board found still moving gets the last scan's bubbles popped into it,
+  // as many as the Bubble Strategy allows a chain, so the refill lands as one
+  // drop rather than the skill firing round bubbles it then has to wait on. A
+  // board already still keeps them: the skill is about to fire anyway. The
+  // hold after the last activation stands, inside `popGameBubbles` -- those
+  // bubbles were read off a board a skill was still detonating on.
+  let settleMs = 0;
+  let settled: boolean | undefined;
+  if (this.skillSettleMs > 0) {
+    const from = Date.now();
+    settled = this.settleBoard(this.skillSettleMs, 0, () => { this.popGameBubbles(); });
+    settleMs = Date.now() - from;
+    if (!this.isRunning) {
+      return false;
+    }
+  }
+
   if (this.noSkillLastFeverSec > 0) {
     skillWaitOutEndingFever(this);
   }
 
-  logInfo(Log.Skill.Use, { skill: this.skillType, skillLevel: this.skillLevel });
+  // `settleMs` is what the wait above actually took, against the setting's
+  // ceiling; `settled` is whether the board held still inside it.
+  logInfo(Log.Skill.Use, { skill: this.skillType, skillLevel: this.skillLevel,
+    settleMs: settleMs, settled: settled });
   if (handler && handler.beforeActivate) {
     handler.beforeActivate(this);
   }
@@ -536,6 +746,10 @@ Tsum.prototype.useSkill = function(board, fast) {
   // everything the handler spends before its first timed tap, including this
   // tap's own hold and the settle below, comes out of its own budget.
   const activatedAt = Date.now();
+  this.skillActivatedAt = activatedAt;
+  // No Bubble Strategy pop for a while from here: the burst is about to empty
+  // the board round every bubble on it. See `holdBubblesAfterSkill`.
+  this.holdBubblesAfterSkill(activatedAt);
   // The Lorcana card check stands down until this animation is over: for a
   // Lorcana tsum the animation *is* a card, drawn across the whole screen.
   // Here rather than in the play loop because this is the one place every

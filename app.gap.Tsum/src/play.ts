@@ -420,6 +420,12 @@ const DeadScanFanSettleMs = 1200;
 // default because it costs the least -- leaving the board alone ends the round
 // within a minute or so, and the run then carries on as normal.
 //
+// Coasting has no time limit of its own. It used to give up after three minutes
+// and hand the task back, and that undid the cap: the next pass found the board
+// still up, restamped the clock and played on, so a round the person had asked
+// to be left alone was played again in stretches until it ended. The only thing
+// that ends a coast now is the game over screen, or the script being stopped.
+//
 // Neither presses the game's Pause button, and that is the point rather than an
 // omission: pausing the game stops its round timer, and a round that can no
 // longer time out is exactly what this is here to avoid. The game's Pause
@@ -428,15 +434,55 @@ const DeadScanFanSettleMs = 1200;
 
 /** Between looks while a round is coasting to its end. */
 const RoundCoastPollMs = 500;
-/**
- * How long coasting will wait for the round to end on its own.
- *
- * Generous: a 60s round stretched by +Time and a long fever is nowhere near it.
- * It bounds the one case coasting cannot answer -- a board that goes on
- * fingerprinting as the round with the game's own clock stopped -- because the
- * task never handing back is exactly the wedge the cap exists to escape.
- */
-const RoundCoastMaxMs = 3 * 60 * 1000;
+/** Between `play.roundCoasting` lines, so a long coast is visibly still alive. */
+const RoundCoastHeartbeatMs = 60 * 1000;
+
+// --- Stop after games --------------------------------------------------------
+//
+// Counted at the round's tail, so the last round is always seen out and a round
+// abandoned by a stop never counts. Firing resets the count, so a Resume after
+// `Pause` plays the same number again.
+
+/** Anything unrecognised is AutoPlayOff: the one action that loses nothing. */
+function stopAfterActionOf(value: unknown): StopAfterAction {
+  return value === StopAfterAction.Pause || value === StopAfterAction.Stop
+    ? value : StopAfterAction.AutoPlayOff;
+}
+
+Tsum.prototype.countGameTowardStop = function() {
+  if (this.stopAfterGames <= 0 || !this.isRunning) {
+    return false;
+  }
+  this.gamesTowardStop++;
+  if (this.gamesTowardStop < this.stopAfterGames) {
+    return false;
+  }
+  this.gamesTowardStop = 0;
+  let action = this.stopAfterAction;
+  // An older host has no pauseScript; ending play is the closest safe answer.
+  if (action === StopAfterAction.Pause && typeof pauseScript !== 'function') {
+    action = StopAfterAction.AutoPlayOff;
+  }
+  logInfo(Log.Play.GamesLimitReached, { games: this.stopAfterGames,
+    action: action });
+  switch (action) {
+    case StopAfterAction.Stop:
+      this.banner('Played ' + this.stopAfterGames + ' games: stopping', 5000);
+      requestStop();
+      break;
+    case StopAfterAction.Pause:
+      this.banner('Played ' + this.stopAfterGames + ' games: pausing', 5000);
+      pauseScript();
+      break;
+    default:
+      // Only the round job goes; chores and their schedules keep running.
+      this.banner('Played ' + this.stopAfterGames + ' games: Auto Play off', 5000);
+      if (gTaskController !== undefined) {
+        gTaskController.removeTask(TaskName.PlayRound);
+      }
+  }
+  return true;
+}
 
 Tsum.prototype.roundDelayRemainingMs = function() {
   const left = this.nextRoundAt - Date.now();
@@ -482,6 +528,8 @@ Tsum.prototype.openRound = function() {
     round: this.roundNumber,
     myTsum: this.myTsum,
     skill: statsSkillName(this.roundSettings ? this.roundSettings.skillType : this.skillType),
+    // The CSV's `build` column: INTL and JP rounds only compare with their own.
+    build: this.gameBuild(),
     // What the round is played under, so a consumer can group rounds without
     // waiting for the CSV. The snapshot, so a mid-round Quick Bar change is the
     // next round's news.
@@ -549,6 +597,12 @@ Tsum.prototype.taskPlayGameQuick = function() {
   // ahead of the tap so `round.start` lands with the items in frame, and
   // `duration_seconds` must still measure play rather than the walk in.
   this.roundStartedAt = Date.now();
+  // A new round's first activation is never held by the last round's.
+  this.skillActivatedAt = 0;
+  // Every round starts with normal-size tsums.
+  Config.boardScale = 1;
+  this.boardScaleReads = [];
+  this.boardScaleTrend = 0;
   this.runTimes = 0;
   // Re-resolved on the first board scan of each game: the player may have
   // changed which tsum is selected, and `identifyMyTsum` has just re-read it.
@@ -567,10 +621,11 @@ Tsum.prototype.taskPlayGameQuick = function() {
   let zeroPath = 0;
   // The liveness check's debounce, carried across the turns that share it.
   const hud: HudWatch = { misses: 0, firstMissAt: 0 };
-  // While the Max Round Duration cap is coasting this round out, when it gives
-  // up on that too; 0 while the round is still being played. See the block at
-  // the top of the loop.
-  let coastUntil = 0;
+  // When the Max Round Duration cap stopped playing this round, epoch ms; 0
+  // while it is still being played. The loop then only watches for the end,
+  // with `nextCoastBeatAt` pacing the heartbeat line. See the cap block above.
+  let coastStartedAt = 0;
+  let nextCoastBeatAt = 0;
   // The chain the last turn certainly drew, and how many scans running have
   // found it still standing afterwards -- the stalled-board check above. Null
   // means the last turn drew nothing, or churned the board by some other means,
@@ -581,7 +636,7 @@ Tsum.prototype.taskPlayGameQuick = function() {
     // The Max Round Duration cap. Read off `ts` each turn, which is what lets a
     // Quick Bar change land at once, and measured from `roundStartedAt` -- the
     // board coming up, not the walk in.
-    if (coastUntil === 0 && this.maxRoundMs > 0
+    if (coastStartedAt === 0 && this.maxRoundMs > 0
         && Date.now() - this.roundStartedAt >= this.maxRoundMs) {
       const stopping = this.maxRoundAction === MaxRoundAction.Stop;
       logWarn(Log.Play.RoundTimeUp, { ranMs: Date.now() - this.roundStartedAt,
@@ -598,20 +653,19 @@ Tsum.prototype.taskPlayGameQuick = function() {
       }
       // Coast. Nothing below runs again; the round then finishes like any
       // other, so the tally, the stats and the next round all follow as usual.
-      coastUntil = Date.now() + RoundCoastMaxMs;
+      coastStartedAt = Date.now();
+      nextCoastBeatAt = coastStartedAt + RoundCoastHeartbeatMs;
     }
-    if (coastUntil !== 0) {
-      if (Date.now() >= coastUntil) {
-        // Left alone for longer than any round can last and still going, so the
-        // game's own clock is not running either and there is nothing to wait
-        // for. Hand the task back rather than watch for ever -- the chores get
-        // their turns, and the next pass walks to the board again.
-        logWarn(Log.Play.RoundCoastGaveUp, { ranMs: Date.now() - this.roundStartedAt,
-          coastedMs: RoundCoastMaxMs });
-        break;
-      }
+    if (coastStartedAt !== 0) {
       // Watching, not playing: no scan, no chain, no skill. The liveness check
-      // is the whole turn, and the rest is what keeps it cheap.
+      // is the whole turn, and the rest is what keeps it cheap. No deadline --
+      // see the cap block above -- so the heartbeat is what says this is a
+      // coast still going rather than a script that has hung.
+      if (Date.now() >= nextCoastBeatAt) {
+        logInfo(Log.Play.RoundCoasting, { ranMs: Date.now() - this.roundStartedAt,
+          coastedMs: Date.now() - coastStartedAt });
+        nextCoastBeatAt = Date.now() + RoundCoastHeartbeatMs;
+      }
       this.sleep(RoundCoastPollMs);
       if (this.watchRoundEnd(hud) === RoundLook.Over) {
         break;
@@ -754,11 +808,6 @@ Tsum.prototype.taskPlayGameQuick = function() {
           && !skillSweepsBubbles(this.skillType)) {
         this.popLorcanaStoneBubble();
       }
-      // The burst is what made those bubbles, and several choreographies return
-      // before it has finished playing. Let the board settle before any of them
-      // is spent, so the chain that spends one is a real chain rather than
-      // whatever could be scraped off a board mid-detonation.
-      this.bubbleSettleScans = GameBubbleConfig.settleScansAfterSkill;
     }
     // The transformation: while the skill button is still a medallion the
     // card's spot is tapped blind, and the medallion going is the
@@ -779,8 +828,11 @@ Tsum.prototype.taskPlayGameQuick = function() {
     // skill's next activation is counting on -- Gaston's cancel bubble, or
     // Aurora's chain. So does the fever hold, for the same reason: it has
     // just refused the aimed pops so the bubbles are there after the fever.
+    // And the hold after an activation: the events stand, so the sweep runs
+    // on the first turn after it lifts, onto a board that has refilled.
     if (this.bubbleStrategy === BubbleStrategy.AllAsap && bubbleEvents >= 2
-        && !skillClaimsBubbles(this) && !this.bubblesHeldForFever()) {
+        && !skillClaimsBubbles(this) && !this.bubblesHeldForFever()
+        && !this.bubblesHeldAfterSkill()) {
       logDebug(Log.Bubble.Cleared);
       bubbleEvents = 0;
       // A popped bubble clears the area around it, which can take the chain
@@ -821,6 +873,10 @@ Tsum.prototype.taskPlayGameQuick = function() {
   const roundSeconds = this.roundStartedAt && this.roundEndedAt
     ? Math.round((this.roundEndedAt - this.roundStartedAt) / 1000)
     : 0;
+  if (roundSeconds > 0) {
+    this.runClock.rounds++;
+    this.runClock.roundSec += roundSeconds;
+  }
   this.finishRoundStats();
   // The stop signal, and emitted from here rather than from inside
   // finishRoundStats: that returns early when round stats are off, and an event
@@ -834,6 +890,9 @@ Tsum.prototype.taskPlayGameQuick = function() {
     // closes the round without clearing either.
     id: this.roundUid,
     round: this.roundNumber,
+    myTsum: this.myTsum,
+    skill: statsSkillName(this.roundSettings ? this.roundSettings.skillType : this.skillType),
+    build: this.gameBuild(),
     seconds: outcome === null ? roundSeconds : outcome.seconds,
     score: outcome === null ? null : outcome.score,
     baseCoins: outcome === null ? null : outcome.baseCoins,
@@ -846,6 +905,10 @@ Tsum.prototype.taskPlayGameQuick = function() {
   // whatever comes next. Before the delay below, which measures from the game
   // being back between rounds.
   this.raiseMyTsumLevelCapIfPending();
+  // Not due again at once: a pause lands at the next sleep, not the next walk.
+  if (this.countGameTowardStop()) {
+    return false;
+  }
   // Start the wait here rather than at game over: finishRoundStats sees the
   // score screen away, so this measures from the game being back at the start
   // screen -- which is what "between rounds" means to the person who set it.
@@ -856,4 +919,7 @@ Tsum.prototype.taskPlayGameQuick = function() {
       nextRoundAt: new Date(this.nextRoundAt).toISOString() });
     this.banner('Next round in ' + minutes + ' min', 4000);
   }
+  // Due again at once: the job's 3s interval otherwise left the finished tally
+  // sitting on screen before Play was pressed.
+  return true;
 }

@@ -25,8 +25,12 @@ Tsum.prototype.linkTsums = function(path) {
   // Raise all three together if that ever comes back; a chain drawn faster than
   // the game samples is `DRIVING_SCREENS.md` § 5.
   const grabDuring = 10;
-  const moveDuring = 10;
   const releaseDuring = 10;
+  // Whether to read the game's chain counter before the release, for the
+  // skills that ask (`readsChainCounter`): how much of the chain the game
+  // linked, logged against the plan.
+  const counted = skillReadsChainCounter(this);
+  const moveDuring = 10;
   for (let j = 0; j < path.length; j++) {
     const point = path[j];
     const x = Math.floor(this.playOffsetX + (point.x + Config.tsumWidth / 2) * this.playWidth / this.playResizeWidth);
@@ -36,6 +40,14 @@ Tsum.prototype.linkTsums = function(path) {
     }
     moveTo(x, y, moveDuring);
     if (j === path.length - 1) {
+      if (counted) {
+        this.sleep(ChainCounterConfig.settleMs);
+        const count = chainCounterRead(this, chainRouteCentres(path));
+        logInfo(Log.Board.ChainDrawn, {
+          chain: path.length, registered: count.value, dwellMs: moveDuring,
+          counter: chainCountDetail(count),
+        });
+      }
       tapUp(x, y, releaseDuring);
     }
   }
@@ -85,6 +97,28 @@ Tsum.prototype.bubblesHeldForFever = function() {
   return true;
 };
 
+// The hold after a skill activation: no Bubble Strategy pop for
+// `GameBubbleConfig.holdAfterSkillMs` from the tap, because the burst has
+// just emptied the board round every bubble on it. Stamped by every
+// activation, however the skill was fired -- `useSkill`, or a blind tap the
+// gauge then showed had taken -- and honoured wherever the strategy would pop:
+// `bubbleTapBudget` for the aimed pops, `link` for a skill's per-chain pops,
+// the play loop for its blind sweep. A skill's own pops (an explicit limit,
+// or `clearAllBubbles`) are not the strategy's and read none of it.
+Tsum.prototype.holdBubblesAfterSkill = function(activatedAt) {
+  this.bubbleHoldUntil = activatedAt + GameBubbleConfig.holdAfterSkillMs;
+};
+
+Tsum.prototype.bubblesHeldAfterSkill = function() {
+  const remainingMs = this.bubbleHoldUntil - Date.now();
+  if (remainingMs <= 0) { return false; }
+  logDebug(Log.Bubble.HeldAfterSkill, {
+    remainingMs: remainingMs,
+    bubbles: this.gameBubbles ? this.gameBubbles.length : 0
+  });
+  return true;
+};
+
 // How many of the bubbles the last scan found this strategy will spend at once.
 // The ceilings, and why there are any, are in GameBubbleConfig.
 Tsum.prototype.bubbleTapBudget = function() {
@@ -92,6 +126,9 @@ Tsum.prototype.bubbleTapBudget = function() {
   // on the way past is a link out of that chain, and its chain is worth far more
   // than the bigger clear the pop buys. See `SkillHandler.claimsBubbles`.
   if (skillClaimsBubbles(this)) { return 0; }
+  // The hold after a skill activation, for every strategy: the bubbles are in
+  // the hole the burst left, and the refill closes round them inside it.
+  if (this.bubblesHeldAfterSkill()) { return 0; }
   // The fever hold, for every strategy: the bubbles stay on the board for the
   // chains after the fever. `popGameBubbles` keeps the list on a 0 budget, and
   // the next scan re-finds them anyway.
@@ -107,19 +144,68 @@ Tsum.prototype.bubbleTapBudget = function() {
   }
 };
 
-// The bubbles of the last scan a pop is worth taking now: those with at least
-// `minTsumsInBlast` tsums in the blast, richest first, so a budget of one takes
-// the one that clears most. A bubble in the hole a burst just left has none
-// and is left for the next scan, which re-finds it once the refill has closed
-// round it. Past `unripeHoldScans` scans the count is a misread and every
-// bubble is worth it by fiat -- see GameBubbleConfig.
+/** Each bubble's age since first sighting, ms; -1 for one never tracked. */
+function bubbleAges(bubbles: GameBubble[]): number[] {
+  const now = Date.now();
+  const ages: number[] = [];
+  for (let i = 0; i < bubbles.length; i++) {
+    const seen = bubbles[i].firstSeen;
+    ages.push(seen === undefined ? -1 : now - seen);
+  }
+  return ages;
+}
+
+// Give this scan's bubbles their first sightings. See `minAgeMs`. Each is
+// matched to the nearest known sighting within `matchRadius`, nearest first;
+// one nothing matched is kept for `sightingMemoryMs`, so a scan that missed
+// a bubble does not make it new again. A popped one lends its age to nothing.
+Tsum.prototype.trackGameBubbles = function(bubbles) {
+  const cfg = GameBubbleConfig;
+  const now = Date.now();
+  const known = this.bubbleSightings;
+  const taken: boolean[] = [];
+  for (let i = 0; i < bubbles.length; i++) {
+    const b = bubbles[i];
+    let best = -1;
+    let bestD = cfg.matchRadius * cfg.matchRadius;
+    for (let k = 0; k < known.length; k++) {
+      if (taken[k] || known[k].popped) { continue; }
+      const dx = known[k].x - b.x;
+      const dy = known[k].y - b.y;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) { bestD = d; best = k; }
+    }
+    if (best >= 0) { taken[best] = true; }
+    b.firstSeen = best >= 0 ? known[best].firstSeen : now;
+    b.lastSeen = now;
+  }
+  const next = bubbles.slice();
+  for (let k = 0; k < known.length; k++) {
+    if (!taken[k] && !known[k].popped
+        && now - (known[k].lastSeen || 0) <= cfg.sightingMemoryMs) {
+      next.push(known[k]);
+    }
+  }
+  this.bubbleSightings = next;
+};
+
+// The bubbles of the last scan a pop is worth taking now: seen for at least
+// `minAgeMs`, with at least `minTsumsInBlast` tsums in the blast, richest
+// first, so a budget of one takes the one that clears most. A bubble that has
+// just appeared, or sits in the hole a burst just left, is left for a later
+// scan, which re-finds it once the refill has closed round it. Past
+// `unripeReleaseMs` the count is a misread and the bubble is worth it by fiat
+// -- see GameBubbleConfig.
 Tsum.prototype.ripeGameBubbles = function(bubbles) {
   const cfg = GameBubbleConfig;
-  const released = this.bubbleUnripeScans >= cfg.unripeHoldScans;
+  const now = Date.now();
   const ripe: GameBubble[] = [];
   for (let i = 0; i < bubbles.length; i++) {
     const b = bubbles[i];
-    if (released || b.near === undefined || b.near >= cfg.minTsumsInBlast) {
+    // Never tracked: old enough, and judged on the count alone.
+    const age = b.firstSeen === undefined ? cfg.unripeReleaseMs : now - b.firstSeen;
+    if (age < cfg.minAgeMs) { continue; }
+    if (age >= cfg.unripeReleaseMs || b.near === undefined || b.near >= cfg.minTsumsInBlast) {
       ripe.push(b);
     }
   }
@@ -150,11 +236,12 @@ Tsum.prototype.popGameBubbles = function(limit) {
   const held = all.length - bubbles.length;
   const count = Math.min(bubbles.length, budget);
   if (count <= 0) {
-    // Every bubble is in a hole. The list stays: the next scan replaces it.
+    // Every bubble has just appeared or is in a hole. The list stays: the next
+    // scan replaces it.
     logDebug(Log.Bubble.Unripe, {
       held: held,
       near: all.map(function(b) { return b.near || 0; }),
-      scans: this.bubbleUnripeScans
+      age: bubbleAges(all)
     });
     return;
   }
@@ -163,6 +250,7 @@ Tsum.prototype.popGameBubbles = function(limit) {
     const x = Math.floor(this.playOffsetX + b.x * this.playWidth / this.playResizeWidth);
     const y = Math.floor(this.playOffsetY + b.y * this.playHeight / this.playResizeHeight);
     tap(x, y, cfg.tapDuring);
+    b.popped = true;
   }
   logDebug(Log.Bubble.Popped, { popped: count, seen: all.length, held: held });
   // A bubble only pops once, and one left behind is one this strategy is
@@ -174,20 +262,15 @@ Tsum.prototype.popGameBubbles = function(limit) {
 
 Tsum.prototype.link = function(paths, board) {
   let isBubble = false;
-  // Bubbles seen on a board still detonating from a skill are not spent on this
-  // batch -- see `settleScansAfterSkill`. Read and spent once here rather than
-  // per path, so a batch is held or not held as a whole, and so the count moves
-  // by one scan rather than by one chain.
-  const holdBubbles = this.bubbleSettleScans > 0;
-  if (holdBubbles) { this.bubbleSettleScans--; }
   // Overloading (burst skills): erased MyTsums keep counting into the gauge
   // for a moment after the drag, and firing the skill right as the gauge tops
   // off lets the rest of that count spill into the next gauge instead of
   // capping at 100%. Tapping a not-yet-full skill button is a no-op the game
   // ignores, so the cheap way to catch the fill instant is a single
-  // fire-and-forget tap after each drag: no screenshots, no waits (a gauge
-  // check costs ~10x a tap), no change to the link cadence. The game itself
-  // fires the skill on whichever tap lands first after the gauge fills.
+  // fire-and-forget tap after each drag: no waits, no change to the link
+  // cadence, and a capture only when there are bubbles on the board to hold
+  // (`maybeAutoTapSkill`). The game itself fires the skill on whichever tap
+  // lands first after the gauge fills.
   // Choreographed skills can't ride blind taps (activating without the
   // follow-up aiming wastes the skill) and go through maybeAutoTapSkill,
   // which verifies readiness before handing over to useSkill.
@@ -205,17 +288,17 @@ Tsum.prototype.link = function(paths, board) {
     // go is the Bubble Strategy setting's call -- one, under the default. Under
     // All Bubbles ASAP there is nothing left here to pop: the loop spent them
     // the moment the scan found them.
-    if (!holdBubbles && path.length >= this.bubblePopChainLength()) {
+    if (path.length >= this.bubblePopChainLength()) {
       this.popGameBubbles();
     }
     // A skill that claimed the bubbles gets its own say. The budget above is 0
     // while a claim stands, and hoarding every bubble for the next activation
     // leaves the board clearing no faster than tsum chains clear it -- so Aurora
-    // spends one every couple of long chains. See `popBubblesAfterChain`.
-    if (!holdBubbles) {
-      const pops = skillPopBubblesAfterChain(this, path.length);
-      if (pops > 0) { this.popGameBubbles(pops); }
-    }
+    // spends one every couple of long chains. See `popBubblesAfterChain`. Held
+    // after an activation as the strategy's pops are, since an explicit count
+    // is an override to `popGameBubbles`.
+    const pops = skillPopBubblesAfterChain(this, path.length);
+    if (pops > 0 && !this.bubblesHeldAfterSkill()) { this.popGameBubbles(pops); }
     // Linking a full batch of chains can take several seconds; check between
     // chains so a gauge that fills mid-batch fires right away.
     //
@@ -262,6 +345,9 @@ Tsum.prototype.clearAllBubbles = function(startDelay, endDelay, fromY, delayBetw
     }
     this.sleep(delayBetweenLines);
   }
+  // Blind, so nothing knows which it took: whatever the next scan finds is
+  // new, rather than a new bubble inheriting the age of one this just popped.
+  this.bubbleSightings = [];
 
   if (typeof endDelay === 'number' && endDelay > 0) {
     this.sleep(endDelay);
@@ -299,17 +385,120 @@ Tsum.prototype.sampleMyTsumColor = function() {
   }
 };
 
+// How many usable size reads `boardScale` is the median of. Smooths over a
+// board read mid-clear without lagging a change by much more than a second.
+const BoardScaleWindow = 9;
+// Reads needed after a roll before the scale moves, so one taken while the
+// new tsums are still falling in cannot set it alone.
+const BoardScaleMinReads = 3;
+// The smallest scale the reads are trusted to; NBC Set bottoms out ~0.75.
+const BoardScaleMin = 0.6;
+
+/**
+ * Read the tsums' size off this scan's gray and set `Config.boardScale` to the
+ * median of the last few reads, in 0.05 steps and only in the direction
+ * `boardScaleTrend` allows. Reset to 1 at each round's start.
+ */
+Tsum.prototype.updateBoardScale = function(grayImg) {
+  // Nothing can change, so no Hough pass.
+  if (this.boardScaleTrend === 0) { return; }
+  const read = readBoardScale(grayImg, this.boardScaleTrend > 0);
+  if (read === null) { return; }
+  this.boardScaleReads.push(read);
+  if (this.boardScaleReads.length > BoardScaleWindow) { this.boardScaleReads.shift(); }
+  if (this.boardScaleReads.length < BoardScaleMinReads) { return; }
+  const median = Math.min(1, Math.max(BoardScaleMin, skillMedian(this.boardScaleReads)));
+  const scale = Math.round(median * 20) / 20;
+  // Only the way the skill said, which is also what stops a median sitting on
+  // a step boundary from flipping the scale back and forth.
+  if (Math.sign(scale - Config.boardScale) !== this.boardScaleTrend) { return; }
+  logInfo(Log.Board.Scale, { from: Config.boardScale, to: scale, read: +read.toFixed(2) });
+  Config.boardScale = scale;
+};
+
+// The round's last ~5 seconds wash the screen edges cyan once a second: ~0.55s
+// bright, then ~0.45s dim. Under the bright part, tsums near the left and right
+// edges read the wrong colour (whites join Sally on NBC Set), so chains planned
+// through them break after a link or two. Read off the gaps between tsums in
+// the edge strips: dark on any board, bright only under the wash. Measured on
+// the NBC, Gaston and Elsa recordings (play square, blurred board gray).
+var EdgeWash = {
+  strip: 8,        // strip width at each side, play-square px
+  top: 20,         // rows read, clear of the corners
+  bottom: 180,
+  step: 2,
+  percentile: 0.1, // the darkest tenth: the gaps, not the tsums
+  bright: 130,     // both strips at least this bright = washed (normal ~50-80)
+  pollMs: 50,
+  maxWaitMs: 800,  // the dim part always comes within ~0.55s
+  // A wait that ran out was something else lighting the edges, not the wash;
+  // don't spend another wait on it this soon.
+  backoffMs: 3000,
+};
+
+// Sample points of the two strips, left strip first. Built on first use.
+let edgeWashPoints: Point[] | null = null;
+
+function edgeWashSamplePoints(): Point[] {
+  if (edgeWashPoints !== null) { return edgeWashPoints; }
+  const c = EdgeWash;
+  const size = Config.screenResize;
+  const pts: Point[] = [];
+  for (const x0 of [0, size - c.strip]) {
+    for (let y = c.top; y < c.bottom; y += c.step) {
+      for (let x = x0; x < x0 + c.strip; x += c.step) { pts.push({x: x, y: y}); }
+    }
+  }
+  edgeWashPoints = pts;
+  return pts;
+}
+
+/** How bright the dimmer edge strip's gaps are, on the board gray. */
+function edgeWashLevel(grayImg: NativeImage): number {
+  const colors = getImageColors(grayImg, edgeWashSamplePoints());
+  const half = colors.length >> 1;
+  const level = function(from: number): number {
+    const v: number[] = [];
+    for (let i = from; i < from + half; i++) { v.push(colors[i].r); }
+    v.sort(function(a, b) { return a - b; });
+    return v[Math.floor(v.length * EdgeWash.percentile)];
+  };
+  return Math.min(level(0), level(half));
+}
+
+/**
+ * If this scan's gray is under the last seconds' edge wash, wait for its dim
+ * part. True when it waited, so the caller captures the board again.
+ */
+Tsum.prototype.waitOutEdgeWash = function(grayImg) {
+  const c = EdgeWash;
+  const first = edgeWashLevel(grayImg);
+  if (first < c.bright || Date.now() < this.edgeWashBackoffUntil) { return false; }
+  const start = Date.now();
+  let level = first;
+  while (this.isRunning && level >= c.bright && Date.now() - start < c.maxWaitMs) {
+    this.sleep(c.pollMs);
+    const img = this.playScreenshotSquare();
+    let gray: NativeImage | null = null;
+    try {
+      gray = buildBoardGray(img);
+      level = edgeWashLevel(gray);
+    } finally {
+      if (gray !== null) { releaseImage(gray); }
+      releaseImage(img);
+    }
+  }
+  const timedOut = level >= c.bright;
+  if (timedOut) { this.edgeWashBackoffUntil = Date.now() + c.backoffMs; }
+  logDebug(Log.Board.EdgeWash, { waitedMs: Date.now() - start, first: first,
+    level: level, timedOut: timedOut });
+  return true;
+};
+
 Tsum.prototype.scanBoardQuick = function() {
   // load game tsums
   const startTime = Date.now();
-  const srcImg = this.playScreenshotSquare();
-  // Overload carry-over: the last batch's count-in may top the gauge off
-  // during this scan; one blind tap catches it. After the capture so the tap
-  // can't disturb the frame.
-  if (this.overloadPending) {
-    this.overloadPending = false;
-    this.tap(Button.gameSkill1, 10);
-  }
+  let srcImg = this.playScreenshotSquare();
   const board = [];
   // Owned here rather than inside either pass, so the two Hough passes below
   // share one image and exactly one release covers it -- including when a
@@ -317,11 +506,37 @@ Tsum.prototype.scanBoardQuick = function() {
   // retries, so a leak here would recur on every scan.
   let grayImg: NativeImage | null = null;
   try {
+    // The skill sees the frame first (`SkillHandler.watchScan`); one that acted
+    // on it has moved the board on, so capture again.
+    if (skillWatchScan(this, srcImg)) {
+      releaseImage(srcImg);
+      srcImg = this.playScreenshotSquare();
+    }
+    // Overload carry-over: the last batch's count-in may top the gauge off
+    // during this scan; one blind tap catches it. After the capture so the tap
+    // can't disturb the frame, and inside the try so a tap that throws still
+    // releases it.
+    if (this.overloadPending) {
+      this.overloadPending = false;
+      if (!skillStillRunning(this)) {
+        this.tap(Button.gameSkill1, 10);
+      }
+    }
     // Both circle passes want the same grayscale, blurred copy of the board, so
     // it is built once here and handed to each. They used to build one apiece:
     // two clones, two colour conversions and two 9x9 Gaussians per scan for a
     // pair of identical images.
     grayImg = buildBoardGray(srcImg);
+    if (this.waitOutEdgeWash(grayImg)) {
+      releaseImage(grayImg);
+      grayImg = null;
+      releaseImage(srcImg);
+      srcImg = this.playScreenshotSquare();
+      grayImg = buildBoardGray(srcImg);
+    }
+    if (skillScalesBoard(this)) {
+      this.updateBoardScale(grayImg);
+    }
     const points = findTsums(srcImg, grayImg);
     // Read bubble positions off this same capture and remember them, so popping
     // one after a chain is taps only -- no screenshot in the middle of a batch,
@@ -329,20 +544,14 @@ Tsum.prototype.scanBoardQuick = function() {
     // are big and drift slowly, so a position a second old still lands. Each
     // carries how many of this scan's tsums its pop would take (`near`).
     this.gameBubbles = findGameBubbles(grayImg, points);
+    // Each one's first sighting, carried over from earlier scans -- what
+    // `ripeGameBubbles` ages it by. Run on an empty list too: that is what
+    // lets old sightings go.
+    this.trackGameBubbles(this.gameBubbles);
     if (this.gameBubbles.length > 0) {
-      const near: number[] = [];
-      let unripe = false;
-      for (let i = 0; i < this.gameBubbles.length; i++) {
-        const n = this.gameBubbles[i].near || 0;
-        near.push(n);
-        if (n < GameBubbleConfig.minTsumsInBlast) { unripe = true; }
-      }
-      // Consecutive scans that saw a bubble with too few tsums round it -- the
-      // bound on how long `ripeGameBubbles` may hold one.
-      this.bubbleUnripeScans = unripe ? this.bubbleUnripeScans + 1 : 0;
-      logDebug(Log.Bubble.Found, { bubbles: this.gameBubbles.length, near: near });
-    } else {
-      this.bubbleUnripeScans = 0;
+      logDebug(Log.Bubble.Found, { bubbles: this.gameBubbles.length,
+        near: this.gameBubbles.map(function(b) { return b.near || 0; }),
+        age: bubbleAges(this.gameBubbles) });
     }
     logDebug(Log.Board.RecognitionStart);
     const tcs = classifyTsums(points);

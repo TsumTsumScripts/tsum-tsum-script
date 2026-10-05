@@ -39,6 +39,7 @@ const enum TaskName {
 const enum JobPriority {
   UnlockNow = 10,
   BuyBoxesNow = 11,
+  TsumListNow = 12,
   AppRestart = 20,
   UnlockLevel = 30,
   BuyBoxes = 31,
@@ -90,6 +91,11 @@ function runTaskTable(settings: RunSettings): TaskSpec[] {
   if (on(SettingKey.Walkthrough)) {
     jobs.push({ name: TaskName.Walkthrough, priority: JobPriority.Walkthrough,
       intervalMs: 1000, dueAtStart: true });
+    return jobs;
+  }
+  // A run the Tsum List Now button started does the export and nothing else;
+  // `buildRun` queues it.
+  if (on(SettingKey.TsumListOnly)) {
     return jobs;
   }
   if (on(SettingKey.ReceiveHeartsOneByOne)) {

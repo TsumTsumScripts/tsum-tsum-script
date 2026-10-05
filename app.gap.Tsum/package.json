@@ -1,12 +1,13 @@
 {
   "name": "app.gap.tsum",
-  "version": "2.0",
+  "version": "4.0",
   "description": "Game Automation Platform automation script for Tsum Tsum.",
   "main": "src/index.ts",
   "scripts": {
     "build": "node tools/build/build.js",
     "build:ps": "powershell -ExecutionPolicy Bypass -File ./build.ps1",
     "buildAndAdb": "node tools/build/build.js --adb",
+    "buildAndAdb:beta": "node tools/build/build.js --adb --channel Beta",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.settings.json --noEmit && tsc -p tsconfig.quickbar.json --noEmit",
     "typecheck:game": "tsc --noEmit",
     "typecheck:settings": "tsc -p tsconfig.settings.json --noEmit",
@@ -23,7 +24,7 @@
     "release:alpha": "node tools/release/release.js --channel Alpha",
     "release:beta": "node tools/release/release.js --channel Beta",
     "release:production": "node tools/release/release.js --channel Production",
-    "adb": "adb push dist/index.js dist/index.html dist/quickbar.html dist/tsums.dat \"/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/\""
+    "adb": "adb shell mkdir -p \"'/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/'\" && adb push dist/index.js dist/index.html dist/quickbar.html dist/tsums.dat \"/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/\""
   },
   "keywords": [],
   "author": "Thi Nguyen",

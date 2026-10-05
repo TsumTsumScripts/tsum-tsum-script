@@ -44,6 +44,12 @@ var Config: TsumConfig = {
   // setting, 3-15. 0 is not reachable from the settings UI and is treated as
   // "no limit", which is what a hand-written start() command can ask for.
   maxChain: 3,
+  // How big the tsums are against `tsumWidth`, read off the board each scan
+  // (`updateBoardScale`) and reset to 1 every round. Some skills put more tsums
+  // on the board and shrink them all to fit (Nightmare Before Christmas Set,
+  // down to ~0.75); the circle pass, the colour blurs and the link reach all
+  // scale with it.
+  boardScale: 1,
   debugLogs: false,
   // What an issue report copies, and so what the router keeps -- see report.ts.
   reportTrailFrames: 8,
@@ -82,21 +88,24 @@ var GameBubbleConfig = {
   param1: 20,
   param2: 26,
 
-  // Board scans after a skill fires whose bubbles are left alone.
+  // How long after a skill activation the Bubble Strategy pops nothing, ms.
   //
-  // A skill's burst is what *makes* most bubbles, and several choreographies --
-  // Tiara Minnie+ is the clearest -- return the moment their last aiming tap
-  // goes out, before the burst has played out. The loop's very next scan is
-  // therefore taken on a board still detonating: it finds the fresh bubbles,
-  // and the longest chain it can offer is a scrap of one off a half-empty
-  // board. Spending a bubble there is the waste this whole setting exists to
-  // avoid, and from the outside it looks like the bubble being popped the
-  // instant it appears.
+  // A skill's burst is what *makes* most bubbles, and it empties the board
+  // round every one already there. Several choreographies -- Tiara Minnie+ is
+  // the clearest -- return the moment their last aiming tap goes out, before
+  // the burst has played out, and a blind-fired burst is not waited on at all.
+  // A bubble popped then sits in the hole the burst left and clears next to
+  // nothing; from the outside it looks like the bubble being popped the
+  // instant it appears. So every activation stamps this hold from its tap
+  // (`holdBubblesAfterSkill`), whichever way the skill was fired.
   //
-  // One scan, not a duration: it costs nothing on a fast device, scales with a
-  // slow one, and nothing is lost by waiting -- every scan re-finds the
-  // bubbles, so this only ever moves which chain spends them.
-  settleScansAfterSkill: 1,
+  // A duration, not a scan count: a scan on a fast device is a few hundred ms,
+  // well inside a burst, and the one-scan hold this replaces was over before
+  // the refill began. Long enough for the burst and the refill after it;
+  // `ripeGameBubbles` then judges each bubble by the tsums round it. Nothing
+  // is lost by waiting -- every scan re-finds the bubbles, so this only ever
+  // moves which chain spends them.
+  holdAfterSkillMs: 2000,
 
   // What a pop is worth: the tsums within `blastReach` tsum widths past the
   // bubble's edge, counted off the same scan (`GameBubble.near`). The
@@ -104,13 +113,31 @@ var GameBubbleConfig = {
   // one in the hole a burst just left clears nothing, and the refill closes
   // round it within a scan or two. A full board puts ~6 in that ring, and the
   // Hough pass keeps 45-80% of a landed board's circles, so 3 reads as
-  // "surrounded" where a fresh hole reads 0-1. The hold is bounded by
-  // `unripeHoldScans`: a bubble on a settled board always has neighbours, so
-  // past that many consecutive scans the count is a misread and the bubble is
-  // spent regardless. A skill's own pop (an explicit limit) reads none of this.
+  // "surrounded" where a fresh hole reads 0-1. A skill's own pop (an explicit
+  // limit) reads none of this.
   blastReach: 1,
   minTsumsInBlast: 3,
-  unripeHoldScans: 5,
+
+  // A bubble is also left alone for `minAgeMs` after it is first seen. The
+  // blast count is one frame's reading, and the frame a burst's bubble first
+  // shows on is mid-clear: the tsums still round it are going and the refill
+  // has not landed, so the count can read "surrounded" over a hole -- which is
+  // the bubble popped the instant it appears, hitting nothing. The refill
+  // lands within a second of the clear whatever the skill's animation took to
+  // get there, so age from first sighting is the one gate that does not need
+  // the animation's length. `unripeReleaseMs` bounds both holds: a bubble on
+  // a settled board always has neighbours, so past that age the count is a
+  // misread and the bubble is spent regardless.
+  //
+  // Sightings are carried across scans by position (`trackGameBubbles`): a
+  // bubble that moved under `matchRadius` (200px-square space, about a bubble
+  // radius) since the last scan is the same bubble; one that moved more is
+  // falling and counts as new, which holds it -- the safe way to be wrong. A
+  // sighting outlives a missed detection for `sightingMemoryMs`.
+  minAgeMs: 1000,
+  unripeReleaseMs: 3000,
+  matchRadius: 20,
+  sightingMemoryMs: 1500,
 
   // How long a row of the quick sweep waits before the next one.
   //
@@ -401,12 +428,15 @@ var MailList = {
    * gold instead of the three pieces the word cuts it into. `fromY`/`toY` are
    * the list's viewport -- the title bar above and the Claim All bar below are
    * outside it, and a run touching either end belongs to a half-drawn row.
+   * Both are the last list pixels the scan samples: the title bar ends at 494
+   * and the bar starts at 1344, so a sample on either would never read gold
+   * and a button cut by it would pass as whole.
    */
-  buttonColumn: {x: 780, fromY: 500, toY: 1345, step: 4},
+  buttonColumn: {x: 780, fromY: 500, toY: 1340, step: 4},
   /** A run shorter than this is a highlight or a clipped button, not a row. */
   minButtonRun: 50,
   /**
-   * One drag of the list, and how long its overscroll bounce takes to settle.
+   * One drag of the list, and the most its overscroll bounce may take to settle.
    *
    * Travels 505px: two and a half rows, so the rows land half a row out of
    * phase with where they were. Deliberate -- a run of Mission Clear mails is
@@ -455,6 +485,9 @@ const enum PageName {
   // waits to be closed.
   TsumLevelUp = 'TsumLevelUp',
   AccountLevelUp = 'AccountLevelUp',
+  // The leaderboard panel after a round that passes a friend ("Rank Up": the
+  // player's row with an up arrow over the one it displaced).
+  RankUp = 'RankUp',
   MagicalTime = 'MagicalTime',
   // The event's own page, seen after a round while an event card is active:
   // the event's result overlay is thrown over the score tally, any tap moves it
@@ -1191,20 +1224,32 @@ var Page = {
     back: {x: 310, y: 1070},  // Cancel button
     next: {x: 760, y: 1070}   // OK button
   },
+  // "Pick-Up Capsule Purchase": the machine, "Left: N", the price, Cancel / OK
+  // and a List button in the footer. A taller panel than the box confirmation,
+  // so its button row sits 370px lower -- which is what keeps the two entries
+  // apart -- and its cyan footer band reaches where every other dialog here
+  // shows dimmed background. The machine's dome used to be a probe; it is a
+  // gradient that read 30 off between two captures, so the bands carry it now.
   ConfirmPurchaseCapsulePage: {
     name: PageName.ConfirmPurchasePage,
     colors: [
-      {x: 200, y: 1444, r: 247, g: 178, b: 8, match: true, threshold: 30},  // left of Cancel button
-      {x: 426, y: 1444, r: 247, g: 178, b: 8, match: true, threshold: 30},  // right of Cancel button
-      {x: 540, y: 1444, r: 54, g: 93, b: 146, match: true, threshold: 30},  // between buttons
-      {x: 660, y: 1444, r: 247, g: 174, b: 8, match: true, threshold: 30},  // left of OK button
-      {x: 860, y: 1444, r: 247, g: 178, b: 8, match: true, threshold: 30},  // right of OK button
-      {x: 940, y: 1444, r: 33, g: 65, b: 107, match: true, threshold: 30},  // right next to OK button
-      {x: 416, y: 790, r: 239, g: 28, b: 49, match: true, threshold: 40}    // red top of big pickup capsule image
+      {x: 200, y: 1444, r: 247, g: 178, b:   8, match: true, threshold: 30},  // left of Cancel button
+      {x: 426, y: 1444, r: 247, g: 178, b:   8, match: true, threshold: 30},  // right of Cancel button
+      {x: 540, y: 1444, r:  54, g:  93, b: 146, match: true, threshold: 30},  // between buttons
+      {x: 660, y: 1444, r: 247, g: 174, b:   8, match: true, threshold: 30},  // left of OK button
+      {x: 860, y: 1444, r: 247, g: 178, b:   8, match: true, threshold: 30},  // right of OK button
+      {x: 940, y: 1444, r:  33, g:  65, b: 107, match: true, threshold: 30},  // right next to OK button
+      {x: 200, y:  560, r:  30, g: 199, b: 236, match: true, threshold: 40},  // cyan header band, left
+      {x: 880, y:  560, r:  33, g: 201, b: 238, match: true, threshold: 40},  // cyan header band, right
+      {x: 120, y: 1600, r:  33, g: 194, b: 234, match: true, threshold: 40},  // cyan footer band, left of the wording
+      {x: 960, y: 1600, r:  32, g: 194, b: 231, match: true, threshold: 40}   // cyan footer band, above List
     ],
     back: {x: 320, y: 1444},  // Cancel button
     next: {x: 766, y: 1444}   // OK button
   },
+  // The same dialog with the stock drawn as "N/N" rather than "Left: N". No
+  // corpus frame shows it any more; kept until one does or the game plainly
+  // never draws it again.
   Confirm2025PurchaseCapsulePage: {
     name: PageName.ConfirmPurchasePage,
     colors: [
@@ -1438,6 +1483,11 @@ var Page = {
     back: {x: 540, y: 880},
     next: {x: 540, y: 880}
   },
+  // The pause menu: Sound sliders, the Gyro toggle, Try Again beside To Home
+  // Screen, Continue below. Continue (`next`) is the only button anything
+  // presses; the other two forfeit the round, so `PageRoutes` declares no exit
+  // and `nav.move.exit` never taps here. `back` is To Home Screen so the anchor
+  // names a real button -- it used to sit on the Gyro toggle at (318,1078).
   GamePause: {
     name: PageName.GamePause,
     colors: [
@@ -1446,7 +1496,7 @@ var Page = {
       {x: 623, y: 1221, r: 255, g: 192, b:   8, match: true, threshold: 80},  // stability 12, separation 150
       {x: 477, y: 1595, r: 246, g: 178, b:   7, match: true, threshold: 40}  // stability 4, separation 32
     ],
-    back: {x: 318, y: 1078},
+    back: {x: 761, y: 1248},
     next: {x: 539, y: 1657}
   },
   GamePlaying480x800: {
@@ -1824,30 +1874,32 @@ var Page = {
   // Probed on the panel's own background, in the four places the pill keeps
   // clear whatever tsum it is showing: the margin left of the icon (x 240), the
   // strip above the "Lv" row (y 875), the strip below the "Score" row (y ~1040)
-  // and the column right of the exp bar (x ~795). The icon, the two numbers,
-  // the exp fill and the score row all move with the tsum and the round.
+  // and the column right of the Score figure (x ~820). The icon, the two
+  // numbers, the exp fill and the score row all move with the tsum and the round.
   //
-  // This entry also passes the five-panel frame -- at these coordinates panel 3
-  // is drawn the same way -- which costs nothing, since both report
+  // Keep probes off the icon column and the top right of the panel. A Set's
+  // icon can be a cut-out that hangs below the Score row (Villains reaches
+  // y~1043 across x 260-426), and a "x2" badge sits right of the exp bar
+  // (y 870-935). Probes at (353,1043) and (797,911) landed on those, so a
+  // Villains level-up read as unknown and the round lost every stats field.
+  //
+  // This entry may also pass the five-panel frame -- at these coordinates panel
+  // 3 is drawn the same way -- which costs nothing, since both report
   // `PageName.TsumLevelUp`. The reverse does not hold, which is why it is a
-  // third entry rather than a widened one. The low-drift probes are what carry
-  // that: (797,911) and (791,1034) drift 7 and 25, so they read the same on
-  // both stacks.
+  // third entry rather than a widened one.
   //
-  // The best-separating pill probes in the table are here -- 41 to 86 against
-  // thresholds of 40 to 58 -- and that is still only "weak", every one of them
-  // inside twice its own threshold. Six were kept, chosen to keep both jobs:
-  // separation where there is any, and the two low-drift ones that hold the
-  // five-panel frame.
+  // Pill probes separate weakly from other dark-blue screens -- 35 to 56
+  // against thresholds of 40 to 45 -- so `LevelUpDimmedChrome` is what keeps
+  // this entry off them.
   TsumLevelUpSingleTsum: {
     name: PageName.TsumLevelUp,
     variant: 'single-tsum',
     colors: LevelUpDimmedChrome.concat([
       {x: 239, y:  971, r: 33, g:  60, b: 107, match: true, threshold: 40},  // left margin, separation 41, drift 172
       {x: 302, y: 1046, r: 24, g:  55, b:  99, match: true, threshold: 40},  // below the Score row, separation 48, drift 195
-      {x: 353, y: 1043, r: 24, g:  56, b: 106, match: true, threshold: 58},  // below the Score row, separation 86, drift 119
+      {x: 772, y: 1048, r: 33, g:  65, b: 108, match: true, threshold: 40},  // below the Score figure, separation 35
       {x: 791, y: 1034, r: 33, g:  64, b: 107, match: true, threshold: 40},  // below the Score row, right, separation 56, drift 25
-      {x: 797, y:  911, r: 35, g:  69, b: 115, match: true, threshold: 40},  // right of the exp bar, separation 43, drift 7
+      {x: 821, y:  997, r: 34, g:  67, b: 109, match: true, threshold: 40},  // right of the Score figure, separation 44
       {x: 845, y: 1010, r: 24, g:  54, b:  90, match: true, threshold: 45}   // right margin, separation 55, drift 104
     ]),
     back: {x: 300, y: 1660},
@@ -1890,6 +1942,24 @@ var Page = {
       {x: 468, y: 790, r: 173, g:  57, b:   7, match: true, threshold: 80},  // star lower left, stability 8, separation 214
       {x: 564, y: 822, r: 173, g:  73, b:  16, match: true, threshold: 80},  // star lower body, stability 4, separation 232
       {x: 600, y: 826, r: 173, g:  67, b:  16, match: true, threshold: 80}   // star lower right, stability 10, separation 229
+    ],
+    back: {x: 540, y: 1652},
+    next: {x: 540, y: 1652}
+  },
+  // The ranking panel: two cyan-framed rows, the player's with an orange up
+  // arrow and the displaced friend's with a blue down arrow. The arrows and the
+  // cyan frame are the same for every account; names, scores and avatars are not.
+  // Without an entry it read `ClosePage`, which nothing taps during the score
+  // wait, so the tally stayed behind it until the wait gave up.
+  RankUp: {
+    name: PageName.RankUp,
+    colors: [
+      {x: 104, y:  730, r: 255, g: 186, b:  41, match: true, threshold: 80},  // up arrow
+      {x: 104, y: 1180, r:  66, g: 215, b: 255, match: true, threshold: 80},  // down arrow
+      {x: 540, y:  600, r:  33, g: 190, b: 222, match: true, threshold: 80},  // top row, cyan frame
+      {x: 540, y:  880, r:  25, g: 174, b: 214, match: true, threshold: 80},  // cyan gap between the rows
+      {x: 200, y:  780, r:  41, g:  73, b: 115, match: true, threshold: 80},  // top row, navy band
+      {x: 200, y: 1220, r:  41, g:  73, b: 115, match: true, threshold: 80}   // bottom row, navy band
     ],
     back: {x: 540, y: 1652},
     next: {x: 540, y: 1652}
@@ -1958,9 +2028,11 @@ var Page = {
     next: {x: 540, y: 1000}
   },
   // The GET! gift dialog -- cyan header, dark body, "Claim your gift from your
-  // mailbox", a Close button -- which the event raises after a card reveal.
+  // mailbox", a Close button -- which the event raises after a card reveal,
+  // and the Pick-Up Capsule when its prize is an item rather than a tsum.
   // Probed on the dialog's own chrome, not on the amount or the item, so it
-  // reads the same wherever the game shows it.
+  // reads the same wherever the game shows it: the capsule's ticket frame
+  // passes at 0.85 with nothing in the entry written for it.
   //
   // A joint fingerprint, deliberately: this is the game's shared dialog sprite,
   // drawn where `GiftHeart` and `ReceiveHeart` draw theirs, so the header and
@@ -1980,6 +2052,33 @@ var Page = {
       {x: 542, y: 1382, r: 247, g: 174, b:   8, match: true, threshold: 40},  // Close button, stability 3, separation 53
       {x: 524, y: 1388, r: 247, g: 174, b:   8, match: true, threshold: 40},  // Close button, stability 4, separation 51
       {x: 542, y: 1418, r: 247, g: 174, b:   8, match: true, threshold: 40}   // Close button, stability 4, separation 51
+    ],
+    back: {x: 540, y: 1400},
+    next: {x: 540, y: 1400}
+  },
+  // "Last Prize!" -- the same dialog, raised over the store once the last
+  // Pick-Up Capsule is bought, with the Skill ticket its Last Prize badge
+  // promised. Every chrome probe reads the very pixels the GET! frame does;
+  // the title is the whole difference, so the title is what tells them apart:
+  // the two GET! probes read panel blue here, and two on this title's wider
+  // glyphs -- the L's stem and the a's bowl -- read blue on the GET! frame and
+  // the mail dialogs' white separator dots. Sparkles play over the title, so
+  // the threshold takes their glow (the worst of 35 recording frames reads
+  // 112 off at the L) and a sparkle sitting on a probe costs one look, not
+  // the page; white and panel blue are 270 and 360 off, so nothing is given.
+  EventGiftLastPrize: {
+    name: PageName.EventGift,
+    variant: 'lastPrize',
+    colors: [
+      {x: 431, y:  539, r:  26, g: 193, b: 233, match: true, threshold: 50},  // header band
+      {x: 119, y:  551, r:  26, g: 197, b: 233, match: true, threshold: 50},  // header band
+      {x: 275, y: 1217, r:  31, g: 197, b: 238, match: true, threshold: 50},  // footer band
+      {x: 665, y: 1193, r:  31, g: 199, b: 239, match: true, threshold: 50},  // footer band
+      {x: 290, y:  700, r: 243, g: 186, b:  65, match: true, threshold: 120}, // Last Prize! title, the L's stem -- panel blue on the GET! frame
+      {x: 350, y:  705, r: 246, g: 190, b:  64, match: true, threshold: 120}, // Last Prize! title, the a's bowl -- panel blue on the GET! frame
+      {x: 542, y: 1382, r: 247, g: 174, b:   8, match: true, threshold: 40},  // Close button
+      {x: 524, y: 1388, r: 247, g: 174, b:   8, match: true, threshold: 40},  // Close button
+      {x: 542, y: 1418, r: 247, g: 174, b:   8, match: true, threshold: 40}   // Close button
     ],
     back: {x: 540, y: 1400},
     next: {x: 540, y: 1400}
@@ -2174,6 +2273,12 @@ var PageProfiles: PageProfileMap = {
         + 'tally and sits on top of it until Close is pressed, so unlike '
         + '`TsumLevelUp` there is no window to wait out.'
   },
+  RankUp: {
+    kind: PageKind.Permanent,
+    roles: [PageRole.PreTally],
+    note: 'The ranking panel after a round that passes a friend. Like '
+        + '`AccountLevelUp` it sits on the tally until Close is pressed.'
+  },
   EventMain: {
     kind: PageKind.Permanent,
     roles: [PageRole.PreTally],
@@ -2191,7 +2296,10 @@ var PageProfiles: PageProfileMap = {
     roles: [PageRole.PreTally],
     note: 'The GET! gift dialog ("Claim your gift from your mailbox") with its '
         + 'Close. The game\'s generic reward dialog; the event raises it after a '
-        + 'card reveal.'
+        + 'card reveal, and the Pick-Up Capsule ends on it when the prize is an '
+        + 'item rather than a tsum. Also "Last Prize!" (the `lastPrize` '
+        + 'configuration), the same dialog over the store once the last capsule '
+        + 'is bought.'
   },
   MagicalTime: {
     kind: PageKind.Permanent,
@@ -2239,7 +2347,12 @@ var PageProfiles: PageProfileMap = {
         + 'the standard close button at centre bottom (events, My Info, settings).'
   },
   TapOpenPage: {kind: PageKind.Permanent, note: 'Waits for the "TAP!" it asks for.'},
-  TapOpenPageDeprecated: {kind: PageKind.Permanent, note: 'Older capsule art for the same screen.'},
+  TapOpenPageDeprecated: {
+    kind: PageKind.Permanent,
+    note: 'Older capsule art for the same screen. Also what the capsule machine '
+        + 'reads as while it turns after the tap -- the same art without the '
+        + 'prompt -- which the Box Buying sweep taps through blind.'
+  },
 
   // --- Tsum collection and store ---
   TsumsPage: {kind: PageKind.Permanent, roles: [PageRole.GameUp]},
@@ -2255,11 +2368,11 @@ var PageProfiles: PageProfileMap = {
   ConfirmPurchasePage: {kind: PageKind.Permanent, note: 'OK / Cancel.'},
   BoxPurchasedPage: {
     kind: PageKind.Permanent,
-    note: 'One box\'s reveal card, with Close. What a 1-Time purchase ends on; a '
-        + '10-Time one shows ten of these without the Close and then '
-        + '`BoxPurchaseResult`. Also the "You got a Patch!" popup (the `patch` '
-        + 'configuration), which a purchase carrying a patch shows after its '
-        + 'reveals, with a Close of its own.'
+    note: 'One box\'s reveal card, with Close. What a 1-Time purchase ends on -- '
+        + 'a Pick-Up Capsule that drops a tsum too; a 10-Time one shows ten of '
+        + 'these without the Close and then `BoxPurchaseResult`. Also the "You '
+        + 'got a Patch!" popup (the `patch` configuration), which a purchase '
+        + 'carrying a patch shows after its reveals, with a Close of its own.'
   },
   BoxPurchaseResult: {
     kind: PageKind.Permanent,
@@ -2422,7 +2535,7 @@ var HeartScrollPath = {
   x: 900,
   down: [1304, 1102, 895, 698, 502],
   up: [698, 895, 1102, 1304, 1500],
-  /** Long enough for an overscroll bounce to settle before the list is re-read. */
+  /** Budget for the overscroll bounce to settle before the list is re-read. */
   settleMs: 900
 };
 
@@ -2496,6 +2609,34 @@ var CollectionGrid = {
   prevPageColor: {r: 220, g: 244, b: 253},
   prevPageDiff: 60,
   prevPageVotes: 3,
+  /** `prevPage`'s samples mirrored onto `nextPage`; absent on the last page. */
+  nextPageSamples: [
+    {dx: 0, dy: -27}, {dx: 9, dy: -9}, {dx: 0, dy: 0}, {dx: 0, dy: 9}, {dx: 0, dy: 27}
+  ],
+  /**
+   * Four points on each card's body, low and to the sides where no tsum art
+   * reaches (the top corners take the card's border colour, which varies). A
+   * card reads blue, the selected one gold, an empty slot the darker panel.
+   * Measured: blue b 173-206, gold r 222-247 b 8-74, empty b 99-156.
+   */
+  bodySamples: [{dx: -85, dy: 0}, {dx: 85, dy: 0}, {dx: -80, dy: 40}, {dx: 80, dy: 40}],
+  bodyColor: {r: 37, g: 107, b: 192},
+  bodyDiff: 32,
+  selectedColor: {r: 239, g: 174, b: 20},
+  selectedDiff: 60,
+  /** Of the four, how many make a card, or the selected one. */
+  bodyVotes: 2,
+  /**
+   * A card still loading: flat blue with a spinner where the tsum art goes. The
+   * grid shows these for ~0.5s after a re-sort, with the right chevron drawn but
+   * not the left, so the first-page check must wait them out. Three points on
+   * the card body, all three blue, makes a placeholder; `loadingCards` of them
+   * makes the grid loading. Measured: 8 of 8 on a loading grid, 0 on loaded ones.
+   */
+  loadingSamples: [{dx: 0, dy: -40}, {dx: -30, dy: 0}, {dx: 0, dy: 0}],
+  loadingColor: {r: 35, g: 112, b: 207},
+  loadingDiff: 40,
+  loadingCards: 5,
   /**
    * The "MyTsum Set" button under the grid, which the game greys out while the
    * selected card is already the MyTsum -- the cheapest proof that the detail
@@ -2552,13 +2693,13 @@ var LevelUpMyTsumCard = {
    * A lone card sits far below any multi-card first card (~860 against
    * ~400-575 mid-bounce), and its own gutter run is cut short by its wider
    * Score row -- so it is told by its top, and its bar placed off the top
-   * rather than the middle. Unverified on a capped lone card: the one corpus
-   * frame of this layout shows an EXP bar.
+   * rather than the middle. Measured on a capped lone card (Villains Set): top
+   * 855, padlock body y 958-970.
    */
   singleMinTopY: 780,
-  singleBarFromTopY: 119,
-  /** The padlock body, about the bar row: two columns, two rows, all four required. */
-  lockX: [500, 515],
+  singleBarFromTopY: 104,
+  /** The padlock body (x 496-514), about the bar row: two columns, two rows, all four required. */
+  lockX: [500, 511],
   lockDy: [0, 6],
   lockColor: {r: 255, g: 255, b: 255},
   lockDiff: 40
@@ -2604,7 +2745,103 @@ var CollectionSortDialog = {
   selectedColor: {r: 247, g: 174, b: 8},
   selectedDiff: 50,
   /** How many of the four have to be gold. Measured: 4 or 0, never between. */
-  selectedVotes: 3
+  selectedVotes: 3,
+  /**
+   * The "Show owned Tsums only" checkbox: its centre, and two points on the
+   * brown tick that only a ticked box draws (read 115-123/65/41).
+   */
+  ownedOnly: {x: 165, y: 1370},
+  ownedOnlySamples: [{dx: -5, dy: 5}, {dx: 0, dy: 10}],
+  ownedOnlyColor: {r: 119, g: 65, b: 41},
+  ownedOnlyDiff: 40
+};
+
+// ---------------------------------------------------------------------------
+// The collection's detail panel, as the Tsum List export reads it
+// (src/tsumList.ts).
+//
+// `icon` is a square on the big portrait, which is how a tsum is named first.
+// The panel draws the tsum's plain `_l` sprite unscaled at centre (303, 493),
+// 432 wide, and this crop covers the same share of it that
+// `MyTsumPortrait.icon` covers of the pre-round sprite. The pre-round library
+// cannot be used here (it is the glowing `_y` sprite on the orange button), so
+// the development tools' lexicon renders a second one from the `_l` art at
+// this rect: `library`. Same grid, mask and file format as `MyTsumPortrait`,
+// and read by the same loader.
+//
+// Measured over 355 live panels once the selection animation had settled: the
+// right tsum scored 0.889 and up, and a tsum missing from the library 0.892 --
+// so the library has to hold every tsum. A lead under `minMargin` is an art
+// twin (Donald and his variants, the Minnies, Piglet), which the printed name
+// settles (`TsumListName`).
+//
+// The level and skill rows read "5/10" as [5, 10]. The level row moves 30
+// right when the raise-cap padlock is drawn beside it (`levelCappedDx`).
+// ---------------------------------------------------------------------------
+
+var TsumListPortrait = {
+  library: 'tsumsCollection.dat',
+  icon: {from: {x: 178, y: 368}, to: {x: 428, y: 618}},
+  minScore: 0.88,
+  minMargin: 0.03,
+  /** A lead under `minMargin` is still trusted at this score when the name cannot help. */
+  aloneScore: 0.95
+};
+
+// The tsum's printed name at the top of the panel, which is the game's own
+// `win_tsumname_<id>` strip drawn unscaled -- the fallback for a portrait that
+// cannot tell two look-alikes apart. It is centred at x 774 but
+// its height moves with the length of the description under it, so the name
+// is *found*: the white text in `band`, and the row holding its tallest glyph.
+// That row's box is squashed to a `w` x `h` grid of the text mask.
+var TsumListName = {
+  library: 'tsumNames.dat',
+  magic: 'gap-tsum-names',
+  format: 'v1',
+  band: {x: 480, y: 260, w: 590, h: 190},
+  lo: 200,
+  /** Glyphs overlapping the tallest by this share of its height are the same row. */
+  rowOverlap: 0.5,
+  w: 48,
+  h: 8,
+  /** Over 40 live panels the true name scored 0.90-0.99, 0.19+ ahead; a missing one 0.55. */
+  minScore: 0.85,
+  minMargin: 0.1
+};
+
+var TsumListRegions = {
+  level: {
+    name: 'tsum level',
+    // Ends short of the "x2" badge some tsums wear at the bar's right end.
+    x: 300, y: 672, w: 190, h: 60,
+    lo: [220, 220, 220], hi: [255, 255, 255], slash: true
+  } as StatsRegion,
+  levelCappedDx: 30,
+  skill: {
+    name: 'tsum skill',
+    x: 750, y: 672, w: 230, h: 60,
+    lo: [220, 220, 220], hi: [255, 255, 255], slash: true
+  } as StatsRegion,
+  /**
+   * A card's "2026/05", offset from its `CollectionGrid.cells` centre. At 9px
+   * tall no single floor and scale reads every card, but none of them reads a
+   * wrong date either -- they fail empty -- so a date is read under each of
+   * `dateReads` in turn until two agree. 27 of 27 cards, ~2 reads each.
+   */
+  date: {dx: -80, dy: 58, w: 160, h: 40},
+  /**
+   * The skill bar's yellow fill: progress through the current skill level.
+   * Where the fill ends, scanned across every row so the white "%" text over it
+   * does not matter, is linear in the percentage: fitted on 25/37/50/75% panels
+   * (all read back within 0.2%), 0% at x 583 and 100% at 947. Near 0% the
+   * rounded end reads ~2 points high. `toX` stops short of the gold "+" coin.
+   */
+  skillBar: {fromX: 570, toX: 946, stepX: 2, fromY: 732, toY: 788, stepY: 4, zeroX: 583, fullX: 946.6},
+  skillFill: {rMin: 200, gMin: 110, bMax: 130},
+  dateReads: [
+    {scale: 4, lo: 170}, {scale: 3, lo: 180}, {scale: 2, lo: 180},
+    {scale: 3, lo: 130}, {scale: 3, lo: 190}
+  ]
 };
 
 // ---------------------------------------------------------------------------
@@ -2624,6 +2861,13 @@ var CollectionSortDialog = {
 //   `PageDef.variant` exists for on the detection side. Which one is up is read
 //   from the ends of the row: with three tabs the panel background shows at
 //   both, with four a tab reaches into each.
+//
+//   THE FOURTH TAB IS ONE OF TWO BOXES.  The limited-time slot holds the Select
+//   Box or the Pick-Up Capsule, drawn in the same place with the same label
+//   band, so the slot alone cannot say which is on sale. The icon can: the
+//   capsule's is a gumball machine on a red base, the box's a blue gift with a
+//   pink bow, and the base is read on both flanks of the machine's gold plate,
+//   below where a "Sold Out" ribbon or the "Limited!" badge reaches.
 //
 //   SO DO THE BUTTONS.  A box with both purchase sizes draws them side by side;
 //   one with only a 1-Time purchase -- Happiness always, and any box whose
@@ -2649,15 +2893,28 @@ var BoxStore = {
    * The boxes in the order the tab row draws them, per row width.
    *
    * The limited-time box sits third, between Premium Box and Happiness Box --
-   * true of every four-tab frame in the corpus. A four-tab row whose third box
-   * is some *other* limited box would be bought as `Select`, which is why only
-   * a player who picked Select can reach it.
+   * true of every four-tab frame in the corpus. `order4` names it `Select`;
+   * `readBoxTabs` reads the icon at `limitedSlot` and `openBoxTab` puts what
+   * it found there, so a capsule is bought only by a player who picked the
+   * capsule and a Select Box only by one who picked that. A four-tab row whose
+   * third box is some *other* limited box reads as `Select`.
    */
   order3: [BoxType.PremiumPlus, BoxType.Premium, BoxType.Happiness] as BoxType[],
   order4: [BoxType.PremiumPlus, BoxType.Premium, BoxType.Select, BoxType.Happiness] as BoxType[],
+  limitedSlot: 2,
   /** Tab centres for each row width. Measured across all seven corpus store frames. */
   tabX3: [232, 540, 847],
   tabX4: [141, 406, 673, 938],
+  /**
+   * The Pick-Up Capsule's icon on the limited-time tab: the red base of the
+   * gumball machine, either side of its gold plate. Both must read red. The
+   * Select Box's icon puts its pink ribbon on the left point (255/117/198) and
+   * its blue body on the right (74/146/239), each 70+ off in a channel; the
+   * capsule reads 197-229/33-47/18-58 across every capsule frame.
+   */
+  capsuleIcon: [{x: 650, y: 1160}, {x: 700, y: 1160}],
+  capsuleIconColor: {r: 212, g: 40, b: 54},
+  capsuleIconDiff: 50,
 
   /**
    * The band a tab is read on: below its label, above its bottom edge, and clear
@@ -2996,12 +3253,14 @@ var PageRoutes: PageRouteMap = {
   GamePlaying: [
     { via: PageAnchor.Back, to: PageName.GamePause, source: RouteSource.Declared }
   ],
-  // dismiss.resumeGame: Continue, back to a round already running. The other
-  // button ends the round; nav.move.exit takes it only when something is
-  // deliberately heading off the board, which is when resumeGame declines.
+  // dismiss.resumeGame: Continue, back to a round already running. The only
+  // edge on purpose: the other buttons forfeit the round, so nothing navigates
+  // off one -- a chore that finds a round in progress stands aside instead
+  // (`roundInProgress`, pages.ts). A navigate with any other goal is left
+  // untouched here and reports `nav.noRoute`; the `back` exit this row used to
+  // declare sat on the Gyro toggle, and toggled it once a pass.
   GamePause: [
-    { via: PageAnchor.Next, to: PageName.GamePlaying, source: RouteSource.Handler },
-    { via: PageAnchor.Back, source: RouteSource.Declared }
+    { via: PageAnchor.Next, to: PageName.GamePlaying, source: RouteSource.Handler }
   ],
   // The three panels that stand between a finished round and its tally. Each is
   // closed by a `dismiss` handler, and each says so in its own `what`.
@@ -3014,6 +3273,9 @@ var PageRoutes: PageRouteMap = {
   AccountLevelUp: [
     { via: PageAnchor.Back, to: PageName.ScorePage, source: RouteSource.Handler }
   ],
+  RankUp: [
+    { via: PageAnchor.Back, to: PageName.ScorePage, source: RouteSource.Handler }
+  ],
   // The event page's `back` is its Close. The result overlay that leads here
   // has no entry (see PageName.EventMain), so no route arrives from it.
   EventMain: [
@@ -3024,8 +3286,11 @@ var PageRoutes: PageRouteMap = {
   EventCardReveal: [
     { via: PageAnchor.Back, to: PageName.EventGift, source: RouteSource.Handler }
   ],
+  // Two destinations for one Close, by what raised it: the event's card reveal
+  // leads back to the event, the Pick-Up Capsule's item prize to the store.
   EventGift: [
-    { via: PageAnchor.Back, to: PageName.EventMain, source: RouteSource.Handler }
+    { via: PageAnchor.Back, to: PageName.EventMain, source: RouteSource.Handler },
+    { via: PageAnchor.Back, to: PageName.TsumTsumStorePage, source: RouteSource.Declared }
   ],
   // Declared, not implemented: `nav.move.back` is what closes it, and the tally
   // is what `record.baseCoins` and `finishRoundStats` expect behind it.

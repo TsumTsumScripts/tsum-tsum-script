@@ -1,3 +1,7 @@
+// Editor only: tsconfig.json does not list this file, so name what it uses.
+/// <reference path="shared.d.ts" />
+/// <reference path="strings.d.ts" />
+/// <reference path="releaseStatus.ts" />
 // The Skill Type dropdown's entries, written once.
 //
 // Two pages offer this list -- the settings page's Skills tab and the Quick Bar
@@ -103,6 +107,8 @@ var SkillsDeclared: SkillOption[] = [
      status: ReleaseStatus.Production, group: UiText.SkillGroupBurst},
     {key: SkillType.LightningMcQueenPlus, share: 'q', title: UiText.SkillLightningMcQueenPlus,
      status: ReleaseStatus.Production, group: UiText.SkillGroupBurst},
+    {key: SkillType.NightmareSet, share: 'N', title: UiText.SkillNightmareSet,
+     status: ReleaseStatus.Production, group: UiText.SkillGroupBurst},
     // Two buttons rather than one, but the clear at the end of it is a burst.
     {key: SkillType.PairTsum, share: 'p', title: UiText.SkillPairTsum,
      status: ReleaseStatus.Production, group: UiText.SkillGroupBurst},
@@ -130,14 +136,11 @@ var SkillsDeclared: SkillOption[] = [
 
     // --- Unique: the play loop plays differently while these are up ----------
     {key: SkillType.CoronationElsa, share: 'e', title: UiText.SkillCoronationElsa,
-     status: ReleaseStatus.Beta, group: UiText.SkillGroupUnique},
-    // The 1.0 choreography, offered beside the reworked one for comparison.
-    {key: SkillType.CoronationElsaLegacy, share: 'E', title: UiText.SkillCoronationElsaLegacy,
-     status: ReleaseStatus.Beta, group: UiText.SkillGroupUnique},
+     status: ReleaseStatus.Production, group: UiText.SkillGroupUnique},
     {key: SkillType.FormalBeast, share: 'f', title: UiText.SkillFormalBeast,
      status: ReleaseStatus.Production, group: UiText.SkillGroupUnique},
     {key: SkillType.Gaston, share: 'G', title: UiText.SkillGaston,
-     status: ReleaseStatus.Alpha, group: UiText.SkillGroupUnique},
+     status: ReleaseStatus.Production, group: UiText.SkillGroupUnique},
     // The one entry with `enables`: her second skill only exists once the card
     // has been tapped, and tapping it is that switch's job, not hers.
     {key: SkillType.LorcanaAurora, share: 'a', title: UiText.SkillLorcanaAurora,

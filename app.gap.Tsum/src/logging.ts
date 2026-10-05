@@ -80,7 +80,7 @@ type LogEvent = `${Log.Run | Log.Task | Log.App | Log.Screen | Log.Page | Log.Na
   | Log.Forecast
   | Log.Board | Log.Bubble | Log.Play | Log.Tsums | Log.Skill | Log.Fever
   | Log.Lorcana
-  | Log.Hearts | Log.Gifts | Log.Unlock | Log.Box | Log.Stats | Log.Dialog
+  | Log.Hearts | Log.Gifts | Log.Unlock | Log.Box | Log.TsumList | Log.Stats | Log.Dialog
   | Log.Stall | Log.Corpus | Log.Report | Log.Walk | Log.Assist | Log.Log
   | Log.Settings | Log.QuickBar}`;
 
@@ -229,6 +229,15 @@ function logEndRun(): void {
 function logBeginRound(): number {
   gLogRoundId++;
   return gLogRoundId;
+}
+
+/**
+ * The current round, unique across runs. Round ids restart at 1 every run and
+ * the script's globals outlive a run, so per-round state keyed on
+ * `gLogRoundId` alone carries into the next run's round 1.
+ */
+function logRoundKey(): string {
+  return gLogRunId + '/' + gLogRoundId;
 }
 
 /** `play.gameStart` -> `play`. An event with no dot is its own component. */

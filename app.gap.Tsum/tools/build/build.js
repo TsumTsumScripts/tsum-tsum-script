@@ -35,7 +35,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { spawn } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
 
 const { projectDir, loadConfig, resolveChannel, archiveName } = require('../release/config');
 const { runSteps, defaultJobs } = require('./schedule');
@@ -52,7 +52,7 @@ const local = (...parts) => path.join(projectDir, ...parts);
 const nodeBin = process.execPath;
 const tsc = local('node_modules', 'typescript', 'bin', 'tsc');
 
-const DEPLOY_DIR = '/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/';
+const DEPLOY_DIR = '/sdcard/Download/GameAutomationPlatform/scripts/DEV';
 
 // The page scripts, minified in one process. All ES5, to match what
 // tsconfig.settings.json and tsconfig.quickbar.json emit. `verify` is only
@@ -65,11 +65,13 @@ const PAGE_SCRIPTS = [
   { file: 'build/i18n.js', verify: 'names:i18nRegister,i18nText' },
   { file: 'build/uiEn.js' },
   { file: 'build/uiZhTw.js' },
+  { file: 'build/uiJa.js' },
   { file: 'build/releaseStatus.js', verify: 'names:offeredHere,statusFlag' },
   { file: 'build/skillOptions.js' },
   // No `verify`, as skillOptions: `names:` looks for function declarations and
   // both of these files are one `var` holding an array.
   { file: 'build/bubbleOptions.js' },
+  { file: 'build/stopAfterOptions.js' },
   { file: 'build/runPlan.js' },
   { file: 'build/qrCode.js', verify: 'names:qrMatrix' },
   { file: 'build/presets.js', verify: 'names:presetsLoad,presetMatchName' },
@@ -227,7 +229,7 @@ const steps = [
 
   { id: 'tsc:settings', run: ({ log }) => node(log, tsc, '-p', 'tsconfig.settings.json') },
   // Behind the settings compile for want of a lock, not a core: both configs
-  // emit build/i18n.js, uiEn.js, uiZhTw.js and skillOptions.js from the same
+  // emit build/i18n.js, the ui*.js catalogues and skillOptions.js from the same
   // sources. The output is identical either way, but two tsc processes writing
   // those paths at once can leave one of them half-written. Giving this config
   // its own outDir would buy back ~0.5s and cost a copy step plus a fix to
@@ -253,12 +255,17 @@ const steps = [
     run: ({ log }) => inlinePage(log, 'build/quickbar.html', 'dist/quickbar.html'),
   },
   { id: 'dist:bundle', needs: ['tsc:game'], run: ({ log }) => distBundle(log) },
-  // The tsum portrait library: not compiled, but shipped, so it goes into dist/
-  // under the same rule as the scripts. It is read off getScriptPath() on the
-  // first round that needs a name rather than out of the bundle.
+  // The tsum portrait libraries: not compiled, but shipped, so they go into
+  // dist/ under the same rule as the scripts. Each is read off getScriptPath()
+  // on first use rather than out of the bundle. tsumNames.dat and
+  // tsumsCollection.dat are the Tsum List export's, for the collection screen.
   {
     id: 'dist:library',
-    run: ({ log }) => node(log, 'tools/minify/library.js', 'src/tsums.dat', 'dist/tsums.dat'),
+    run: async ({ log }) => {
+      await node(log, 'tools/minify/library.js', 'src/tsums.dat', 'dist/tsums.dat');
+      await node(log, 'tools/minify/library.js', 'src/tsumsCollection.dat', 'dist/tsumsCollection.dat');
+      await node(log, 'tools/minify/library.js', 'src/tsumNames.dat', 'dist/tsumNames.dat');
+    },
   },
   // The license and the notices ride in the archive: dist/index.html inlines
   // Pico CSS, whose MIT notice has to travel with it.
@@ -299,15 +306,45 @@ async function main() {
   console.log(`[build] done in ${elapsed}s`);
 
   if (has('adb')) {
-    const device = valueOf('device');
-    const target = device ? ['-s', device] : [];
-    console.log(`[build] pushing to ${device || 'the connected device'}...`);
-    await sh((text) => process.stdout.write(text), 'adb', [
-      ...target, 'push',
-      'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
-      DEPLOY_DIR,
-    ]);
+    const devices = valueOf('device') ? [valueOf('device')] : connectedEmulators();
+    const failed = [];
+    for (const device of devices) {
+      console.log(`[build] pushing to ${device}...`);
+      try {
+        // A multi-file push fails if the target folder is missing.
+        await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'shell', 'mkdir', '-p', `'${DEPLOY_DIR}'`]);
+        await sh((text) => process.stdout.write(text), 'adb', [
+          '-s', device, 'push',
+          'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
+          'dist/tsumsCollection.dat', 'dist/tsumNames.dat', DEPLOY_DIR,
+        ]);
+      } catch (err) {
+        // Keep going so one bad emulator doesn't block the rest.
+        console.error(`[build] push to ${device} failed: ${err && err.message ? err.message : err}`);
+        failed.push(device);
+      }
+    }
+    if (failed.length) throw new Error(`push failed on ${failed.join(', ')}`);
   }
+}
+
+// Every emulator in `adb devices`: `emulator-NNNN`, or a local TCP serial such
+// as BlueStacks' `127.0.0.1:5555`. Physical devices and offline entries are skipped.
+function connectedEmulators() {
+  const out = execFileSync('adb', ['devices'], { encoding: 'utf8' });
+  const serials = [];
+  for (const line of out.split('\n').slice(1)) {
+    const [serial, state] = line.trim().split(/\s+/);
+    if (state !== 'device') continue;
+    if (/^emulator-\d+$/.test(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) serials.push(serial);
+  }
+  // An emulator reached over `adb connect` also shows as 127.0.0.1:<console port + 1>; push once.
+  const unique = serials.filter((serial) => {
+    const port = /:(\d+)$/.exec(serial);
+    return !port || !serials.includes(`emulator-${Number(port[1]) - 1}`);
+  });
+  if (!unique.length) throw new Error('no emulator listed in `adb devices`; pass --device SERIAL');
+  return unique;
 }
 
 main().catch((err) => {

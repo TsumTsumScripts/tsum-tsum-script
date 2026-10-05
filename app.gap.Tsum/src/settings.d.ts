@@ -95,6 +95,14 @@ declare const enum PageMessage {
    * the strip re-reads the list it draws its names from.
    */
   Presets = 'presets',
+  /**
+   * The strip asking the settings page to copy the share code: that page owns
+   * the format. Built from the store, which the strip flushes first.
+   */
+  CopyShareCode = 'copyShareCode',
+  /** The settings page's answer to `CopyShareCode`. */
+  ShareCodeCopied = 'shareCodeCopied',
+  ShareCodeNotCopied = 'shareCodeNotCopied',
 }
 
 /**
@@ -143,6 +151,8 @@ declare const enum RowKey {
   RunOrder = 'runOrder',
   /** The Copy/Paste buttons; the share panel is inserted under this row. */
   ShareSettings = 'shareSettings',
+  /** The switch that adds a settings list to a copied code; stored by the page, not a setting. */
+  ShareListing = 'shareListing',
   /** The preset export buttons; their status line is inserted under this row. */
   ExportPresets = 'exportPresets',
   /** The build stamp on the Debug tab. */
@@ -151,6 +161,8 @@ declare const enum RowKey {
   ReportIssue = 'reportIssue',
   /** The Detect button; the engine's answer is written under this row. */
   DetectMyTsum = 'detectMyTsum',
+  /** The Tsum List export's Now button. */
+  ExportTsumList = 'exportTsumList',
 }
 
 /** One row of the settings schema (a `rows` entry of a `GroupSpec`). */
@@ -159,10 +171,10 @@ interface SettingSpec {
    * What the row names. A settings row carries a `SettingKey` -- the contract
    * with `start()`, so nothing else can be typed here -- a value-less row a
    * `RowKey`, and a `dropdown` entry reuses the field for the option's own
-   * value, which is why the skill, bubble, box and round-cap vocabularies are
-   * in the union too.
+   * value, which is why the skill, bubble, box, round-cap and board-model
+   * vocabularies are in the union too.
    */
-  key?: SettingKey | RowKey | SkillType | BubbleStrategy | BoxType | BoxPurchaseSize | MaxRoundAction;
+  key?: SettingKey | RowKey | SkillType | BubbleStrategy | BoxType | BoxPurchaseSize | MaxRoundAction | StopAfterAction;
   /** A `UiText` key, resolved at render time -- see `src/strings.d.ts`. */
   title?: UiText;
   /**
@@ -177,7 +189,7 @@ interface SettingSpec {
   /**
    * Kept out of share codes and presets, but shown like any other row. Every
    * toggle on the Debug tab carries it -- it replaced `dev_mode`, which also hid
-   * the row -- and so do the five Gameplay rows that shape the *run* rather
+   * the row -- and so do the five General rows that shape the *run* rather
    * than the round (`SHARE_TABS`, src/settings.ts). On a shared tab it is a
    * declaration, not just an effect: it is what stops `checkShareSlots`
    * reporting the missing slot.
@@ -260,6 +272,13 @@ interface SettingSpec {
   min?: number;
   max?: number;
   step?: number;
+  /**
+   * On a number row: the field shows the stored value divided by this, so a
+   * value stored in tenths reads as 1.5 with `scale: 10`. `min`, `max` and
+   * `step` stay in stored units, which are what a share code carries. A scaled
+   * row shows one decimal and its fine buttons step by 0.1.
+   */
+  scale?: number;
   incrementBy1?: boolean;
 }
 

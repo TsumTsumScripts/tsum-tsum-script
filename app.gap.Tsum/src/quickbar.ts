@@ -110,6 +110,8 @@ function quickBarState(): string {
     state[SettingKey.MaxChainsPerScan] = ts.maxChainsPerScan;
     state[SettingKey.MaxChain] = Config.maxChain;
     state[SettingKey.SkillWaitingTime] = Math.round(ts.skillInterval / 1000);
+    state[SettingKey.SkillSettleMs] = ts.skillSettleMs;
+    state[SettingKey.SkillReactivationTenths] = Math.round(ts.skillReactivationMs / 100);
     state[SettingKey.SkillAutoTap] = ts.skillAutoTap;
     state[SettingKey.NoSkillLastFeverSec] = ts.noSkillLastFeverSec;
     state[SettingKey.PrioritizeMyTsum] = ts.prioritizeMyTsum;
@@ -128,6 +130,8 @@ function quickBarState(): string {
     state[SettingKey.BuyBoxMaxPurchases] = ts.buyBoxMaxPurchases > 0
       ? ts.buyBoxMaxPurchases : BuyBoxDefaultMax;
     state[SettingKey.AutoUnlockMyTsumLevel] = ts.autoUnlockMyTsumLevel;
+    state[SettingKey.SendHeartsAuto] = ts.sendHearts;
+    state[SettingKey.ReceiveHeartsOneByOne] = ts.receiveOneByOne;
     // Reported without being drawn, for the reason above: the strip's own Rest
     // stepper made way for the preset chip, and the settings panel's row is now
     // the only one that moves it -- which means the panel reads this back.
@@ -136,6 +140,8 @@ function quickBarState(): string {
     // settings panel is the only thing that moves them, and it reads this back.
     state[SettingKey.MaxRoundMinutes] = Math.round(ts.maxRoundMs / 60000);
     state[SettingKey.MaxRoundAction] = ts.maxRoundAction;
+    state[SettingKey.StopAfterGames] = ts.stopAfterGames;
+    state[SettingKey.StopAfterAction] = ts.stopAfterAction;
     // A span rather than the instant it ends at, so a page counting it down
     // needs the two clocks to agree about nothing. 0 is "nothing is resting".
     // Nothing draws it since the countdown left the strip; it is kept because
@@ -165,6 +171,12 @@ function quickBarState(): string {
       ? Math.round(coins.baseTotal / coins.baseRounds) : -1;
     state.finalCoinAvg = coins.finalRounds > 0
       ? Math.round(coins.finalTotal / coins.finalRounds) : -1;
+
+    // The time readout, in seconds; the page formats them. -1 is "no round yet".
+    const clock = ts.runClock;
+    state.avgRoundSec = clock.rounds > 0 ? Math.round(clock.roundSec / clock.rounds) : -1;
+    state.playedSec = clock.roundSec;
+    state.runSec = Math.round((Date.now() - clock.startedAt) / 1000);
   }
   return JSON.stringify(state);
 }
@@ -291,6 +303,17 @@ function quickBarApplyOne(tsum: Tsum, key: SettingKey,
     case SettingKey.BubbleStrategy:
       tsum.bubbleStrategy = value as BubbleStrategy;
       break;
+    // Chores rather than play: each switch adds or removes its job.
+    case SettingKey.SendHeartsAuto:
+      applied = !!value;
+      tsum.sendHearts = applied;
+      quickBarSyncJob(tsum, TaskName.SendHearts, key, applied);
+      break;
+    case SettingKey.ReceiveHeartsOneByOne:
+      applied = !!value;
+      tsum.receiveOneByOne = applied;
+      quickBarSyncJob(tsum, TaskName.ReceiveOneItem, key, applied);
+      break;
     case SettingKey.HoldBubblesLastFeverSec:
       applied = quickBarClamp(value, 0, 10);
       tsum.holdBubblesLastFeverSec = applied as number;
@@ -298,6 +321,14 @@ function quickBarApplyOne(tsum: Tsum, key: SettingKey,
     case SettingKey.SkillWaitingTime:
       applied = quickBarClamp(value, 0, 15);
       tsum.skillInterval = (applied as number) * 1000;
+      break;
+    case SettingKey.SkillSettleMs:
+      applied = quickBarClamp(value, 0, 3000);
+      tsum.skillSettleMs = applied as number;
+      break;
+    case SettingKey.SkillReactivationTenths:
+      applied = quickBarClamp(value, 0, 300);
+      tsum.skillReactivationMs = (applied as number) * 100;
       break;
     case SettingKey.NoSkillLastFeverSec:
       applied = quickBarClamp(value, 0, 10);
@@ -352,6 +383,18 @@ function quickBarApplyOne(tsum: Tsum, key: SettingKey,
       applied = value === MaxRoundAction.Stop
         ? MaxRoundAction.Stop : MaxRoundAction.Coast;
       tsum.maxRoundAction = applied as MaxRoundAction;
+      break;
+    // A new target restarts the count, so "5" means five more from here.
+    case SettingKey.StopAfterGames:
+      applied = quickBarClamp(value, 0, 999);
+      if (applied !== tsum.stopAfterGames) {
+        tsum.gamesTowardStop = 0;
+      }
+      tsum.stopAfterGames = applied as number;
+      break;
+    case SettingKey.StopAfterAction:
+      applied = stopAfterActionOf(value);
+      tsum.stopAfterAction = applied as StopAfterAction;
       break;
     // Held back, and this pairing is why: `uniqueTsumCount` is how many colours
     // every board scan keeps, and the board in front of the loop was dealt under
@@ -455,6 +498,8 @@ const LiveSettings: { [key: string]: LiveWhen } = {
   //   bubbleStrategy               the bubble sweep, per scan
   //   holdBubblesLastFeverSec      bubblesHeldForFever, per pop
   //   skillWaitingTime             ts.skillInterval, per activation
+  //   skillSettleMs                useSkill, per activation
+  //   skillReactivationTenths      skillStillRunning, per activation
   //   skillAutoTap                 maybeAutoTapSkill, inside a link batch
   //   noSkillLastFeverSec          the skill decision, per activation
   //   skillLevel                   per activation. The level of the tsum you
@@ -470,6 +515,8 @@ const LiveSettings: { [key: string]: LiveWhen } = {
   [SettingKey.BubbleStrategy]: LiveWhen.Now,
   [SettingKey.HoldBubblesLastFeverSec]: LiveWhen.Now,
   [SettingKey.SkillWaitingTime]: LiveWhen.Now,
+  [SettingKey.SkillSettleMs]: LiveWhen.Now,
+  [SettingKey.SkillReactivationTenths]: LiveWhen.Now,
   [SettingKey.SkillAutoTap]: LiveWhen.Now,
   [SettingKey.NoSkillLastFeverSec]: LiveWhen.Now,
   [SettingKey.SkillLevel]: LiveWhen.Now,
@@ -487,6 +534,10 @@ const LiveSettings: { [key: string]: LiveWhen } = {
   // *run* spends on a round, not how one is played.
   [SettingKey.MaxRoundMinutes]: LiveWhen.Now,
   [SettingKey.MaxRoundAction]: LiveWhen.Now,
+  // Read at each round's tail (`countGameTowardStop`), so a change counts from
+  // the round in progress. Not preset rows: they shape the run, not a round.
+  [SettingKey.StopAfterGames]: LiveWhen.Now,
+  [SettingKey.StopAfterAction]: LiveWhen.Now,
   // Not preset rows either -- these belong to the account rather than to how a
   // round is played -- and live because the sweep re-reads them when it runs,
   // which is between rounds by definition.
@@ -496,6 +547,11 @@ const LiveSettings: { [key: string]: LiveWhen } = {
   // Read at the round's end -- by the level-up record handler and then the
   // play task's tail -- so a switch thrown mid-round counts for this round.
   [SettingKey.AutoUnlockMyTsumLevel]: LiveWhen.Now,
+  // Each chooses a job in the run's task set, and `quickBarSyncJob` adds or
+  // removes that job on the live scheduler. A job runs between rounds, so the
+  // round in front of the loop is untouched. Not preset rows.
+  [SettingKey.SendHeartsAuto]: LiveWhen.Now,
+  [SettingKey.ReceiveHeartsOneByOne]: LiveWhen.Now,
 
   // --- The round in front of the loop was set up under the old value -------
   //
@@ -669,6 +725,39 @@ function quickBarSetRoundDelay(tsum: Tsum, delayMs: number): void {
     tsum.nextRoundAt = Math.max(endsAt, Date.now());
   }
   tsum.roundDelayMs = delayMs;
+}
+
+/**
+ * Adds or removes one chore's job on the running scheduler.
+ *
+ * The spec comes from `runTaskTable` with the change applied, so the interval
+ * and priority are the ones a fresh start would register -- and a run the table
+ * gives no such job (the walkthrough recorder) gets none. A job already there
+ * is left alone rather than re-registered, which would make it due at once.
+ */
+function quickBarSyncJob(tsum: Tsum, name: TaskName, key: SettingKey, on: boolean): void {
+  const controller = gTaskController;
+  if (controller === undefined) {
+    return;
+  }
+  if (!on) {
+    controller.removeTask(name);
+    return;
+  }
+  if (controller.tasks[name] !== undefined) {
+    return;
+  }
+  const settings: RunSettings = {};
+  for (const k in tsum.settings) {
+    settings[k as SettingKey] = tsum.settings[k as SettingKey];
+  }
+  settings[key] = true;
+  const jobs = runTaskTable(settings);
+  for (let i = 0; i < jobs.length; i++) {
+    if (jobs[i].name === name) {
+      controller.register(jobs[i], taskBody(tsum, name));
+    }
+  }
 }
 
 function quickBarClamp(value: string | number | boolean, min: number, max: number): number {

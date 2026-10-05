@@ -141,6 +141,11 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   ts.holdBubblesLastFeverSec = typeof settings.holdBubblesLastFeverSec === 'number'
     ? settings.holdBubblesLastFeverSec : 0;
   ts.skillInterval = settings.skillWaitingTime * 1000;
+  // Same default, same reason: a stored form from before the row existed.
+  ts.skillSettleMs = typeof settings.skillSettleMs === 'number' && settings.skillSettleMs > 0
+    ? settings.skillSettleMs : 0;
+  ts.skillReactivationMs = typeof settings.skillReactivationTenths === 'number'
+    && settings.skillReactivationTenths > 0 ? settings.skillReactivationTenths * 100 : 0;
   ts.skillLevel = settings.skillLevel;
   ts.skillType = settings.skillType;
   ts.trackRoundStats = settings.trackRoundStats;
@@ -185,7 +190,11 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   // which is the one behaviour the cap exists to replace.
   ts.maxRoundAction = settings.maxRoundAction === MaxRoundAction.Stop
     ? MaxRoundAction.Stop : MaxRoundAction.Coast;
+  ts.stopAfterGames = typeof settings.stopAfterGames === 'number'
+    && settings.stopAfterGames > 0 ? Math.round(settings.stopAfterGames) : 0;
+  ts.stopAfterAction = stopAfterActionOf(settings.stopAfterAction);
   ts.sendHearts = settings.sendHeartsAuto;
+  ts.receiveOneByOne = settings.receiveHeartsOneByOne;
   ts.keepRuby = settings.receiveHeartsSkipRuby;
   ts.skipMedals = settings.receiveHeartsSkipMedals;
   ts.sendHeartMaxDuring = settings.sendHeartsMaxRuntime * 60 * 1000;
@@ -276,6 +285,7 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   // Set when a Now button started this run -- see `unlockLevelsNow`, `buyBoxesNow`.
   const unlockFirst = settings.unlockLevelsFirst === true;
   const buyBoxesFirst = settings.buyBoxesFirst === true;
+  const tsumListOnly = settings.tsumListOnly === true;
 
   // The walkthrough recorder is a mode, not a task alongside the others: it is
   // watching a person play, so nothing else may touch the screen. The table
@@ -289,6 +299,9 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
     }
     if (buyBoxesFirst) {
       logWarn(Log.Box.NowRefused, { reason: 'walkthrough' });
+    }
+    if (tsumListOnly) {
+      logWarn(Log.TsumList.NowRefused, { reason: 'walkthrough' });
     }
   }
   const jobs = runTaskTable(settings);
@@ -304,6 +317,9 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   if (buyBoxesFirst) {
     queueBuyBoxSweep(ts, gTaskController);
   }
+  if (tsumListOnly) {
+    queueTsumListExport(ts, gTaskController, true);
+  }
 }
 
 /**
@@ -312,7 +328,7 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
  * A switch rather than a lookup by string, so a name the table can produce and
  * this cannot bind is a build error.
  */
-function taskBody(run: Tsum, name: TaskName): () => void {
+function taskBody(run: Tsum, name: TaskName): TaskBody {
   switch (name) {
     case TaskName.Walkthrough: return run.taskWalkthrough.bind(run);
     case TaskName.ReceiveOneItem: return run.taskReceiveOneItem.bind(run);
@@ -320,8 +336,11 @@ function taskBody(run: Tsum, name: TaskName): () => void {
     case TaskName.SendHearts: return run.taskSendHearts.bind(run);
     case TaskName.AppRestart: return run.taskTsumAppRestart.bind(run);
     case TaskName.ClickAssist: return run.taskClickAssist.bind(run);
-    case TaskName.UnlockLevel: return run.taskAutoUnlockLevel.bind(run);
-    case TaskName.BuyBoxes: return run.taskBuyBoxes.bind(run);
+    // These two return "ran, or stood aside" for the Now queue. The controller
+    // reads `true` as "due again next pass", so the result stops here -- passing
+    // it through looped the sweep back to back instead of every N hours.
+    case TaskName.UnlockLevel: return () => { run.taskAutoUnlockLevel(); };
+    case TaskName.BuyBoxes: return () => { run.taskBuyBoxes(); };
     case TaskName.PlayRound: return run.taskPlayGameQuick.bind(run);
   }
 }
@@ -341,6 +360,7 @@ function endRun(): void {
   gWalkthroughRun = false;
   gUnlockNowQueued = false;
   gBuyBoxNowQueued = false;
+  gTsumListNowQueued = false;
   // Read before `ts` is cleared below; the event itself goes out with the rest
   // of the closing lines.
   const rounds = ts === undefined ? 0 : ts.runCoins.rounds;
@@ -682,6 +702,70 @@ function buyBoxesNow(settings?: Settings): string {
   }
   applyLiveSettings(settings);
   queueBuyBoxSweep(ts, gTaskController);
+  return 'queued';
+}
+
+/** Name of the one-shot task `exportTsumListNow` queues. */
+const TsumListNowTask = 'exportTsumListNow';
+
+/** Set while a Tsum List export asked for from the settings page waits for its turn. */
+let gTsumListNowQueued = false;
+
+/**
+ * Registers the Tsum List export on `controller`, the way `queueBuyBoxSweep`
+ * does. `stopAfter` is set for a run started only for the export, which ends
+ * once it is done.
+ */
+function queueTsumListExport(run: Tsum, controller: TsumTaskController, stopAfter: boolean): void {
+  gTsumListNowQueued = true;
+  run.yieldAsked = true;
+  let waited = false;
+  controller.newTask(TsumListNowTask, function() {
+    run.yieldAsked = false;
+    if (!run.taskExportTsumList()) {
+      run.yieldAsked = true;
+      if (!waited) {
+        waited = true;
+        logInfo(Log.TsumList.NowWaiting);
+      }
+      return;
+    }
+    gTsumListNowQueued = false;
+    controller.removeTask(TsumListNowTask);
+    if (stopAfter) {
+      requestStop();
+    }
+  }, UnlockNowRetryMs, 0, false, JobPriority.TsumListNow);
+  logInfo(Log.TsumList.NowQueued);
+  run.banner('Exporting the Tsum list next', 4000);
+}
+
+/**
+ * Exports the Tsum list once. A global the settings page reaches by name, like
+ * `buyBoxesNow`: queued on a live run, which carries on afterwards; with
+ * nothing running it starts a run for the export alone, which stops when the
+ * export is done.
+ *
+ * Returns what it decided, which the host writes to the log.
+ */
+// noinspection JSUnusedGlobalSymbols
+function exportTsumListNow(settings?: Settings): string {
+  if (!gRunActive || ts === undefined || gTaskController === undefined) {
+    if (settings === undefined) {
+      return 'no run';
+    }
+    settings.tsumListOnly = true;
+    start(settings);
+    return 'started';
+  }
+  if (gWalkthroughRun) {
+    logWarn(Log.TsumList.NowRefused, { reason: 'walkthrough' });
+    return 'walkthrough recording';
+  }
+  if (gTsumListNowQueued) {
+    return 'already queued';
+  }
+  queueTsumListExport(ts, gTaskController, false);
   return 'queued';
 }
 

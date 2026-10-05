@@ -49,6 +49,492 @@ var SETTINGS_KEY = StorageKey.Settings;
  */
 var tabs: TabSpec[] = [
     {
+        // First tab, with Round and Hearts beside it: the three things a
+        // player changes most, so each is one tap from opening the page.
+        id: 'skills',
+        title: UiText.TabSkills,
+        groups: [
+            {
+                title: UiText.GroupSkill,
+                rows: [
+                    {
+                        key: SettingKey.SkillType,
+                        title: UiText.SettingSkillType,
+                        help: UiText.SettingSkillTypeHelp,
+                        default: SkillType.Burst as SkillType,
+                        // One list, in src/skillOptions.ts, because the Quick
+                        // Bar offers the same skills from its own compilation.
+                        dropdown: SkillOptions
+                    },
+                    {
+                        key: SettingKey.SkillLevel,
+                        title: UiText.SettingSkillLevel,
+                        help: UiText.SettingSkillLevelHelp,
+                        default: 6,
+                        step: 1,
+                        max: 6,
+                        min: 1
+                    },
+                    {
+                        // Not part of the skill above it: every Lorcana tsum
+                        // transforms the same way whatever its own skill is, so
+                        // this is its own switch rather than something a
+                        // SkillType implies.
+                        key: SettingKey.LorcanaCard,
+                        title: UiText.SettingLorcanaCard,
+                        help: UiText.SettingLorcanaCardHelp,
+                        default: false
+                    }
+                ]
+            },
+            {
+                // In the order they act: before firing, then after it.
+                title: UiText.GroupTiming,
+                rows: [
+                    {
+                        key: SettingKey.SkillAutoTap,
+                        title: UiText.SettingSkillAutoTap,
+                        help: UiText.SettingSkillAutoTapHelp,
+                        default: true
+                    },
+                    {
+                        // Stored in ms (a share code carries whole numbers
+                        // only), shown as seconds (`scale`).
+                        key: SettingKey.SkillSettleMs,
+                        title: UiText.SettingSkillSettle,
+                        help: UiText.SettingSkillSettleHelp,
+                        default: 0,
+                        step: 200,
+                        max: 3000,
+                        min: 0,
+                        scale: 1000
+                    },
+                    {
+                        key: SettingKey.NoSkillLastFeverSec,
+                        title: UiText.SettingNoSkillLastFever,
+                        help: UiText.SettingNoSkillLastFeverHelp,
+                        default: 0,
+                        step: 1,
+                        max: 10,
+                        min: 0
+                    },
+                    {
+                        key: SettingKey.SkillWaitingTime,
+                        title: UiText.SettingSkillWaitingTime,
+                        help: UiText.SettingSkillWaitingTimeHelp,
+                        default: 0,
+                        step: 1,
+                        max: 15,
+                        min: 0
+                    },
+                    {
+                        // Stored in tenths, shown as seconds (`scale`).
+                        key: SettingKey.SkillReactivationTenths,
+                        title: UiText.SettingSkillReactivation,
+                        help: UiText.SettingSkillReactivationHelp,
+                        default: 0,
+                        step: 5,
+                        max: 300,
+                        min: 0,
+                        scale: 10,
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        // The round's own knobs: chain shape first (changed most), then the
+        // bonus items bought before it.
+        id: 'round',
+        title: UiText.TabRound,
+        groups: [
+            {
+                title: UiText.GroupChains,
+                rows: [
+                    {
+                        key: SettingKey.MaxChainsPerScan,
+                        title: UiText.SettingMaxChainsPerScan,
+                        help: UiText.SettingMaxChainsPerScanHelp,
+                        default: 6,
+                        step: 1,
+                        max: 12,
+                        min: 1
+                    },
+                    {
+                        key: SettingKey.MaxChain,
+                        title: UiText.SettingMaxChain,
+                        help: UiText.SettingMaxChainHelp,
+                        default: 4,
+                        step: 1,
+                        max: 15,
+                        min: 3
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupItems,
+                help: UiText.GroupItemsHelp,
+                rows: [
+                    {
+                        key: SettingKey.BonusScore,
+                        title: UiText.SettingBonusScore,
+                        help: UiText.SettingBonusScoreHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.BonusCoin,
+                        title: UiText.SettingBonusCoin,
+                        help: UiText.SettingBonusCoinHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.BonusExp,
+                        title: UiText.SettingBonusExp,
+                        help: UiText.SettingBonusExpHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.BonusTime,
+                        title: UiText.SettingBonusTime,
+                        help: UiText.SettingBonusTimeHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.BonusBubble,
+                        title: UiText.SettingBonusBubble,
+                        help: UiText.SettingBonusBubbleHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.Bonus5to4,
+                        title: UiText.SettingBonus5to4,
+                        help: UiText.SettingBonus5to4Help,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.BonusCombo,
+                        title: UiText.SettingBonusCombo,
+                        help: UiText.SettingBonusComboHelp,
+                        default: false
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'hearts',
+        title: UiText.TabHearts,
+        groups: [
+            {
+                title: UiText.GroupReceiveAll,
+                rows: [
+                    {
+                        key: SettingKey.ReceiveAllHearts,
+                        title: UiText.SettingReceiveAllHearts,
+                        help: UiText.SettingReceiveAllHeartsHelp,
+                        default: false
+                    },
+                    {
+                        // The three "waiting time" rows share a title, so each
+                        // one's help says which job it paces.
+                        key: SettingKey.ReceiveAllHeartsMinWait,
+                        title: UiText.SettingRepeatWait,
+                        help: UiText.SettingReceiveAllWaitHelp,
+                        default: 25,
+                        step: 5,
+                        max: 60,
+                        min: 5
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupSendHearts,
+                rows: [
+                    {
+                        key: SettingKey.SendHeartsAuto,
+                        title: UiText.SettingSendHeartsAuto,
+                        help: UiText.SettingSendHeartsAutoHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.SendHeartsToZeroScore,
+                        title: UiText.SettingSendToZeroScore,
+                        help: UiText.SettingSendToZeroScoreHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.SendHeartsMaxRuntime,
+                        title: UiText.SettingSendMaxRuntime,
+                        help: UiText.SettingSendMaxRuntimeHelp,
+                        default: 0,
+                        step: 5,
+                        max: 80,
+                        min: 0
+                    },
+                    {
+                        key: SettingKey.SendHeartsMinWait,
+                        title: UiText.SettingRepeatWait,
+                        help: UiText.SettingSendWaitHelp,
+                        default: 26,
+                        step: 5,
+                        max: 60,
+                        min: 1
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupMailbox,
+                rows: [
+                    {
+                        key: SettingKey.ReceiveHeartsOneByOne,
+                        title: UiText.SettingReceiveOneByOne,
+                        help: UiText.SettingReceiveOneByOneHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.ReceiveHeartsSkipFirst,
+                        title: UiText.SettingSkipFirstPerson,
+                        help: UiText.SettingSkipFirstPersonHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.ReceiveHeartsSkipRuby,
+                        title: UiText.SettingSkipRuby,
+                        help: UiText.SettingSkipRubyHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.ReceiveHeartsSkipMedals,
+                        title: UiText.SettingSkipMedals,
+                        help: UiText.SettingSkipMedalsHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.ClaimAllWithoutCoins,
+                        title: UiText.SettingClaimAllOldMails,
+                        help: UiText.SettingClaimAllOldMailsHelp,
+                        default: false
+                    },
+                    {
+                        key: SettingKey.MailOpenMax,
+                        title: UiText.SettingMailOpenMax,
+                        help: UiText.SettingMailOpenMaxHelp,
+                        default: 5,
+                        step: 1,
+                        max: 20,
+                        min: 1
+                    },
+                    {
+                        key: SettingKey.MailMinWait,
+                        title: UiText.SettingRepeatWait,
+                        help: UiText.SettingMailWaitHelp,
+                        default: 5,
+                        step: 2,
+                        max: 60,
+                        min: 1
+                    },
+                ]
+            }
+        ]
+    },
+    {
+        id: 'gameplay',
+        title: UiText.TabGameplay,
+        groups: [
+            {
+                title: UiText.GroupLinking,
+                rows: [
+                    {
+                        // Percent rather than a multiplier because a share code
+                        // carries a number as `Math.round(n).toString(36)` -- 2.2
+                        // would travel as 2.
+                        key: SettingKey.LinkReachPercent,
+                        title: UiText.SettingLinkReach,
+                        help: UiText.SettingLinkReachHelp,
+                        default: 190,
+                        step: 10,
+                        max: 350,
+                        min: 150
+                    },
+                    {
+                        key: SettingKey.PrioritizeMyTsum,
+                        title: UiText.SettingPrioritizeMyTsum,
+                        help: UiText.SettingPrioritizeMyTsumHelp,
+                        default: true
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupBoardHelpers,
+                rows: [
+                    {
+                        key: SettingKey.BubbleStrategy,
+                        title: UiText.SettingBubbleStrategy,
+                        help: UiText.SettingBubbleStrategyHelp,
+                        default: BubbleStrategy.OneMidChain as BubbleStrategy,
+                        // `src/bubbleOptions.ts`, as the skill row reads
+                        // `SkillOptions`: the Quick Bar offers this list too, and
+                        // it is a separate compilation, so the entries are shared
+                        // rather than written here and copied there. The typing
+                        // that used to be a `satisfies` on this literal is the
+                        // `BubbleOption` interface now -- a key that is not a
+                        // BubbleStrategy would otherwise compile, fall through
+                        // every comparison in the play loop and play as the
+                        // stingiest option without reporting it.
+                        //
+                        // Skills that clear bubbles themselves are unaffected by
+                        // any of these -- they declare `sweepsBubbles` and call
+                        // `clearAllBubbles` outright.
+                        dropdown: BubbleOptions
+                    },
+                    {
+                        // A hold over the strategy above rather than an entry in
+                        // it, so it combines with all three. The same shape as
+                        // "No skill last fever seconds" on the Skills tab.
+                        key: SettingKey.HoldBubblesLastFeverSec,
+                        title: UiText.SettingHoldBubblesLastFever,
+                        help: UiText.SettingHoldBubblesLastFeverHelp,
+                        default: 0,
+                        step: 1,
+                        max: 10,
+                        min: 0,
+                    },
+                    {
+                        key: SettingKey.UseFan,
+                        title: UiText.SettingUseFan,
+                        help: UiText.SettingUseFanHelp,
+                        default: false
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        // The jobs a run does between rounds, one group each. They were a single
+        // Chores card at the bottom of the Gameplay tab until Box Buying arrived
+        // with four rows of its own; a tab is what stops the next chore from
+        // pushing the board settings off the screen.
+        //
+        // Each chore's first row is its schedule in hours, 0 for off, with a Now
+        // button beside it -- so the tab reads as a list of jobs and how often
+        // each runs. Hearts are chores too and have had their own tab since
+        // before this one; they stay there.
+        id: 'chores',
+        title: UiText.TabChores,
+        groups: [
+            {
+                title: UiText.GroupLevelCaps,
+                rows: [
+                    {
+                        // Now runs one sweep straight away, whatever the schedule
+                        // says: queued on a running script, or the script started
+                        // for it. It acts on the run rather than the form, as the
+                        // round delay's Now does -- see `askUnlockLevelsNow`.
+                        key: SettingKey.UnlockLevelHoursWait,
+                        title: UiText.SettingUnlockLevel,
+                        help: UiText.SettingUnlockLevelHelp,
+                        default: 0,
+                        min: 0,
+                        max: 24,
+                        step: 1,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askUnlockLevelsNow(); }}
+                        ]
+                    },
+                    {
+                        // One raise for the selected tsum, after the round whose
+                        // level-up screen showed it capped -- not a sweep, and
+                        // independent of the schedule above. Beta until a device
+                        // run has read `unlock.myTsum.*`.
+                        key: SettingKey.AutoUnlockMyTsumLevel,
+                        title: UiText.SettingUnlockMyTsumLevel,
+                        help: UiText.SettingUnlockMyTsumLevelHelp,
+                        default: false,
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupBoxes,
+                help: UiText.GroupBoxesHelp,
+                rows: [
+                    {
+                        // Now works the same way the level-cap sweep's does --
+                        // see `askBuyBoxesNow`.
+                        key: SettingKey.BuyBoxHoursWait,
+                        title: UiText.SettingBuyBox,
+                        help: UiText.SettingBuyBoxHelp,
+                        default: 0,
+                        min: 0,
+                        max: 24,
+                        step: 1,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askBuyBoxesNow(); }}
+                        ]
+                    },
+                    {
+                        key: SettingKey.BuyBoxType,
+                        title: UiText.SettingBuyBoxType,
+                        help: UiText.SettingBuyBoxTypeHelp,
+                        default: BoxType.Premium as BoxType,
+                        // `satisfies` for the same reason the skill and bubble
+                        // dropdowns have it: a key that is not a BoxType would
+                        // compile, match no tab in `BoxStore.order3`/`order4`,
+                        // and buy nothing while reporting the store had no such
+                        // box.
+                        dropdown: ([
+                            {key: BoxType.PremiumPlus, share: 'P', title: UiText.BoxPremiumPlus},
+                            {key: BoxType.Premium, share: 'p', title: UiText.BoxPremium},
+                            {key: BoxType.Select, share: 's', title: UiText.BoxSelect},
+                            {key: BoxType.Capsule, share: 'c', title: UiText.BoxCapsule},
+                            {key: BoxType.Happiness, share: 'h', title: UiText.BoxHappiness}
+                        ] satisfies { key: BoxType; share: string; title: UiText }[])
+                    },
+                    {
+                        key: SettingKey.BuyBoxSize,
+                        title: UiText.SettingBuyBoxSize,
+                        help: UiText.SettingBuyBoxSizeHelp,
+                        default: BoxPurchaseSize.One as BoxPurchaseSize,
+                        // No `share` ids: a Chores row, so no code or preset
+                        // carries it. `satisfies` for the reason the box
+                        // dropdown above has it -- a key that is not a
+                        // BoxPurchaseSize would compile and buy singly without
+                        // saying why.
+                        dropdown: ([
+                            {key: BoxPurchaseSize.One, title: UiText.BoxSizeOne},
+                            {key: BoxPurchaseSize.Ten, title: UiText.BoxSizeTen},
+                            {key: BoxPurchaseSize.TenThenOne, title: UiText.BoxSizeTenThenOne}
+                        ] satisfies { key: BoxPurchaseSize; title: UiText }[])
+                    },
+                    {
+                        key: SettingKey.BuyBoxMaxPurchases,
+                        title: UiText.SettingBuyBoxMax,
+                        help: UiText.SettingBuyBoxMaxHelp,
+                        default: 10,
+                        min: 1,
+                        max: 50,
+                        step: 1
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupTsumList,
+                help: UiText.GroupTsumListHelp,
+                rows: [
+                    {
+                        // A one-off with no schedule -- see `askExportTsumListNow`.
+                        key: RowKey.ExportTsumList,
+                        title: UiText.SettingExportTsumList,
+                        help: UiText.SettingExportTsumListHelp,
+                        status: ReleaseStatus.Alpha,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askExportTsumListNow(); }}
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
         id: 'general',
         title: UiText.TabGeneral,
         groups: [
@@ -82,63 +568,20 @@ var tabs: TabSpec[] = [
                     //     step: 10,
                     //     max: 240,
                     //     min: 20
-                    // },
+                    // }
+                ]
+            },
+            // The run rather than the round: none of these travel in a
+            // share code or preset.
+            {
+                title: UiText.GroupRun,
+                rows: [
                     {
                         key: SettingKey.AutoLaunchApp,
                         title: UiText.SettingAutoLaunchApp,
                         help: UiText.SettingAutoLaunchAppHelp,
                         default: false
-                    }
-                ]
-            },
-            {
-                title: UiText.GroupRunOrder,
-                help: UiText.GroupRunOrderHelp,
-                rows: [
-                    {
-                        key: RowKey.RunOrder,
-                        // No `default`, so it holds no value: nothing to save,
-                        // nothing to share, no share slot to keep.
-                        build: buildRunOrder
-                    }
-                ]
-            },
-            {
-                title: UiText.GroupSettingsCode,
-                help: UiText.GroupSettingsCodeHelp,
-                rows: [
-                    {
-                        key: RowKey.ShareSettings,
-                        title: UiText.SettingShareSettings,
-                        buttons: [
-                            {text: i18nThunk(UiText.ButtonCopy), onClick: function () { copySettingsCode(); }},
-                            {text: i18nThunk(UiText.ButtonPaste), onClick: function () { pasteSettingsCode(); }}
-                        ]
                     },
-                    {
-                        // Beside the share code because it is the same errand --
-                        // getting a configuration off this device -- and unlike
-                        // a code it carries every row, so the two are not
-                        // alternatives. See `presetsExportText`, src/presets.ts.
-                        key: RowKey.ExportPresets,
-                        title: UiText.SettingExportPresets,
-                        help: UiText.SettingExportPresetsHelp,
-                        buttons: [
-                            {text: i18nThunk(UiText.ButtonCopy), onClick: function () { copyPresetsExport(); }},
-                            {text: i18nThunk(UiText.ButtonSaveFile), onClick: function () { savePresetsFile(); }}
-                        ]
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'gameplay',
-        title: UiText.TabGameplay,
-        groups: [
-            {
-                title: UiText.GroupPlaying,
-                rows: [
                     {
                         key: SettingKey.AutoPlayGame,
                         title: UiText.SettingAutoPlayGame,
@@ -210,40 +653,26 @@ var tabs: TabSpec[] = [
                         neverShared: true
                     },
                     {
-                        key: SettingKey.MaxChainsPerScan,
-                        title: UiText.SettingMaxChainsPerScan,
-                        help: UiText.SettingMaxChainsPerScanHelp,
-                        default: 6,
+                        // Counted at each round's tail -- see the Stop after
+                        // games block in `src/play.ts`. How long the run goes,
+                        // not how a round is played, so never shared.
+                        key: SettingKey.StopAfterGames,
+                        title: UiText.SettingStopAfterGames,
+                        help: UiText.SettingStopAfterGamesHelp,
+                        default: 0,
                         step: 1,
-                        max: 12,
-                        min: 1
+                        max: 999,
+                        min: 0,
+                        neverShared: true
                     },
                     {
-                        key: SettingKey.MaxChain,
-                        title: UiText.SettingMaxChain,
-                        help: UiText.SettingMaxChainHelp,
-                        default: 4,
-                        step: 1,
-                        max: 15,
-                        min: 3
-                    },
-                    {
-                        // Percent rather than a multiplier because a share code
-                        // carries a number as `Math.round(n).toString(36)` -- 2.2
-                        // would travel as 2.
-                        key: SettingKey.LinkReachPercent,
-                        title: UiText.SettingLinkReach,
-                        help: UiText.SettingLinkReachHelp,
-                        default: 190,
-                        step: 10,
-                        max: 350,
-                        min: 150
-                    },
-                    {
-                        key: SettingKey.PrioritizeMyTsum,
-                        title: UiText.SettingPrioritizeMyTsum,
-                        help: UiText.SettingPrioritizeMyTsumHelp,
-                        default: false
+                        key: SettingKey.StopAfterAction,
+                        title: UiText.SettingStopAfterAction,
+                        help: UiText.SettingStopAfterActionHelp,
+                        default: StopAfterAction.AutoPlayOff as StopAfterAction,
+                        // `src/stopAfterOptions.ts`, shared with the Quick Bar.
+                        dropdown: StopAfterOptions,
+                        neverShared: true
                     },
                     {
                         key: SettingKey.TrackRoundStats,
@@ -257,397 +686,6 @@ var tabs: TabSpec[] = [
                 ]
             },
             {
-                title: UiText.GroupBoardHelpers,
-                rows: [
-                    {
-                        key: SettingKey.BubbleStrategy,
-                        title: UiText.SettingBubbleStrategy,
-                        help: UiText.SettingBubbleStrategyHelp,
-                        default: BubbleStrategy.OneMidChain as BubbleStrategy,
-                        // `src/bubbleOptions.ts`, as the skill row reads
-                        // `SkillOptions`: the Quick Bar offers this list too, and
-                        // it is a separate compilation, so the entries are shared
-                        // rather than written here and copied there. The typing
-                        // that used to be a `satisfies` on this literal is the
-                        // `BubbleOption` interface now -- a key that is not a
-                        // BubbleStrategy would otherwise compile, fall through
-                        // every comparison in the play loop and play as the
-                        // stingiest option without reporting it.
-                        //
-                        // Skills that clear bubbles themselves are unaffected by
-                        // any of these -- they declare `sweepsBubbles` and call
-                        // `clearAllBubbles` outright.
-                        dropdown: BubbleOptions
-                    },
-                    {
-                        // A hold over the strategy above rather than an entry in
-                        // it, so it combines with all three. The same shape as
-                        // "No skill last fever seconds" on the Skills tab.
-                        key: SettingKey.HoldBubblesLastFeverSec,
-                        title: UiText.SettingHoldBubblesLastFever,
-                        help: UiText.SettingHoldBubblesLastFeverHelp,
-                        default: 0,
-                        step: 1,
-                        max: 10,
-                        min: 0,
-                        status: ReleaseStatus.Beta
-                    },
-                    {
-                        key: SettingKey.UseFan,
-                        title: UiText.SettingUseFan,
-                        help: UiText.SettingUseFanHelp,
-                        default: false
-                    }
-                ]
-            },
-            {
-                title: UiText.GroupItems,
-                help: UiText.GroupItemsHelp,
-                rows: [
-                    {
-                        key: SettingKey.BonusScore,
-                        title: UiText.SettingBonusScore,
-                        help: UiText.SettingBonusScoreHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.BonusCoin,
-                        title: UiText.SettingBonusCoin,
-                        help: UiText.SettingBonusCoinHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.BonusExp,
-                        title: UiText.SettingBonusExp,
-                        help: UiText.SettingBonusExpHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.BonusTime,
-                        title: UiText.SettingBonusTime,
-                        help: UiText.SettingBonusTimeHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.BonusBubble,
-                        title: UiText.SettingBonusBubble,
-                        help: UiText.SettingBonusBubbleHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.Bonus5to4,
-                        title: UiText.SettingBonus5to4,
-                        help: UiText.SettingBonus5to4Help,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.BonusCombo,
-                        title: UiText.SettingBonusCombo,
-                        help: UiText.SettingBonusComboHelp,
-                        default: false
-                    }
-                ]
-            },
-        ]
-    },
-    {
-        id: 'skills',
-        title: UiText.TabSkills,
-        groups: [
-            {
-                title: UiText.GroupSkill,
-                rows: [
-                    {
-                        key: SettingKey.SkillType,
-                        title: UiText.SettingSkillType,
-                        help: UiText.SettingSkillTypeHelp,
-                        default: SkillType.Burst as SkillType,
-                        // One list, in src/skillOptions.ts, because the Quick
-                        // Bar offers the same skills from its own compilation.
-                        dropdown: SkillOptions
-                    },
-                    {
-                        key: SettingKey.SkillLevel,
-                        title: UiText.SettingSkillLevel,
-                        help: UiText.SettingSkillLevelHelp,
-                        default: 6,
-                        step: 1,
-                        max: 6,
-                        min: 1
-                    },
-                    {
-                        key: SettingKey.SkillWaitingTime,
-                        title: UiText.SettingSkillWaitingTime,
-                        help: UiText.SettingSkillWaitingTimeHelp,
-                        default: 0,
-                        step: 1,
-                        max: 15,
-                        min: 0
-                    },
-                    {
-                        // Not part of the skill above it: every Lorcana tsum
-                        // transforms the same way whatever its own skill is, so
-                        // this is its own switch rather than something a
-                        // SkillType implies.
-                        key: SettingKey.LorcanaCard,
-                        title: UiText.SettingLorcanaCard,
-                        help: UiText.SettingLorcanaCardHelp,
-                        default: false
-                    }
-                ]
-            },
-            {
-                title: UiText.GroupTiming,
-                rows: [
-                    {
-                        key: SettingKey.NoSkillLastFeverSec,
-                        title: UiText.SettingNoSkillLastFever,
-                        help: UiText.SettingNoSkillLastFeverHelp,
-                        default: 0,
-                        step: 1,
-                        max: 10,
-                        min: 0
-                    },
-                    {
-                        key: SettingKey.SkillAutoTap,
-                        title: UiText.SettingSkillAutoTap,
-                        help: UiText.SettingSkillAutoTapHelp,
-                        default: true
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'hearts',
-        title: UiText.TabHearts,
-        groups: [
-            {
-                title: UiText.GroupReceiveAll,
-                rows: [
-                    {
-                        key: SettingKey.ReceiveAllHearts,
-                        title: UiText.SettingReceiveAllHearts,
-                        help: UiText.SettingReceiveAllHeartsHelp,
-                        default: false
-                    },
-                    {
-                        // The three "waiting time" rows share a title, so each
-                        // one's help says which job it paces.
-                        key: SettingKey.ReceiveAllHeartsMinWait,
-                        title: UiText.SettingRepeatWait,
-                        help: UiText.SettingReceiveAllWaitHelp,
-                        default: 25,
-                        step: 5,
-                        max: 60,
-                        min: 5
-                    }
-                ]
-            },
-            {
-                title: UiText.GroupMailbox,
-                rows: [
-                    {
-                        key: SettingKey.ReceiveHeartsOneByOne,
-                        title: UiText.SettingReceiveOneByOne,
-                        help: UiText.SettingReceiveOneByOneHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.ReceiveHeartsSkipFirst,
-                        title: UiText.SettingSkipFirstPerson,
-                        help: UiText.SettingSkipFirstPersonHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.ReceiveHeartsSkipRuby,
-                        title: UiText.SettingSkipRuby,
-                        help: UiText.SettingSkipRubyHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.ReceiveHeartsSkipMedals,
-                        title: UiText.SettingSkipMedals,
-                        help: UiText.SettingSkipMedalsHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.ClaimAllWithoutCoins,
-                        title: UiText.SettingClaimAllOldMails,
-                        help: UiText.SettingClaimAllOldMailsHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.MailOpenMax,
-                        title: UiText.SettingMailOpenMax,
-                        help: UiText.SettingMailOpenMaxHelp,
-                        default: 5,
-                        step: 1,
-                        max: 20,
-                        min: 1
-                    },
-                    {
-                        key: SettingKey.MailMinWait,
-                        title: UiText.SettingRepeatWait,
-                        help: UiText.SettingMailWaitHelp,
-                        default: 5,
-                        step: 2,
-                        max: 60,
-                        min: 1
-                    },
-                ]
-            },
-            {
-                title: UiText.GroupSendHearts,
-                rows: [
-                    {
-                        key: SettingKey.SendHeartsAuto,
-                        title: UiText.SettingSendHeartsAuto,
-                        help: UiText.SettingSendHeartsAutoHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.SendHeartsToZeroScore,
-                        title: UiText.SettingSendToZeroScore,
-                        help: UiText.SettingSendToZeroScoreHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.SendHeartsMaxRuntime,
-                        title: UiText.SettingSendMaxRuntime,
-                        help: UiText.SettingSendMaxRuntimeHelp,
-                        default: 0,
-                        step: 5,
-                        max: 80,
-                        min: 0
-                    },
-                    {
-                        key: SettingKey.SendHeartsMinWait,
-                        title: UiText.SettingRepeatWait,
-                        help: UiText.SettingSendWaitHelp,
-                        default: 26,
-                        step: 5,
-                        max: 60,
-                        min: 1
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        // The jobs a run does between rounds, one group each. They were a single
-        // Chores card at the bottom of the Gameplay tab until Box Buying arrived
-        // with four rows of its own; a tab is what stops the next chore from
-        // pushing the board settings off the screen.
-        //
-        // Each chore's first row is its schedule in hours, 0 for off, with a Now
-        // button beside it -- so the tab reads as a list of jobs and how often
-        // each runs. Hearts are chores too and have had their own tab since
-        // before this one; they stay there.
-        id: 'chores',
-        title: UiText.TabChores,
-        groups: [
-            {
-                title: UiText.GroupLevelCaps,
-                rows: [
-                    {
-                        // Now runs one sweep straight away, whatever the schedule
-                        // says: queued on a running script, or the script started
-                        // for it. It acts on the run rather than the form, as the
-                        // round delay's Now does -- see `askUnlockLevelsNow`.
-                        key: SettingKey.UnlockLevelHoursWait,
-                        title: UiText.SettingUnlockLevel,
-                        help: UiText.SettingUnlockLevelHelp,
-                        default: 0,
-                        min: 0,
-                        max: 24,
-                        step: 1,
-                        buttons: [
-                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askUnlockLevelsNow(); }}
-                        ]
-                    },
-                    {
-                        // One raise for the selected tsum, after the round whose
-                        // level-up screen showed it capped -- not a sweep, and
-                        // independent of the schedule above. Beta until a device
-                        // run has read `unlock.myTsum.*`.
-                        key: SettingKey.AutoUnlockMyTsumLevel,
-                        title: UiText.SettingUnlockMyTsumLevel,
-                        help: UiText.SettingUnlockMyTsumLevelHelp,
-                        default: false,
-                        status: ReleaseStatus.Beta
-                    }
-                ]
-            },
-            {
-                title: UiText.GroupBoxes,
-                help: UiText.GroupBoxesHelp,
-                rows: [
-                    {
-                        // Now works the same way the level-cap sweep's does --
-                        // see `askBuyBoxesNow`.
-                        key: SettingKey.BuyBoxHoursWait,
-                        title: UiText.SettingBuyBox,
-                        help: UiText.SettingBuyBoxHelp,
-                        default: 0,
-                        min: 0,
-                        max: 24,
-                        step: 1,
-                        buttons: [
-                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askBuyBoxesNow(); }}
-                        ]
-                    },
-                    {
-                        key: SettingKey.BuyBoxType,
-                        title: UiText.SettingBuyBoxType,
-                        help: UiText.SettingBuyBoxTypeHelp,
-                        default: BoxType.Premium as BoxType,
-                        // `satisfies` for the same reason the skill and bubble
-                        // dropdowns have it: a key that is not a BoxType would
-                        // compile, match no tab in `BoxStore.order3`/`order4`,
-                        // and buy nothing while reporting the store had no such
-                        // box.
-                        dropdown: ([
-                            {key: BoxType.PremiumPlus, share: 'P', title: UiText.BoxPremiumPlus},
-                            {key: BoxType.Premium, share: 'p', title: UiText.BoxPremium},
-                            {key: BoxType.Select, share: 's', title: UiText.BoxSelect},
-                            {key: BoxType.Happiness, share: 'h', title: UiText.BoxHappiness}
-                        ] satisfies { key: BoxType; share: string; title: UiText }[])
-                    },
-                    {
-                        key: SettingKey.BuyBoxSize,
-                        title: UiText.SettingBuyBoxSize,
-                        help: UiText.SettingBuyBoxSizeHelp,
-                        default: BoxPurchaseSize.One as BoxPurchaseSize,
-                        // No `share` ids: a Chores row, so no code or preset
-                        // carries it. `satisfies` for the reason the box
-                        // dropdown above has it -- a key that is not a
-                        // BoxPurchaseSize would compile and buy singly without
-                        // saying why.
-                        dropdown: ([
-                            {key: BoxPurchaseSize.One, title: UiText.BoxSizeOne},
-                            {key: BoxPurchaseSize.Ten, title: UiText.BoxSizeTen},
-                            {key: BoxPurchaseSize.TenThenOne, title: UiText.BoxSizeTenThenOne}
-                        ] satisfies { key: BoxPurchaseSize; title: UiText }[])
-                    },
-                    {
-                        key: SettingKey.BuyBoxMaxPurchases,
-                        title: UiText.SettingBuyBoxMax,
-                        help: UiText.SettingBuyBoxMaxHelp,
-                        default: 10,
-                        min: 1,
-                        max: 50,
-                        step: 1
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'advanced',
-        title: UiText.TabAdvanced,
-        groups: [
-            {
                 title: UiText.GroupExperimental,
                 help: UiText.GroupExperimentalHelp,
                 warn: true,
@@ -660,6 +698,51 @@ var tabs: TabSpec[] = [
                         max: 120,
                         step: 6,
                         default: 0
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupRunOrder,
+                help: UiText.GroupRunOrderHelp,
+                rows: [
+                    {
+                        key: RowKey.RunOrder,
+                        // No `default`, so it holds no value: nothing to save,
+                        // nothing to share, no share slot to keep.
+                        build: buildRunOrder
+                    }
+                ]
+            },
+            {
+                title: UiText.GroupSettingsCode,
+                help: UiText.GroupSettingsCodeHelp,
+                rows: [
+                    {
+                        // Above the buttons, so the share panel still opens
+                        // directly under them.
+                        key: RowKey.ShareListing,
+                        build: buildShareListingRow
+                    },
+                    {
+                        key: RowKey.ShareSettings,
+                        title: UiText.SettingShareSettings,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonCopy), onClick: function () { copySettingsCode(); }},
+                            {text: i18nThunk(UiText.ButtonPaste), onClick: function () { pasteSettingsCode(); }}
+                        ]
+                    },
+                    {
+                        // Beside the share code because it is the same errand --
+                        // getting a configuration off this device -- and unlike
+                        // a code it carries every row, so the two are not
+                        // alternatives. See `presetsExportText`, src/presets.ts.
+                        key: RowKey.ExportPresets,
+                        title: UiText.SettingExportPresets,
+                        help: UiText.SettingExportPresetsHelp,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonCopy), onClick: function () { copyPresetsExport(); }},
+                            {text: i18nThunk(UiText.ButtonSaveFile), onClick: function () { savePresetsFile(); }}
+                        ]
                     }
                 ]
             }
@@ -829,7 +912,8 @@ function readSettingValue(setting: SettingSpec): SettingValue | undefined {
     if (typeof setting.default === 'boolean') {
         return control !== null ? control.checked === true : setting.default;
     } else if (typeof setting.default === 'number') {
-        return control !== null ? +control.value : setting.default;
+        // The field shows the value divided by `scale`; hand back stored units.
+        return control !== null ? Math.round(+control.value * (setting.scale || 1)) : setting.default;
     } else if (typeof setting.default === 'string') {
         return control !== null ? String(control.value) : setting.default;
     }
@@ -1128,7 +1212,25 @@ function onGapMessage(topic: string): void {
         refreshPresetLabel();
         refreshPresetPanel();
         pullLiveSettings(true);
+    } else if (topic === PageMessage.CopyShareCode) {
+        copySettingsCodeForStrip();
     }
+}
+
+/**
+ * The strip's Copy share chip. From the store rather than the form: the strip
+ * writes the store and flushed it before asking, and the form may not have
+ * caught up. Answers with a topic so the chip can say whether it worked.
+ */
+function copySettingsCodeForStrip(): void {
+    flushSettings();
+    var values = storedSettings();
+    writeClipboard(withShareListing(buildSettingsCode(values), values), function (ok) {
+        var iface = bridge();
+        if (iface !== undefined && iface.broadcast !== undefined) {
+            iface.broadcast(ok ? PageMessage.ShareCodeCopied : PageMessage.ShareCodeNotCopied);
+        }
+    });
 }
 
 /**
@@ -1213,6 +1315,32 @@ function takeStoredSettings(): void {
     if (moved.length > 0) {
         logInfo(Log.Settings.StoreRead, 'Took a change made to the stored settings onto the form',
             {settings: moved.join(' ')});
+    }
+}
+
+/**
+ * Writes the whole form to the store when the store is missing any row of it.
+ *
+ * A fresh device, or a build that added a setting, leaves the store without
+ * those rows, and nothing writes them until a control is changed. The Quick Bar
+ * draws from the store while no run is going, so it would show nothing for
+ * them. `Presets` tells it the store moved, as a preset load does.
+ */
+function completeStoredSettings(): void {
+    if (localStorage === undefined) {
+        return;
+    }
+    var stored = storedSettings();
+    var form = collectSettingValues(settings);
+    for (var key in form) {
+        if (!(key in stored)) {
+            recordSettings(settings);
+            var iface = bridge();
+            if (iface !== undefined && iface.broadcast !== undefined) {
+                iface.broadcast(PageMessage.Presets);
+            }
+            return;
+        }
     }
 }
 
@@ -1393,26 +1521,26 @@ var SHARE_SLOTS: (SettingKey | '')[] = [
     // -- they are about the run, not about the round. See SHARE_TABS.
     SettingKey.BubbleStrategy,
     SettingKey.HoldBubblesLastFeverSec,
+    SettingKey.SkillSettleMs,
+    SettingKey.SkillReactivationTenths,
 ];
 
 /**
  * The tabs a share code -- and so a preset -- draws its rows from.
  *
- * **What travels is how a round is played, and nothing else.** That is the
- * sentence the feature is defined by, and it is narrower than "these two tabs":
- * a row on them that is about the *run* rather than the round is marked
- * `neverShared` and stays home. Five are -- Auto Play Game (whether rounds are
- * played at all), the between-rounds delay, Track round statistics, and the Max
- * Round Duration pair (how long the run will spend on one round before giving
- * up on it). Nothing off these tabs travels either: not the language, the
- * device, the chores, the mailbox or the hearts, which are about the account.
+ * **What travels is how a round is played, and nothing else.** The rows about
+ * the *run* rather than the round -- Auto Play Game, the between-rounds delay,
+ * Track round statistics and the Max Round Duration pair -- live on the General
+ * tab and are marked `neverShared`. Nothing else off these tabs travels either:
+ * not the language, the device, the chores, the mailbox or the hearts, which
+ * are about the account.
  *
- * The set is still `SHARE_SLOTS`; these two lists are what `checkShareSlots`
- * holds it up against, so a row added to either tab with neither a slot nor a
+ * The set is still `SHARE_SLOTS`; these lists are what `checkShareSlots` holds
+ * it up against, so a row added to one of these tabs with neither a slot nor a
  * `neverShared` is reported rather than silently left out of every code and
  * every preset.
  */
-var SHARE_TABS = ['gameplay', 'skills'];
+var SHARE_TABS = ['skills', 'round', 'gameplay'];
 
 /**
  * The 64 characters a code is built from: one per slot, and one per six bits of
@@ -1476,7 +1604,7 @@ var SHARE_DEFAULTS = captureShareDefaults();
 /**
  * Reports anything that would make codes wrong or unreadable: a slot listed
  * twice, more slots than the alphabet can name, a slot naming a row that must
- * never travel, or a Gameplay or Skills row with neither a slot nor a
+ * never travel, or a row on a `SHARE_TABS` tab with neither a slot nor a
  * `neverShared` saying it was left off on purpose.
  *
  * Called once on load. It only writes to the log -- the settings page is not the
@@ -1524,7 +1652,7 @@ function checkShareSlots(): void {
                 if (typeof row.key === 'string' && row.default !== undefined
                     && !seen[row.key] && row.neverShared !== true) {
                     logWarn(Log.Settings.ShareNoSlot,
-                        'A gameplay or skill setting has no share-code slot, so it is in no '
+                        'A shared-tab setting has no share-code slot, so it is in no '
                         + 'share code and no preset',
                         {setting: row.key, tab: tabs[t].id});
                 }
@@ -1847,7 +1975,7 @@ function applySettingValue(setting: SettingSpec, value: SettingValue): boolean {
         }
         setting.default = num;
         if (control !== null) {
-            control.value = String(num);
+            control.value = shownNumber(setting, num);
         }
         return true;
     }
@@ -1971,6 +2099,24 @@ function askBuyBoxesNow(): void {
     iface.runScript('typeof buyBoxesNow === "function" && buyBoxesNow('
         + JSON.stringify(startSettings(settings)) + ');');
     logInfo(Log.Settings.BuyBoxesNowAsked, 'Asked the run to buy boxes now');
+}
+
+/**
+ * The Tsum List export's Now button. As `askBuyBoxesNow`, except that a run
+ * started from here stops once the export is done (`exportTsumListNow`).
+ */
+// noinspection JSUnusedGlobalSymbols
+function askExportTsumListNow(): void {
+    var iface = bridge();
+    if (iface === undefined) {
+        return;
+    }
+    flushSettings();
+    iface.hideMenu();
+    iface.showMenu();
+    iface.runScript('typeof exportTsumListNow === "function" && exportTsumListNow('
+        + JSON.stringify(startSettings(settings)) + ');');
+    logInfo(Log.Settings.ExportTsumListAsked, 'Asked the run to export the Tsum list');
 }
 
 /**
@@ -2417,12 +2563,14 @@ function setShareStatus(message: string, isError: boolean): void {
  * route that does -- `copyFieldSelection` -- takes focus itself, and only
  * when it is actually reached.
  */
-function showShareText(text: string, focus: boolean): void {
+function showShareText(text: string, focus: boolean, qrText?: string): void {
     var panel = ensureSharePanel();
     var box = shareBox()!;
     panel.hidden = false;
     box.value = text;
-    drawShareQr(text);
+    // Taller for a listing, so it reads without scrolling a three-line box.
+    box.rows = Math.min(12, Math.max(3, text.split('\n').length + 1));
+    drawShareQr(qrText !== undefined ? qrText : text);
     if (focus) {
         box.focus();
     }
@@ -2452,6 +2600,76 @@ function applySettingsCodeText(text: string): void {
         {applied: result.applied, from: from, skipped: result.skipped}), false);
 }
 
+/** localStorage key for the Copy with settings list switch. A page preference, so not a setting. */
+var SHARE_LISTING_KEY = 'tsumtsumsharelisting';
+
+function shareListingOn(): boolean {
+    return localStorage !== undefined && localStorage.getItem(SHARE_LISTING_KEY) === '1';
+}
+
+/** The Copy with settings list row: a switch drawn by hand, since it holds no setting. */
+function buildShareListingRow(): HTMLElement {
+    var row = fromTemplate('tpl-row');
+    pick(row, '.row-title').textContent = i18nText(UiText.SettingShareListing);
+    pick(row, '.row-help').textContent = i18nText(UiText.SettingShareListingHelp);
+    var input = fromTemplate('tpl-switch') as HTMLInputElement;
+    input.checked = shareListingOn();
+    input.addEventListener('change', function () {
+        if (localStorage !== undefined) {
+            localStorage.setItem(SHARE_LISTING_KEY, input.checked ? '1' : '0');
+        }
+    });
+    pick(row, '.row-control').appendChild(input);
+    return row;
+}
+
+/** One row's value as the page shows it: On/Off, the option's name, or the number. */
+function shareListingValue(setting: SettingSpec, value: SettingValue): string {
+    if (typeof value === 'boolean') {
+        return i18nText(value ? UiText.ShareListingOn : UiText.ShareListingOff);
+    }
+    if (setting.dropdown !== undefined) {
+        for (var i = 0; i < setting.dropdown.length; i++) {
+            if (setting.dropdown[i].key === value) {
+                return getTitle(setting.dropdown[i]);
+            }
+        }
+    }
+    return typeof value === 'number' ? shownNumber(setting, value) : String(value);
+}
+
+/**
+ * The skill type, then the rows the code changes from default, on one line in
+ * page order, e.g. `Skill Type: Elsa · +Coin: On`. For people, not the parser -- pasting it
+ * back reads only the code.
+ */
+function buildShareListing(values: SettingValues): string {
+    var parts: string[] = [];
+    for (var t = 0; t < tabs.length; t++) {
+        for (var g = 0; g < tabs[t].groups.length; g++) {
+            var rows = tabs[t].groups[g].rows;
+            for (var r = 0; r < rows.length; r++) {
+                var row = rows[r];
+                var key = row.key as SettingKey;
+                var value = values[key] !== undefined ? values[key] : SHARE_DEFAULTS[key];
+                // Unshown rows take no shared value, so they are not listed.
+                // The skill type always is: it says what the rest is tuned for.
+                if (isUnsharedSetting(row) || !offeredHere(row.status)
+                    || (value === SHARE_DEFAULTS[key] && key !== SettingKey.SkillType)) {
+                    continue;
+                }
+                parts.push(getTitle(row) + ': ' + shareListingValue(row, value));
+            }
+        }
+    }
+    return parts.join(' · ');
+}
+
+/** `code`, plus the listing under it when the switch is on. */
+function withShareListing(code: string, values: SettingValues): string {
+    return shareListingOn() ? code + '\n' + buildShareListing(values) : code;
+}
+
 /**
  * The Copy button.
  *
@@ -2463,8 +2681,10 @@ function applySettingsCodeText(text: string): void {
 function copySettingsCode(): void {
     ensureSharePanel();
     var code = buildSettingsCode();
-    showShareText(code, false);
-    writeClipboard(code, function (ok) {
+    var text = withShareListing(code, collectSettingValues(settings, isUnsharedSetting));
+    // The QR stays the bare code: a listing would not fit one.
+    showShareText(text, false, code);
+    writeClipboard(text, function (ok) {
         setShareStatus(i18nText(ok ? UiText.ShareCopied : UiText.ShareCopyFailed), !ok);
     });
 }
@@ -2491,9 +2711,9 @@ function pasteSettingsCode(): void {
 
 // --- Presets ---------------------------------------------------------------
 //
-// A preset is a name and a settings code's worth of form: **the Gameplay and
-// Skills tabs, and nothing else**. `SHARE_SLOTS` above is that set, so a preset
-// and a share code carry exactly the same rows -- which is what makes the code
+// A preset is a name and a settings code's worth of form: **the Skills,
+// Round and Gameplay tabs, and nothing else**. `SHARE_SLOTS` above is that
+// set, so a preset and a share code carry exactly the same rows -- which is what makes the code
 // the export format rather than a second one invented for this.
 //
 // This half is the app bar: the dropdown that says which preset the form
@@ -3190,11 +3410,17 @@ function taskDetail(name: TaskName, values: { [key: string]: SettingValue }): st
             // which is what lets the chores keep their own clocks through it.
             var delay = num(SettingKey.RoundDelayMinutes);
             var cap = num(SettingKey.MaxRoundMinutes);
+            var games = num(SettingKey.StopAfterGames);
             return (delay > 0 ? i18nFormat(UiText.RunPlayRoundDelay, {minutes: delay}) : '')
                 + (cap > 0 ? i18nFormat(UiText.RunPlayRoundCap, {
                     minutes: cap,
                     action: optionLabelOf(SettingKey.MaxRoundAction,
                         values[SettingKey.MaxRoundAction])
+                }) : '')
+                + (games > 0 ? i18nFormat(UiText.RunPlayRoundStopAfter, {
+                    games: games,
+                    action: optionLabelOf(SettingKey.StopAfterAction,
+                        values[SettingKey.StopAfterAction])
                 }) : '')
                 + itemsLabel(values);
         }
@@ -3254,6 +3480,10 @@ function roundFlowChips(values: { [key: string]: SettingValue }): string[] {
             : UiText.FlowLink));
     if (on(SettingKey.UseFan)) {
         chips.push(i18nText(UiText.FlowFan));
+    }
+    if (values[SettingKey.SkillType] !== SkillType.NoSkill && num(SettingKey.SkillSettleMs) > 0) {
+        chips.push(i18nFormat(UiText.FlowSettleSkill,
+            {sec: (num(SettingKey.SkillSettleMs) / 1000).toFixed(1)}));
     }
     chips.push(values[SettingKey.SkillType] === SkillType.NoSkill
         ? i18nText(UiText.FlowNoSkill)
@@ -3647,38 +3877,44 @@ function buildStepper(setting: SettingSpec): HTMLElement {
     var stepper = fromTemplate('tpl-number');
     var input = pick(stepper, '.setting-number') as HTMLInputElement;
     var step = setting.step || 1;
+    var fine = fineStep(setting);
 
     input.id = controlElementId(setting.key);
-    input.value = String(setting.default);
-    input.step = String(step);
+    var scale = setting.scale || 1;
+    if (scale > 1) {
+        // The numeric keypad has no decimal point.
+        input.inputMode = 'decimal';
+    }
+    input.value = shownNumber(setting, setting.default as number);
+    input.step = String(step / scale);
     if (setting.min !== undefined) {
-        input.min = String(setting.min);
+        input.min = String(setting.min / scale);
     }
     if (setting.max !== undefined) {
-        input.max = String(setting.max);
+        input.max = String(setting.max / scale);
     }
 
     var steps = stepper.querySelectorAll('.step');
     for (var i = 0; i < steps.length; i++) {
         var button = steps[i] as HTMLButtonElement;
         var coarse = button.getAttribute('data-coarse');
-        var fine = button.getAttribute('data-fine');
-        if (fine !== null && step === 1) {
+        var fineBy = button.getAttribute('data-fine');
+        if (fineBy !== null && step === fine) {
             button.parentNode!.removeChild(button);
             continue;
         }
-        var by = coarse !== null ? +coarse * step : +fine!;
+        var by = coarse !== null ? +coarse * step : +fineBy! * fine;
         // A real minus sign: the hyphen reads as a dash next to the digits.
-        button.textContent = (by > 0 ? '+' : '−') + Math.abs(by);
+        button.textContent = (by > 0 ? '+' : '−') + Math.abs(by) / scale;
         button.addEventListener('click', (function (by) {
             return function () {
-                setNumberValue(setting, input, (+input.value) + by);
+                setNumberValue(setting, input, (+input.value) * scale + by);
             };
         })(by));
     }
 
     input.addEventListener('change', function () {
-        setNumberValue(setting, input, +input.value);
+        setNumberValue(setting, input, (+input.value) * scale);
     });
 
     // A number row may also carry an action -- "Now", beside the between-rounds
@@ -3700,16 +3936,29 @@ function buildStepper(setting: SettingSpec): HTMLElement {
  * way in is the two agreeing.
  */
 function setNumberValue(setting: SettingSpec, input: HTMLInputElement, value: number): void {
-    var next = isFinite(value) ? Math.round(value) : (setting.default as number);
+    var fine = fineStep(setting);
+    var next = isFinite(value) ? Math.round(value / fine) * fine : (setting.default as number);
     if (setting.max !== undefined) {
         next = Math.min(next, setting.max);
     }
     if (setting.min !== undefined) {
         next = Math.max(next, setting.min);
     }
-    input.value = String(next);
+    input.value = shownNumber(setting, next);
     setting.default = next;
     saveSettings(settings);
+}
+
+/** A number row's stored value as its field shows it -- see `SettingSpec.scale`. */
+function shownNumber(setting: SettingSpec, value: number): string {
+    var scale = setting.scale || 1;
+    return scale > 1 ? (value / scale).toFixed(1) : String(value);
+}
+
+/** A number row's fine step in stored units: 1, or 0.1 shown on a scaled row. */
+function fineStep(setting: SettingSpec): number {
+    var scale = setting.scale || 1;
+    return scale > 1 ? Math.max(1, Math.round(scale / 10)) : 1;
 }
 
 function buildText(setting: SettingSpec): HTMLElement {
@@ -3908,10 +4157,11 @@ function onEvent(eventType: string): void {
     }
 }
 
-// function called by the host when writing logs
+// Called by the host for every script log line. Deliberately empty: echoing
+// each line through console.log sent it back to the host's main thread, ~100
+// times a second, for a copy already in logcat and script.log.
 // noinspection JSUnusedGlobalSymbols
 function onLog(message: string): void {
-    console.log(message);
 }
 
 /**
@@ -4085,6 +4335,7 @@ function bootstrap(): void {
     checkShareSlots();
     loadSettings(settings);
     renderPage();
+    completeStoredSettings();
 
     // The last word on a debounced write: the panel can go away between a tap
     // and the timer, and the host closes it in ways this page never hears about

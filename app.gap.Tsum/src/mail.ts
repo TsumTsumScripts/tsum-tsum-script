@@ -20,8 +20,9 @@
 const ReceiveAllSettleMs = 3000;
 
 Tsum.prototype.taskReceiveAllItems = function() {
-  if (gPages.detect() === PageName.GamePause)
+  if (roundInProgress()) {
     return;
+  }
   logInfo(Log.Page.Friends);
   // The mailbox is a navigation destination rather than a tap-and-hope: the hop
   // that used to be `navigate(FriendPage)` + `tap(outReceive)` + `sleep(3500)`
@@ -150,19 +151,31 @@ Tsum.prototype.mailRowToOpen = function(img) {
   if (this.keepRuby) {
     skips.push({badge: Button.outReceiveOneRuby, event: Log.Gifts.ReceiveOneSkipRuby});
   }
+  // Every probe a row is judged by hangs below its Check button, the ad's gift
+  // box lowest of all. So the last row of a scrolled screen can show its button
+  // whole with those still under the Claim All bar, and a badge read off the
+  // bar is no badge -- that row is left for the next scroll to bring up whole.
+  const deepestProbe = Math.max(Button.outReceiveOneMedal.y,
+    Button.outReceiveOneRuby.y, Button.outReceiveOneAd.y);
+  let underBar = false;
   const wanted: number[] = [];
   const points: Coord[] = [];
   for (let i = 0; i < rows.length; i++) {
     // Drop the rows above the one "Skip first person" starts at. Half a pitch
     // of slack, because a found centre carries the scan's own step as error.
     if (rows[i] < -MailList.rowPitch / 2) { continue; }
+    if (deepestProbe + rows[i] > MailList.buttonColumn.toY) {
+      logDebug(Log.Gifts.ReceiveOneRowUnderBar, {offset: rows[i]});
+      underBar = true;
+      continue;
+    }
     wanted.push(rows[i]);
     for (let j = 0; j < skips.length; j++) {
       points.push({x: skips[j].badge.x, y: skips[j].badge.y + rows[i]});
     }
   }
   if (wanted.length === 0) {
-    return MailNoRow;
+    return underBar ? MailAllSkipped : MailNoRow;
   }
   const badges = this.getColors(img, points);
   for (let i = 0; i < wanted.length; i++) {
@@ -187,8 +200,9 @@ Tsum.prototype.scrollMailList = function() {
 }
 
 Tsum.prototype.taskReceiveOneItem = function() {
-  if (gPages.detect() === PageName.GamePause)
+  if (roundInProgress()) {
     return;
+  }
   logInfo(Log.Page.Friends);
   gPages.navigate(PageName.FriendPage);
   this.sleep(1000)

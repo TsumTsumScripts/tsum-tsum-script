@@ -68,12 +68,6 @@ declare const enum SkillType {
    */
   CoronationElsa = 'elsa_coronation',
   /**
-   * The same skill as it was played in 1.0, kept for side-by-side testing --
-   * see `src/skills/coronationElsaLegacy.ts`. Its own id so the round stats
-   * and the log tell the two apart.
-   */
-  CoronationElsaLegacy = 'elsa_coronation_legacy',
-  /**
    * Rapunzel+. Her activation makes the board colour-blind for a moment: one
    * chain may take tsums of any colour, up to a length her skill level sets --
    * see `src/skills/rapunzelPlus.ts`.
@@ -81,9 +75,10 @@ declare const enum SkillType {
   RapunzelPlus = 'rapunzelplus',
   /**
    * Gaston. His activation makes every tsum that *drops* a Gaston for a window
-   * his skill level sets, so the choreography plays it: chain every Gaston,
-   * cancel the pop animation with a bubble so the next batch drops at once, and
-   * again -- see `src/skills/gaston.ts`.
+   * his skill level sets, so the choreography plays it: chain every Gaston and
+   * cancel the pop with a bubble so the next batch drops at once, twice, then
+   * hold a third chain through the close so its clear charges the next
+   * activation -- see `src/skills/gaston.ts`.
    */
   Gaston = 'gaston',
   /**
@@ -95,6 +90,12 @@ declare const enum SkillType {
    * (`src/lorcana.ts`).
    */
   LorcanaAurora = 'auroraink',
+  /**
+   * Nightmare Before Christmas (Set). Plays as a burst, but one of its skills
+   * puts more tsums on the board and shrinks them all, so the board read
+   * follows their size -- see `src/skills/nbcSet.ts`.
+   */
+  NightmareSet = 'nbc_set',
   PairTsum = 'pair_tsum',
   /** Offered in the dropdown; short-circuited in useSkill, so it has no handler. */
   NoSkill = 'nokill',
@@ -167,13 +168,26 @@ declare const enum MaxRoundAction {
 }
 
 /**
+ * What happens once "Stop after games" has counted its rounds down. Checked
+ * between rounds, so the last round is always seen out.
+ */
+declare const enum StopAfterAction {
+  /** Stop starting rounds for the rest of this run; the chores carry on. */
+  AutoPlayOff = 'autoPlayOff',
+  /** Pause the script the way the overlay's Pause does; Resume counts again. */
+  Pause = 'pause',
+  /** End the run, the way the Stop button does. */
+  Stop = 'stop',
+}
+
+/**
  * The boxes the Tsum Tsum Store sells, as the Box Buying chore names them.
  *
  * The store draws its boxes as a row of tabs, and the row is three or four wide
  * depending on whether a limited-time box is running -- so a box is found by its
  * place in that row rather than by a fixed coordinate (`BoxStore`, src/data.ts).
- * `Select` is the limited-time slot, and it is the one that is only sometimes
- * there.
+ * `Select` and `Capsule` share the limited-time slot, which is only sometimes
+ * there and holds one of them at a time; the tab's icon says which.
  *
  * A `const enum` for the reason `SkillType` is one: the value crosses the
  * `start({...})` bridge between two runtimes that share no memory, so it is
@@ -184,6 +198,11 @@ declare const enum BoxType {
   Premium = 'premium',
   /** The limited-time box: present only while one is running. */
   Select = 'select',
+  /**
+   * The Pick-Up Capsule, in the same slot while one is running. Sells singly
+   * only, and its prize can be an item rather than a tsum.
+   */
+  Capsule = 'capsule',
   Happiness = 'happiness',
 }
 
@@ -194,8 +213,8 @@ declare const enum BoxType {
  * ("You can't use 10-Time Purchases", `PageName.BoxTenTimeRefused`), and the
  * two ten-sized settings differ only in what the sweep does then: `Ten` ends
  * it, `TenThenOne` carries on singly until the box sells out. Neither ever
- * buys ten on a box that only draws a 1-Time button -- Happiness always -- and
- * `One` never buys ten at all.
+ * buys ten on a box that only draws a 1-Time button -- Happiness and the
+ * Pick-Up Capsule always -- and `One` never buys ten at all.
  */
 declare const enum BoxPurchaseSize {
   One = 'one',
@@ -226,7 +245,7 @@ declare const enum DetectMyTsumRefusal {
  * Every language the project speaks, as BCP-47 tags.
  *
  * One member per registered catalogue -- `src/uiEn.ts` and `src/logsEn.ts` for
- * `English`, `src/uiZhTw.ts` and `src/logsZhTw.ts` for `Taiwan`. Adding a
+ * `English`, `src/uiZhTw.ts` and `src/logsZhTw.ts` for `Taiwan`, and so on. Adding a
  * language starts with a member here.
  *
  * Here rather than in `src/settings.d.ts` because all three compilations need
@@ -243,6 +262,7 @@ declare const enum DetectMyTsumRefusal {
 declare const enum Locale {
   English = 'en-US',
   Taiwan = 'zh-TW',
+  Japanese = 'ja-JP',
 }
 
 /**
@@ -280,6 +300,8 @@ declare const enum SettingKey {
   RoundDelayMinutes = 'roundDelayMinutes',
   MaxRoundMinutes = 'maxRoundMinutes',
   MaxRoundAction = 'maxRoundAction',
+  StopAfterGames = 'stopAfterGames',
+  StopAfterAction = 'stopAfterAction',
   BubbleStrategy = 'bubbleStrategy',
   HoldBubblesLastFeverSec = 'holdBubblesLastFeverSec',
   UseFan = 'useFan',
@@ -295,6 +317,8 @@ declare const enum SettingKey {
   Bonus5to4 = 'bonus5to4',
   BonusCombo = 'bonusCombo',
   SkillWaitingTime = 'skillWaitingTime',
+  SkillSettleMs = 'skillSettleMs',
+  SkillReactivationTenths = 'skillReactivationTenths',
   SkillLevel = 'skillLevel',
   SkillType = 'skillType',
   SkillAutoTap = 'skillAutoTap',
@@ -309,6 +333,7 @@ declare const enum SettingKey {
   BuyBoxSize = 'buyBoxSize',
   BuyBoxMaxPurchases = 'buyBoxMaxPurchases',
   BuyBoxesFirst = 'buyBoxesFirst',
+  TsumListOnly = 'tsumListOnly',
   ReceiveAllHearts = 'receiveAllHearts',
   ReceiveAllHeartsMinWait = 'receiveAllHeartsMinWait',
   ReceiveHeartsOneByOne = 'receiveHeartsOneByOne',
@@ -382,6 +407,9 @@ interface Settings {
   [SettingKey.MaxRoundMinutes]: number;
   /** What to do when `maxRoundMinutes` runs out. Ignored while that is 0. */
   [SettingKey.MaxRoundAction]: MaxRoundAction;
+  /** Rounds to play before `stopAfterAction` fires; 0 never stops. */
+  [SettingKey.StopAfterGames]: number;
+  [SettingKey.StopAfterAction]: StopAfterAction;
   [SettingKey.BubbleStrategy]: BubbleStrategy;
   /**
    * Pop no bubble while a fever has this many seconds left, so they are still
@@ -403,6 +431,22 @@ interface Settings {
   [SettingKey.Bonus5to4]: boolean;
   [SettingKey.BonusCombo]: boolean;
   [SettingKey.SkillWaitingTime]: number;
+  /**
+   * The most milliseconds to wait, once the gauge reads full, for the tsums the
+   * last chains cleared to drop back in before the activation tap -- the tap
+   * goes out as soon as the board holds still, or at this deadline, and a board
+   * found moving gets the bubbles a chain would spend popped into it. In ms
+   * rather than seconds because a share code carries whole numbers only. 0
+   * fires at once.
+   */
+  [SettingKey.SkillSettleMs]: number;
+  /**
+   * "Delay Skill ReActivation": after an activation, a full gauge is not fired
+   * again for this long, so a skill with a duration is not restarted while it
+   * still runs. Tenths of a second, because a share code carries whole numbers
+   * only; the page shows it as seconds. 0 is off.
+   */
+  [SettingKey.SkillReactivationTenths]?: number;
   [SettingKey.SkillLevel]: number;
   [SettingKey.SkillType]: SkillType;
   [SettingKey.SkillAutoTap]: boolean;
@@ -451,6 +495,11 @@ interface Settings {
    * starts a run, and `buildRun` queues the sweep off it.
    */
   [SettingKey.BuyBoxesFirst]?: boolean;
+  /**
+   * A run started by the Tsum List Now button: it exports and stops. Not a
+   * schema entry; `exportTsumListNow()` sets it.
+   */
+  [SettingKey.TsumListOnly]?: boolean;
   [SettingKey.ReceiveAllHearts]: boolean;
   [SettingKey.ReceiveAllHeartsMinWait]: number;
   [SettingKey.ReceiveHeartsOneByOne]: boolean;

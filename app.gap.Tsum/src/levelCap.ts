@@ -21,9 +21,8 @@
 //   RaiseLevelCap   -- OK, which spends the coins -> LevelCapRaised
 //   LevelCapRaised  -- a tap anywhere             -> TsumsPage
 //
-// The collection is left in Level Lock order rather than put back the way it
-// was. Nothing else in the script reads that order, and leaving it is what makes
-// the next run's first card the next capped tsum.
+// The player's own order is read off the dialog first and put back afterwards
+// (`restoreCollectionSort`).
 //
 // `awaitPage` is the wait every one of those hops goes through, and boxes.ts
 // borrows it -- hence its `event` parameter, so a Box Buying timeout is not
@@ -68,6 +67,8 @@ const UnlockDialogWaitMs = 4000;
 const UnlockConfirmWaitMs = 8000;
 /** How long the collection gets to redraw after the toast is dismissed. */
 const UnlockReturnWaitMs = 6000;
+/** How long the grid gets to swap its placeholder cards for real ones. */
+const UnlockGridLoadMs = 5000;
 /** Rest between polls while waiting for a screen. */
 const UnlockPollRestMs = 300;
 /** Taps the order gets before the sweep gives up on it -- the first can be swallowed. */
@@ -190,8 +191,29 @@ Tsum.prototype.readCollectionSort = function() {
   return gold === 1 ? selected : null;
 }
 
+/** Is "Show owned Tsums only" ticked? By the brown tick only a ticked box draws. */
+Tsum.prototype.readCollectionOwnedOnly = function() {
+  const d = CollectionSortDialog;
+  const points: Coord[] = [];
+  for (let i = 0; i < d.ownedOnlySamples.length; i++) {
+    points.push({x: d.ownedOnly.x + d.ownedOnlySamples[i].dx, y: d.ownedOnly.y + d.ownedOnlySamples[i].dy});
+  }
+  const img = this.screenshot();
+  try {
+    const read = this.getColors(img, points);
+    for (let i = 0; i < read.length; i++) {
+      if (!isSameColor(d.ownedOnlyColor, read[i], d.ownedOnlyDiff)) {
+        return false;
+      }
+    }
+    return true;
+  } finally {
+    releaseImage(img);
+  }
+}
+
 /**
- * Put the collection in `order`, and say which order it was in before.
+ * Put the collection in `order`, and say what the dialog held before.
  *
  * Opens the Change Order dialog, reads the selected order, taps `order` unless
  * it already is, confirms the dialog took it, and closes. The answer is what
@@ -199,8 +221,11 @@ Tsum.prototype.readCollectionSort = function() {
  * be in `order` -- the dialog did not open, would not take the order, or did not
  * close. When the *selected* order could not be read the sort still goes ahead
  * and the answer is `order` itself: nothing known to put back.
+ *
+ * With `ownedOnly` given, the "Show owned Tsums only" box is set to it too, read
+ * back the same way; left out, the box is neither read nor touched.
  */
-Tsum.prototype.sortCollection = function(order) {
+Tsum.prototype.sortCollection = function(order, ownedOnly) {
   this.tap(Button.outTsumSortOrder);
   if (!this.awaitPage(PageName.TsumSortOrder, UnlockDialogWaitMs)) {
     logWarn(Log.Unlock.SortFailed, 'The Change Order dialog did not open', {order: order});
@@ -241,30 +266,47 @@ Tsum.prototype.sortCollection = function(order) {
       return null;
     }
   }
+  let wasOwnedOnly: boolean | null = null;
+  if (ownedOnly !== undefined) {
+    // Same tap-and-read-back as the order. A box left wrong is logged rather
+    // than fatal: the export still reads what the grid shows.
+    wasOwnedOnly = this.readCollectionOwnedOnly();
+    let set = wasOwnedOnly === ownedOnly;
+    for (let i = 0; i < UnlockSortAttempts && !set && this.isRunning; i++) {
+      this.tap(CollectionSortDialog.ownedOnly);
+      this.settleScreen(UnlockOptionSettleMs);
+      set = this.readCollectionOwnedOnly() === ownedOnly;
+    }
+    if (!set) {
+      logWarn(Log.TsumList.OwnedOnlyNotSet, 'Could not set "Show owned Tsums only"', {want: ownedOnly});
+    }
+  }
   this.tap(Page.TsumSortOrder.back);
   if (!this.awaitPage(PageName.TsumsPage, UnlockDialogWaitMs)) {
     logWarn(Log.Unlock.SortFailed, 'The collection did not come back after Close', {order: order});
     return null;
   }
-  logDebug(Log.Unlock.Sorted, {order: order, previous: previous});
-  return previous;
+  logDebug(Log.Unlock.Sorted, {order: order, previous: previous, ownedOnly: wasOwnedOnly});
+  return {order: previous, ownedOnly: wasOwnedOnly};
 }
 
 /**
- * Put the collection back in the order the player had it in.
+ * Put the collection back the way the player had it, after a sweep that sorted
+ * it to `current`.
  *
- * Nothing to do when that was Level Lock, or once the run has stopped. The
+ * Nothing to do when nothing changed, or once the run has stopped. The
  * collection has to be showing first, and after a failed raise it may not be.
  */
-Tsum.prototype.restoreCollectionSort = function(order) {
-  if (order === CollectionSort.LevelLock || !this.isRunning) {
+Tsum.prototype.restoreCollectionSort = function(previous, current) {
+  if ((previous.order === current && previous.ownedOnly === null) || !this.isRunning) {
     return;
   }
   if (!this.awaitPage(PageName.TsumsPage, UnlockReturnWaitMs)) {
     gPages.navigate(PageName.TsumsPage);
   }
-  if (this.sortCollection(order) !== null) {
-    logInfo(Log.Unlock.SortRestored, {order: order});
+  const ownedOnly = previous.ownedOnly === null ? undefined : previous.ownedOnly;
+  if (this.sortCollection(previous.order, ownedOnly) !== null) {
+    logInfo(Log.Unlock.SortRestored, {order: previous.order, ownedOnly: previous.ownedOnly});
   }
 }
 
@@ -300,6 +342,88 @@ Tsum.prototype.collectionAtFirstPage = function() {
   return votes < CollectionGrid.prevPageVotes;
 }
 
+/** Is the collection showing its last page? The mirror of `collectionAtFirstPage`. */
+Tsum.prototype.collectionAtLastPage = function() {
+  const offsets = CollectionGrid.nextPageSamples;
+  const points: Coord[] = [];
+  for (let i = 0; i < offsets.length; i++) {
+    points.push({
+      x: CollectionGrid.nextPage.x + offsets[i].dx,
+      y: CollectionGrid.nextPage.y + offsets[i].dy
+    });
+  }
+  let votes = 0;
+  const img = this.screenshot();
+  try {
+    const read = this.getColors(img, points);
+    for (let i = 0; i < read.length; i++) {
+      if (isSameColor(CollectionGrid.prevPageColor, read[i], CollectionGrid.prevPageDiff)) {
+        votes++;
+      }
+    }
+  } finally {
+    releaseImage(img);
+  }
+  return votes < CollectionGrid.prevPageVotes;
+}
+
+/** How many of the eight cards are still loading placeholders. */
+Tsum.prototype.collectionLoadingCards = function() {
+  const cells = CollectionGrid.cells;
+  const samples = CollectionGrid.loadingSamples;
+  const points: Coord[] = [];
+  for (let i = 0; i < cells.length; i++) {
+    for (let j = 0; j < samples.length; j++) {
+      points.push({x: cells[i].x + samples[j].dx, y: cells[i].y + samples[j].dy});
+    }
+  }
+  let loading = 0;
+  const img = this.screenshot();
+  try {
+    const read = this.getColors(img, points);
+    for (let i = 0; i < cells.length; i++) {
+      let hits = 0;
+      for (let j = 0; j < samples.length; j++) {
+        if (isSameColor(CollectionGrid.loadingColor, read[i * samples.length + j],
+                        CollectionGrid.loadingDiff)) {
+          hits++;
+        }
+      }
+      if (hits === samples.length) {
+        loading++;
+      }
+    }
+  } finally {
+    releaseImage(img);
+  }
+  return loading;
+}
+
+/**
+ * Wait for the grid's placeholder cards to be replaced by real ones.
+ *
+ * A loading grid draws no left chevron, so reading it for "first page" says yes
+ * whatever page it is on, and its padlock read finds nothing. `settleScreen`
+ * cannot catch it: the placeholders hold still. Gives up after
+ * `UnlockGridLoadMs` and carries on -- the caller's reads are no worse than
+ * without the wait.
+ */
+Tsum.prototype.awaitCollectionLoaded = function() {
+  const startedAt = Date.now();
+  let loading = this.collectionLoadingCards();
+  while (this.isRunning && loading >= CollectionGrid.loadingCards) {
+    if (Date.now() - startedAt >= UnlockGridLoadMs) {
+      logWarn(Log.Unlock.GridStillLoading, 'The collection was still loading its cards',
+        {loading: loading, waitedMs: Date.now() - startedAt});
+      return false;
+    }
+    this.sleep(UnlockPollRestMs);
+    loading = this.collectionLoadingCards();
+  }
+  logDebug(Log.Unlock.GridLoaded, {ms: Date.now() - startedAt});
+  return true;
+}
+
 /**
  * Walk the collection back to its first page.
  *
@@ -318,11 +442,12 @@ Tsum.prototype.collectionAtFirstPage = function() {
  * counts taps rather than pages and is set well above the length of the list.
  */
 Tsum.prototype.rewindCollection = function() {
+  this.awaitCollectionLoaded();
   let turned = 0;
   while (this.isRunning && turned <= UnlockRewindMaxPages) {
     // Every reading past the first is taken after the settle at the bottom of
-    // the loop, so the grid it reads has stopped moving. On the first pass
-    // nothing has moved yet, so there is nothing to wait out.
+    // the loop, so the grid it reads has stopped moving. The first waited for
+    // the cards to load above -- a loading grid hides the left chevron.
     if (this.collectionAtFirstPage()) {
       logDebug(Log.Unlock.Rewound, {pages: turned});
       return true;
@@ -435,14 +560,11 @@ Tsum.prototype.raiseCardLevelCap = function(slot) {
 }
 
 /**
- * Buy the raise for whichever tsum the collection's detail panel shows.
- *
- * The gold coin under the panel's level bar is the game's own offer to lift the
- * cap, and it is checked before anything is pressed, because the tap after it
- * spends coins. `fields` say which tsum this was about in every line written
- * here -- the sweep's card slot, or the MyTsum.
+ * Does the detail panel offer a level-cap raise? The gold coin under the level
+ * bar, all four rim points required. The Tsum List export asks too: the level
+ * row moves right when the padlock is drawn.
  */
-Tsum.prototype.raiseSelectedLevelCap = function(fields) {
+Tsum.prototype.collectionOffersRaise = function() {
   const offsets = CollectionGrid.raiseCapSamples;
   const points: Coord[] = [];
   for (let i = 0; i < offsets.length; i++) {
@@ -462,7 +584,19 @@ Tsum.prototype.raiseSelectedLevelCap = function(fields) {
   } finally {
     releaseImage(img);
   }
-  if (!offered) {
+  return offered;
+}
+
+/**
+ * Buy the raise for whichever tsum the collection's detail panel shows.
+ *
+ * The gold coin under the panel's level bar is the game's own offer to lift the
+ * cap, and it is checked before anything is pressed, because the tap after it
+ * spends coins. `fields` say which tsum this was about in every line written
+ * here -- the sweep's card slot, or the MyTsum.
+ */
+Tsum.prototype.raiseSelectedLevelCap = function(fields) {
+  if (!this.collectionOffersRaise()) {
     logWarn(Log.Unlock.RaiseNotOffered,
       'The tsum reads as capped but the panel offers no raise', fields);
     return false;
@@ -493,12 +627,9 @@ Tsum.prototype.raiseSelectedLevelCap = function(fields) {
 
 // Returns false only when it stood aside for a round in progress -- the board,
 // or the game's own pause menu over it. Either way the round is the play task's
-// to finish: there is no route off a running board, so navigating from one only
-// stalls into an app restart. The detect broadcasts, so on the pause menu
-// `dismiss.resumeGame` has pressed Continue by the time the answer is read.
+// to finish: `roundInProgress` (pages.ts) says why.
 Tsum.prototype.taskAutoUnlockLevel = function() {
-  const page = gPages.detect();
-  if (page === PageName.GamePause || page === PageName.GamePlaying) {
+  if (roundInProgress()) {
     return false;
   }
   logInfo(Log.Page.Tsums);
@@ -513,7 +644,7 @@ Tsum.prototype.taskAutoUnlockLevel = function() {
     return true;
   }
   const outcome = this.raiseCappedCards();
-  this.restoreCollectionSort(previous);
+  this.restoreCollectionSort(previous, CollectionSort.LevelLock);
   if (outcome !== null) {
     logInfo(Log.Unlock.End, outcome);
   }

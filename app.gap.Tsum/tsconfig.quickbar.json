@@ -45,6 +45,7 @@
     "src/i18n.ts",
     "src/uiEn.ts",
     "src/uiZhTw.ts",
+    "src/uiJa.ts",
     // What this channel is allowed to offer, and how an unfinished thing is
     // badged. Shared with the settings page. Emits build/releaseStatus.js,
     // loaded before the list that reads it.
@@ -55,6 +56,8 @@
     // The Bubble Strategy dropdown's entries, shared for the same reason and in
     // the same shape. Emits build/bubbleOptions.js.
     "src/bubbleOptions.ts",
+    // Stop after games' action entries, the same way. Emits build/stopAfterOptions.js.
+    "src/stopAfterOptions.ts",
     // The named-configuration store, shared with the settings page: the strip
     // lists the presets and applies one mid-run. Emits build/presets.js, which
     // quickbar.html loads before quickbarPage.js.

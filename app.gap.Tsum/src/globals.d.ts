@@ -165,6 +165,11 @@ interface BoxTabRow {
   tabs: number;
   /** Which tab is the open (gold) one, as an index into that width's order. */
   selected: number;
+  /**
+   * Which box the limited-time slot holds -- `Select` or `Capsule`, read off
+   * the tab's icon -- or null on a three-tab row, which has no such slot.
+   */
+  limited: BoxType | null;
 }
 
 /** Where to tap for each purchase size on the open box, and what is sold out. */
@@ -751,6 +756,27 @@ interface GameBubble {
    * list built without the tsum pass, which pops as it always did.
    */
   near?: number;
+  /**
+   * Found by the bottom-band pass rather than the Hough pass proper
+   * (`gastonBubbles`): planned round and tapped like any other, logged apart.
+   */
+  band?: boolean;
+  /**
+   * One the memory supplied, which may have rolled since
+   * (`gastonRememberBubbles`): planned round, and tapped last.
+   */
+  soft?: boolean;
+  /**
+   * Found by its gold icons over a circle the tsum scan took for a tsum, the
+   * Hough passes having missed it (`gastonBubbles`).
+   */
+  gold?: boolean;
+  /** Epoch ms this bubble was first seen at about this spot (`trackGameBubbles`). */
+  firstSeen?: number;
+  /** Epoch ms of the scan that last found it. */
+  lastSeen?: number;
+  /** Tapped by `popGameBubbles`: lends its age to nothing that appears where it was. */
+  popped?: boolean;
 }
 
 /**
@@ -788,6 +814,36 @@ interface StatsRegion {
   /** Inclusive colour bounds as [r, g, b] -- reversed when handed to inRange. */
   lo: [number, number, number];
   hi: [number, number, number];
+  /** A '/' ends one number and starts the next ("5/10" reads [5, 10]). */
+  slash?: boolean;
+  /** Read the crop this many times the 540-wide template space, for small text. */
+  scale?: number;
+}
+
+/** The Change Order dialog's settings, as `sortCollection` found them. */
+interface CollectionSortState {
+  order: CollectionSort;
+  /** "Show owned Tsums only"; null when it was not read. */
+  ownedOnly: boolean | null;
+}
+
+/** What a collection slot holds: a card, the selected (gold) card, or nothing. */
+type CollectionCardState = 'empty' | 'card' | 'selected';
+
+/** One row of the Tsum List CSV. Unread fields are '' or null. */
+interface TsumListRow {
+  /** Position in Date acquired order, from 1. */
+  order: number;
+  tsum: string;
+  name: string;
+  level: number | null;
+  levelCap: number | null;
+  skill: number | null;
+  skillMax: number | null;
+  /** Percent through the current skill level, 0-100; null at MAX or unread. */
+  skillProgress: number | null;
+  /** "YYYY-MM". */
+  acquired: string;
 }
 
 /** A portrait rect in logical 1080x1920 coordinates. `MyTsumPortrait` holds two. */
@@ -847,6 +903,20 @@ interface RoundOutcome {
   medals: number | null;
 }
 
+/**
+ * What the last look at the score tally read off its frame -- the three
+ * questions about its button row, answered together by `readTallyRow`
+ * (`record.tallyRow`) so the handlers and the stats read share one capture.
+ */
+interface TallyRow {
+  /** The button row is out, which is the game's own signal the count-up is over. */
+  buttons: boolean;
+  /** The medals-row layout; only meaningful once `buttons` is true. */
+  medals: boolean;
+  /** Play is drawn beside Close -- a point battle's tally draws Close alone. */
+  play: boolean;
+}
+
 /** The best library entry for a signature, and how far clear of the runner-up. */
 interface MyTsumMatch {
   short: string;
@@ -890,6 +960,19 @@ interface RunCoinTally {
   baseTotal: number;
   finalRounds: number;
   finalTotal: number;
+}
+
+/**
+ * The run's time totals, read by the Quick Bar. Counted by the play task at
+ * every round end whether or not round stats are on, unlike `RunCoinTally`.
+ */
+interface RunClock {
+  /** When this run's `Tsum` was built -- the start of the run. */
+  startedAt: number;
+  /** Rounds that ended with both a start and an end stamp. */
+  rounds: number;
+  /** Their summed play time, seconds. */
+  roundSec: number;
 }
 
 /**
@@ -1042,9 +1125,15 @@ interface TiaraLook {
 // --- Scheduling ---
 
 /** A unit of work scheduled by the TaskController. */
+type TaskBody = () => boolean | void;
+
 interface Task {
   name: string;
-  run: () => void;
+  /**
+   * Returns true to be due again on the next pass rather than after `interval`.
+   * A body whose boolean means something else must not pass it through.
+   */
+  run: TaskBody;
   interval: number;
   runTimes: number;
   /** Lower runs first among the jobs due at once; distinct per job. `JobPriority`, src/runPlan.ts. */
@@ -1076,6 +1165,8 @@ interface TsumConfig {
    */
   linkReach: number;
   maxChain: number;
+  /** Tsum size against `tsumWidth`, 1 for a normal board -- see `tsumSpan`. */
+  boardScale: number;
   debugLogs: boolean;
   /**
    * Page-history frames an issue report copies, and so the number the router
@@ -1147,7 +1238,8 @@ interface Tsum {
   toRealXYs(xy: Coord): Point;
   tap(xy: Coord, during?: number): void;
   tapDown(xy: Coord, during?: number): void;
-  moveTo(xy: Coord, during?: number): void;
+  /** `wait` is the native `moveTo`'s: return once the game has taken the move. */
+  moveTo(xy: Coord, during?: number, wait?: boolean): void;
   tapUp(xy: Coord, during?: number): void;
   /**
    * Drag one column of the screen and answer how many of `sample`'s points the
@@ -1193,9 +1285,10 @@ interface Tsum {
    * Wait for the tsums to stop moving, up to `maxMs` (`BoardSettle.maxMs` when
    * omitted) and not before `minMs` (`BoardSettle.minMs`): `settleScreen`'s
    * counterpart for the board, which the full-screen grid can never call still.
+   * `onMoving` runs once, at the first reading that shows them moving.
    * False means they never did, or the run stopped.
    */
-  settleBoard(maxMs?: number, minMs?: number): boolean;
+  settleBoard(maxMs?: number, minMs?: number, onMoving?: () => void): boolean;
   /** `isRunning`, and no level-cap sweep waiting to take the screen (`yieldAsked`). */
   mayContinue(): boolean;
 
@@ -1215,10 +1308,12 @@ interface Tsum {
 
   // --- board.ts --------------------------------------------------------
   linkTsums(path: Point[]): void;
-  /** Scans still to go before a mid-chain pop is worth taking again. */
-  bubbleSettleScans: number;
-  /** Consecutive scans that saw a bubble with too few tsums in its blast. */
-  bubbleUnripeScans: number;
+  /** Epoch ms the hold after a skill activation lifts; 0 means none stands. */
+  bubbleHoldUntil: number;
+  /** Bubbles seen on recent scans with their first sightings -- what a bubble's age is read from. */
+  bubbleSightings: GameBubble[];
+  /** Give this scan's bubbles their first sightings, matched by position against recent scans. */
+  trackGameBubbles(bubbles: GameBubble[]): void;
   /** The chain length that earns a bubble pop, bounded by the chain cap in
    * force -- `Config.maxChain`, or the selected skill's `chainLimits`. */
   bubblePopChainLength(): number;
@@ -1229,6 +1324,10 @@ interface Tsum {
    * end? The "Hold bubbles last fever seconds" setting, asked per pop.
    */
   bubblesHeldForFever(): boolean;
+  /** Start the hold on the Bubble Strategy's pops from an activation at `activatedAt`. */
+  holdBubblesAfterSkill(activatedAt: number): void;
+  /** Is the hold after a skill activation still standing? Asked per pop. */
+  bubblesHeldAfterSkill(): boolean;
   /** How many bubbles the Bubble Strategy setting allows one pop to spend. */
   bubbleTapBudget(): number;
   /**
@@ -1253,6 +1352,17 @@ interface Tsum {
   boardClusters: Color[];
   /** How many tsums each of `boardClusters` holds, same order. */
   boardClusterSizes: number[];
+  /** The last few tsum-size reads `Config.boardScale` is the median of; emptied each round. */
+  boardScaleReads: number[];
+  /**
+   * Which way the skill last said the tsums can change size: -1 only smaller,
+   * 1 only bigger, 0 neither. 0 at each round's start, where they are full size.
+   */
+  boardScaleTrend: number;
+  /** Until when `waitOutEdgeWash` skips waiting, after a wait that ran out. */
+  edgeWashBackoffUntil: number;
+  updateBoardScale(grayImg: NativeImage): void;
+  waitOutEdgeWash(grayImg: NativeImage): boolean;
   scanBoardQuick(): BoardPoint[];
 
   // --- play.ts ---------------------------------------------------------
@@ -1274,7 +1384,10 @@ interface Tsum {
   watchRoundEnd(hud: HudWatch): RoundLook;
   /** What is left of the between-rounds delay, in ms; 0 when none is running. */
   roundDelayRemainingMs(): number;
-  taskPlayGameQuick(): void;
+  /** Counts a finished round toward "Stop after games"; true if it fired. */
+  countGameTowardStop(): boolean;
+  /** True once a round has been played, so the next one starts without the job's interval. */
+  taskPlayGameQuick(): boolean | void;
 
   // --- corpus.ts -------------------------------------------------------
   /** Where saveCorpusFrame writes, under the record directory. */
@@ -1309,7 +1422,8 @@ interface Tsum {
    * Which mail row a Skip Medals / Skip Ruby pass should open, as one of
    * `readMailRows`' offsets; `MailNoRow` when nothing on screen can be opened,
    * `MailAllSkipped` when every row on screen is a medal or ruby being stepped
-   * past and the hearts under them are only out of sight.
+   * past and the hearts under them are only out of sight. A row whose badge is
+   * still under the Claim All bar is never opened: it counts as out of sight.
    */
   mailRowToOpen(img: NativeImage): number;
   /** Drag the mail list on; false when it did not move, so the mail ended. */
@@ -1328,7 +1442,8 @@ interface Tsum {
    * it stopped on. `abortOn` ends the wait early once that page has held for
    * `HeartOkLostPolls`.
    */
-  waitForHeartPage(want: PageName, polls: number, abortOn?: PageName): PageName;
+  heartRowSent(heart: Point): boolean;
+  waitForHeartPage(want: PageName, polls: number, abortOn?: PageName, sentRow?: Point): PageName;
   /** Tap one heart and see it through the gift dialog and the toast. */
   sendOneHeart(heart: Point): boolean;
   /** Send every heart on the screenful in front of us. */
@@ -1363,14 +1478,47 @@ interface Tsum {
   // --- levelCap.ts -----------------------------------------------------
   /** Which order the open Change Order dialog says the collection is in; null when it cannot tell. */
   readCollectionSort(): CollectionSort | null;
-  /** Put the collection in `order`. The order it was in before, or null when the dialog failed. */
-  sortCollection(order: CollectionSort): CollectionSort | null;
-  /** Put the collection back in `order` once the sweep is done; nothing to do for Level Lock. */
-  restoreCollectionSort(order: CollectionSort): void;
+  /**
+   * Put the collection in `order`, and set "Show owned Tsums only" when
+   * `ownedOnly` is given. What it was before, or null when the dialog failed.
+   */
+  sortCollection(order: CollectionSort, ownedOnly?: boolean): CollectionSortState | null;
+  /** Put the collection back to `previous` once a sweep that sorted it to `current` is done. */
+  restoreCollectionSort(previous: CollectionSortState, current: CollectionSort): void;
+  /** Is "Show owned Tsums only" ticked on the open Change Order dialog? */
+  readCollectionOwnedOnly(): boolean;
   /** The raise loop. The fields for `Log.Unlock.End`, or null when the run stopped under it. */
   raiseCappedCards(): LogFields | null;
   /** Is the collection showing its first eight cards? By the left chevron's absence. */
   collectionAtFirstPage(): boolean;
+  /** Is the collection showing its last page? By the right chevron's absence. */
+  collectionAtLastPage(): boolean;
+  /** Does the detail panel offer a level-cap raise (the gold coin)? */
+  collectionOffersRaise(): boolean;
+
+  // --- tsumList.ts -----------------------------------------------------
+  /** What each of the eight collection slots holds, off one capture. */
+  readCollectionCards(): CollectionCardState[];
+  /** Card `slot`'s acquisition month as "YYYY-MM", or '' when unread. */
+  readCardDate(slot: number): string;
+  /** Percent through the current skill level off the skill bar's fill. */
+  readSkillProgress(): number;
+  /** The detail panel's level and skill, each `[now, max]` or null. */
+  readTsumDetail(): {level: number[] | null; skill: number[] | null};
+  /** Name the detail panel's portrait against the collection library. */
+  identifyCollectionTsum(): MyTsumSelection | null;
+  /** Wait for the panel portrait to change from `before`, then hold still; false on timeout. */
+  awaitCollectionPortrait(before: number[] | null): boolean;
+  /** Save the detail panel's portrait crop to `path`. */
+  saveCollectionPortrait(path: string): void;
+  /** Select card `slot` and read its row; unnamed portraits are saved under `shotDir`. */
+  readCollectionCard(slot: number, order: number, date: string, shotDir: string): TsumListRow;
+  /** The Tsum List export. False only when it stood aside for a round. */
+  taskExportTsumList(): boolean;
+  /** How many of the eight cards are still loading placeholders. */
+  collectionLoadingCards(): number;
+  /** Wait for the grid's placeholder cards to load; false when they did not in time. */
+  awaitCollectionLoaded(): boolean;
   /** Tap the left arrow until the collection is back on its first page. */
   rewindCollection(): boolean;
   /** Which of the eight cards on this collection page are at their level cap. */
@@ -1396,7 +1544,7 @@ interface Tsum {
    * chore in the give-up line; the level-cap sweep's when it is left out.
    */
   awaitPage(page: PageName, timeoutMs: number, event?: LogEvent): boolean;
-  /** True once the sweep has run; false when it stood aside for a paused round. */
+  /** True once the sweep has run; false when it stood aside for a round in progress. */
   taskAutoUnlockLevel(): boolean;
 
   // --- boxes.ts --------------------------------------------------------
@@ -1426,7 +1574,7 @@ interface Tsum {
   buyOneBox(tenTimes: boolean, purchase: number, limit: number): BoxPurchaseOutcome;
   /** The purchase loop. The fields for `Log.Box.End`, or null when the run stopped under it. */
   buyBoxes(box: BoxType, size: BoxPurchaseSize, maxPurchases: number): LogFields | null;
-  /** True once the sweep has run; false when it stood aside for a paused round. */
+  /** True once the sweep has run; false when it stood aside for a round in progress. */
   taskBuyBoxes(): boolean;
 
   // --- fever.ts --------------------------------------------------------
@@ -1521,11 +1669,8 @@ interface Tsum {
    * ran out.
    */
   waitForScorePage(): boolean;
-  /**
-   * Whether this tally draws Play beside Close, which a point battle's does not.
-   * Takes its own frame unless given one.
-   */
-  tallyPlayShown(img?: NativeImage): boolean;
+  /** Read the tally's button row off a fresh frame into `tallyRow`; see `record.tallyRow`. */
+  readTallyRow(): void;
   finishRoundStats(): void;
   saveStatsDebugShot(tag: string): void;
   writeRoundStats(date: Date, seconds: number, score: number | null,
@@ -1556,20 +1701,16 @@ interface Tsum {
   useCptLySkill(activatedAt?: number, timing?: CptLyTiming): void;
 
   // --- skills/coronationElsa.ts ----------------------------------------
-  /**
-   * Set off the pile: aimed taps down the sorted pile, then -- only when
-   * `grid` says so -- the blind sweep. The closing burst passes true; a
-   * mid-window burst must not, or the grid taps ice the read never claimed.
-   */
-  elsaBurstFrozen(frozen: BoardPoint[], grid: boolean): number;
+  /** Set off the pile: aimed taps down the sorted pile, then its bubbles. */
+  elsaBurstFrozen(frozen: BoardPoint[]): number;
   /**
    * One settled capture (a mid-fall or bubbled ice-free look is retaken, a
    * bounded number of times), split into free tsums and ice, plus what a drag
    * must keep away from. `expected` is the settle gate's board population.
    */
-  elsaLook(closesAt: number, expected?: number, popIcedMax?: number):
+  elsaLook(closesAt: number, expected?: number):
     { free: BoardPoint[], iced: BoardPoint[], obstacles: {x: number, y: number, pad?: number}[],
-      waits: number, pops: number };
+      waits: number, pops: number, popped: number };
   /**
    * Play the freeze window as a sweep: chain after chain on the lowest free
    * row, one look per chain, until the window is nearly out; then one break
@@ -1577,24 +1718,6 @@ interface Tsum {
    * the pre-activation board's size.
    */
   useCoronationElsaSkill(activatedAt?: number, expectTsums?: number): void;
-
-  // --- skills/coronationElsaLegacy.ts ----------------------------------
-  // The 1.0 choreography, kept for comparison; the file's header says why.
-  /** As `elsaBurstFrozen`, over the pile the model believes is standing. */
-  elsaLegacyBurstFrozen(frozen: BoardPoint[], grid: boolean): number;
-  /**
-   * One settled capture, then chains chosen for coverage off a model of what
-   * each one froze, until the board offers none or `closesAt` passes. Returns
-   * the points the model believes are now ice, how many chains the pass drew,
-   * and the whole population it read.
-   */
-  elsaLegacyFreezePass(closesAt: number, expected?: number):
-    { iced: BoardPoint[], chains: number, read: number };
-  /**
-   * Play out the freeze window: freeze until no more chains can be made, then
-   * burst -- the clock forces the burst only at `burstTailMs` before close.
-   */
-  useCoronationElsaLegacySkill(activatedAt?: number, expectTsums?: number): void;
 
   // --- skills/formalBeast.ts -------------------------------------------
   /**
@@ -1632,13 +1755,20 @@ declare const enum KeyCode {
 }
 
 // --- Native runtime (provided by the host environment) ---
+// Only what the host registers (`defFn` in its api_*.cpp). A declaration with
+// no native behind it typechecks and throws ReferenceError at run time: the
+// old API's getImageWidth/Height did, mid-drag, on 2026-09-23.
 declare function sleep(ms: number): void;
 declare function tap(x: number, y: number, during?: number): void;
 declare function tapDown(x: number, y: number, during?: number): void;
 declare function tapUp(x: number, y: number, during?: number): void;
-declare function moveTo(x: number, y: number, during?: number): void;
-declare function tapMove(id: number, x: number, y: number): void;
-declare function press(key: string | number): void;
+/**
+ * `wait` (default false) returns only once the game has taken the move, about
+ * a frame, so a long drag across a stalled game pauses instead of batching into
+ * one point. Off, the move is queued and the call returns at once; a short drag
+ * is faster that way.
+ */
+declare function moveTo(x: number, y: number, during?: number, wait?: boolean): void;
 declare function keycode(code: KeyCode, during?: number): void;
 declare function swipe(x1: number, y1: number, x2: number, y2: number, steps?: number): void;
 declare function getColor(x: number, y: number): Color;
@@ -1650,7 +1780,6 @@ declare function getScreenshotModify(
 declare function releaseImage(img: NativeImage): void;
 declare function openImage(path: string): NativeImage;
 declare function saveImage(img: NativeImage, path: string): void;
-declare function cloneImage(img: NativeImage): NativeImage;
 declare function clone(img: NativeImage): NativeImage;
 declare function cropImage(img: NativeImage, x: number, y: number, w: number, h: number): NativeImage;
 declare function getBase64FromImage(img: NativeImage): string;
@@ -1662,11 +1791,8 @@ declare function getImageColor(img: NativeImage, x: number, y: number): Color;
  * without first filtering it against the frame being sampled.
  */
 declare function getImageColors(img: NativeImage, points: Point[]): Color[];
-declare function getImageWidth(img: NativeImage): number;
-declare function getImageHeight(img: NativeImage): number;
 declare function getImageSize(img: NativeImage): { width: number; height: number };
 declare function getScreenSize(): { width: number; height: number };
-declare function getDeviceSize(): { width: number; height: number };
 declare function getStoragePath(): string;
 /**
  * The loaded script's own folder -- where `tsums.dat` sits, beside `index.js`.
@@ -1689,6 +1815,15 @@ declare function getScriptPath(): string;
  */
 declare function getDeviceId(): string;
 /**
+ * What this device is called: the name the host's event stream sends (set in
+ * the app's Settings, or `<model>-<first four of getDeviceId()>`). GAP Stats
+ * shows rounds and Tsum lists under it.
+ *
+ * Newer than the rest of the API -- reach for it behind
+ * `typeof getDeviceName === 'function'`.
+ */
+declare function getDeviceName(): string;
+/**
  * The top-most screen row this script reads, in screen px, so the host keeps
  * the windows it leaves up for a whole run -- the status line under the
  * floating bar -- above it, or shows nothing there. Negative withdraws it.
@@ -1698,15 +1833,9 @@ declare function getDeviceId(): string;
  * `Tsum.prototype.declareReadTop` is the one caller.
  */
 declare function setReadTop(y: number): void;
-declare function getCurrentPackage(): string;
-declare function launchApp(pkg: string): void;
-declare function killCurrentPackage(): void;
-declare function killApp(pkg: string): void;
 declare function execute(cmd: string): string;
 declare function readFile(path: string): string;
 declare function writeFile(path: string, content: string): void;
-declare function setScreenOrientation(orientation: number): void;
-declare function keepScreenAwake(enabled?: boolean): void;
 
 // --- Image-processing helpers (OpenCV-backed) ---
 declare function smooth(img: NativeImage, type: number, size: number): void;
@@ -1791,6 +1920,14 @@ declare function showBanner(message: string, duration?: number, plays?: number):
  * reference to a missing global is a ReferenceError.
  */
 declare function publishStats(pattern: string): void;
+
+/**
+ * Ask the host to pause this script, as its own Pause button would. Returns at
+ * once; the pause lands at the script's next `sleep()` or touch, and the host's
+ * Resume carries on from there. Newer than the rest -- reach for it behind
+ * `typeof pauseScript === 'function'`.
+ */
+declare function pauseScript(): void;
 
 /**
  * Broadcast one of this script's own events to tooling outside the device.

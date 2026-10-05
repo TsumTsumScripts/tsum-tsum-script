@@ -28,8 +28,8 @@ declare const enum UiText {
   TabGameplay = 'tab.gameplay',
   TabChores = 'tab.chores',
   TabSkills = 'tab.skills',
+  TabRound = 'tab.round',
   TabHearts = 'tab.hearts',
-  TabAdvanced = 'tab.advanced',
   TabDebug = 'tab.debug',
 
   // --- group headings -----------------------------------------------------
@@ -38,13 +38,17 @@ declare const enum UiText {
   GroupRunOrderHelp = 'group.runOrder.help',
   GroupSettingsCode = 'group.settingsCode',
   GroupSettingsCodeHelp = 'group.settingsCode.help',
-  GroupPlaying = 'group.playing',
+  GroupRun = 'group.run',
+  GroupChains = 'group.chains',
+  GroupLinking = 'group.linking',
   GroupBoardHelpers = 'group.boardHelpers',
   GroupItems = 'group.items',
   GroupItemsHelp = 'group.items.help',
   GroupLevelCaps = 'group.levelCaps',
   GroupBoxes = 'group.boxes',
   GroupBoxesHelp = 'group.boxes.help',
+  GroupTsumList = 'group.tsumList',
+  GroupTsumListHelp = 'group.tsumList.help',
   GroupSkill = 'group.skill',
   GroupTiming = 'group.timing',
   GroupReceiveAll = 'group.receiveAll',
@@ -64,6 +68,8 @@ declare const enum UiText {
   SettingAutoLaunchApp = 'setting.autoLaunchApp',
   SettingAutoLaunchAppHelp = 'setting.autoLaunchApp.help',
   SettingShareSettings = 'setting.shareSettings',
+  SettingShareListing = 'setting.shareListing',
+  SettingShareListingHelp = 'setting.shareListing.help',
   SettingExportPresets = 'setting.exportPresets',
   SettingExportPresetsHelp = 'setting.exportPresets.help',
   SettingAutoPlayGame = 'setting.autoPlayGame',
@@ -78,6 +84,17 @@ declare const enum UiText {
   SettingMaxRoundActionHelp = 'setting.maxRoundAction.help',
   MaxRoundCoast = 'maxRound.coast',
   MaxRoundStop = 'maxRound.stop',
+  SettingStopAfterGames = 'setting.stopAfterGames',
+  SettingStopAfterGamesHelp = 'setting.stopAfterGames.help',
+  SettingStopAfterAction = 'setting.stopAfterAction',
+  SettingStopAfterActionHelp = 'setting.stopAfterAction.help',
+  StopAfterAutoPlayOff = 'stopAfter.autoPlayOff',
+  StopAfterPause = 'stopAfter.pause',
+  StopAfterStop = 'stopAfter.stop',
+  /** The Quick Bar chip's names for the three. */
+  StopAfterAutoPlayOffShort = 'stopAfter.autoPlayOff.short',
+  StopAfterPauseShort = 'stopAfter.pause.short',
+  StopAfterStopShort = 'stopAfter.stop.short',
   SettingMaxChainsPerScan = 'setting.maxChainsPerScan',
   SettingMaxChainsPerScanHelp = 'setting.maxChainsPerScan.help',
   SettingMaxChain = 'setting.maxChain',
@@ -114,6 +131,8 @@ declare const enum UiText {
   SettingUnlockMyTsumLevelHelp = 'setting.unlockMyTsumLevel.help',
   SettingBuyBox = 'setting.buyBox',
   SettingBuyBoxHelp = 'setting.buyBox.help',
+  SettingExportTsumList = 'setting.exportTsumList',
+  SettingExportTsumListHelp = 'setting.exportTsumList.help',
   SettingBuyBoxType = 'setting.buyBoxType',
   SettingBuyBoxTypeHelp = 'setting.buyBoxType.help',
   SettingBuyBoxSize = 'setting.buyBoxSize',
@@ -123,6 +142,7 @@ declare const enum UiText {
   BoxPremiumPlus = 'box.premiumPlus',
   BoxPremium = 'box.premium',
   BoxSelect = 'box.select',
+  BoxCapsule = 'box.capsule',
   BoxHappiness = 'box.happiness',
   BoxSizeOne = 'boxSize.one',
   BoxSizeTen = 'boxSize.ten',
@@ -133,6 +153,10 @@ declare const enum UiText {
   SettingSkillLevelHelp = 'setting.skillLevel.help',
   SettingSkillWaitingTime = 'setting.skillWaitingTime',
   SettingSkillWaitingTimeHelp = 'setting.skillWaitingTime.help',
+  SettingSkillSettle = 'setting.skillSettle',
+  SettingSkillSettleHelp = 'setting.skillSettle.help',
+  SettingSkillReactivation = 'setting.skillReactivation',
+  SettingSkillReactivationHelp = 'setting.skillReactivation.help',
   SettingNoSkillLastFever = 'setting.noSkillLastFever',
   SettingNoSkillLastFeverHelp = 'setting.noSkillLastFever.help',
   SettingSkillAutoTap = 'setting.skillAutoTap',
@@ -234,11 +258,11 @@ declare const enum UiText {
   SkillCptLightyear = 'skill.cptLightyear',
   SkillCptLightyear120 = 'skill.cptLightyear120',
   SkillLightningMcQueenPlus = 'skill.lightningMcQueenPlus',
+  SkillNightmareSet = 'skill.nightmareSet',
   SkillFormalBeast = 'skill.formalBeast',
   SkillGaston = 'skill.gaston',
   SkillTiaraMinniePlus = 'skill.tiaraMinniePlus',
   SkillCoronationElsa = 'skill.coronationElsa',
-  SkillCoronationElsaLegacy = 'skill.coronationElsaLegacy',
   SkillRapunzelPlus = 'skill.rapunzelPlus',
   SkillLorcanaAurora = 'skill.lorcanaAurora',
   SkillPairTsum = 'skill.pairTsum',
@@ -268,6 +292,9 @@ declare const enum UiText {
   SharePastePrompt = 'share.pastePrompt',
   ShareOtherFormat = 'share.otherFormat',
   ShareNotACode = 'share.notACode',
+  /** A switch's value in the settings list a copied code can carry. */
+  ShareListingOn = 'share.listingOn',
+  ShareListingOff = 'share.listingOff',
   /** `{applied}` settings, `{from}` version suffix. */
   ShareApplied = 'share.applied',
   /** As above, plus `{skipped}`. */
@@ -346,6 +373,7 @@ declare const enum UiText {
   /** Waits `{minutes}` between rounds. Prefixed to the item list, so it ends in a space. */
   RunPlayRoundDelay = 'run.playRound.delay',
   RunPlayRoundCap = 'run.playRound.cap',
+  RunPlayRoundStopAfter = 'run.playRound.stopAfter',
   RunItemsNone = 'run.items.none',
   /** `{items}`, joined with `RunItemsSeparator`. */
   RunItemsSome = 'run.items.some',
@@ -372,6 +400,8 @@ declare const enum UiText {
   FlowLink = 'flow.link',
   FlowFan = 'flow.fan',
   FlowNoSkill = 'flow.noSkill',
+  /** Wait up to `{ms}` milliseconds for the board to refill before the skill. */
+  FlowSettleSkill = 'flow.settleSkill',
   /** `{skill}` at level `{level}`. */
   FlowUseSkill = 'flow.useSkill',
   FlowLorcanaCard = 'flow.lorcanaCard',
@@ -386,6 +416,23 @@ declare const enum UiText {
    *  in some languages than the chip has room for. */
   QbBonusCoin = 'qb.bonusCoin',
   QbBonus5to4 = 'qb.bonus5to4',
+  /** Stop after games' stepper and its action chip. */
+  QbGames = 'qb.games',
+  QbThen = 'qb.then',
+  QbSendHearts = 'qb.sendHearts',
+  QbReceiveOneByOne = 'qb.receiveOneByOne',
+  QbUnlockNow = 'qb.unlockNow',
+  QbCopyShare = 'qb.copyShare',
+  /** The banner after Copy code; the panel's own lines point at a box the strip lacks. */
+  QbCodeCopied = 'qb.codeCopied',
+  QbCodeNotCopied = 'qb.codeNotCopied',
+  /** Banners after the Lvl chip, when the engine's own banner does not apply. */
+  QbLevelsAlreadyQueued = 'qb.levelsAlreadyQueued',
+  QbLevelsNotQueued = 'qb.levelsNotQueued',
+  /** The page toggle's accessible name; the chip itself draws two dots. */
+  QbPage = 'qb.page',
+  /** The readout toggle's accessible name; the chip itself draws two dots. */
+  QbReadout = 'qb.readout',
   QbScan = 'qb.scan',
   QbChain = 'qb.chain',
   QbPreset = 'qb.preset',
@@ -394,6 +441,9 @@ declare const enum UiText {
   QbBase = 'qb.base',
   QbFinal = 'qb.final',
   QbRounds = 'qb.rounds',
+  QbAvgRound = 'qb.avgRound',
+  QbInRounds = 'qb.inRounds',
+  QbRunning = 'qb.running',
 }
 
 /**

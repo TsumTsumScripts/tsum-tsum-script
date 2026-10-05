@@ -33,6 +33,7 @@ namespace Log {
     LoopStopped           = 'task.loopStopped',
     LoopStopping          = 'task.loopStopping',
     NotAFunction          = 'task.notAFunction',
+    StoodAside            = 'task.stoodAside',
     Threw                 = 'task.threw',
     WatchdogRestart       = 'task.watchdogRestart',
     WatchdogRestartFailed = 'task.watchdogRestartFailed',
@@ -80,9 +81,11 @@ namespace Log {
     HistoryFrameFailed    = 'page.historyFrameFailed',
     Matched               = 'page.matched',
     Probed                = 'page.probed',
+    RankUpClosing         = 'page.rankUp.closing',
     Rejected              = 'page.rejected',
     SubscriptionCycle     = 'page.subscriptionCycle',
     SubscriptionThrew     = 'page.subscriptionThrew',
+    TallySkipping         = 'page.scorePage.skipping',
     Trail                 = 'page.trail',
     Tsums                 = 'page.tsums',
     Unmatched             = 'page.unmatched',
@@ -102,8 +105,12 @@ namespace Log {
 
   /** Reading the board and planning chains. */
   export const enum Board {
+    /** A play-loop chain drawn, with what the game's counter said it linked (`readsChainCounter` skills only). */
+    ChainDrawn       = 'board.chainDrawn',
     Clusters         = 'board.clusters',
     DeadScan         = 'board.deadScan',
+    /** The scan waited out the last seconds' edge wash (`waitOutEdgeWash`). */
+    EdgeWash         = 'board.edgeWash',
     LinkReach        = 'board.linkReach',
     MyTsumColor      = 'board.myTsumColor',
     PathDone         = 'board.pathDone',
@@ -111,19 +118,23 @@ namespace Log {
     RecognitionStart = 'board.recognitionStart',
     RecognitionTime  = 'board.recognitionTime',
     Recognized       = 'board.recognized',
+    /** The tsums on the board changed size (`Config.boardScale`). */
+    Scale            = 'board.scale',
     Stalled          = 'board.stalled',
   }
 
   /** Bubbles on the board. */
   export const enum Bubble {
-    Cleared   = 'bubble.cleared',
-    Found     = 'bubble.found',
-    Generated = 'bubble.generated',
+    Cleared        = 'bubble.cleared',
+    Found          = 'bubble.found',
+    Generated      = 'bubble.generated',
     /** A pop refused because a fever is about to end -- the fever hold. */
-    Held      = 'bubble.held',
-    Popped    = 'bubble.popped',
+    Held           = 'bubble.held',
+    /** A pop refused because a skill fired inside `holdAfterSkillMs` -- the burst hold. */
+    HeldAfterSkill = 'bubble.heldAfterSkill',
+    Popped         = 'bubble.popped',
     /** A pop refused because every bubble sits in a hole -- too few tsums round it. */
-    Unripe    = 'bubble.unripe',
+    Unripe         = 'bubble.unripe',
   }
 
   /** A round, start to finish. */
@@ -137,6 +148,7 @@ namespace Log {
     GameOverAssumed       = 'play.gameOverAssumed',
     GameOverConfirmed     = 'play.gameOverConfirmed',
     GameStart             = 'play.gameStart',
+    GamesLimitReached     = 'play.gamesLimitReached',
     GamingFast            = 'play.gamingFast',
     HudBack               = 'play.hudBack',
     MagicalTimeCancelled  = 'play.magicalTimeCancelled',
@@ -144,7 +156,7 @@ namespace Log {
     RoundDelaySkipped     = 'play.roundDelaySkipped',
     RoundDelayStarted     = 'play.roundDelayStarted',
     RoundDelayWaiting     = 'play.roundDelayWaiting',
-    RoundCoastGaveUp      = 'play.roundCoastGaveUp',
+    RoundCoasting         = 'play.roundCoasting',
     RoundTimeUp           = 'play.roundTimeUp',
   }
 
@@ -163,6 +175,8 @@ namespace Log {
 
   /** The skill core, then one group per skill that has anything to say. */
   export const enum Skill {
+    /** A blind tap on a burst skill read as fired: the bubbles are held. */
+    BlindTapFired         = 'skill.blindTapFired',
     CabbageMickeyFound    = 'skill.cabbageMickey.found',
     CabbageMickeyNotFound = 'skill.cabbageMickey.notFound',
     CinderellaStroke      = 'skill.cinderella.stroke',
@@ -170,17 +184,15 @@ namespace Log {
     ElsaBurst             = 'skill.elsa.burst',
     ElsaDone              = 'skill.elsa.done',
     ElsaIceAlike          = 'skill.elsa.iceAlike',
-    // The 1.0 choreography's own names, so a log tells the two apart.
-    ElsaLegacyBurst       = 'skill.elsaLegacy.burst',
-    ElsaLegacyDone        = 'skill.elsaLegacy.done',
-    ElsaLegacyIceAlike    = 'skill.elsaLegacy.iceAlike',
-    ElsaLegacyPass        = 'skill.elsaLegacy.pass',
+    ElsaKind              = 'skill.elsa.kind',
     ElsaPass              = 'skill.elsa.pass',
+    ElsaSalvo             = 'skill.elsa.salvo',
     ElsaRoundOver         = 'skill.elsa.roundOver',
     FeverHoldOff          = 'skill.feverHoldOff',
     FormalBeastModeEnd    = 'skill.formalBeast.modeEnd',
     FormalBeastModeStart  = 'skill.formalBeast.modeStart',
     FormalBeastSteer      = 'skill.formalBeast.steer',
+    GastonClear           = 'skill.gaston.clear',
     GastonDone            = 'skill.gaston.done',
     GastonPass            = 'skill.gaston.pass',
     LorcanaAuroraDone     = 'skill.lorcanaAurora.done',
@@ -188,9 +200,17 @@ namespace Log {
     LorcanaAuroraStayed   = 'skill.lorcanaAurora.stayed',
     LorcanaAuroraSwept    = 'skill.lorcanaAurora.swept',
     MyTsumPriorityHold    = 'skill.myTsumPriority.hold',
+    /** NBC Set: Oogie Boogie's cut-in seen on a scan; his dice follow. */
+    NbcOogie              = 'skill.nbc.oogie',
+    /** NBC Set: Oogie's dice read at rest, and whether that roll is rerolled. */
+    NbcDice               = 'skill.nbc.dice',
+    /** NBC Set: Oogie's dice never read at rest before the wait ran out. */
+    NbcDiceUnread         = 'skill.nbc.diceUnread',
     OverloadProbe         = 'skill.overloadProbe',
     RapunzelDone          = 'skill.rapunzel.done',
     ReadyAgain            = 'skill.readyAgain',
+    /** A tap withheld: the skill's last activation is still running. */
+    StillRunning          = 'skill.stillRunning',
     TiaraBubbleRead       = 'skill.tiara.bubbleRead',
     TiaraBusy             = 'skill.tiara.busy',
     TiaraDimDream         = 'skill.tiara.dimDream',
@@ -255,6 +275,7 @@ namespace Log {
     ReceiveOneOk              = 'gifts.receiveOne.ok',
     ReceiveOneProbe           = 'gifts.receiveOne.probe',
     ReceiveOneReceiveAll      = 'gifts.receiveOne.receiveAll',
+    ReceiveOneRowUnderBar     = 'gifts.receiveOne.rowUnderBar',
     ReceiveOneSkipMedal       = 'gifts.receiveOne.skipMedal',
     ReceiveOneSkipRuby        = 'gifts.receiveOne.skipRuby',
     ReceiveOneSkippedOnly     = 'gifts.receiveOne.skippedOnly',
@@ -270,6 +291,8 @@ namespace Log {
     CardsRead         = 'unlock.cardsRead',
     DialogMissing     = 'unlock.dialogMissing',
     End               = 'unlock.end',
+    GridLoaded        = 'unlock.gridLoaded',
+    GridStillLoading  = 'unlock.gridStillLoading',
     /** The Auto Unlock MyTsum Level flow: one raise for the selected tsum after a round. */
     MyTsumBackoff     = 'unlock.myTsum.backoff',
     MyTsumCapped      = 'unlock.myTsum.capped',
@@ -327,6 +350,26 @@ namespace Log {
     TabRead          = 'box.tabRead',
     TenRefused       = 'box.tenRefused',
     ToastStuck       = 'box.toastStuck',
+  }
+
+  /** The Tsum List export: every owned tsum off the collection into a CSV. */
+  export const enum TsumList {
+    CardMissed      = 'tsumList.cardMissed',
+    CardRead        = 'tsumList.cardRead',
+    End             = 'tsumList.end',
+    Identified      = 'tsumList.identified',
+    NowQueued       = 'tsumList.nowQueued',
+    NowRefused      = 'tsumList.nowRefused',
+    NowWaiting      = 'tsumList.nowWaiting',
+    OwnedOnlyNotSet = 'tsumList.ownedOnlyNotSet',
+    PageMissed      = 'tsumList.pageMissed',
+    PageRead        = 'tsumList.pageRead',
+    PageTurnMissed  = 'tsumList.pageTurnMissed',
+    PortraitSaved   = 'tsumList.portraitSaved',
+    PortraitSettled = 'tsumList.portraitSettled',
+    Start           = 'tsumList.start',
+    Unnamed         = 'tsumList.unnamed',
+    WriteFailed     = 'tsumList.writeFailed',
   }
 
   /** The per-round CSV. */
@@ -439,6 +482,7 @@ namespace Log {
     RoundDelaySkipAsked        = 'settings.roundDelaySkipAsked',
     UnlockLevelsNowAsked       = 'settings.unlockLevelsNowAsked',
     BuyBoxesNowAsked           = 'settings.buyBoxesNowAsked',
+    ExportTsumListAsked        = 'settings.exportTsumListAsked',
     Saved                      = 'settings.saved',
     ShareCodeUndecodable       = 'settings.shareCodeUndecodable',
     ShareFieldIgnored          = 'settings.shareFieldIgnored',
@@ -468,6 +512,8 @@ namespace Log {
     PresetApplied  = 'quickBar.presetApplied',
     ReportAsked    = 'quickBar.reportAsked',
     ReportFailed   = 'quickBar.reportFailed',
+    UnlockNowAsked = 'quickBar.unlockNowAsked',
+    CopyShareAsked = 'quickBar.copyShareAsked',
     UnknownSetting = 'quickBar.unknownSetting',
   }
 }
