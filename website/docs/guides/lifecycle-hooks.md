@@ -23,7 +23,8 @@ already decides it, and that is where a reaction goes. This page is the map.
 | a skill is about to fire / has fired | `beforeActivate` / `afterActivate` on the handler | [Add a skill](add-a-skill). `orderPaths` is the one hook that runs while the skill is *not* activating. |
 | a chain was just linked | `popBubblesAfterChain` on the handler | Only for a skill that claims the bubbles. |
 | a setting changes on a running script | a `case` in `quickBarApplyOne` | [Add a setting](add-a-setting). Both pages go through it. |
-| the run is paused from the strip | `onPause()` in `quickbar.ts` | Evaluated by the host *after* it parks the engine. The only hook allowed to tap while paused. |
+| the run is paused from the strip | `onPause()` in `quickbar.ts` | Evaluated by the host *after* it parks the engine. One of the two hooks allowed to tap while paused. |
+| the run is resumed | `onResume()` in `quickbar.ts` | Evaluated by the host *before* it un-parks the engine: presses Continue and waits for the board, so the parked touch does not land on the pause menu. |
 | the game app has restarted | `awaitAppUp` in `appLifecycle.ts`, then `observe.startupPhase` | The root warning is the first page after a restart; the observe handler flips `isStartupPhase`. |
 | a scheduled interval elapses | a row in `runTaskTable` | [Add a scheduled task](add-a-task). |
 | a failure should collect an issue report | `ReportTriggers` in `report.ts` | Keyed by the `Log` event the failure already writes. [Logging and events](logging-and-events). |

@@ -476,8 +476,8 @@ gPages.subscribe({
   category: PageCategory.Dismiss,
   what: 'Press Continue on the game\'s own pause menu. It stands between the script '
       + 'and the board it was playing, and the script did not necessarily open it: '
-      + 'the host presses Pause for the user through `onPause`, so a round comes '
-      + 'back from a script pause through here.',
+      + 'the host presses Pause for the user through `onPause`. A script resume '
+      + 'presses Continue itself (`onResume`); this catches every other way in.',
   pages: [PageName.GamePause],
   // Dismiss rather than navigate, and the distinction is the whole point: the
   // navigate band is silent when nothing set a goal, so a handler there is never

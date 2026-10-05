@@ -107,8 +107,10 @@ Opening the settings panel or the Quick Bar **pauses** the run: the host sets
 a flag that parks `sleep()` and every touch injector, so the script freezes
 where it is. `onPause()` (`quickbar.ts`) is evaluated once *after* that flag is
 set, and presses the game's own Pause button if a round is running, so the
-round's clock stops too. Closing the panel resumes; the play loop's next look
-sees the pause menu and `dismiss.resumeGame` presses Continue.
+round's clock stops too. Closing the panel resumes: `onResume()` runs *before*
+the flag lifts, presses Continue and waits for the board. It has to come first
+because the script is parked inside its next touch, often mid-chain, and that
+touch would otherwise land on the pause menu.
 
 Play with the panel open is the one thing that ends a run: it sends a fresh
 `start()` with the settings on screen.

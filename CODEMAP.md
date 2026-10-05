@@ -245,7 +245,7 @@ enforces every row below, so these are true rather than approximate.
 | `PageDef`, `PageMatch`, `PageMap`, `PageProfile`, `PageProfileMap`, `PageSubscription`, `PageSubscriptionEntry`, `PageVisit`, `PageEvent`, `PageColor`, `PageRoute`, `PageRouteMap` | `src/globals.d.ts` |
 | `Fever*`, `gFever` | `src/fever.ts`, `src/data.ts` (`FeverProbes`, `FeverBar`), `src/globals.d.ts` |
 | `skill*`, `Skill*` | `src/skills/skillCore.ts`, `src/tsum.ts`, `src/globals.d.ts`, `src/shared.d.ts`, `src/skillOptions.ts` |
-| `quickBar*`, `onPause` | `src/quickbar.ts` |
+| `quickBar*`, `onPause`, `onResume` | `src/quickbar.ts` |
 | `qb*`, `QB_*`, `onQuickBar*`, `onGapState` | `src/quickbarPage.ts` |
 | `*LiveSettings`, `onLiveSettingsApplied`, `LIVE_POLL_MS` — the settings page and the running world, kept in step | `src/index.ts` (`applyLiveSettings`, the engine's end), `src/settings.ts` (`pushLiveSettings`, `pullLiveSettings`, `onLiveSettings`, and `onLiveSettingsApplied` — the engine confirming a push, which is where the nudge to the other page goes out) |
 | `lastRunSettings`, `saveLastRunSettings`, `lastSettingsPath`, `LastSettingsOneShot` — the per-device last-settings file (README § Getting logs) | `src/index.ts` |

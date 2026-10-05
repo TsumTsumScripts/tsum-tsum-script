@@ -272,6 +272,15 @@ class Tsum {
    */
   lastRound: RoundOutcome | null;
   roundStartedAt: number;
+  /**
+   * The run's pauses, as `onPause` (quickbar.ts) found them. `pauses` counts
+   * them, so a chain batch can tell one happened under it and stop drawing a
+   * plan made before it; `pausedAt` and `pausedInRound` are what `onResume`
+   * puts the round back from.
+   */
+  pauses: number;
+  pausedAt: number;
+  pausedInRound: boolean;
   roundEndedAt: number;
   roundBaseCoins: number;
   /**
@@ -453,6 +462,9 @@ class Tsum {
     this.roundUid = '';
     this.lastRound = null;
     this.roundStartedAt = 0;
+    this.pauses = 0;
+    this.pausedAt = 0;
+    this.pausedInRound = false;
     this.roundEndedAt = 0;
     this.roundBaseCoins = -1;
     this.tallyRow = {buttons: false, medals: false, play: false};

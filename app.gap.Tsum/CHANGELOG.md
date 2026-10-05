@@ -57,6 +57,7 @@ release note; they fold back in here when she ships.
 - Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, the Mid Chain strategies no longer let them pile up, and new Save One and Save One Mid Chain strategies pop all but one (on sight, or as a chain lands).
 - Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen.
 - Quick Bar's coin readout shows the average medals earned per round.
+- Resuming after a pause mid-round now presses Continue and returns to the round, instead of sometimes tapping Try Again or elsewhere on the pause menu.
 
 ### Added
 
@@ -186,6 +187,13 @@ release note; they fold back in here when she ships.
 
 ### Fixed
 
+- **Resume mid-round tapped the pause menu.** A paused run is parked inside its
+  next touch, so on Resume the rest of a chain planned before the pause landed on
+  the pause menu (Try Again, To Home Screen) before the loop pressed Continue.
+  New `onResume()` host hook (host: `ScriptRuntime.runResumeHook`, before the
+  flag lifts) presses Continue and waits for the board; `onPause` records the
+  pause (`ts.pauses`, `pausedAt`, `pausedInRound`); `link` drops the rest of a
+  batch a pause landed under; the paused time is credited to `roundStartedAt`.
 - **Rank-up panel stalled the score wait.** The ranking panel read `ClosePage`,
   which nothing taps during the wait; it now has its own page (`RankUp`) and
   `dismiss.rankUp` closes it.
