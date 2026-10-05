@@ -50,7 +50,7 @@ interface GapWorkflowListInfo {
   missing: string;
 }
 
-/** One param of a node: an adapter field, plus `lists`, `perLoop`, `optional`. */
+/** One param of a node: an adapter field, plus `lists`, `perLoop`, `perDevice`, `optional`. */
 interface GapWorkflowParam {
   key: string;
   label: string;
@@ -64,6 +64,8 @@ interface GapWorkflowParam {
   help?: string;
   default?: GapWorkflowScalar;
   perLoop?: boolean;
+  /** The phone may set one value per device; the server sends each device its own. */
+  perDevice?: boolean;
   optional?: boolean;
 }
 

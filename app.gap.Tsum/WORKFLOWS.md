@@ -94,6 +94,9 @@ list: `<storage>/tsum_record/tsum_list_<getDeviceId()>.json`,
 - **The check** (`gapWorkflowCheck` and `gapWorkflowBegin`): a workflow with a
   (banner "Run Export Tsum List first"); a chosen tsum, any per-loop value
   included, not in it → `tsum-not-in-list:<tsum>`.
+- **Per device**: the `tsum` param is `perDevice`, so one workflow can pick a
+  different Tsum on each device from that device's own list. The server sends
+  each device only its own value; nothing here sees the others.
 
 ## The presets mirror
 
