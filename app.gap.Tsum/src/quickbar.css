@@ -689,6 +689,12 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
   font-size: calc(10 * var(--qb-u));
 }
 
+/* A GAP Companion workflow's step takes the Rounds row's place, so the chip
+   keeps its three rows and its height. */
+.qb-stat-workflow { display: none; }
+body[data-workflow="on"] .qb-stat-workflow { display: table-row; }
+body[data-workflow="on"] .qb-stats[data-readout="coins"] .qb-stat-rounds:not(.qb-stat-workflow) { display: none; }
+
 /* --- now, or at the next round ------------------------------------------ */
 
 /*

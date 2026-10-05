@@ -23,6 +23,8 @@ const enum TaskName {
   UnlockLevel = 'autoUnlockLevel',
   BuyBoxes = 'buyBoxes',
   PlayRound = 'taskPlayGameQuick',
+  /** A GAP Companion workflow: its nodes replace every chore above. */
+  Workflow = 'workflow',
 }
 
 /**
@@ -33,7 +35,7 @@ const enum TaskName {
  * refuses two jobs at one priority). The one-shot sweeps a Now button queues go
  * first; the app restart next, so the chores after it run on a fresh app; the
  * two coin-spending sweeps; the mailbox and hearts; and the round last, since
- * it is the job that never finishes early. The three at the bottom share a
+ * it is the job that never finishes early. The four at the bottom share a
  * number because a run registers at most one of them.
  */
 const enum JobPriority {
@@ -51,6 +53,7 @@ const enum JobPriority {
   PlayRound = 90,
   ClickAssist = 90,
   Walkthrough = 90,
+  Workflow = 90,
 }
 
 /** One job, as the scheduler is told about it. */
@@ -138,4 +141,17 @@ function runTaskTable(settings: RunSettings): TaskSpec[] {
       intervalMs: 3000, dueAtStart: true });
   }
   return jobs;
+}
+
+/**
+ * The jobs a workflow run registers: the workflow alone. Its nodes call the
+ * chores themselves in the workflow's order, so none of `runTaskTable`'s jobs
+ * run beside it -- only the Now and Stop-after-this-round one-shots, which are
+ * queued separately. `buildRun` picks this table when `startWorkflow` armed it.
+ */
+function workflowTaskTable(): TaskSpec[] {
+  // The play task's cadence: a node that answers `wait` (a round delay, a Now
+  // sweep ahead of it) is asked again this often.
+  return [{ name: TaskName.Workflow, priority: JobPriority.Workflow,
+    intervalMs: 3000, dueAtStart: true }];
 }

@@ -89,6 +89,7 @@ function start(settings: Settings) {
     locale: settings.locale,
   });
 
+  gRunErrored = false;
   try {
     buildRun(settings, logs);
     const controller = gTaskController;
@@ -104,6 +105,10 @@ function start(settings: Settings) {
     if (!gStopRequested) {
       controller.start();
     }
+  } catch (e) {
+    // Flagged for endRun, so a workflow reports `failed` rather than a stop.
+    gRunErrored = true;
+    throw e;
   } finally {
     // Reached on the way out of the loop, and on any throw during the build --
     // either way this is the thread that owns the run, and the loop it was
@@ -355,6 +360,10 @@ function remoteSettingsApply(key: string, value: string | number | boolean): str
   if (!typed || !quickBarEnumValid(key as SettingKey, value)) {
     return JSON.stringify({ ok: false, why: 'invalid value' });
   }
+  // A running workflow owns it (forced to 0); the adapter answers `workflow-run`.
+  if (quickBarWorkflowOwns(key)) {
+    return JSON.stringify({ ok: false, why: 'workflow' });
+  }
   let taken = value;
   let applies = 'nextStart';
   const when = LiveSettings[key];
@@ -394,6 +403,10 @@ function remoteSettingsTake(): string {
  * `endRun()`.
  */
 function buildRun(settings: Settings, logs: LogCatalogue): void {
+  // A GAP Companion workflow run (`startWorkflow`, src/workflow.ts). Taken and
+  // cleared here, first, so nothing armed outlives this call.
+  const workflowRef = workflowTakeArmed();
+  gWorkflowRun = workflowRef !== null;
   ts = new Tsum(settings.specialScreenRatio, logs);
   // From here on there is a world to dismantle, whether or not the rest of this
   // function gets to finish -- `start()` tears it down in its `finally`.
@@ -407,7 +420,8 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
     ts.uniqueTsumCount = 4;
   }
   ts.prioritizeMyTsum = settings.prioritizeMyTsum;
-  ts.autoLaunch = settings.autoLaunchApp;
+  // A workflow runs unattended, and its Restart app node launches the game.
+  ts.autoLaunch = settings.autoLaunchApp || gWorkflowRun;
   ts.scoreItem = settings.bonusScore;
   ts.coinItem = settings.bonusCoin;
   ts.expItem = settings.bonusExp;
@@ -472,7 +486,9 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   // which is the one behaviour the cap exists to replace.
   ts.maxRoundAction = settings.maxRoundAction === MaxRoundAction.Stop
     ? MaxRoundAction.Stop : MaxRoundAction.Coast;
-  ts.stopAfterGames = typeof settings.stopAfterGames === 'number'
+  // Off in a workflow: its Play rounds node counts rounds instead, and the
+  // Auto Play off action removes a PlayRound job this mode never registers.
+  ts.stopAfterGames = !gWorkflowRun && typeof settings.stopAfterGames === 'number'
     && settings.stopAfterGames > 0 ? Math.round(settings.stopAfterGames) : 0;
   ts.stopAfterAction = stopAfterActionOf(settings.stopAfterAction);
   ts.sendHearts = settings.sendHeartsAuto;
@@ -574,7 +590,7 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   // returns it alone, which is what enforces that -- the recorder itself only
   // ever calls `gPages.sweep`, which scores the table without broadcasting, so
   // not even a dismiss handler fires. See src/walkthrough.ts.
-  gWalkthroughRun = settings.walkthrough === true;
+  gWalkthroughRun = !gWorkflowRun && settings.walkthrough === true;
   if (gWalkthroughRun) {
     if (unlockFirst) {
       logWarn(Log.Unlock.NowRefused, { reason: 'walkthrough' });
@@ -586,7 +602,13 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
       logWarn(Log.TsumList.NowRefused, { reason: 'walkthrough' });
     }
   }
-  const jobs = runTaskTable(settings);
+  // A workflow replaces the chore table: its nodes call the chores in its own
+  // order. Refused (e.g. no Tsum List for Select Tsum): nothing is registered
+  // and the run ends before any node runs.
+  if (gWorkflowRun && !workflowBegin(workflowRef!)) {
+    return;
+  }
+  const jobs = gWorkflowRun ? workflowTaskTable() : runTaskTable(settings);
   for (let i = 0; i < jobs.length; i++) {
     gTaskController.register(jobs[i], taskBody(ts, jobs[i].name));
   }
@@ -624,6 +646,7 @@ function taskBody(run: Tsum, name: TaskName): TaskBody {
     case TaskName.UnlockLevel: return () => { run.taskAutoUnlockLevel(); };
     case TaskName.BuyBoxes: return () => { run.taskBuyBoxes(); };
     case TaskName.PlayRound: return run.taskPlayGameQuick.bind(run);
+    case TaskName.Workflow: return workflowPass;
   }
 }
 
@@ -643,6 +666,8 @@ function endRun(): void {
   gUnlockNowQueued = false;
   gBuyBoxNowQueued = false;
   gTsumListNowQueued = false;
+  // Before `ts` goes, so the workflow's closing banner still has somewhere to go.
+  workflowRunEnded();
   // Read before `ts` is cleared below; the event itself goes out with the rest
   // of the closing lines.
   const rounds = ts === undefined ? 0 : ts.runCoins.rounds;
@@ -838,7 +863,7 @@ function applyLiveSettings(values?: Partial<Settings>): string {
   const held: string[] = [];
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
-    if (wanted[key] === current[key]) {
+    if (wanted[key] === current[key] || quickBarWorkflowOwns(key)) {
       continue;
     }
     if (quickBarApplyOne(ts, key as SettingKey, wanted[key]) === undefined) {

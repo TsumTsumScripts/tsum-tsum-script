@@ -90,7 +90,8 @@ line said `roundId` or `round_id` is a viewer you cannot filter.
 `bubble` · `play` · `tsums` · `skill` · `fever` · `hearts` · `gifts` ·
 `unlock` · `box` (buying boxes in the store) · `stats` · `dialog` · `stall` ·
 `corpus` · `report` (the folder a player sends in) · `walk` · `assist` · `log` ·
-`settings` (the settings page) · `host` (the host app's own lines).
+`settings` (the settings page) · `workflow` (a GAP Companion workflow run,
+`WORKFLOWS.md`) · `host` (the host app's own lines).
 
 One `const enum` per component in [`src/logEvents.ts`](src/logEvents.ts), in
 this order, and the enums are the only place an event name is spelled out:

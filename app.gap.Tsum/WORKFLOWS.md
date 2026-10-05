@@ -1,0 +1,150 @@
+# Workflows: how Tsum runs them
+
+A GAP Companion **workflow** is an ordered list of nodes (restart the game,
+collect hearts, pick a Tsum, play N rounds, loop...) built on the phone and
+assigned to a device. The binding contract, for every layer, is the host's
+`../game-automation-app/docs/WORKFLOWS.md` (on its `companion-app` branch).
+This document is what Tsum does with it.
+
+## Who does what
+
+| Part | File | Does |
+|:--|:--|:--|
+| Runner library | `src/gapWorkflow.ts` | Generic and vendored verbatim by other scripts: the catalog, the last sync, `gapWorkflowCheck`, the cursor `{loop, index}`, per-loop values (they cycle), `loop` / `stop`, retries, state and events. References nothing else in this tree; `npm run typecheck:workflow` compiles it alone |
+| Tsum's half | `src/workflow.ts` | The node catalog and lists, each node's implementation, the Tsum List check, the run mode, the presets mirror |
+| Run mode | `src/index.ts` (`buildRun`), `src/runPlan.ts` (`workflowTaskTable`) | A workflow run registers the Workflow job instead of the chore table |
+| Select My Tsum | `src/myTsumSelect.ts` | The Select Tsum node's flow (below) |
+| Checks | `tools/workflowCheck/` | `npm run workflow:check` |
+
+## A workflow run
+
+The adapter calls `startWorkflow(settings, refJson)` (it has already run
+`gapWorkflowCheck`). That arms the ref and calls `start(settings)`:
+
+1. `buildRun` takes the ref and clears it in the same call, so a refused
+   (`busy`) start leaves nothing armed. The ref is never put in `Settings`, so
+   `saveLastRunSettings` cannot replay it.
+2. It forces **Auto launch on** (the run is unattended) and **Stop after games
+   off** (`ts.stopAfterGames = 0`; the setting itself is untouched).
+3. `gapWorkflowBegin` checks the workflow again and snapshots it. A refusal ends
+   the workflow (`workflow.end`, status `terminated`) and the run, before any
+   node runs.
+4. Only the **Workflow** job is registered (priority 90, every 3 s). The chore
+   table is not: the workflow's order replaces the coded one. The Now one-shots
+   (unlock, boxes, Tsum List) and Stop after this round still run, ahead of it.
+5. Each pass of the job is one `gapWorkflowStep()`: at most one node call.
+   `finished` stops the run; a run stopped from outside ends the workflow as
+   `ended` / `stopped`, and one ended by a throw (`gRunErrored`, set in
+   `start()`) as `failed` / `error`.
+
+While it runs:
+- `remoteSettingsApply` and `quickBarApply` refuse `stopAfterGames` with
+  `why: 'workflow'` (the adapter answers `workflow-run`); `applyLiveSettings`
+  skips it. `quickBarState` reports the page's own value, so neither page adopts
+  the forced 0.
+- The Send / Receive hearts switches add no job (`quickBarSyncJob`).
+- Every node gets a banner and a log line (`workflow.*` events, `Log.Workflow`).
+- `quickBarState()` adds `workflowStep` (`L2 3/5`: loop 2, step 3 of 5), which
+  the Quick Bar shows in place of its Rounds row, and `workflow`, the whole line.
+
+## The nodes
+
+Node params override the run's settings for that node only, and are put back
+afterwards. A chore node goes through one wrapper, one step per call:
+
+1. `!ts.isRunning` (the run is stopping): `wait`.
+2. A round is on (`quickBarInRound` or `roundInProgress`): finish it with
+   `taskPlayGameQuick()` and answer `again`. The chore and any queued Now sweep
+   only stand aside for it, and nothing else plays rounds here; checking it
+   before step 3 is what keeps a sweep from deadlocking on the round.
+3. `!ts.mayContinue()` (a Now sweep wants the screen): `wait`.
+4. Call the chore method directly, once.
+5. `ts.yieldAsked` (it handed back for a Now sweep): `again`; else `done`.
+
+A node that fails is retried, then skipped after 3 tries (`workflow.nodeFailed`),
+so the scheduler's five-throws restart can never loop.
+
+| Node | Does |
+|:--|:--|
+| `restartApp` | Force-stops the build this device plays, launches it (`startTsumTsumApp`) and waits for a known screen (`awaitAppUp`). Not `taskTsumAppRestart`, which needs Auto launch and ignores a live round. Fails with `app-not-up` |
+| `tsum.receiveHearts` | `mode` `claimAll`: `taskReceiveAllItems`; `oneByOne`: `taskReceiveOneItem`. `skipRuby` / `skipMedals` set `keepRuby` / `skipMedals` for the call |
+| `tsum.sendHearts` | `taskSendHearts` once. `toZeroScore` sets `sentToZero`; `maxRuntime` (minutes) sets `sendHeartMaxDuring` |
+| `tsum.selectTsum` | `selectMyTsum(tsum)`: straight to the card the Tsum List places it at, then MyTsum Set (below) |
+| `tsum.skill` | `preset:<id>`: the synced preset's round keys (`WorkflowPresetKeys`, the adapter's `presets.fields`) through `applyLiveSettings`; `skill:<id>`: `skillType`. Next-round keys land at the next whistle, as from the Quick Bar |
+| `tsum.playRounds` | `taskPlayGameQuick` until `rounds` more rounds finished, counted by the change in `ts.runClock.rounds` (not the return value). Answers `wait` during the round delay or while a Now sweep waits, unless a round is already on the board |
+| `loop`, `stop` | The library: `loop {times}` (0 = forever) restarts at the first node; `stop` ends the workflow. Running off the end is an implicit stop |
+
+Option lists: `tsums` (below) and `skills`, every skill this build has a handler
+for plus `nokill`, as `skill:<id>` with a readable name (`WorkflowSkillLabels`,
+mirroring the adapter's SKILLS; the id for a skill missing there). `presets` is the phone's, from the account.
+
+## The Tsum List file
+
+Select Tsum goes straight to a card by its position, so it needs this device's
+list: `<storage>/tsum_record/tsum_list_<getDeviceId()>.json`,
+`{at, build, tsums: [{order, tsum, name}]}`.
+
+- The Export Tsum List chore writes it, overwriting, only when an export ends
+  with reason `end of list`. A partial export (stopped, page limit, page turn
+  failed) does not. The CSV beside it is unchanged, so the stats site reading it
+  is unaffected.
+- Keyed by the device id, not the CSV's `device` column: device names need not
+  be unique, and a storage folder may be seen by more than one install. Nothing
+  here assumes a particular emulator.
+- `lists.tsums` comes only from it (labels: the full name as this build spells
+  it); without it the catalog reports `null` and the phone shows "Needs Tsum
+  List: Run Export Tsum List on the device".
+- **The check** (`gapWorkflowCheck` and `gapWorkflowBegin`): a workflow with a
+  `tsum.selectTsum` node on a device without the file → `tsum-list-missing`
+  (banner "Run Export Tsum List first"); a chosen tsum, any per-loop value
+  included, not in it → `tsum-not-in-list:<tsum>`.
+
+## Select My Tsum
+
+`selectMyTsum(short)` (`src/myTsumSelect.ts`) never scans or searches. The list
+only grows at the end of the Date acquired order, so a tsum's `order` in this
+device's list file fixes its card: page `floor((order-1)/8)`, slot
+`(order-1) % 8` of `CollectionGrid`, the grid and sort the export read.
+
+1. Look the tsum up in the list file. Already `ts.myTsum`: `done`, nothing is
+   navigated.
+2. The export's opening: `navigate(TsumsPage)`,
+   `sortCollection(DateAcquired, true)`, `rewindCollection()`.
+3. Turn `page` pages with the export's own page turn (`tsumListTurnPage`).
+4. Tap the card and wait for its portrait (`tsumListSelectCard`, shared with
+   `readCollectionCard`), then **one** confirming `identifyCollectionTsum`.
+5. Tap **MyTsum Set** (`CollectionGrid.setButton`) until the button greys
+   (`collectionShowsMyTsum`), at most 3 taps. A button grey already means the
+   card is the MyTsum: no tap.
+6. Put the player's sort back (`restoreCollectionSort`), however it ended. The
+   next round's `identifyMyTsum` checks the MyTsum again.
+
+| Outcome | Answer |
+|:--|:--|
+| The read names another tsum, or no confident one; the collection has fewer pages than listed; the slot is empty | `{terminate: 'tsum-list-stale'}`, banner "Run Export Tsum List again" |
+| The file was deleted, or the tsum left it, since the run began | `{terminate: 'tsum-list-missing'}` / `'tsum-not-in-list:<tsum>'` |
+| No collection, sort failed, page turn failed, card missed, Set not taken | `{fail: 'no-collection' \| 'sort-failed' \| 'page-turn-failed' \| 'card-missed' \| 'set-not-taken'}`: retried, then skipped |
+
+Logged as `workflow.selectTsum.start` / `.already` / `.done` / `.failed`
+(with `reason`) / `.stale`.
+
+**To verify on a device, INTL and JP:** `CollectionGrid.setButton` (540, 1655),
+measured on one INTL frame only; whether the tap brings up a confirmation
+before the button greys (none is handled: the 3 taps would fail with
+`set-not-taken`, and a dialog would then need a `Page` and a route); and corpus
+frames of the live button and the screen right after the tap.
+
+## The presets mirror
+
+The presets live in each page's WebView localStorage, out of the engine's reach.
+On every save (`presetsStore`) and as each page opens, the page calls
+`presetsMirror(json)` (through `runScriptCallback`: a `runScript` would count as
+a run on the host), which writes `<script folder>/presets-<device id>.json`.
+`presetsLocal()` reads it back for GAP Companion's Import from device.
+
+## Checks
+
+`npm run workflow:check` (Select My Tsum's flow too, against a fake
+collection); `npm run dispatch:eval` (preset `workflow.json`: only the Workflow
+job and the one-shots, Stop after this round first);
+`npm run events:docs:check` for the `workflow.*` events.

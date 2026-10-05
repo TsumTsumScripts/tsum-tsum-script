@@ -92,6 +92,8 @@
     "src/boxes.ts",
     // Walks the collection with levelCap.ts's helpers, so it follows it too.
     "src/tsumList.ts",
+    // Select My Tsum, the workflow's Select Tsum node: reads tsumList.ts's file.
+    "src/myTsumSelect.ts",
     // Attaches to Tsum.prototype and constructs its singleton (`gFever`) at
     // load time, so it follows tsum.ts and precedes pageHandlers.ts, whose
     // observe.feverTime feeds it.
@@ -150,7 +152,14 @@
     // file whose methods its handlers call -- and before index.ts, which is
     // what starts anything running.
     "src/pageHandlers.ts",
+    // The GAP Companion workflow runner: generic and vendored verbatim by other
+    // scripts, so it references nothing above. Before workflow.ts, which
+    // registers Tsum's nodes into it at load.
+    "src/gapWorkflow.ts",
     "src/index.ts",
+    // Tsum's workflow nodes and run mode. Registers into gapWorkflow.ts at load;
+    // everything else it touches (index.ts, quickbar.ts) only at run time.
+    "src/workflow.ts",
     // The engine half of the Quick Bar. Reads `gRunActive` (index.ts) and taps
     // through `ts`, so it is last; nothing calls into it from the bundle -- the
     // host's WebView and its pause hook are the only callers.

@@ -57,6 +57,15 @@ release note; they fold back in here when she ships.
 
 ### Added
 
+- **GAP Companion workflows** (dormant until a sync arrives; `WORKFLOWS.md`).
+  `src/gapWorkflow.ts` is the generic runner other scripts vendor; `src/workflow.ts`
+  is Tsum's catalog and nodes, and `startWorkflow` a run mode that registers
+  only the Workflow job. A whole Tsum List export also writes
+  `tsum_list_<device id>.json`, which Select Tsum requires: Select My Tsum
+  goes straight to the card's listed page and slot, confirms it with one read
+  (`tsum-list-stale` otherwise) and taps MyTsum Set (its position still to
+  verify on a device, INTL and JP). Pages mirror presets to
+  `presets-<device id>.json` for Import. `npm run workflow:check`.
 - **Save One Mid Chain bubble strategy** (`BubbleStrategy.SaveOneMidChain`,
   share `S`, chip "Save 1 mid"). `popGameBubbles` on a long chain taps all but
   the richest (`richestFirst`), ripe or not; short post-skill hold; the

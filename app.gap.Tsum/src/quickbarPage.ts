@@ -598,7 +598,24 @@ function qbRender(): void {
     qbSetTime('avgRoundTime', qbState.avgRoundSec, false);
     qbSetTime('playedTime', qbState.playedSec, true);
     qbSetTime('runTime', qbState.runSec, true);
+    qbRenderWorkflow();
     qbRenderPreset();
+}
+
+/**
+ * A GAP Companion workflow's progress, in the readout's Rounds row: `L2 3/5`
+ * is loop 2, step 3 of 5, and the whole line is the cell's title. The body's
+ * `data-workflow` is what swaps the two rows (quickbar.css).
+ */
+function qbRenderWorkflow(): void {
+    var step = typeof qbState.workflowStep === 'string' ? qbState.workflowStep : '';
+    document.body.setAttribute('data-workflow', step === '' ? 'off' : 'on');
+    var element = document.getElementById('workflowStep');
+    if (element === null) {
+        return;
+    }
+    element.textContent = step === '' ? '—' : step;
+    element.setAttribute('title', typeof qbState.workflow === 'string' ? qbState.workflow : '');
 }
 
 /**
@@ -1349,5 +1366,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // localStorage, so it has its name to draw with no engine behind it at all.
     // After the labels are in, so the hotspot it names is measured on them.
     qbRenderPreset();
+    // The engine's copy for GAP Companion's Import from device (the strip only
+    // opens with a run, so the bundle is there to take it).
+    presetsSendMirror(presetsLoad());
     qbRequestState();
 });

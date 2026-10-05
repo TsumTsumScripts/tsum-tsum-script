@@ -65,4 +65,22 @@ namespace Emit {
      */
     End   = 'round.end',
   }
+
+  /**
+   * A GAP Companion workflow (the app repo's docs/WORKFLOWS.md § 8). Emitted by
+   * the runner library (src/gapWorkflow.ts) through the hook src/workflow.ts
+   * sets, so the call sites carry these strings rather than the members.
+   */
+  export const enum Workflow {
+    /** A workflow passed its check and its first node is next. */
+    Start      = 'workflow.start',
+    /** A node's first call in this pass (not repeated for again, wait or a retry). */
+    Node       = 'workflow.node',
+    /** Pass `loop` (2 or more) begins at the first node. */
+    Loop       = 'workflow.loop',
+    /** A node failed its last try and was skipped. */
+    NodeFailed = 'workflow.nodeFailed',
+    /** The workflow is over: `status` is ended, failed or terminated, `reason` why. */
+    End        = 'workflow.end',
+  }
 }

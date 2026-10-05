@@ -82,7 +82,7 @@ type LogEvent = `${Log.Run | Log.Task | Log.App | Log.Screen | Log.Page | Log.Na
   | Log.Lorcana
   | Log.Hearts | Log.Gifts | Log.Unlock | Log.Box | Log.TsumList | Log.Stats | Log.Dialog
   | Log.Stall | Log.Corpus | Log.Report | Log.Walk | Log.Assist | Log.Log
-  | Log.Settings | Log.QuickBar}`;
+  | Log.Settings | Log.QuickBar | Log.Workflow}`;
 
 /**
  * The subset with a sentence to show -- the keys of the message table.

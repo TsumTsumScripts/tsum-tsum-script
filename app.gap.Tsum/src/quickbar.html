@@ -393,6 +393,14 @@
             <th class="qb-stat-label" scope="row" data-i18n="qb.rounds">Rounds</th>
             <td class="qb-stat-value" id="roundCount">0</td>
           </tr>
+          <!--
+            Takes the Rounds row's place while a GAP Companion workflow runs
+            (`<body data-workflow="on">`): loop and step, e.g. `L2 3/5`.
+          -->
+          <tr class="qb-stat qb-stat-rounds qb-stat-workflow">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.step">Step</th>
+            <td class="qb-stat-value" id="workflowStep">&mdash;</td>
+          </tr>
         </tbody>
       </table>
 

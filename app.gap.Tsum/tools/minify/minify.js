@@ -109,7 +109,10 @@ function checkBundle(file) {
                   'onPause', 'quickBarState', 'quickBarApply', 'applyLiveSettings',
                   // Both pages have a Report button, and the host's Log chip
                   // reaches the same name over the IPC socket on a long press.
-                  'reportIssue'];
+                  'reportIssue',
+                  // GAP Companion's adapter calls these by name (docs/WORKFLOWS.md § 6).
+                  'gapWorkflowCatalog', 'gapWorkflowReceive', 'gapWorkflowState',
+                  'gapWorkflowCheck', 'startWorkflow', 'presetsMirror', 'presetsLocal'];
   const missing = wanted.filter((name) => ctx[name] === undefined);
   if (missing.length) {
     console.error('[minify] the reprinted bundle lost: ' + missing.join(', '));

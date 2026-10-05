@@ -1,0 +1,12 @@
+{
+  "note": "A GAP Companion workflow run: the Workflow job replaces the chore table, so only it and the one-shots run. Stop after this round is armed while a round is on: it goes first and stands aside until the round ends, then stops the run. The unlock and box Now sweeps queue ahead of the workflow.",
+  "settings": { "unlockLevelsFirst": true, "buyBoxesFirst": true },
+  "workflow": [
+    { "id": "n1", "type": "tsum.playRounds", "params": { "rounds": 2 } },
+    { "id": "n2", "type": "loop", "params": { "times": 0 } }
+  ],
+  "after": ["stopAfterThisRound"],
+  "inRoundTicks": 12,
+  "durationsMs": { "workflow": 180000 },
+  "ticks": 20
+}
