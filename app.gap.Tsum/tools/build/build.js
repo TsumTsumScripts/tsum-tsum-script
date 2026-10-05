@@ -142,8 +142,8 @@ function stageAssets(log) {
 
 /** [sheet, family, file in src/fonts, weight range] -- Latin subsets of the GAP kit's fonts. */
 const GAP_FONTS = [
-  ['font-sans.css', 'IBM Plex Sans', 'ibm-plex-sans.woff2', '400 700'],
-  ['font-display.css', 'Space Grotesk', 'space-grotesk.woff2', '500 700'],
+  ['font-sans.css', 'Inter', 'inter.woff2', '400 800'],
+  ['font-display.css', 'Inter Display', 'inter-display.woff2', '600 800'],
   ['font-mono.css', 'IBM Plex Mono', 'ibm-plex-mono.woff2', '400'],
 ];
 

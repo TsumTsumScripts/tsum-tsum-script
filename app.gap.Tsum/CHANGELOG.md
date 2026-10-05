@@ -55,7 +55,7 @@ release note; they fold back in here when she ships.
 - Large tsums are now chained instead of popped, and bridge longer gaps.
 - Tsum List export and Unlock Level now jump straight to the first page of the Tsum collection instead of paging back one at a time.
 - Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, the Mid Chain strategies no longer let them pile up, and new Save One and Save One Mid Chain strategies pop all but one (on sight, or as a chain lands).
-- Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, orange switches, a light and dark theme, and tabs that show how many are off-screen.
+- Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen.
 
 ### Added
 
@@ -166,9 +166,15 @@ release note; they fold back in here when she ships.
   `quickbar.css` use only `src/gapTokens.css` (the kit's tokens, copied
   verbatim). Fonts are Latin woff2 subsets in `src/fonts/`, inlined by the
   build as data URIs. Dark is the default theme.
+- **Design kit v2.** Tokens re-copied; fonts are now Inter / Inter Display
+  (opsz instances, subset with fonttools) plus IBM Plex Mono. Blue `tap` edge
+  marks tappable, solid `selected` marks on; settings groups are flat
+  read-only cards and controls inside them are fill only. Text sizes kept a
+  step above the kit's so legibility matches. Quick Bar reaches full size at
+  460dp (was 440) because Inter runs wider than Plex.
 - Settings tabs scroll as pills with "+N" overflow cues (`updateTabOverflow`);
   stepper buttons turn dashed at the row's min/max (`syncStepLimits`).
-- Quick Bar toggles are orange with a check box; "applies now" is green,
+- Quick Bar toggles are solid blue with a check; "applies now" is green,
   "next round" amber; coin and time figures use the data colours.
 
 ### Fixed
