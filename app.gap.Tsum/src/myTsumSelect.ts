@@ -1,0 +1,136 @@
+// Select My Tsum: make a given tsum the MyTsum, for the workflow's Select Tsum
+// node (src/workflow.ts).
+//
+// No scanning. The Tsum List only grows at the end of the Date acquired order,
+// so a tsum's `order` in this device's list file (tsumListLoadFile) fixes its
+// card: page floor((order-1)/8), slot (order-1)%8 of `CollectionGrid`.
+//
+//   already the MyTsum (ts.myTsum)            done, nothing navigated
+//   collection, Date acquired, owned only,    the export's opening (tsumList.ts)
+//   rewind
+//   turn `page` pages                         tsumListTurnPage
+//   tap the card, wait for its portrait       tsumListSelectCard
+//   ONE confirming read                       identifyCollectionTsum; another
+//                                             tsum, or no confident read, means
+//                                             the list is out of date:
+//                                             terminate `tsum-list-stale`
+//   tap MyTsum Set until the button greys     collectionShowsMyTsum, 3 taps
+//   put the player's sort back                restoreCollectionSort
+//
+// Other failures answer `{fail}`, which the runner retries, then skips.
+
+/** The 8-card collection page the export read. */
+const SelectMyTsumPerPage = 8;
+/** Taps on MyTsum Set before giving up. */
+const SelectMyTsumSetAttempts = 3;
+
+/** Makes `short` (the stats CSV's tsum key) the MyTsum. */
+function selectMyTsum(short: string): GapWorkflowResult {
+  const run = ts;
+  if (run === undefined) {
+    return { fail: 'no-run' };
+  }
+  // The runner's check already refused a missing file or tsum; this is a
+  // file deleted or rewritten since the run began.
+  const file = tsumListLoadFile();
+  if (file === null) {
+    return { terminate: 'tsum-list-missing' };
+  }
+  let row: TsumListFile['tsums'][number] | null = null;
+  for (let i = 0; i < file.tsums.length && row === null; i++) {
+    if (file.tsums[i].tsum === short) {
+      row = file.tsums[i];
+    }
+  }
+  if (row === null || row.order < 1) {
+    return { terminate: 'tsum-not-in-list:' + short };
+  }
+  const page = Math.floor((row.order - 1) / SelectMyTsumPerPage);
+  const slot = (row.order - 1) % SelectMyTsumPerPage;
+  const fields = { tsum: short, order: row.order, page: page, slot: slot };
+
+  if (run.myTsum === short) {
+    logInfo(Log.Workflow.SelectTsumAlready, 'The Tsum is already the MyTsum', fields);
+    return 'done';
+  }
+  logInfo(Log.Workflow.SelectTsumStart, 'Selecting the MyTsum', fields);
+
+  gPages.navigate(PageName.TsumsPage);
+  if (!run.awaitPage(PageName.TsumsPage, UnlockReturnWaitMs)) {
+    return selectMyTsumFailed('no collection', fields);
+  }
+  const previous = run.sortCollection(CollectionSort.DateAcquired, true);
+  if (previous === null) {
+    return selectMyTsumFailed('sort failed', fields);
+  }
+  try {
+    return selectMyTsumOnGrid(run, short, row.name, page, slot, fields);
+  } finally {
+    run.restoreCollectionSort(previous, CollectionSort.DateAcquired);
+  }
+}
+
+/** The part on the sorted collection; the caller puts the sort back. */
+function selectMyTsumOnGrid(run: Tsum, short: string, name: string, page: number, slot: number,
+                            fields: LogFields): GapWorkflowResult {
+  run.rewindCollection();
+  for (let p = 0; p < page; p++) {
+    if (!run.isRunning) {
+      return 'wait';
+    }
+    run.awaitCollectionLoaded();
+    // Fewer pages than the list says: the collection is not the one listed.
+    if (run.collectionAtLastPage()) {
+      return selectMyTsumStale(fields, { atPage: p });
+    }
+    if (!tsumListTurnPage(run)) {
+      return selectMyTsumFailed('page turn failed', fields);
+    }
+  }
+  run.awaitCollectionLoaded();
+  if (run.readCollectionCards()[slot] === 'empty') {
+    return selectMyTsumStale(fields, { emptySlot: true });
+  }
+  if (!tsumListSelectCard(run, slot)) {
+    return run.isRunning ? selectMyTsumFailed('card missed', fields) : 'wait';
+  }
+  // One read, to confirm; not a search.
+  const id = run.identifyCollectionTsum();
+  if (id === null || !id.confident || id.short !== short) {
+    return selectMyTsumStale(fields, {
+      read: id === null ? null : id.short,
+      confident: id === null ? false : id.confident,
+      score: id === null ? null : +id.score.toFixed(3),
+    });
+  }
+  // Grey already: the card is the MyTsum even though the last round's read
+  // did not say so.
+  let set = run.collectionShowsMyTsum();
+  for (let i = 0; i < SelectMyTsumSetAttempts && !set && run.isRunning; i++) {
+    run.tap(CollectionGrid.setButton);
+    run.settleScreen(UnlockOptionSettleMs);
+    set = run.collectionShowsMyTsum();
+  }
+  if (!set) {
+    return run.isRunning ? selectMyTsumFailed('set not taken', fields) : 'wait';
+  }
+  // The next round's pre-round read (identifyMyTsum) checks this again.
+  run.myTsum = short;
+  run.myTsumName = name !== '' ? name : id.full;
+  logInfo(Log.Workflow.SelectTsumDone, 'MyTsum set', fields);
+  return 'done';
+}
+
+/** Logs a failed step; the runner retries the node, then skips it. */
+function selectMyTsumFailed(reason: string, fields: LogFields): GapWorkflowResult {
+  logWarn(Log.Workflow.SelectTsumFailed, 'Could not select the MyTsum',
+    Object.assign({ reason: reason }, fields));
+  return { fail: reason.replace(/ /g, '-') };
+}
+
+/** The card is not where the list says: the list is out of date. */
+function selectMyTsumStale(fields: LogFields, seen: LogFields): GapWorkflowResult {
+  logWarn(Log.Workflow.SelectTsumStale, 'The Tsum List is out of date; run Export Tsum List again',
+    Object.assign({}, fields, seen));
+  return { terminate: 'tsum-list-stale' };
+}
