@@ -208,6 +208,8 @@ i18nRegister(Locale.Japanese, '日本語', {
     [UiText.ButtonReport]: '報告',
     [UiText.ButtonSaveReport]: '報告を保存',
     [UiText.ButtonDetect]: '判定',
+    [UiText.CompanionConfirmSpend]: '見ていない間に GAP がコインを使うようになります。変更しますか？',
+    [UiText.CompanionConfirmSpendNow]: 'コインを使います。今すぐ実行しますか？',
 
     [UiText.ChromeReset]: '設定をリセット',
     [UiText.ChromeRestartNow]: 'ツムツムスクリプトを今すぐ再起動',

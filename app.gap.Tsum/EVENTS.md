@@ -28,7 +28,7 @@ Names are declared once, in `src/scriptEvents.ts`, and reached through
 | `workflow.loop` | `src/gapWorkflow.ts:697` | `id`, `loop` |
 | `workflow.nodeFailed` | `src/gapWorkflow.ts:742` | `id`, `loop`, `index`, `nodeId`, `node`, `error`, `tries` |
 | `run.started` | `src/index.ts:86` | `version`, `skill`, `locale` |
-| `run.stopped` | `src/index.ts:686` | `rounds` |
+| `run.stopped` | `src/index.ts:771` | `rounds` |
 
 ## The events
 
@@ -201,4 +201,4 @@ Emitted from:
 
 Emitted from:
 
-- `src/index.ts:686` — `emitScriptEvent(Emit.Run.Stopped, …)`
+- `src/index.ts:771` — `emitScriptEvent(Emit.Run.Stopped, …)`
