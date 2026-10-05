@@ -253,6 +253,8 @@ i18nRegister(Locale.English, 'English', {
     [UiText.ButtonReport]: 'Report',
     [UiText.ButtonSaveReport]: 'Save report',
     [UiText.ButtonDetect]: 'Detect',
+    [UiText.CompanionConfirmSpend]: 'This lets GAP spend coins while you are not watching. Change it?',
+    [UiText.CompanionConfirmSpendNow]: 'This spends coins. Do it now?',
 
     [UiText.ChromeReset]: 'Reset Settings',
     [UiText.ChromeRestartNow]: 'Restart TsumTsum script now',

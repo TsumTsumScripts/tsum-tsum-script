@@ -397,6 +397,91 @@ function remoteSettingsTake(): string {
   return JSON.stringify(pending);
 }
 
+// --- GAP Companion's Settings tab, driven by this script ----------------------
+//
+// `companionSettings.json` is the settings page's own schema, written by
+// tools/companion/settings.js at build time. The phone draws its Settings tab
+// from it, so a settings change here needs no phone or adapter release.
+// Contract (UI 2): "Settings from the script" in the companion repo's
+// cloud/adapters/README.md.
+
+/** One `layout` item: a setting, a button, or a note. */
+interface CompanionItem { control?: string; button?: string; note?: string }
+interface CompanionGroup { items: CompanionItem[] }
+interface CompanionPage { groups: CompanionGroup[] }
+
+/** The page's Now buttons the phone may press. Each answers a short status. */
+const CompanionActions: { [name: string]: () => string } = {
+  unlockLevelsNow: () => unlockLevelsNow(),
+  buyBoxesNow: () => buyBoxesNow(),
+  exportTsumListNow: () => exportTsumListNow(),
+  roundDelaySkip: () => roundDelaySkip(),
+};
+
+/** When a change to `key` reaches a run, in the contract's words. */
+function companionApplies(key: string): string {
+  const when = LiveSettings[key];
+  return when === LiveWhen.Now ? 'now' : when === LiveWhen.NextRound ? 'nextRound' : 'nextStart';
+}
+
+let gCompanionSchema: string | undefined;
+
+/**
+ * The phone's settings schema as JSON, or 'null' when the file is missing.
+ * Keeps only settings in `RemoteSettingKinds` and buttons in `CompanionActions`.
+ * A standard global the companion adapter library looks for.
+ */
+// noinspection JSUnusedGlobalSymbols
+function gapSettingsSchema(): string {
+  if (gCompanionSchema !== undefined) {
+    return gCompanionSchema;
+  }
+  const file = typeof getScriptPath === 'function' ? getScriptPath() + '/companionSettings.json' : '';
+  const raw = readJsonObject(file);
+  if (!Array.isArray(raw.controls)) {
+    return 'null';
+  }
+  const controls = (raw.controls as { key: string; applies?: string }[])
+    .filter((c) => RemoteSettingKinds.hasOwnProperty(c.key));
+  for (const c of controls) {
+    c.applies = companionApplies(c.key);
+  }
+  const keys = controls.map((c) => c.key);
+  const buttons = (Array.isArray(raw.buttons) ? raw.buttons as { name: string }[] : [])
+    .filter((b) => CompanionActions.hasOwnProperty(b.name));
+  const names = buttons.map((b) => b.name);
+  // Drop what was filtered out, then any group or page left empty.
+  const layout = (Array.isArray(raw.layout) ? raw.layout as CompanionPage[] : []).filter((page) => {
+    page.groups = page.groups.filter((group) => {
+      group.items = group.items.filter((item) => {
+        if (item.control !== undefined && keys.indexOf(item.control) < 0) delete item.control;
+        if (item.button !== undefined && names.indexOf(item.button) < 0) delete item.button;
+        return item.control !== undefined || item.button !== undefined || item.note !== undefined;
+      });
+      return group.items.length > 0;
+    });
+    return page.groups.length > 0;
+  });
+  const presetFields = (Array.isArray(raw.presetFields) ? raw.presetFields as string[] : [])
+    .filter((k) => keys.indexOf(k) >= 0);
+  gCompanionSchema = JSON.stringify({ ui: raw.ui, controls: controls, layout: layout, buttons: buttons,
+    presetFields: presetFields, translations: raw.translations || {} });
+  return gCompanionSchema;
+}
+
+/**
+ * Presses one of the schema's buttons for the phone. Answers JSON
+ * `{ok: true, status}` or `{ok: false, why}` (`no run`, `unknown action`).
+ */
+// noinspection JSUnusedGlobalSymbols
+function gapSettingsAction(name: string): string {
+  if (!CompanionActions.hasOwnProperty(name)) {
+    return JSON.stringify({ ok: false, why: 'unknown action' });
+  }
+  const status = CompanionActions[name]();
+  return JSON.stringify(status === 'no run' ? { ok: false, why: 'no run' } : { ok: true, status: status });
+}
+
 /**
  * Builds the world one run plays in: the `Tsum`, the tuning `start()` maps onto
  * it, the router binding and the task set. Everything here is undone by

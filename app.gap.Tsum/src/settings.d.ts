@@ -261,7 +261,12 @@ interface SettingSpec {
    * opened in, which is exactly what they used to do. It also lets the language
    * picker's own buttons carry endonyms, which are not translated at all.
    */
-  buttons?: { text: () => string; onClick: () => void }[];
+  buttons?: SettingButton[];
+  /**
+   * GAP Companion only: a question the phone asks before changing this row
+   * (Tsum: the rows that spend coins). The page ignores it.
+   */
+  confirm?: UiText;
   /**
    * A row that draws itself and holds no value -- the Run order summary.
    *
@@ -280,6 +285,19 @@ interface SettingSpec {
    */
   scale?: number;
   incrementBy1?: boolean;
+}
+
+/** One button on a settings row. */
+interface SettingButton {
+  text: () => string;
+  onClick: () => void;
+  /**
+   * GAP Companion only: the engine action the phone's copy of this button runs
+   * (`gapSettingsAction`, src/index.ts). A button without one stays page-only.
+   */
+  remote?: string;
+  /** GAP Companion only: a question the phone asks before running `remote`. */
+  confirm?: UiText;
 }
 
 /** One card inside a tab panel: a heading, an optional note, and its rows. */

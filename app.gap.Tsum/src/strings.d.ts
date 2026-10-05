@@ -284,6 +284,10 @@ declare const enum UiText {
   ButtonSaveReport = 'button.saveReport',
   ButtonDetect = 'button.detect',
 
+  // --- GAP Companion (the phone app; never drawn by the page) ---------------
+  CompanionConfirmSpend = 'companion.confirmSpend',
+  CompanionConfirmSpendNow = 'companion.confirmSpendNow',
+
   // --- page chrome --------------------------------------------------------
   ChromeReset = 'chrome.reset',
   ChromeRestartNow = 'chrome.restartNow',

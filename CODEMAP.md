@@ -214,6 +214,7 @@ that runs against this one's build: `DEVELOPMENT.md` § The development toolkit.
 | `tools/eventDocs/` | Renders `EVENTS.md` from the `emitEvent` call sites. The one tool here that reads the **TypeScript program** rather than the built bundle, because what matters about an emit is what a bundle throws away: its file and line, and each payload field's type | `npm run events:docs`, `events:docs:check` |
 | `tools/dispatchEval/` | **Whether a change to one page changed what happens on another.** Golden traces for the dispatch queue and the scheduler, off the built bundle with no device, so a change for page A that moved page B's trace fails before it ships. `tools/dispatchEval/README.md` is the long form | `npm run dispatch:eval`, `dispatch:update` |
 | `tools/codemap/` | Checks this file against the tree | `npm run map:check` |
+| `tools/companion/` | **GAP Companion's Settings tab, from the settings page.** Runs the built page scripts in a vm, walks `tabs` once per language and writes `dist/companionSettings.json` (UI contract 2: pages, groups, settings, Now buttons, translations). `gapSettingsSchema` (`src/index.ts`) serves it to the phone. A row's `confirm` and a button's `remote` are read only here | the `dist:companion` build step |
 | `tools/i18n/` | What each language is missing, which `UiText` keys nothing names any more, and — the one thing it fails on — a `data-i18n` in the markup naming no key. The rest the compiler already catches | `npm run i18n:check` |
 | `tools/liveSettings/` | **When each setting reaches a run in progress**, checked by running the built bundle in a vm rather than by reading it: that every `SHARE_SLOTS` row has an answer, that the switch and the reported state match it, and that the value survives the round trip. It cannot decide *which* kind a setting is — that judgement is what the table records | `npm run workflow:check` | The workflow runner and Tsum's workflow run mode, driven in the built bundle |
 | `npm run live:check` |
@@ -288,6 +289,7 @@ enforces every row below, so these are true rather than approximate.
 | `tabs`, `TabSpec`, `GroupSpec`, `SettingSpec`, `RowKey` | `src/settings.ts`, `src/settings.d.ts` |
 | `SettingKey`, `Settings`, `RecordKey`, `Locale` | `src/shared.d.ts` |
 | `gapWorkflow*`, `GapWorkflow*`, `GAP_WORKFLOW_*` — the workflow runner library | `src/gapWorkflow.ts` |
+| `gapSettingsSchema`, `gapSettingsAction`, `Companion*`, `remoteSettings*` — GAP Companion's Settings tab and the settings it may change | `src/index.ts`; the schema file is written by `tools/companion/settings.js` |
 | `workflow*`, `Workflow*`, `gWorkflow*`, `startWorkflow` — Tsum's workflow nodes and run mode | `src/workflow.ts`, `src/runPlan.ts` (`workflowTaskTable`) |
 | `selectMyTsum*`, `SelectMyTsum*` — the Select Tsum node's flow | `src/myTsumSelect.ts` (it reuses `tsumListTurnPage` and `tsumListSelectCard` from `src/tsumList.ts`, and taps `CollectionGrid.setButton` in `src/data.ts`) |
 

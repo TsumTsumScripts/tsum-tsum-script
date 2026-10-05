@@ -447,11 +447,13 @@ var tabs: TabSpec[] = [
                         title: UiText.SettingUnlockLevel,
                         help: UiText.SettingUnlockLevelHelp,
                         default: SettingDefaults[SettingKey.UnlockLevelHoursWait],
+                        confirm: UiText.CompanionConfirmSpend,
                         min: 0,
                         max: 24,
                         step: 1,
                         buttons: [
-                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askUnlockLevelsNow(); }}
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askUnlockLevelsNow(); },
+                                remote: 'unlockLevelsNow', confirm: UiText.CompanionConfirmSpendNow}
                         ]
                     },
                     {
@@ -463,6 +465,7 @@ var tabs: TabSpec[] = [
                         title: UiText.SettingUnlockMyTsumLevel,
                         help: UiText.SettingUnlockMyTsumLevelHelp,
                         default: SettingDefaults[SettingKey.AutoUnlockMyTsumLevel],
+                        confirm: UiText.CompanionConfirmSpend,
                     }
                 ]
             },
@@ -477,11 +480,13 @@ var tabs: TabSpec[] = [
                         title: UiText.SettingBuyBox,
                         help: UiText.SettingBuyBoxHelp,
                         default: SettingDefaults[SettingKey.BuyBoxHoursWait],
+                        confirm: UiText.CompanionConfirmSpend,
                         min: 0,
                         max: 24,
                         step: 1,
                         buttons: [
-                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askBuyBoxesNow(); }}
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askBuyBoxesNow(); },
+                                remote: 'buyBoxesNow', confirm: UiText.CompanionConfirmSpendNow}
                         ]
                     },
                     {
@@ -489,6 +494,7 @@ var tabs: TabSpec[] = [
                         title: UiText.SettingBuyBoxType,
                         help: UiText.SettingBuyBoxTypeHelp,
                         default: SettingDefaults[SettingKey.BuyBoxType],
+                        confirm: UiText.CompanionConfirmSpend,
                         // `satisfies` for the same reason the skill and bubble
                         // dropdowns have it: a key that is not a BoxType would
                         // compile, match no tab in `BoxStore.order3`/`order4`,
@@ -507,6 +513,7 @@ var tabs: TabSpec[] = [
                         title: UiText.SettingBuyBoxSize,
                         help: UiText.SettingBuyBoxSizeHelp,
                         default: SettingDefaults[SettingKey.BuyBoxSize],
+                        confirm: UiText.CompanionConfirmSpend,
                         // No `share` ids: a Chores row, so no code or preset
                         // carries it. `satisfies` for the reason the box
                         // dropdown above has it -- a key that is not a
@@ -523,6 +530,7 @@ var tabs: TabSpec[] = [
                         title: UiText.SettingBuyBoxMax,
                         help: UiText.SettingBuyBoxMaxHelp,
                         default: SettingDefaults[SettingKey.BuyBoxMaxPurchases],
+                        confirm: UiText.CompanionConfirmSpend,
                         min: 1,
                         max: 50,
                         step: 1
@@ -540,7 +548,8 @@ var tabs: TabSpec[] = [
                         help: UiText.SettingExportTsumListHelp,
                         status: ReleaseStatus.Alpha,
                         buttons: [
-                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askExportTsumListNow(); }}
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askExportTsumListNow(); },
+                                remote: 'exportTsumListNow'}
                         ]
                     }
                 ]
@@ -625,7 +634,8 @@ var tabs: TabSpec[] = [
                         max: 120,
                         min: 0,
                         buttons: [
-                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { skipRoundDelay(); }}
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { skipRoundDelay(); },
+                                remote: 'roundDelaySkip'}
                         ],
                         // The gap *between* rounds -- see SHARE_TABS.
                         neverShared: true

@@ -246,6 +246,8 @@ i18nRegister(Locale.Taiwan, '中文', {
     [UiText.ButtonReport]: '回報',
     [UiText.ButtonSaveReport]: '儲存回報',
     [UiText.ButtonDetect]: '辨識',
+    [UiText.CompanionConfirmSpend]: '這會讓 GAP 在你沒看著時花費金幣。要變更嗎？',
+    [UiText.CompanionConfirmSpendNow]: '這會花費金幣。要立即執行嗎？',
 
     [UiText.ChromeReset]: '重設設定',
     [UiText.ChromeRestartNow]: '立即重启TsumTsum脚本',
