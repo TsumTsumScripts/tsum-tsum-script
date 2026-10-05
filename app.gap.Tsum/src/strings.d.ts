@@ -457,6 +457,7 @@ declare const enum UiText {
   QbReport = 'qb.report',
   QbBase = 'qb.base',
   QbFinal = 'qb.final',
+  QbMedals = 'qb.medals',
   QbRounds = 'qb.rounds',
   QbAvgRound = 'qb.avgRound',
   QbInRounds = 'qb.inRounds',
