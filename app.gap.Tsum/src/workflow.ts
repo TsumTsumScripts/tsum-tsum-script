@@ -265,7 +265,8 @@ const WorkflowTsumNodes: GapWorkflowNodeDef[] = [
   {
     type: 'tsum.selectTsum', label: 'Select Tsum', group: 'Tsum',
     help: 'Sets My Tsum before the next round',
-    params: [{ key: 'tsum', label: 'Tsum', type: 'enum', lists: ['tsums'], perLoop: true }],
+    // perDevice: each device picks from its own Tsum List.
+    params: [{ key: 'tsum', label: 'Tsum', type: 'enum', lists: ['tsums'], perLoop: true, perDevice: true }],
     // Straight to the card the Tsum List places it at (src/myTsumSelect.ts).
     run: workflowChore(function(run, ctx) {
       return selectMyTsum(String(ctx.params.tsum));
