@@ -627,7 +627,7 @@ body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-
  * A read-only chip on the strip's right edge, so flat with a hairline rather
  * than the blue edge (only its dots are tappable): the toggle down its left side,
  * then a two-column table -- names down the left, figures down the right on one
- * edge, three rows ruled apart. Base against final is the comparison worth
+ * edge, rows ruled apart. Base against final is the comparison worth
  * making, and that wants the two figures in a column with their digits aligned.
  */
 .qb-readouts {
@@ -677,10 +677,10 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
   border-collapse: separate;
   border-spacing: 0;
   /*
-   * Half the strip's padding above and below: three ruled rows and a border are
-   * ~52 of the 54px the band leaves at full size, and the slack that buys is
-   * what keeps a descender off the hairline under it.
+   * Half the strip's padding above and below. Four ruled rows have to fit the
+   * ~54px band, hence the small type and a line height of 1.
    */
+  line-height: 1;
   padding: calc(var(--qb-vpad) / 2) calc(7 * var(--qb-u)) calc(var(--qb-vpad) / 2) calc(6 * var(--qb-u));
 }
 
@@ -694,7 +694,7 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
 .qb-stat-label {
   padding: calc(1px * var(--qb-vs)) calc(8 * var(--qb-u)) calc(1px * var(--qb-vs)) 0;
   color: var(--qb-muted);
-  font-size: calc(9 * var(--qb-u));
+  font-size: calc(8 * var(--qb-u));
   font-weight: inherit;
   text-align: left;
   white-space: nowrap;
@@ -706,17 +706,18 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
   padding: calc(1px * var(--qb-vs)) 0;
   text-align: right;
   font-variant-numeric: tabular-nums;
-  font-size: calc(12 * var(--qb-u));
+  font-size: calc(10 * var(--qb-u));
   color: var(--data-coin);
 }
 
-/* The game-data colours: coin for coins, cyan for times. */
+/* The game-data colours: coin for coins, violet for medals, cyan for times. */
+.qb-stats .qb-stat-medals .qb-stat-value { color: var(--data-medal); }
 .qb-stats[data-readout="times"] .qb-stat-value { color: var(--data-time); }
 
 /* A count of rounds, not coins: same column, but not one of the two figures. */
 .qb-stats .qb-stat-rounds .qb-stat-value {
   color: var(--qb-muted);
-  font-size: calc(10 * var(--qb-u));
+  font-size: calc(9 * var(--qb-u));
 }
 
 /* --- now, or at the next round ------------------------------------------ */
@@ -822,14 +823,14 @@ body[data-dense="true"] .qb-wide-readout {
 }
 
 /*
- * The coin block is three rows in the same band, so it is the other place the
+ * The coin block is four rows in the same band, so it is the other place the
  * height actually binds: its type comes down with `--qb-vs` itself rather than
  * with the floored unit the chips use, because a readout that overflows its
  * track is clipped by the strip rather than merely tight.
  */
-body[data-dense="true"] .qb-stat-label { font-size: calc(9 * var(--qb-u) * var(--qb-vs)); }
-body[data-dense="true"] .qb-stat-value { font-size: calc(12 * var(--qb-u) * var(--qb-vs)); }
-body[data-dense="true"] .qb-stat-rounds .qb-stat-value { font-size: calc(10 * var(--qb-u) * var(--qb-vs)); }
+body[data-dense="true"] .qb-stat-label { font-size: calc(8 * var(--qb-u) * var(--qb-vs)); }
+body[data-dense="true"] .qb-stat-value { font-size: calc(10 * var(--qb-u) * var(--qb-vs)); }
+body[data-dense="true"] .qb-stat-rounds .qb-stat-value { font-size: calc(9 * var(--qb-u) * var(--qb-vs)); }
 
 /* --- running: readable, but not live --------------------------------- */
 

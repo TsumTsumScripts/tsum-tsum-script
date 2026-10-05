@@ -51,9 +51,11 @@ release note; they fold back in here when she ships.
 - Round stats no longer lose the score and coins when the rank-up panel appears after a round, and base coins read more reliably.
 - Auto Play Game setting moved from General to the Round tab.
 - Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen.
+- Quick Bar's coin readout shows the average medals earned per round.
 
 ### Added
 
+- **Quick Bar Medals row**: average medals per round, from the tally's medal reading, under Base and Final; a dash until a round earns some. The readout type is smaller so four rows fit the band.
 - **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`, Beta). A burst
   declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture

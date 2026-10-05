@@ -2128,6 +2128,10 @@ Tsum.prototype.finishRoundStats = function() {
       this.runCoins.finalRounds++;
       this.runCoins.finalTotal += finalCoins;
     }
+    if (medals !== null) {
+      this.runCoins.medalRounds++;
+      this.runCoins.medalTotal += medals;
+    }
   } finally {
     // Closes the round for `sampleBaseCoins`, so nothing on the way back out to
     // the friend page can add to a figure that has already been written.

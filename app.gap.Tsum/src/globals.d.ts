@@ -948,10 +948,10 @@ interface HeartsCount {
 /**
  * The run's coin totals, kept by `finishRoundStats` and read by the Quick Bar.
  *
- * Three counts rather than one because a round can write a row with either coin
- * figure missing -- the level-up panel never showed, or the tally would not read
+ * Per-figure counts because a round can write a row with any figure
+ * missing -- the level-up panel never showed, or the tally would not read
  * -- and an average taken over rounds that had no number is not an average of
- * anything. `rounds` is every row written; the other two are the rounds that
+ * anything. `rounds` is every row written; the others are the rounds that
  * actually contributed to each total.
  */
 interface RunCoinTally {
@@ -960,6 +960,8 @@ interface RunCoinTally {
   baseTotal: number;
   finalRounds: number;
   finalTotal: number;
+  medalRounds: number;
+  medalTotal: number;
 }
 
 /**
