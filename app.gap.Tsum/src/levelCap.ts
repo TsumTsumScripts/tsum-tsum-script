@@ -427,6 +427,9 @@ Tsum.prototype.awaitCollectionLoaded = function() {
 /**
  * Walk the collection back to its first page.
  *
+ * One tap on the scrubber's left end (`CollectionGrid.scrubFirst`) normally
+ * does it; the left-chevron bursts below are the fallback when it did not.
+ *
  * Closing the sort dialog leaves the grid wherever the selected tsum landed in
  * the new order, and that tsum is whatever the player last looked at -- often a
  * MyTsum already at MAX, which Level Lock order puts well past the capped run.
@@ -443,6 +446,11 @@ Tsum.prototype.awaitCollectionLoaded = function() {
  */
 Tsum.prototype.rewindCollection = function() {
   this.awaitCollectionLoaded();
+  if (!this.collectionAtFirstPage()) {
+    this.tap(CollectionGrid.scrubFirst);
+    this.settleScreen(UnlockPageTurnSettleMs);
+    this.awaitCollectionLoaded();
+  }
   let turned = 0;
   while (this.isRunning && turned <= UnlockRewindMaxPages) {
     // Every reading past the first is taken after the settle at the bottom of
@@ -464,6 +472,20 @@ Tsum.prototype.rewindCollection = function() {
   logWarn(Log.Unlock.RewindFailed,
     'The collection would not go back to its first page', {pages: turned});
   return false;
+}
+
+/** Jump to the collection's last page with the scrubber's right end. */
+Tsum.prototype.skipCollectionToEnd = function() {
+  this.awaitCollectionLoaded();
+  for (let i = 0; i < UnlockSortAttempts && this.isRunning; i++) {
+    if (this.collectionAtLastPage()) {
+      return true;
+    }
+    this.tap(CollectionGrid.scrubLast);
+    this.settleScreen(UnlockPageTurnSettleMs);
+    this.awaitCollectionLoaded();
+  }
+  return this.collectionAtLastPage();
 }
 
 /**

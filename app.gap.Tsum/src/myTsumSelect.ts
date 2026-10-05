@@ -7,8 +7,9 @@
 //
 //   already the MyTsum (ts.myTsum)            done, nothing navigated
 //   collection, Date acquired, owned only,    the export's opening (tsumList.ts)
-//   rewind
-//   turn `page` pages                         tsumListTurnPage
+//   rewind, turn `page` pages                 tsumListTurnPage; or, when
+//                                             nearer the end, scrub to the last
+//                                             page and turn back
 //   tap the card, wait for its portrait       tsumListSelectCard
 //   ONE confirming read                       identifyCollectionTsum; another
 //                                             tsum, or no confident read, means
@@ -64,7 +65,7 @@ function selectMyTsum(short: string): GapWorkflowResult {
     return selectMyTsumFailed('sort failed', fields);
   }
   try {
-    return selectMyTsumOnGrid(run, short, row.name, page, slot, fields);
+    return selectMyTsumOnGrid(run, short, row.name, page, slot, file.tsums.length, fields);
   } finally {
     run.restoreCollectionSort(previous, CollectionSort.DateAcquired);
   }
@@ -72,20 +73,10 @@ function selectMyTsum(short: string): GapWorkflowResult {
 
 /** The part on the sorted collection; the caller puts the sort back. */
 function selectMyTsumOnGrid(run: Tsum, short: string, name: string, page: number, slot: number,
-                            fields: LogFields): GapWorkflowResult {
-  run.rewindCollection();
-  for (let p = 0; p < page; p++) {
-    if (!run.isRunning) {
-      return 'wait';
-    }
-    run.awaitCollectionLoaded();
-    // Fewer pages than the list says: the collection is not the one listed.
-    if (run.collectionAtLastPage()) {
-      return selectMyTsumStale(fields, { atPage: p });
-    }
-    if (!tsumListTurnPage(run)) {
-      return selectMyTsumFailed('page turn failed', fields);
-    }
+                            listed: number, fields: LogFields): GapWorkflowResult {
+  const reached = selectMyTsumGoToPage(run, page, listed, fields);
+  if (reached !== null) {
+    return reached;
   }
   run.awaitCollectionLoaded();
   if (run.readCollectionCards()[slot] === 'empty') {
@@ -119,6 +110,58 @@ function selectMyTsumOnGrid(run: Tsum, short: string, name: string, page: number
   run.myTsumName = name !== '' ? name : id.full;
   logInfo(Log.Workflow.SelectTsumDone, 'MyTsum set', fields);
   return 'done';
+}
+
+/**
+ * Brings the grid to `page`; null once there. From the last page (the
+ * scrubber's right end) when that is fewer turns, but only if the last page
+ * holds the cards the list expects -- a grown collection shifts nothing from
+ * the start, so that walk is the safe fallback.
+ */
+function selectMyTsumGoToPage(run: Tsum, page: number, listed: number,
+                              fields: LogFields): GapWorkflowResult | null {
+  const lastPage = Math.floor((listed - 1) / SelectMyTsumPerPage);
+  const fromEnd = lastPage - page;
+  if (fromEnd < page && run.skipCollectionToEnd() &&
+      selectMyTsumCardCount(run) === listed - lastPage * SelectMyTsumPerPage) {
+    for (let p = 0; p < fromEnd; p++) {
+      if (!run.isRunning) {
+        return 'wait';
+      }
+      run.awaitCollectionLoaded();
+      if (!tsumListTurnPage(run, true)) {
+        return selectMyTsumFailed('page turn failed', fields);
+      }
+    }
+    return null;
+  }
+  run.rewindCollection();
+  for (let p = 0; p < page; p++) {
+    if (!run.isRunning) {
+      return 'wait';
+    }
+    run.awaitCollectionLoaded();
+    // Fewer pages than the list says: the collection is not the one listed.
+    if (run.collectionAtLastPage()) {
+      return selectMyTsumStale(fields, { atPage: p });
+    }
+    if (!tsumListTurnPage(run)) {
+      return selectMyTsumFailed('page turn failed', fields);
+    }
+  }
+  return null;
+}
+
+/** Cards on the page showing. */
+function selectMyTsumCardCount(run: Tsum): number {
+  const cards = run.readCollectionCards();
+  let n = 0;
+  for (let i = 0; i < cards.length; i++) {
+    if (cards[i] !== 'empty') {
+      n++;
+    }
+  }
+  return n;
 }
 
 /** Logs a failed step; the runner retries the node, then skips it. */

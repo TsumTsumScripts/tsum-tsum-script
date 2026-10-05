@@ -53,6 +53,7 @@ release note; they fold back in here when she ships.
 - Auto Play Game setting moved from General to the Round tab.
 - Tsum app restart frequency now counts in minutes (30-minute steps) and sits under Device, out of Experimental.
 - Large tsums are now chained instead of popped, and bridge longer gaps.
+- Tsum List export and Unlock Level now jump straight to the first page of the Tsum collection instead of paging back one at a time.
 - Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, the Mid Chain strategies no longer let them pile up, and new Save One and Save One Mid Chain strategies pop all but one (on sight, or as a chain lands).
 
 ### Added
@@ -128,6 +129,12 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
+- **Collection scrubber.** The track under the grid jumps to the first page
+  when tapped at its left end, the last at its right (`CollectionGrid.scrubFirst`
+  / `scrubLast`). `rewindCollection` taps it first, keeping the chevron bursts
+  as fallback; `skipCollectionToEnd` is new. Select My Tsum comes from the last
+  page and turns back (`tsumListTurnPage(run, true)`) when that is fewer turns
+  and the last page holds the expected card count. Untested on a device.
 - **Bubble popping.** Measured on a Villains Set recording: the scan found
   about half of a packed bottom row, and the 2s post-skill hold blocked pops
   for ~30% of the round.
