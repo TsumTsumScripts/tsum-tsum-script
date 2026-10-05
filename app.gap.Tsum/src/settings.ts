@@ -1980,6 +1980,9 @@ function applySettingValue(setting: SettingSpec, value: SettingValue): boolean {
         setting.default = num;
         if (control !== null) {
             control.value = shownNumber(setting, num);
+            if (control.parentNode !== null) {
+                syncStepLimits(control.parentNode as HTMLElement, setting);
+            }
         }
         return true;
     }
@@ -3209,13 +3212,13 @@ function genStartCommand(settings: SettingSpec[][]): string {
 /** localStorage key holding an explicit choice, if the user has made one. */
 var THEME_KEY = 'tsumtsumtheme';
 
-/** What the device asks for. Light when it has no opinion, or cannot say. */
+/** What the device asks for. Dark, GAP's default, when it has no opinion. */
 function systemTheme(): string {
     if (typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'dark';
+        window.matchMedia('(prefers-color-scheme: light)').matches) {
+        return 'light';
     }
-    return 'light';
+    return 'dark';
 }
 
 /** The theme the page is showing right now. */
@@ -3228,7 +3231,7 @@ function currentTheme(): string {
  * `remember` says the user is the one who asked.
  *
  * `data-theme` is always set explicitly, even when it only mirrors the device,
- * because Pico's dark rules and the toggle's own icon both key off it.
+ * because the GAP tokens and the toggle's own icon both key off it.
  */
 function setTheme(theme: string, remember: boolean): void {
     document.documentElement.setAttribute('data-theme', theme);
@@ -3910,6 +3913,7 @@ function buildStepper(setting: SettingSpec): HTMLElement {
         var by = coarse !== null ? +coarse * step : +fineBy! * fine;
         // A real minus sign: the hyphen reads as a dash next to the digits.
         button.textContent = (by > 0 ? '+' : '−') + Math.abs(by) / scale;
+        button.setAttribute('data-by', String(by));
         button.addEventListener('click', (function (by) {
             return function () {
                 setNumberValue(setting, input, (+input.value) * scale + by);
@@ -3920,6 +3924,7 @@ function buildStepper(setting: SettingSpec): HTMLElement {
     input.addEventListener('change', function () {
         setNumberValue(setting, input, (+input.value) * scale);
     });
+    syncStepLimits(stepper, setting);
 
     // A number row may also carry an action -- "Now", beside the between-rounds
     // delay. Inside the stepper rather than beside it, so the row's control
@@ -3950,7 +3955,22 @@ function setNumberValue(setting: SettingSpec, input: HTMLInputElement, value: nu
     }
     input.value = shownNumber(setting, next);
     setting.default = next;
+    if (input.parentNode !== null) {
+        syncStepLimits(input.parentNode as HTMLElement, setting);
+    }
     saveSettings(settings);
+}
+
+/** Disables a stepper's buttons that point past the row's min or max. */
+function syncStepLimits(stepper: HTMLElement, setting: SettingSpec): void {
+    var value = setting.default as number;
+    var steps = stepper.querySelectorAll('.step');
+    for (var i = 0; i < steps.length; i++) {
+        var button = steps[i] as HTMLButtonElement;
+        var by = +button.getAttribute('data-by')!;
+        button.disabled = (by < 0 && setting.min !== undefined && value <= setting.min) ||
+            (by > 0 && setting.max !== undefined && value >= setting.max);
+    }
 }
 
 /** A number row's stored value as its field shows it -- see `SettingSpec.scale`. */
@@ -4116,7 +4136,83 @@ function selectTab(id: string): void {
     if (localStorage !== undefined) {
         localStorage.setItem(TAB_KEY, id);
     }
+    scrollTabIntoView(document.getElementById('tab_' + id));
     window.scrollTo(0, 0);
+}
+
+/** Scrolls the tab bar just far enough that `tab` is fully in view. */
+function scrollTabIntoView(tab: HTMLElement | null): void {
+    var bar = document.getElementById('tabBar');
+    if (tab === null || bar === null) {
+        return;
+    }
+    // Room for the "+N" button that would otherwise sit over the tab's edge.
+    var pad = 48;
+    if (tab.offsetLeft - pad < bar.scrollLeft) {
+        bar.scrollLeft = Math.max(0, tab.offsetLeft - pad);
+    } else if (tab.offsetLeft + tab.offsetWidth + pad > bar.scrollLeft + bar.clientWidth) {
+        bar.scrollLeft = tab.offsetLeft + tab.offsetWidth + pad - bar.clientWidth;
+    }
+    updateTabOverflow();
+}
+
+/**
+ * The tab bar's overflow cues: a faded edge and a "+N" button on each side
+ * that has tabs past it, so no tab is hidden without saying so.
+ */
+function updateTabOverflow(): void {
+    var bar = document.getElementById('tabBar');
+    var scroll = document.getElementById('tabScroll');
+    var left = document.getElementById('tabMoreLeft');
+    var right = document.getElementById('tabMoreRight');
+    if (bar === null || scroll === null || left === null || right === null) {
+        return;
+    }
+    var hiddenLeft = 0;
+    var hiddenRight = 0;
+    for (var i = 0; i < bar.children.length; i++) {
+        var tab = bar.children[i] as HTMLElement;
+        // Half out counts as hidden: the half that shows is only the peek.
+        var middle = tab.offsetLeft + tab.offsetWidth / 2;
+        if (middle < bar.scrollLeft) {
+            hiddenLeft++;
+        } else if (middle > bar.scrollLeft + bar.clientWidth) {
+            hiddenRight++;
+        }
+    }
+    scroll.classList.toggle('has-left', hiddenLeft > 0);
+    scroll.classList.toggle('has-right', hiddenRight > 0);
+    left.hidden = hiddenLeft === 0;
+    right.hidden = hiddenRight === 0;
+    left.textContent = '‹ ' + hiddenLeft;
+    right.textContent = '+' + hiddenRight + ' ›';
+    var label = i18nText(UiText.ChromeMoreTabs);
+    left.setAttribute('aria-label', label + ' (' + hiddenLeft + ')');
+    right.setAttribute('aria-label', label + ' (' + hiddenRight + ')');
+}
+
+/** Wires the tab bar's scroll and "+N" buttons; once, as they are chrome. */
+function bindTabOverflow(): void {
+    var bar = document.getElementById('tabBar');
+    var left = document.getElementById('tabMoreLeft');
+    var right = document.getElementById('tabMoreRight');
+    if (bar === null || left === null || right === null) {
+        return;
+    }
+    var page = function (direction: number) {
+        return function () {
+            bar!.scrollLeft += direction * Math.round(bar!.clientWidth * 0.8);
+        };
+    };
+    left.addEventListener('click', page(-1));
+    right.addEventListener('click', page(1));
+    bar.addEventListener('scroll', updateTabOverflow);
+    window.addEventListener('resize', updateTabOverflow);
+    // The fonts land after the first layout and widen the tabs, so bring the
+    // selected one back into view once they have.
+    window.addEventListener('load', function () {
+        scrollTabIntoView(bar!.querySelector('[aria-selected="true"]') as HTMLElement | null);
+    });
 }
 
 /** The remembered tab, or the first one when there is nothing usable stored. */
@@ -4335,6 +4431,7 @@ function bootstrap(): void {
     // Wired once: the app bar and the panel under it are not re-rendered, and
     // their labels are `localiseChrome`'s, which every render calls.
     bindPresets();
+    bindTabOverflow();
 
     checkShareSlots();
     loadSettings(settings);

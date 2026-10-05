@@ -124,17 +124,27 @@ const substitute = (text) => text
 
 /** Stage the page assets so tools/inline/inline.js can resolve them by name. */
 function stageAssets(log) {
-  for (const name of ['index.html', 'index.css', 'quickbar.html', 'quickbar.css']) {
+  for (const name of ['index.html', 'index.css', 'quickbar.html', 'quickbar.css', 'gapTokens.css']) {
     fs.copyFileSync(local('src', name), local('build', name));
   }
-  // Pico CSS from node_modules rather than a CDN: the settings page is opened
-  // from file:// on a device that is often offline, so every asset it names has
-  // to end up inside dist/index.html. `@charset` is dropped because it is only
-  // legal at the top of a stylesheet *file*, and this becomes a <style> element.
-  const pico = fs.readFileSync(local('node_modules', '@picocss', 'pico', 'css', 'pico.min.css'), 'utf8');
-  fs.writeFileSync(local('build', 'pico.css'), pico.replace(/^@charset "UTF-8";/, ''));
-  log('[build] staged index/quickbar html+css and pico.css into build/\n');
+  // The GAP fonts as data URIs: the pages are opened from file:// on a device
+  // that is often offline, so a font they have to fetch is a font they lack.
+  // One sheet per family, so the Quick Bar inlines only the one it uses.
+  for (const [sheet, family, file, weight] of GAP_FONTS) {
+    const data = fs.readFileSync(local('src', 'fonts', file)).toString('base64');
+    fs.writeFileSync(local('build', sheet),
+      `@font-face{font-family:"${family}";src:url(data:font/woff2;base64,${data}) format("woff2");` +
+      `font-weight:${weight};font-style:normal;font-display:block}\n`);
+  }
+  log('[build] staged index/quickbar html+css, GAP tokens and fonts into build/\n');
 }
+
+/** [sheet, family, file in src/fonts, weight range] -- Latin subsets of the GAP kit's fonts. */
+const GAP_FONTS = [
+  ['font-sans.css', 'IBM Plex Sans', 'ibm-plex-sans.woff2', '400 700'],
+  ['font-display.css', 'Space Grotesk', 'space-grotesk.woff2', '500 700'],
+  ['font-mono.css', 'IBM Plex Mono', 'ibm-plex-mono.woff2', '400'],
+];
 
 /**
  * Fold a page's assets into it and substitute the placeholders. The inlined
@@ -267,8 +277,8 @@ const steps = [
       await node(log, 'tools/minify/library.js', 'src/tsumNames.dat', 'dist/tsumNames.dat');
     },
   },
-  // The license and the notices ride in the archive: dist/index.html inlines
-  // Pico CSS, whose MIT notice has to travel with it.
+  // The license and the notices ride in the archive: both pages inline the GAP
+  // fonts, whose OFL notice has to travel with them.
   {
     id: 'dist:notices',
     run: ({ log }) => {

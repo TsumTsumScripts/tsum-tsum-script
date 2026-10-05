@@ -50,6 +50,7 @@ release note; they fold back in here when she ships.
 - Chains no longer break in a round's last seconds.
 - Round stats no longer lose the score and coins when the rank-up panel appears after a round, and base coins read more reliably.
 - Auto Play Game setting moved from General to the Round tab.
+- Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, orange switches, a light and dark theme, and tabs that show how many are off-screen.
 
 ### Added
 
@@ -87,6 +88,14 @@ release note; they fold back in here when she ships.
   smoke. Villains (Set)'s smoke read Active at the button, so `while (useSkill())`
   re-fired every ~300ms and drew no chains for up to 9s per window. The Quick
   Bar's grey strip hides that chrome, so the side margins at y 1700 back it up.
+- **GAP Design System** on both pages. Pico is gone: `index.css` and
+  `quickbar.css` use only `src/gapTokens.css` (the kit's tokens, copied
+  verbatim). Fonts are Latin woff2 subsets in `src/fonts/`, inlined by the
+  build as data URIs. Dark is the default theme.
+- Settings tabs scroll as pills with "+N" overflow cues (`updateTabOverflow`);
+  stepper buttons turn dashed at the row's min/max (`syncStepLimits`).
+- Quick Bar toggles are orange with a check box; "applies now" is green,
+  "next round" amber; coin and time figures use the data colours.
 
 ### Fixed
 
