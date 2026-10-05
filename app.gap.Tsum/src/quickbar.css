@@ -258,7 +258,6 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   flex: 0 0 auto;
   color: var(--qb-muted);
   font-size: calc(10 * var(--qb-u));
-  letter-spacing: 0.02em;
 }
 
 /* --- stepper ------------------------------------------------------------ */
@@ -315,7 +314,6 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   font-size: calc(8 * var(--qb-u));
   line-height: 1;
   color: var(--qb-muted);
-  letter-spacing: 0.02em;
 }
 
 .qb-value {
@@ -347,38 +345,26 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 
 /*
  * A chip that says its own name, rather than a label and a switch beside it:
- * orange with a checked box is on, an empty box is off. Same shape as the
- * steppers and the select, so the row reads as one kind of thing. As wide as
- * its word plus the box, which is always drawn so a flip never moves anything.
+ * on is orange with a check in its corner, off is plain and muted. Same shape
+ * as the steppers and the select, so the row reads as one kind of thing. As
+ * wide as its word: the check is drawn over the corner, so it costs no width.
  */
 .qb-toggle {
+  position: relative;
   flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: calc(3 * var(--qb-u));
   height: 100%;
-  padding: 0 calc(5 * var(--qb-u));
+  padding: 0 calc(6 * var(--qb-u));
   border: 1px solid var(--qb-chip-edge);
   border-radius: var(--qb-radius);
   background: var(--qb-chip);
   color: var(--qb-muted);
   font: inherit;
   font-size: calc(11 * var(--qb-u));
-  letter-spacing: 0.02em;
   white-space: nowrap;
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .qb-toggle:active { background: var(--qb-chip-press); }
-
-.qb-toggle::before {
-  content: "";
-  flex: 0 0 auto;
-  width: calc(9 * var(--qb-u));
-  height: calc(9 * var(--qb-u));
-  border: 1px solid var(--qb-chip-edge);
-  border-radius: 2px;
-}
 
 .qb-toggle[aria-checked="true"] {
   background: var(--qb-on-soft);
@@ -386,10 +372,14 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   color: var(--qb-on-ink);
 }
 
-/* On, the empty box becomes the GAP check glyph: shape, not only colour. */
+/* On also shows the GAP check, so state is not colour alone. */
 .qb-toggle[aria-checked="true"]::before {
-  border: 0;
-  border-radius: 0;
+  content: "";
+  position: absolute;
+  top: calc(2 * var(--qb-u));
+  right: calc(2 * var(--qb-u));
+  width: calc(7 * var(--qb-u));
+  height: calc(7 * var(--qb-u));
   background: currentColor;
   -webkit-mask: var(--qb-check) center / contain no-repeat;
   mask: var(--qb-check) center / contain no-repeat;
@@ -414,7 +404,6 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   color: var(--qb-ink);
   font: inherit;
   font-size: calc(11 * var(--qb-u));
-  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
@@ -479,6 +468,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 .qb-wide-readout {
   flex: 1 1 auto;
   min-width: 0;
+  text-align: left;
   overflow: hidden;
   align-items: stretch;
   gap: calc(2 * var(--qb-u));
@@ -700,7 +690,6 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
   color: var(--qb-muted);
   font-size: calc(9 * var(--qb-u));
   font-weight: inherit;
-  letter-spacing: 0.02em;
   text-align: left;
   white-space: nowrap;
 }
