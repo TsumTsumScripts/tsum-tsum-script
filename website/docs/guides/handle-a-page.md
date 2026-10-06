@@ -18,14 +18,14 @@ Two separate jobs, and most changes need only the second:
 
 | # | File | What |
 |:--|:--|:--|
-| 1 | a frame of the screen | Captured on a device (turn on *Collect unknown screens*) and authored into probes with the development toolkit's studio. |
+| 1 | a frame of the screen | Captured on a device (turn on *Collect unknown screens*), then turned into probes. |
 | 2 | `src/data.ts` | A `PageName` member, and a `Page` entry with the probes. |
 | 3 | `src/data.ts` | Its `PageProfiles` entry: permanent or transient, and its `roles`. |
 | 4 | `src/data.ts` | A `PageRoutes` row if navigation may have to leave it. |
 
-Then `npm run pages:docs`, `npm run dispatch:update`, and the toolkit's
-detection regression (`pages:eval`, `pages:calibrate`, `pages:audit`) — a
-fingerprint change is not finished until that has run.
+Then `npm run pages:docs` and `npm run dispatch:update`. A fingerprint change
+also has to clear the detection regression, which lives outside this package —
+open a pull request and say which frames you measured against.
 
 ### The fingerprint
 
@@ -56,10 +56,10 @@ Two rules about what is *not* a page:
   something to test — make it the plain entry's probes *plus* the new ones,
   because the ranking prefers more probes and a shorter entry can never win.
 - **Something too small to survive the capture path cannot have an entry.**
-  Probes are read off a 360-px-wide capture; a channel 20 logical px thick is
-  three pixels there. Such a mode is read at native resolution off a crop
-  (Formal Beast's twin gauge is the case), and its frames stay plain
-  `GamePlaying`.
+  Probes are read off a downscaled capture, so a thin sliver of the screen is
+  a few pixels by the time a probe sees it. Such a mode is read at native
+  resolution off a crop instead (Formal Beast's twin gauge is the case), and
+  its frames stay plain `GamePlaying`.
 
 <ImagePlaceholder id="page-fingerprint-probes" alt="A captured screen with the entry's probe points marked, showing which pixels the fingerprint reads" />
 
@@ -77,8 +77,8 @@ https://github.com/game-automation-platform/game-automation-scripts/blob/main/ap
 
 To measure a transient page's duration: turn on *Debug game* and *Page history
 depth*, reproduce the screen, and read the visit's duration out of the
-`[Pages]` trail line; convert to 60 fps if the device runs faster, and set
-`measured: true`.
+`[Pages]` trail line. Durations are stored in frames, so convert from the rate
+the device was running at, and set `measured: true`.
 
 ### The route
 

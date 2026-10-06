@@ -87,12 +87,16 @@ belongs beside the number, not in a document elsewhere.
 - **The header comments** are where a decision and its reasoning are kept
   together. When a file's job changes, its header and its code-map row change
   with it.
+- **The site is contributor-level, not a specification.** It says what the
+  rules are and which file owns each one; the derivations, the failures that
+  produced an invariant and the measured constants stay in the header comments,
+  where someone editing the code will see them. If a page could be used to
+  rebuild a part of the script without reading it, it has gone too far.
 
 ## What must not be in the tree
 
-The tree is public. It may not name the private toolkit repository, describe
-what it holds beyond "the development toolkit", or carry anything of the
-game's — screenshots, art, the readers of its data files. Comments cite the
-toolkit's commands by name and stop there. Nothing from the host app's code
-is copied here; its behaviour is described in prose and its natives are
-declared, not implemented.
+The tree is public, and so is the documentation site built from it. Neither
+may name the private maintainers' repository or describe what it holds, or
+carry anything of the game's — screenshots, art, the readers of its data files.
+Nothing from the host app's code is copied here; its behaviour is described in
+prose and its natives are declared, not implemented.

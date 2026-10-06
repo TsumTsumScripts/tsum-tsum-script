@@ -28,13 +28,11 @@ Run from `app.gap.Tsum/`.
 
 ## Not in this package
 
-Source comments cite a second set of commands by name — `pages:eval`,
-`pages:calibrate`, `pages:audit`, `pages:selftest`, `chain:bench`,
-`report:open` and others. Those belong to the **development toolkit**, a
-separate private repository that runs against this one's build. None of them
-is an `npm run` script here; read any command this `package.json` does not
-define as one of the toolkit's, and treat its result (a threshold, a
-timing) as the measurement behind the number in the source.
+Source comments occasionally cite a command this `package.json` does not
+define. Those belong to a separate, private maintainers' repository that runs
+against this one's build; treat the result they produce (a threshold, a timing)
+as the measurement behind the number in the source, and leave the number alone
+unless you can measure it again.
 
 ## The site's own commands
 

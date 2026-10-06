@@ -5,21 +5,16 @@ description: One place decides what is on screen, one queue decides who acts on 
 
 # Page router
 
-Recognising a screen is half the job. The other half is what happens next, and
-that used to be spread across every loop that happened to be looking — three
-navigation loops with near-identical `switch (page)` bodies, and the Magical
-Time offer cancelled in three places because any of three loops could be the
-one that saw it. Two reactions on one frame, one tapping and one reading, read
-or tapped a screen the other had already changed.
-
-Now `gPages` (a `PageRouter`, in `pages.ts`) is the only thing that looks, and
-it **broadcasts** what it found. Anything that wants to react registers a
-subscription in `pageHandlers.ts` instead of writing another branch.
+Recognising a screen is half the job; the other half is what happens next.
+Both belong to one place. `gPages` (a `PageRouter`, in `pages.ts`) is the only
+thing that looks, and it **broadcasts** what it found. Anything that wants to
+react registers a subscription in `pageHandlers.ts` rather than writing another
+branch of its own.
 
 ```mermaid
 flowchart TD
   cap["capture a frame"]
-  sweep["<b>sweep</b>: score every Page entry<br/>most probes confirmed wins"]
+  sweep["<b>sweep</b>: score every Page entry"]
   event["<b>PageEvent</b><br/>page, previous, changed, goal, kind…"]
   cap --> sweep --> event
   event --> observe["observe · 100<br/>read-only state"]
@@ -35,23 +30,18 @@ flowchart TD
 ## Detection
 
 Every screen the script knows is a **fingerprint** in the `Page` table in
-`data.ts`: a handful of probe pixels, each with the colour expected there and
-a threshold. `sweep` scores every entry against a captured frame and takes the
-best. "Best" is **evidence first, comfort second**: the entry confirming the
-most probes wins, and slack only breaks ties between fingerprints of equal
-length — ranking on slack alone would let a one-probe entry that matched by
-luck beat a nine-probe entry that matched genuinely.
+`data.ts`: a handful of probe pixels, each with the colour expected there and a
+tolerance. `sweep` scores every entry against a captured frame and takes the
+best, weighing evidence before comfort — an entry confirming more probes beats
+one that matched more loosely on fewer.
 
 Several `PageName`s have more than one `Page` entry — regional, emulator and
-resolution variants of the same screen. That is why the enum is written by
-hand rather than derived from the table: the keys are fingerprints, the names
-are screens.
+resolution variants of the same screen. That is why the enum is written by hand
+rather than derived from the table: the keys are fingerprints, the names are
+screens.
 
 A caller that knows what it is watching can pass an `expect` list, which
-narrows *which entries are scored at all*. The play loop's liveness check does
-this with the pages a round can be on, so a page outside that set can no
-longer win by being the last entry still passing over a board hidden by an
-animation.
+narrows which entries are scored at all.
 
 <ImagePlaceholder id="page-fingerprint-probes" alt="A game screen with its fingerprint's probe points drawn on it, each labelled with the expected colour and threshold" />
 
@@ -61,8 +51,7 @@ Every detection produces a `PageEvent`: the page, the previous page, whether
 the screen actually turned over since the last look (`changed`), the goal the
 look was made with, the page's kind and, for a transient page, how long it has
 left. The router files it in a bounded **history** (`gPages.history`, rendered
-by `gPages.trail()` as `FriendPage(2.1s) < StartPage(0.4s)`) and runs the
-queue over it.
+by `gPages.trail()`) and runs the queue over it.
 
 ## The queue
 
@@ -82,11 +71,11 @@ predicate declined. Which band a subscription joins is therefore a contract:
 | Band | Promise |
 |:--|:--|
 | `observe` | Takes no captures, taps nothing. Always runs. |
-| `record` | Measurements that need an untouched screen — captures included. The fever reading is here, and that is why. |
+| `record` | Measurements that need an untouched screen — captures included. |
 | `guard` | Handles what is not a game screen at all: system dialogs, the root warning. |
 | `dismiss` | Closes interruptions standing between the script and where it is going. |
 | `navigate` | Moves toward the goal. **Silent when the look had no goal, and never on the destination page.** |
-| `notify` | Logging and bookkeeping. Decides nothing, and runs even after the queue has stopped — it records what was seen. |
+| `notify` | Logging and bookkeeping. Decides nothing, and runs even after the queue has stopped. |
 
 Nothing checks this, and `PAGE_DISPATCH.md` will happily document a wrong
 choice. A handler that captures belongs in `record`; one that taps belongs in
@@ -94,19 +83,16 @@ choice. A handler that captures belongs in `record`; one that taps belongs in
 
 Two rules carry most of the safety:
 
-- **`navigate` is silent with no goal.** A goal is an argument to the look
-  (`gPages.navigate(PageName.X)` is the one caller that passes one), not router
-  state. That is what lets the play loop call `gPages.detect()` every cycle
-  without anything tapping the game away.
-- **`navigate` never fires on the destination.** Arriving is `navigate()`'s
-  job; a fallback back-tap firing there would walk straight off the page the
-  caller asked for.
+- **`navigate` is silent with no goal.** A goal is an argument to the look, not
+  router state, which is what lets other callers detect every cycle without
+  anything tapping the game away.
+- **`navigate` never fires on the destination.** Arriving is `navigate()`'s job.
 
-There is no blind fallback. The last mover, `nav.move.exit`, presses a page's
-`back` only where that page's `PageRoutes` row says `back` is a way out. A page
-with no such row is not tapped: `navigate()` logs `nav.noRoute` once and the
-stall guard takes over. So **a new page that navigation has to leave needs its
-exit declared**, or navigation will sit on it and say so.
+There is no blind fallback: navigation presses a page's `back` only where that
+page's `PageRoutes` row says `back` is a way out. A page with no such row is
+not tapped — `navigate()` logs `nav.noRoute` once and the stall guard takes
+over. So **a new page that navigation has to leave needs its exit declared**,
+or navigation will sit on it and say so.
 
 ## Subscriptions are data
 
@@ -129,16 +115,16 @@ https://github.com/game-automation-platform/game-automation-scripts/blob/main/ap
 Every `PageName` declares in `PageProfiles` (`data.ts`) how it leaves the
 screen:
 
-- **Permanent** — it waits for input. Still there in ten seconds, and the only
-  way past it is a tap. The navigate band taps these.
+- **Permanent** — it waits for input, and the only way past it is a tap. The
+  navigate band taps these.
 - **Transient** — it dismisses itself after `durationMs`. Tapping it is worse
   than doing nothing: by the time the tap lands, the page is gone and the tap
   hits whatever replaced it. `nav.wait.transient` sits these out.
 
 `PageProfiles` is a mapped type over `PageName`, so a name with no profile is a
 build error rather than a page whose behaviour nobody decided. Durations are
-quoted at 60 fps because the game counts these windows in frames, not
-milliseconds; the **Device frame rate** setting scales them.
+quoted in frames rather than milliseconds, because that is how the game counts
+these windows; the **Device frame rate** setting scales them.
 
 ## The five looks
 
@@ -152,17 +138,16 @@ gPages.navigate(PageName.FriendPage)   // look and act until we are there
 ```
 
 `detect` is `observe` then `react`. `peek` is for "where am I?" from code that
-must not set anything in motion — the pause hook uses it, because a broadcast
-would hand the frozen play loop a page it never looked at. Writing the
-*caller* — a task that walks a flow rather than reacting to one screen — is
+must not set anything in motion. Writing the *caller* — a task that walks a
+flow rather than reacting to one screen — is
 [Driving screens](../guides/driving-screens).
 
 ## Modes are not pages
 
-A fever is not a screen: it is the same `GamePlaying` board with the lights
-down and the gauge turned into a timer. State like that is read from its own
-probe table (`ts.isFeverTime()`, `fever.ts`) and never from the matched key —
-a `Page` entry's `variant` is documentation and tooling by contract; the script
-only ever learns the page *name*. Formal Beast's twin gauge and the Lorcana
+A fever is not a screen: it is the same board with the lights down and the
+gauge turned into a timer. State like that is read from its own probe table
+(`ts.isFeverTime()`, `fever.ts`) and never from the matched key — a `Page`
+entry's `variant` is documentation and tooling by contract; the script only
+ever learns the page *name*. Formal Beast's twin gauge and the Lorcana
 transformation are the other two modes, and each has a watcher modelled on
 `fever.ts`.

@@ -17,10 +17,9 @@ description: Clone, install, type-check, build, and push to a device.
 - The **General Automation Platform** app on an Android device or emulator, with
   the game installed, to see a change work for real.
 
-You do **not** need the development toolkit. It is a separate, private
-repository that holds the game's own screenshots and the tools that author
-screen fingerprints; the source comments cite its commands, and nothing in
-this package runs them.
+You do **not** need anything beyond the above. A command the source comments
+mention but `package.json` does not define belongs to a separate, private
+repository, and nothing here runs it.
 
 ## Clone and install
 

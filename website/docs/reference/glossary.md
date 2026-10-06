@@ -76,8 +76,8 @@ threshold.
 screen, the screens before it, the settings and the last few hundred log
 records. Sent in from the app's Run History.
 
-**Ring** — the last 300 log records held in memory whether or not they were
-written out; what a report carries.
+**Ring** — the last few hundred log records held in memory whether or not they
+were written out; what a report carries.
 
 **Round** — one game, from the whistle to the tally. Has its own `roundId`
 and a frozen copy of the settings it was played under.
@@ -98,10 +98,9 @@ choreography, one file per skill under `src/skills/`.
 a fever (`gFever.subscribe`): an id, a sentence saying what it does, the
 pages it fires on, and a list of steps.
 
-**Toolkit** — the development toolkit: a separate private repository holding
-the game's screenshots, the fingerprint studio and the detection regression.
-Its commands (`pages:eval`, `chain:bench`, …) are cited in source comments
-and are not scripts in this package.
+**Toolkit** — a separate, private maintainers' repository. Source comments
+occasionally cite one of its commands; none is a script in this package, and
+nothing here needs it.
 
 **Tsum** — a game piece on the board; also `Tsum`, the object that is the
 world one run is played in, and `ts`, the global that holds it.
