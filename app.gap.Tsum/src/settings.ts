@@ -846,7 +846,7 @@ var tabs: TabSpec[] = [
                     {
                         // How far back the router's page trail goes. With "Debug
                         // game" on it also writes one frame per visit to
-                        // tsum_record/pageHistory, and drops each frame as its visit
+                        // history/, and drops each frame as its visit
                         // falls off the stack -- so the directory is bounded by this
                         // number, not by uptime.
                         key: SettingKey.PageHistoryDepth,
@@ -3207,9 +3207,9 @@ function copyPresetsExport(): void {
  * This page is a file:// document in a WebView and has no filesystem of its own,
  * so the write goes through the bundle's `writeFile` native -- which means it
  * only works once something has been started, and the reply below is what says
- * so rather than leaving the button looking ignored. The directory is read from
- * `Config.recordDir` inside the engine, so the export lands beside the round
- * stats with nothing here holding a second copy of that name.
+ * so rather than leaving the button looking ignored. The directory is
+ * `getDevicePath()` inside the engine, so the export lands in this device's own
+ * folder with nothing here holding a second copy of that path.
  */
 // noinspection JSUnusedGlobalSymbols
 function savePresetsFile(): void {
@@ -3227,12 +3227,10 @@ function savePresetsFile(): void {
         return;
     }
     iface.runScriptCallback('(function () {'
-        + 'if (typeof writeFile !== "function" || typeof getStoragePath !== "function"'
-        + ' || typeof Config === "undefined") { return "no engine"; }'
+        + 'if (typeof writeFile !== "function" || typeof getDevicePath !== "function") {'
+        + ' return "no engine"; }'
         + 'try {'
-        + 'var dir = getStoragePath() + "/" + Config.recordDir;'
-        + 'execute("mkdir -p " + dir);'
-        + 'var path = dir + "/" + ' + JSON.stringify(PRESET_FILE_NAME) + ';'
+        + 'var path = getDevicePath() + "/" + ' + JSON.stringify(PRESET_FILE_NAME) + ';'
         + 'writeFile(path, ' + JSON.stringify(text) + ');'
         + 'return path;'
         + '} catch (e) { return "error " + e; }'

@@ -218,7 +218,7 @@ check('begin: a refused workflow is terminated with the code, before any node',
 check('receive: bad payload is bad-sync', JSON.parse(ctx.gapWorkflowReceive('{"presets":[]}')).error === 'bad-sync');
 
 // --- Tsum's Tsum List check ---------------------------------------------------------
-const listFile = path.join(storage, 'tsum_record', 'tsum_list_' + ctx.getDeviceId() + '.json');
+const listFile = path.join(ctx.getDevicePath(), 'tsum_list_state.json');
 fs.rmSync(listFile, { force: true });
 const select = (tsum) => node('s1', 'tsum.selectTsum', { tsum });
 receive([select({ perLoop: ['arielplus', 'goofyplus'] })]);

@@ -281,23 +281,17 @@ Tsum.prototype.findDialogButton = function(box) {
 /**
  * Dump the Android view hierarchy.
  *
- * `uiautomator` is an app_process shim and needs a working BOOTCLASSPATH, which
- * the host's shell environment already provides. It used to be invoked behind a
- * hardcoded one (see `startTsumTsumApp`) that named jars modern Android no
- * longer ships, and it aborted on it every time -- so this reliably hit its own
- * two-strike limit and the dialog path ran on pixels alone.
+ * The host runs `uiautomator` and hands back the XML, including the scratch
+ * file it needs and the BOOTCLASSPATH care that one wants.
  *
- * Returns "" when the command is unavailable, and still stops trying after two
+ * Returns "" when the dump is unavailable, and still stops trying after two
  * duds so the dialog path does not pay for it on every attempt.
  */
 Tsum.prototype.dumpUiXml = function() {
   if (this._uiDumpFailures >= 2) {
     return '';
   }
-  const path = this.storagePath + '/tmp/ui_dump.xml';
-  execute('rm -f ' + path);
-  execute('uiautomator dump ' + path);
-  const xml = readFile(path);
+  const xml = dumpUi();
   if (typeof xml !== 'string' || xml.indexOf('<hierarchy') === -1) {
     this._uiDumpFailures = (this._uiDumpFailures || 0) + 1;
     logWarn(Log.Dialog.UiDumpUnavailable, 'uiautomator dump unavailable; using pixels only',
@@ -468,7 +462,7 @@ Tsum.prototype.saveDebugScreenshot = function(tag) {
     return;
   }
   this._lastDebugShot = Date.now();
-  const path = this.storagePath + '/tmp/' + tag + '_' + Date.now() + '.png';
+  const path = this.devicePath + '/tmp/' + tag + '_' + Date.now() + '.png';
   const img = this.dialogScreenshot(this.originScreenWidth, this.originScreenHeight);
   try {
     saveImage(img, path);

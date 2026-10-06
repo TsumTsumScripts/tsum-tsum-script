@@ -8,7 +8,7 @@
 var ScriptVersion = '$VERSION';
 
 var Config: TsumConfig = {
-  recordDir: 'tsum_record',
+  statsDir: 'stats',
   // Centre-to-centre distance of two touching tsums, in the screenResize
   // (200px) play square -- about 8 tsums across a board.
   //

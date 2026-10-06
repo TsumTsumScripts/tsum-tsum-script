@@ -13,20 +13,45 @@ storage — the same root `npm run adb` pushes into
 /sdcard/Download/GameAutomationPlatform/
 ```
 
+Everything the script itself writes goes in **this device's own folder**:
+
+```
+/sdcard/Download/GameAutomationPlatform/devices/<name>_<id>/
+```
+
+`<name>` is the device's name (from the app's Settings, else its model) and
+`<id>` is the twelve-hex device id, so several emulator instances sharing one
+root each keep their own files instead of overwriting one another — which is
+exactly what MuMu does by default. `name.txt` beside the files records the
+current name, and renaming a device keeps the folder it already has.
+
 | Where | What |
 |:--|:--|
-| `logs/script-<device id>.log` | The log: one JSON record per line, rotated at 2 MB into `.1.log` … `.3.log`. The id is the device's own — one emulator, one file — and ends every round `id` in the stats. Reading it: [Log schema](../reference/log-schema) |
-| `tsum_record/stats_<YYYYMMDD>.csv` | The round statistics, one file per UTC day |
-| `tsum_record/unread-<field>-<stamp>.png` | The score screen a stat could not be read from |
-| `tsum_record/pageHistory/` | The last screens the router visited, numbered and named for the page it matched: `01562_GamePlaying.png`, `01563_unknown.png` |
-| `tsum_record/reports/` | The issue-report folders, newest eight — the authority the app's zip is packed from |
-| `reports/` | The zips **Save to device** in Run History writes |
-| `tsum_record/record.txt`, `tsum_record/presets.txt` | The heart tally; exported presets |
-| `tsum_record/corpus/`, `tsum_record/walkthrough/` | Unrecognised screens with their sidecars, and walkthrough recordings — each behind its developer option |
+| `logs/script-<device id>.log` | The log: one JSON record per line, rotated at 2 MB into `.1.log` … `.3.log`. The id is the device's own — one emulator, one file — and ends every round `id` in the stats. At the root, not in the device folder, because the host writes it. Reading it: [Log schema](../reference/log-schema) |
+| `reports/` | The zips **Save to device** in Run History writes. Also at the root: the app writes these |
+
+And inside `devices/<name>_<id>/`:
+
+| Where | What |
+|:--|:--|
+| `stats/stats_<YYYYMMDD>.csv` | The round statistics, one file per UTC day |
+| `stats/tsum_list_<stamp>.csv` | What **Export Tsum list** writes |
+| `stats/unread-<field>-<stamp>.png` | The score screen a stat could not be read from |
+| `history/` | The last screens the router visited, numbered and named for the page it matched: `01562_GamePlaying.png`, `01563_unknown.png` |
+| `reports/` | The issue-report folders, newest eight — the authority the app's zip is packed from |
+| `hearts.json`, `presets.txt` | The heart tally; exported presets |
+| `corpus/`, `walkthrough/` | Unrecognised screens with their sidecars, and walkthrough recordings — each behind its developer option |
 | `tmp/` | Scratch: the *Debug game* frames (`…-boardImg.jpg`, `…-detectedHoughCircles.jpg`, `…-hsvImg.jpg`), the `uiautomator` dump a dialog check leaves. Safe to empty |
 
 Names and timestamps are UTC throughout, so a stats file named for today may
 be yesterday's by the PC's clock.
+
+:::note Upgrading from an older release
+Files written before this layout stay where they were, in `tsum_record/` at the
+root. Nothing moves them, and nothing reads them any more — except Tsum Tsum
+Stats, which scans the whole tree and so still imports the old CSVs. Delete the
+old folder once you have what you want out of it.
+:::
 
 ## MuMu Player 12
 
@@ -43,7 +68,7 @@ open a CSV while the script plays, tail the log from there. MuMu's own toolbar
 screenshot lands beside it in `MuMuSharedFolder\Screenshots`.
 
 **Every instance mounts the same folder.** Each writes its own log — that is
-what the device id in the name is for — but the stats files, `record.txt`,
+what the device id in the name is for — but the stats files, `hearts.json`,
 `pageHistory/` and the reports are one set for all of them, so two instances
 at once will interleave their stats.
 
@@ -67,11 +92,11 @@ The guest path is the same; the route onto the PC differs.
 
    ```sh
    adb connect 127.0.0.1:16384
-   adb pull /sdcard/Download/GameAutomationPlatform/tsum_record .
+   adb pull /sdcard/Download/GameAutomationPlatform/devices .
    adb pull /sdcard/Download/GameAutomationPlatform/logs .
    ```
 
-   A pulled directory is created *inside* the target (`./tsum_record/`,
+   A pulled directory is created *inside* the target (`./devices/`,
    `./logs/`). From Git Bash on Windows prefix `MSYS_NO_PATHCONV=1`, or the
    shell rewrites `/sdcard/…` into a path under `C:\Program Files\Git` —
    [Windows and line endings](../contributing/windows-and-line-endings).

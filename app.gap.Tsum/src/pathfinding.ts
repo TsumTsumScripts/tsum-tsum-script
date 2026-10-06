@@ -873,7 +873,7 @@ function findTsumCircles(img: NativeImage, grayImg: NativeImage): HoughCircle[] 
         const pt = points[d];
         drawCircle(debugImg, pt.x, pt.y, minRadius, 255, 0, 0, 1);
       }
-      saveImage(debugImg, ts!.storagePath + "/tmp/" + ts!.runTimes + "-detectedHoughCircles.jpg");
+      saveImage(debugImg, ts!.devicePath + "/tmp/" + ts!.runTimes + "-detectedHoughCircles.jpg");
     } finally {
       releaseImage(debugImg);
     }
@@ -972,7 +972,7 @@ function findTsums(img: NativeImage, grayImg: NativeImage,
     }
 
     if (ts!.debug) {
-      saveImage(hsvImg, ts!.storagePath + "/tmp/" + ts!.runTimes + "-hsvImg.jpg");
+      saveImage(hsvImg, ts!.devicePath + "/tmp/" + ts!.runTimes + "-hsvImg.jpg");
     }
 
     return results;

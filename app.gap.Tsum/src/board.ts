@@ -793,7 +793,7 @@ Tsum.prototype.scanBoardQuick = function() {
       }
     }
     if (this.debug) {
-      saveImage(srcImg, this.storagePath + "/tmp/" + ts!.runTimes + "-boardImg.jpg");
+      saveImage(srcImg, this.devicePath + "/tmp/" + ts!.runTimes + "-boardImg.jpg");
     }
   } finally {
     if (grayImg != null) { releaseImage(grayImg); }

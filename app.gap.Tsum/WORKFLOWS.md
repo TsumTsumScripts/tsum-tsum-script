@@ -79,7 +79,7 @@ mirroring the adapter's SKILLS; the id for a skill missing there). `presets` is 
 
 ## The Tsum List file
 
-list: `<storage>/tsum_record/tsum_list_<getDeviceId()>.json`,
+list: `<storage>/stats/tsum_list_<getDeviceId()>.json`,
 `{at, build, tsums: [{order, tsum, name, favorite}]}`.
 
 - The Export Tsum List chore writes it, overwriting, only when an export ends

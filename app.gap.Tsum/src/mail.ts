@@ -88,7 +88,7 @@ Tsum.prototype.skipAd = function () {
     if (Config.debugLogs) {
       const img = this.screenshot();
       try {
-        saveImage(img, this.storagePath + "/tmp/" + this.runTimes + "-detectedAd.jpg");
+        saveImage(img, this.devicePath + "/tmp/" + this.runTimes + "-detectedAd.jpg");
       } finally {
         releaseImage(img);
       }

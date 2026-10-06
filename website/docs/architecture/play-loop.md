@@ -92,7 +92,7 @@ Two things change how a round is played without being screens:
 ## Reading a round afterwards
 
 Every record in the round carries its `roundId`; `round.start` … `round.end`
-carry the same `id`. The stats CSV (`tsum_record/stats_<YYYYMMDD>.csv`) has one
+carry the same `id`. The stats CSV (`stats/stats_<YYYYMMDD>.csv`) has one
 row per round with the settings it was played under, read from the frozen
 `roundSettings` copy — so a Quick Bar change made mid-round is written on the
 *next* round's row, not this one's.

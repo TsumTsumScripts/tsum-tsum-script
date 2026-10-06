@@ -62,24 +62,12 @@ Tsum.prototype.isAppOn = function() {
 };
 
 /**
- * The package of the focused window, or null when `dumpsys window` cannot say.
- * The one place the focus line is parsed: `isAppOn` asks whether it is the
- * game, `focusedGameBuild` which build of it.
+ * The package of the focused window, or null when the host cannot say.
+ * `isAppOn` asks whether it is the game, `focusedGameBuild` which build of it.
  */
 function focusedPackage(): string | null {
-  let result = execute('dumpsys window').split('mCurrentFocus');
-  if (result.length < 2) {
-    return null;
-  }
-  result = result[1].split(" ");
-  if (result.length < 3) {
-    return null;
-  }
-  result = result[2].split("/");
-  if (result.length < 2) {
-    return null;
-  }
-  return result[0];
+  const app = foregroundApp();
+  return app === null ? null : app.package;
 }
 
 /** Which build of the game is in front, or null when neither is. */
@@ -122,7 +110,7 @@ function installedGameBuilds(): GameBuild[] {
   const builds: GameBuild[] = [GameBuild.Global, GameBuild.Japan];
   const installed: GameBuild[] = [];
   for (let i = 0; i < builds.length; i++) {
-    if (execute('pm path ' + GamePackages[builds[i]]).indexOf('package:') !== -1) {
+    if (isInstalled(GamePackages[builds[i]])) {
       installed.push(builds[i]);
     }
   }
@@ -156,27 +144,16 @@ Tsum.prototype.gameBuild = function() {
   return build;
 };
 
-// A hardcoded `BOOTCLASSPATH=...` prefix used to sit in front of the java-backed
-// commands here and in `dumpUiXml`, because Robotmon's shell started without one.
-// It is gone, and removing it fixed something rather than merely saving a few
-// characters.
-//
-// Checked on the target emulator (Android 12, API 32): three of the fifteen jars
-// it named -- core.jar, core-junit.jar, webviewchromium.jar -- no longer exist,
-// the framework having moved most of them under /apex. `am` turned out to ignore
-// the variable entirely (it behaves identically with a deliberately broken value
-// and with none), but `uiautomator` reads it and *aborts* on a bad one:
-//
-//   BOOTCLASSPATH=<stale> uiautomator dump ...  ->  Aborted
-//   uiautomator dump ...                        ->  UI hierarchy dumped to: ...
-//
-// So the prefix had been quietly disabling `dumpUiXml`: two aborted dumps in a
-// row and the system-dialog path gives up on the view hierarchy and runs on
-// pixels alone for the rest of the session. General Automation Platform runs
-// `sh -c` with the process environment, which already carries the correct
-// BOOTCLASSPATH.
+/** The game's own activity, not its launcher entry: it starts on the title screen. */
+const GameActivity = 'com.linecorp.LGTMTM.TsumTsum';
+
+// The host composes the command now (`launchApp`, GAP's DeviceHost), including
+// the single-top flag that keeps a relaunch from stacking a second copy. It
+// also owns what used to be the trap here: a hardcoded `BOOTCLASSPATH=` prefix
+// in front of the java-backed commands, which `uiautomator` reads and *aborts*
+// on when stale -- quietly disabling the dialog path's view hierarchy.
 function startTsumTsumApp(build: GameBuild): void {
-  execute('am start --activity-single-top -n ' + GamePackages[build] + '/com.linecorp.LGTMTM.TsumTsum');
+  launchApp(GamePackages[build], GameActivity);
 }
 
 /** Budget for a launched game to be in front and on a screen the table knows. */
@@ -272,7 +249,7 @@ Tsum.prototype.forceRestartApp = function() {
     return false;
   }
   this.invalidateAppOn();
-  execute('am force-stop ' + GamePackages[this.gameBuild()]);
+  stopApp(GamePackages[this.gameBuild()]);
   this.awaitAppOff();
   this.isStartupPhase = true;
   this.startApp();
@@ -294,7 +271,7 @@ Tsum.prototype.taskTsumAppRestart = function () {
     // `awaitAppOff` clears the focus cache before every check, so the answer
     // below is never one taken while the app was still up.
     this.invalidateAppOn();
-    execute('am force-stop ' + GamePackages[this.gameBuild()]);
+    stopApp(GamePackages[this.gameBuild()]);
     this.awaitAppOff();
     if (!this.isAppOn()) {
         this.startApp();
