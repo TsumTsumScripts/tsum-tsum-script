@@ -22,11 +22,11 @@ Names are declared once, in `src/scriptEvents.ts`, and reached through
 | `round.over` | `src/play.ts:367` | `id`, `round`, `seconds` |
 | `round.start` | `src/play.ts:546` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `settings` |
 | `round.end` | `src/play.ts:911` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
-| `workflow.end` | `src/gapWorkflow.ts:588` | `id`, `rev`, `status`, `reason`, `loop`, `index` |
-| `workflow.start` | `src/gapWorkflow.ts:643` | `id`, `rev`, `name`, `total` |
-| `workflow.node` | `src/gapWorkflow.ts:685` | `id`, `loop`, `index`, `nodeId`, `node` |
-| `workflow.loop` | `src/gapWorkflow.ts:699` | `id`, `loop` |
-| `workflow.nodeFailed` | `src/gapWorkflow.ts:744` | `id`, `loop`, `index`, `nodeId`, `node`, `error`, `tries` |
+| `workflow.end` | `src/gapWorkflow.ts:589` | `id`, `rev`, `status`, `reason`, `loop`, `index` |
+| `workflow.start` | `src/gapWorkflow.ts:644` | `id`, `rev`, `name`, `total` |
+| `workflow.node` | `src/gapWorkflow.ts:686` | `id`, `loop`, `index`, `nodeId`, `node` |
+| `workflow.loop` | `src/gapWorkflow.ts:700` | `id`, `loop` |
+| `workflow.nodeFailed` | `src/gapWorkflow.ts:745` | `id`, `loop`, `index`, `nodeId`, `node`, `error`, `tries` |
 | `run.started` | `src/index.ts:86` | `version`, `skill`, `locale` |
 | `run.stopped` | `src/index.ts:768` | `rounds` |
 
@@ -114,7 +114,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/gapWorkflow.ts:588` — `gapWorkflowHooksOf().emit('workflow.end', …)`
+- `src/gapWorkflow.ts:589` — `gapWorkflowHooksOf().emit('workflow.end', …)`
 
 ### `workflow.start`
 
@@ -129,7 +129,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/gapWorkflow.ts:643` — `gapWorkflowHooksOf().emit('workflow.start', …)`
+- `src/gapWorkflow.ts:644` — `gapWorkflowHooksOf().emit('workflow.start', …)`
 
 ### `workflow.node`
 
@@ -145,7 +145,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/gapWorkflow.ts:685` — `gapWorkflowHooksOf().emit('workflow.node', …)`
+- `src/gapWorkflow.ts:686` — `gapWorkflowHooksOf().emit('workflow.node', …)`
 
 ### `workflow.loop`
 
@@ -158,7 +158,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/gapWorkflow.ts:699` — `gapWorkflowHooksOf().emit('workflow.loop', …)`
+- `src/gapWorkflow.ts:700` — `gapWorkflowHooksOf().emit('workflow.loop', …)`
 
 ### `workflow.nodeFailed`
 
@@ -176,7 +176,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/gapWorkflow.ts:744` — `gapWorkflowHooksOf().emit('workflow.nodeFailed', …)`
+- `src/gapWorkflow.ts:745` — `gapWorkflowHooksOf().emit('workflow.nodeFailed', …)`
 
 ### `run.started`
 

@@ -190,3 +190,73 @@ function selectMyTsumStale(fields: LogFields, seen: LogFields): GapWorkflowResul
     Object.assign({}, fields, seen));
   return { terminate: 'tsum-list-stale' };
 }
+
+// --- Change My Tsum from GAP Companion ------------------------------------------
+//
+// The phone's Change My Tsum action (`gapRemoteAction`, src/companion.ts) may
+// not tap, so it queues the same Select My Tsum as a one-shot task, run
+// between rounds like the other "Now" chores.
+
+/** Name of the one-shot task `selectMyTsumNow` queues. */
+const SelectTsumNowTask = 'selectTsumNow';
+/** Tries of a failed step before giving up (the workflow node's retry count). */
+const SelectTsumNowAttempts = 3;
+
+/** The tsum a queued change is waiting to select, or null. */
+let gSelectTsumNowQueued: string | null = null;
+
+/**
+ * Queues `short` as the next MyTsum on the live run. Answers what the action
+ * returns: 'queued', or why not ('no run', 'workflow run', 'walkthrough',
+ * 'tsum list missing'). A second call before the first ran replaces its tsum.
+ */
+function selectMyTsumNow(short: string): string {
+  if (!gRunActive || ts === undefined || gTaskController === undefined) {
+    return 'no run';
+  }
+  // A workflow picks its own tsums; a walkthrough records the player's taps.
+  if (gWorkflowRun) {
+    return 'workflow run';
+  }
+  if (gWalkthroughRun) {
+    return 'walkthrough';
+  }
+  if (tsumListLoadFile() === null) {
+    return 'tsum list missing';
+  }
+  const replacing = gSelectTsumNowQueued !== null;
+  gSelectTsumNowQueued = short;
+  logInfo(Log.Workflow.SelectTsumNowQueued, 'Changing the MyTsum next', { tsum: short });
+  ts.banner('Changing My Tsum next', 4000);
+  if (replacing) {
+    return 'queued';
+  }
+  const run = ts;
+  const controller = gTaskController;
+  let failures = 0;
+  run.yieldAsked = true;
+  controller.newTask(SelectTsumNowTask, function() {
+    run.yieldAsked = false;
+    const target = gSelectTsumNowQueued;
+    if (target === null) {
+      controller.removeTask(SelectTsumNowTask);
+      return;
+    }
+    if (roundInProgress()) {
+      run.yieldAsked = true;
+      return;
+    }
+    const res = selectMyTsum(target);
+    // Paused mid-way: try again on the next turn.
+    if (res === 'wait') {
+      run.yieldAsked = true;
+      return;
+    }
+    if (typeof res === 'object' && 'fail' in res && ++failures < SelectTsumNowAttempts) {
+      return;
+    }
+    gSelectTsumNowQueued = null;
+    controller.removeTask(SelectTsumNowTask);
+  }, UnlockNowRetryMs, 0, false, JobPriority.SelectTsumNow);
+  return 'queued';
+}
