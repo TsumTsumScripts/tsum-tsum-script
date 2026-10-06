@@ -87,7 +87,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.SettingTrackRoundStats]: 'Record round stats',
     [UiText.SettingTrackRoundStatsHelp]: 'One CSV a day (UTC) under tsum_record/: stats_YYYYMMDD.csv.',
     [UiText.SettingShareRoundStats]: 'Share round stats',
-    [UiText.SettingShareRoundStatsHelp]: 'Sends new rows to the stats server about once a minute. Needs Record round stats.',
+    [UiText.SettingShareRoundStatsHelp]: 'Sends new rows to the stats server about once a minute. Needs Record round stats, and a stats server set with network access allowed in GAP (Library > this script > settings).',
     [UiText.SettingBubbleStrategy]: 'Bubble Strategy',
     [UiText.SettingBubbleStrategyHelp]: 'A bubble popped mid-chain clears more; the default saves them for that.',
     [UiText.SettingHoldBubblesLastFever]: 'Hold bubbles last fever seconds',

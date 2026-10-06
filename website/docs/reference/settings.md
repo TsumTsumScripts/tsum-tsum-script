@@ -104,7 +104,7 @@ settings". Close the panel instead and the run carries on where it left off.
 | Max round duration (min) | How long one round may last before the script gives up on it (0–60, default 0 = no limit). Timed from the board coming up. |
 | When a round runs long | What happens at that limit. `Stop playing, let the clock run out` (default) stops playing and lets the round finish on its own, so the score screen, the stats and the next round follow as normal. `Stop the script` stops where it stands; the round is not recorded. The game's Pause is never pressed — it would stop the very clock the round has to run down. |
 | Record round stats | One CSV row per played round in `tsum_record/stats_<YYYYMMDD>.csv`: a unique round id, UTC time, skill, duration, score, coins, medals, and the gameplay settings it was played under. Figures that could not be read are left empty and the screen saved beside the CSV. |
-| Share round stats | Alpha, off by default. Sends new rows of those CSVs to the stats server about once a minute; needs Record round stats and a build with a server address. |
+| Share round stats | Alpha, off by default. Sends new rows of those CSVs to the stats server about once a minute; needs Record round stats, and a stats server set with network access allowed on this script's Library card in GAP (`ROUND_STATS_URL`). |
 | Tsum app restart frequency (min) | Close and reopen the game this often to clear out a long run, in 30-minute steps. 0 is off; needs Auto Launch. |
 | Run order | Not a setting: a summary of the others. |
 | Share settings | **Copy** turns the gameplay settings into a short code; **Paste** applies one. See [Sharing settings](#sharing-settings). |

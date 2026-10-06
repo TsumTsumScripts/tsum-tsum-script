@@ -1169,8 +1169,6 @@ interface Task {
 /** Static tuning constants for the player. */
 interface TsumConfig {
   recordDir: string;
-  /** Share round stats endpoint; blank is off. */
-  roundStatsUrl: string;
   tsumWidth: number;
   screenResize: number;
   colors: number[][];
@@ -1925,7 +1923,49 @@ declare function findContours(img: NativeImage, minArea: number, maxArea: number
 declare function resizeImage(img: NativeImage, width: number, height: number): NativeImage;
 
 // --- Networking ---
+/**
+ * Blocks for the reply body; "" when refused or failed. `url` is `env:KEY`, a
+ * `url` var from gap-env.json: GAP refuses a literal URL, and any request while
+ * the user has not allowed network access for this script.
+ */
 declare function httpClient(method: string, url: string, body: string, headers: object): string;
+
+/**
+ * Queues a request (`url` is `env:KEY`, as for `httpClient`) and returns its id
+ * at once; the reply comes as network events. Newer than the rest -- reach for
+ * it behind `typeof httpRequest === 'function'`.
+ */
+declare function httpRequest(method: string, url: string, body: string, headers: object): number;
+
+/** One network event. `queued`, `sent`, then `done`, `failed` or `refused`. */
+interface NetworkEvent {
+  id: number;
+  type: 'queued' | 'sent' | 'done' | 'failed' | 'refused';
+  ref: string;
+  method: string;
+  /** True for `httpClient` and `getImageFromURL`. */
+  sync: boolean;
+  at: number;
+  /** `done`: the HTTP status and body, whatever the status. */
+  status?: number;
+  body?: string;
+  /** `failed` / `refused`: why. */
+  error?: string;
+}
+
+/**
+ * Calls `fn` for each of this script's network events, between its own native
+ * calls. Defined per load with `getEnv` -- reach for it behind `typeof`.
+ */
+declare function addNetworkListener(fn: (event: NetworkEvent) => void): void;
+declare function removeNetworkListener(fn: (event: NetworkEvent) => void): void;
+
+/**
+ * A value the user set for this script in GAP (Library card > env), or its
+ * default from gap-env.json. `undefined` while the user has env vars off.
+ * Defined per load -- reach for it behind `typeof getEnv === 'function'`.
+ */
+declare function getEnv(key: string): string | number | boolean | undefined;
 
 // --- The floating window ---
 /**

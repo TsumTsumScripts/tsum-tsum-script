@@ -30,11 +30,12 @@ flowchart LR
   db["dist:bundle<br/>index.js, whitespace only"]
   dl["dist:library<br/>tsums.dat"]
   dn["dist:notices<br/>LICENSE, NOTICE"]
+  de["dist:env<br/>gap-env.json"]
   arc["archive<br/>zip + .sha256"]
   tscg --> docsp & evald & live & db
   tscs --> tscq --> minp --> di & dq
   stage --> di & dq
-  di & dq & db & dl & dn --> arc
+  di & dq & db & dl & dn & de --> arc
 ```
 
 Steps marked ⁽ᵒ⁾ are **optional**: a stale document, a drifted code map or a

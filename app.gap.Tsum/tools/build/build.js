@@ -328,11 +328,21 @@ const steps = [
       log('[build] dist/LICENSE, dist/NOTICE\n');
     },
   },
+  // The env vars this script asks GAP for (getEnv, env:KEY requests).
+  {
+    id: 'dist:env',
+    run: ({ log }) => {
+      const text = fs.readFileSync(local('gap-env.json'), 'utf8');
+      JSON.parse(text); // a broken manifest fails the build, not the device
+      fs.writeFileSync(local('dist', 'gap-env.json'), text);
+      log('[build] dist/gap-env.json\n');
+    },
+  },
 
   // Last into dist/: it hashes every file there, so the archive and the push carry it.
   {
     id: 'sign',
-    needs: ['dist:index', 'dist:quickbar', 'dist:bundle', 'dist:library', 'dist:notices', 'dist:companion'],
+    needs: ['dist:index', 'dist:quickbar', 'dist:bundle', 'dist:library', 'dist:notices', 'dist:env', 'dist:companion'],
     run: ({ log }) => signDist(log),
   },
   { id: 'archive', needs: ['sign'], run: ({ log }) => writeArchive(log) },

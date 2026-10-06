@@ -409,7 +409,7 @@ interface Settings {
   [SettingKey.AutoLaunchApp]: boolean;
   [SettingKey.AutoPlayGame]: boolean;
   [SettingKey.TrackRoundStats]: boolean;
-  /** Send new round stats rows to `Config.roundStatsUrl`; needs TrackRoundStats. */
+  /** Send new round stats rows to the ROUND_STATS_URL env var; needs TrackRoundStats. */
   [SettingKey.ShareRoundStats]: boolean;
   [SettingKey.ClickAssist]: boolean;
   /**

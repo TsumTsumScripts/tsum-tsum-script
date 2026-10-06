@@ -59,14 +59,18 @@ release note; they fold back in here when she ships.
 - Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, the Mid Chain strategies no longer let them pile up, and new Save One and Save One Mid Chain strategies pop all but one (on sight, or as a chain lands).
 - Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen. The settings page is compact, fitting far more settings on screen, with a Code button by the presets that copies the settings code, and its window title names the script, version and channel.
 - Quick Bar's coin readout shows the average medals earned per round.
+- Share round stats setting added (Alpha): sends your round stats to a stats server you set on this script's card in GAP's Library, with network access allowed there.
 - Resuming after a pause mid-round now presses Continue and returns to the round, instead of sometimes tapping Try Again or elsewhere on the pause menu.
 
 ### Added
 
 - **Share round stats** (General, Alpha, off by default): the script now sends
   its own round stats (`src/roundShare.ts`) instead of handing the CSV pattern
-  to the host's `publishStats`, which is gone. Inert while
-  `Config.roundStatsUrl` is blank, as it is today.
+  to the host's `publishStats`, which is gone. The server is the
+  `ROUND_STATS_URL` env var declared in `gap-env.json` (new, shipped in
+  `dist/` by the `dist:env` step); requests go out as
+  `httpRequest('POST', 'env:ROUND_STATS_URL', …)` and the reply is read from
+  a network event, so the round loop never waits on the server.
 - **Change My Tsum** (GAP Companion action `selectTsum`, arg `tsum` from the
   `tsums` list): `selectMyTsumNow` saves the choice to
   `my_tsum_next_<device id>.json` and queues Select My Tsum as a one-shot task
