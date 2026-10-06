@@ -147,6 +147,9 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
+- **DEV deploys are named.** `--adb` pushes a `.gap-install.json` naming the
+  folder `Tsum Tsum DEV - <local deploy time>`; the host's list shows that
+  instead of `DEV`.
 - **Compact settings page.** A 44px app bar over a slim tab row (version
   moved to the foot); 32px controls (`--ctl`), smaller type and padding, no
   720px width cap. Below the kit's sizes on purpose (`DEVELOPMENT.md`). The
