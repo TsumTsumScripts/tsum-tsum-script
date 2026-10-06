@@ -366,6 +366,7 @@ Tsum.prototype.watchRoundEnd = function(hud) {
   // is round.end, once the figures can be read.
   this.emit(Emit.Round.Over, {
     id: this.roundUid,
+    round: this.roundNumber,
     seconds: Math.round((endedAt - this.roundStartedAt) / 1000),
   });
   return RoundLook.Over;
