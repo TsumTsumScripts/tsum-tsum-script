@@ -1005,6 +1005,15 @@ Beta` or `--channel Beta`, and the default channel when none says. A downloaded
 archive therefore says which release it is, and [Releasing](#releasing) below
 cannot publish an entry describing a different build.
 
+**GAP Companion needs a signed folder.** With `GAP_SCRIPT_KEY` set to an
+ECDSA P-256 private key (PEM), the `sign` step writes `dist/gap-signature.json`
+(`tools/build/signScript.js`): the SHA-256 of every `dist/` file, signed. It
+runs after every `dist:` step and before the archive and the adb push, which
+push all of `dist/`, because a listed file missing on the device fails the
+check. Without the key the build is unsigned and the companion skips it;
+`release.js` warns loudly. GAP Devkit sets the key for DEV builds. Format: the
+host's `cloud/adapters/README.md` § Script signatures.
+
 `<archive>.zip.sha256` is written straight after the archive, so the two always
 describe the same bytes, and it says whether a copy that has travelled to a
 device is still the build it came from. The archive is written by

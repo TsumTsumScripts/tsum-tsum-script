@@ -110,10 +110,13 @@ function checkBundle(file) {
                   // Both pages have a Report button, and the host's Log chip
                   // reaches the same name over the IPC socket on a long press.
                   'reportIssue',
-                  // GAP Companion's adapter calls these by name (docs/WORKFLOWS.md § 6).
+                  // GAP Companion's adapter calls these by name (src/companion.ts,
+                  // docs/WORKFLOWS.md § 6); the pages call presetsMirror.
                   'gapWorkflowCatalog', 'gapWorkflowReceive', 'gapWorkflowState',
-                  'gapWorkflowCheck', 'startWorkflow', 'presetsMirror', 'presetsLocal',
-                  'gapScreens'];
+                  'gapWorkflowCheck', 'startWorkflow', 'presetsMirror', 'gapPresetsLocal',
+                  'gapScreens', 'gapSettingsSchema', 'gapSettingsAction', 'gapCompanion',
+                  'gapRemoteState', 'gapRemoteSet', 'gapRemoteAction', 'gapRemoteStartPrepare',
+                  'gapRemoteStartRun'];
   const missing = wanted.filter((name) => ctx[name] === undefined);
   if (missing.length) {
     console.error('[minify] the reprinted bundle lost: ' + missing.join(', '));

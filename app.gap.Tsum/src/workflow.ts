@@ -554,7 +554,7 @@ function presetsMirror(json: string): void {
 
 /** The mirrored presets as JSON `[{name, values}]`; `"[]"` when missing or unreadable. */
 // noinspection JSUnusedGlobalSymbols
-function presetsLocal(): string {
+function gapPresetsLocal(): string {
   try {
     const path = presetsMirrorPath();
     const text = path === '' ? '' : readFile(path);

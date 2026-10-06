@@ -196,7 +196,16 @@ async function main() {
 
   console.log(`\nReleasing ${channel.Name} ${channel.Version} (${archive})`);
   if (skipBuild) console.log('Skipping the build (--no-build).');
-  else runBuild(channel.name);
+  else {
+    // Without the script key the archive has no gap-signature.json, so GAP Companion skips it.
+    if (!process.env.GAP_SCRIPT_KEY) {
+      console.warn('\n' + '!'.repeat(72) + '\n' +
+        '!! GAP_SCRIPT_KEY is not set: this release is NOT signed and gets no GAP Companion.\n' +
+        '!! Set it to the script key PEM (tools/build/signScript.js) and build again.\n' +
+        '!'.repeat(72) + '\n');
+    }
+    runBuild(channel.name);
+  }
 
   const builtArchive = path.join(projectDir, archive);
   if (!fs.existsSync(builtArchive)) throw new Error(`The build produced no ${archive}.`);

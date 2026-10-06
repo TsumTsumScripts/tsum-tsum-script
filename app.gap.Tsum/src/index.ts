@@ -166,10 +166,8 @@ function saveLastRunSettings(settings: Settings): void {
 
 /**
  * The settings the last run on this device started with (see
- * `saveLastRunSettings`), or null when there is no readable file. A global, so
- * it can be read by name like `start`.
+ * `saveLastRunSettings`), or null when there is no readable file.
  */
-// noinspection JSUnusedGlobalSymbols
 function lastRunSettings(): Partial<Settings> | null {
   try {
     const path = lastSettingsPath();
@@ -188,10 +186,9 @@ function lastRunSettings(): Partial<Settings> | null {
 /**
  * What a start with no settings page runs with: `SettingDefaults` with the last
  * run's settings on top, so a device that never ran the script still starts,
- * and an old file missing newer keys gets their defaults. A global for GAP
- * Companion's adapter.
+ * and an old file missing newer keys gets their defaults. GAP Companion's
+ * remote start runs it (`gapRemoteStartPrepare`, src/companion.ts).
  */
-// noinspection JSUnusedGlobalSymbols
 function remoteStartSettings(): Settings {
   return Object.assign({}, SettingDefaults, lastRunSettings() || {});
 }
@@ -318,12 +315,11 @@ function rememberRemoteSetting(key: string, value: string | number | boolean): v
 }
 
 /**
- * Every remote setting's current value, as JSON `{active, values}`: the running
- * world's when there is a run, else the next start's (`remoteStartSettings`),
- * with pending remote changes on top. A global for GAP Companion's adapter.
+ * Every remote setting's current value: the running world's when there is a
+ * run, else the next start's (`remoteStartSettings`), with pending remote
+ * changes on top. `gapRemoteState` (src/companion.ts) sends it.
  */
-// noinspection JSUnusedGlobalSymbols
-function remoteSettingsState(): string {
+function remoteSettingsValues(): { [key: string]: unknown } {
   const running = quickBarRunning();
   const values: { [key: string]: unknown } = {};
   const layers: { [key: string]: unknown }[] = [
@@ -341,14 +337,14 @@ function remoteSettingsState(): string {
       }
     }
   }
-  return JSON.stringify({ active: running, values: values });
+  return values;
 }
 
 /**
  * Changes one setting for GAP Companion. Answers JSON `{ok, value, applies}`
- * (`now`, `nextRound` or `nextStart`) or `{ok: false, why}`.
+ * (`now`, `nextRound` or `nextStart`) or `{ok: false, why}`; `gapRemoteSet`
+ * (src/companion.ts) turns `why` into the contract's codes.
  */
-// noinspection JSUnusedGlobalSymbols
 function remoteSettingsApply(key: string, value: string | number | boolean): string {
   const kind = RemoteSettingKinds.hasOwnProperty(key) ? RemoteSettingKinds[key] : undefined;
   if (kind === undefined) {
@@ -360,7 +356,7 @@ function remoteSettingsApply(key: string, value: string | number | boolean): str
   if (!typed || !quickBarEnumValid(key as SettingKey, value)) {
     return JSON.stringify({ ok: false, why: 'invalid value' });
   }
-  // A running workflow owns it (forced to 0); the adapter answers `workflow-run`.
+  // A running workflow owns it (forced to 0); `gapRemoteSet` answers `workflow-run`.
   if (quickBarWorkflowOwns(key)) {
     return JSON.stringify({ ok: false, why: 'workflow' });
   }

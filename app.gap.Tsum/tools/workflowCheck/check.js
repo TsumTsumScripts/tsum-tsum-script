@@ -283,9 +283,9 @@ check('catalog: skills include nokill', catalog.lists.skills.some((s) => s.value
 ctx.getScriptPath = () => storage;
 ctx.presetsMirror(JSON.stringify([{ name: 'A', values: { skillLevel: 3, bad: { x: 1 } } }, { nope: 1 }]));
 check('presets mirror: round trip keeps scalar values only',
-  ctx.presetsLocal() === JSON.stringify([{ name: 'A', values: { skillLevel: 3 } }]), ctx.presetsLocal());
+  ctx.gapPresetsLocal() === JSON.stringify([{ name: 'A', values: { skillLevel: 3 } }]), ctx.gapPresetsLocal());
 fs.rmSync(path.join(storage, 'presets-' + ctx.getDeviceId() + '.json'), { force: true });
-check('presets mirror: missing file is []', ctx.presetsLocal() === '[]');
+check('presets mirror: missing file is []', ctx.gapPresetsLocal() === '[]');
 
 // --- review fixes -------------------------------------------------------------------
 // A stale rev is reported under the rev that was started, not the synced one.

@@ -40,6 +40,7 @@ const { spawn, execFileSync } = require('child_process');
 const { projectDir, loadConfig, resolveChannel, archiveName } = require('../release/config');
 const { runSteps, defaultJobs } = require('./schedule');
 const { zipDirectory } = require('./zip');
+const { signScript, SIGNATURE_FILE } = require('./signScript');
 
 const argv = process.argv.slice(2);
 const has = (name) => argv.includes('--' + name);
@@ -194,6 +195,25 @@ function writeArchive(log) {
   log(`[build] SHA256 = ${digest}\n`);
 }
 
+/**
+ * Signs dist/ for GAP Companion (`gap-signature.json`, tools/build/signScript.js)
+ * when `GAP_SCRIPT_KEY` names a PEM private key. Unsigned builds still run;
+ * they just get no companion. The id is `GAP_SCRIPT_ID` in src/index.ts.
+ */
+function signDist(log) {
+  const keyFile = process.env.GAP_SCRIPT_KEY;
+  if (!keyFile) {
+    log('[build] GAP_SCRIPT_KEY unset: dist/ is not signed (no GAP Companion)\n');
+    return;
+  }
+  const id = /const GAP_SCRIPT_ID = '([^']+)'/.exec(fs.readFileSync(local('src', 'index.ts'), 'utf8'));
+  if (!id) throw new Error('GAP_SCRIPT_ID not found in src/index.ts');
+  const pkgVersion = JSON.parse(fs.readFileSync(local('package.json'), 'utf8')).version;
+  const manifest = signScript({ dir: local('dist'), script: id[1], version: pkgVersion,
+    keyPem: fs.readFileSync(keyFile, 'utf8') });
+  log(`[build] dist/${SIGNATURE_FILE}: ${id[1]} ${pkgVersion}, ${Object.keys(manifest.files).length} files\n`);
+}
+
 // Declaration order is print order. What actually runs when is decided by
 // `needs` alone.
 const steps = [
@@ -294,11 +314,13 @@ const steps = [
     },
   },
 
+  // Last into dist/: it hashes every file there, so the archive and the push carry it.
   {
-    id: 'archive',
+    id: 'sign',
     needs: ['dist:index', 'dist:quickbar', 'dist:bundle', 'dist:library', 'dist:notices', 'dist:companion'],
-    run: ({ log }) => writeArchive(log),
+    run: ({ log }) => signDist(log),
   },
+  { id: 'archive', needs: ['sign'], run: ({ log }) => writeArchive(log) },
 ];
 
 async function main() {
@@ -331,11 +353,9 @@ async function main() {
       try {
         // A multi-file push fails if the target folder is missing.
         await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'shell', 'mkdir', '-p', `'${DEPLOY_DIR}'`]);
-        await sh((text) => process.stdout.write(text), 'adb', [
-          '-s', device, 'push',
-          'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
-          'dist/tsumsCollection.dat', 'dist/tsumNames.dat', 'dist/companionSettings.json', DEPLOY_DIR,
-        ]);
+        // Every dist/ file: gap-signature.json lists them all, and a missing one fails it.
+        const files = fs.readdirSync(local('dist')).map((name) => 'dist/' + name);
+        await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'push', ...files, DEPLOY_DIR]);
       } catch (err) {
         // Keep going so one bad emulator doesn't block the rest.
         console.error(`[build] push to ${device} failed: ${err && err.message ? err.message : err}`);
