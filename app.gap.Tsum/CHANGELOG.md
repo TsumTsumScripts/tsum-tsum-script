@@ -71,6 +71,11 @@ release note; they fold back in here when she ships.
   verify on a device, INTL and JP). Pages mirror presets to
   `presets-<device id>.json` for Import. `npm run workflow:check`. Restart app
   walks the startup screens to the friend list before handing off.
+- **GAP Companion screens** (`src/companionScreens.ts`, `gapScreens`): the
+  phone's tabs, Stats cards (this run, a coins-per-round chart, recent
+  rounds), event wording, My Tsum headline and Stop after this round button
+  now come from the script (UI contract 3), so changing them needs no phone
+  release. `round.over` carries `round`.
 - **Save One Mid Chain bubble strategy** (`BubbleStrategy.SaveOneMidChain`,
   share `S`, chip "Save 1 mid"). `popGameBubbles` on a long chain taps all but
   the richest (`richestFirst`), ripe or not; short post-skill hold; the

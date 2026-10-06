@@ -112,7 +112,8 @@ function checkBundle(file) {
                   'reportIssue',
                   // GAP Companion's adapter calls these by name (docs/WORKFLOWS.md § 6).
                   'gapWorkflowCatalog', 'gapWorkflowReceive', 'gapWorkflowState',
-                  'gapWorkflowCheck', 'startWorkflow', 'presetsMirror', 'presetsLocal'];
+                  'gapWorkflowCheck', 'startWorkflow', 'presetsMirror', 'presetsLocal',
+                  'gapScreens'];
   const missing = wanted.filter((name) => ctx[name] === undefined);
   if (missing.length) {
     console.error('[minify] the reprinted bundle lost: ' + missing.join(', '));
