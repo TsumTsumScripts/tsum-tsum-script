@@ -567,6 +567,8 @@ namespace Log {
     UnlockNowAsked = 'quickBar.unlockNowAsked',
     WrapUpAsked    = 'quickBar.wrapUpAsked',
     CopyShareAsked = 'quickBar.copyShareAsked',
+    /** The readout chip was tapped: the run's figures went to the clipboard. */
+    StatsCopied    = 'quickBar.statsCopied',
     UnknownSetting = 'quickBar.unknownSetting',
     /** An enum setting sent a value it does not have; refused. */
     InvalidValue   = 'quickBar.invalidValue',

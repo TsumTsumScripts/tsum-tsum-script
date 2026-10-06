@@ -368,7 +368,12 @@
         <span class="qb-dot" aria-hidden="true"></span>
         <span class="qb-sr" data-i18n="qb.readout">Coins or times</span>
       </button>
-      <div class="qb-readout-tables">
+      <!--
+        A tap anywhere on the tables copies the whole run's figures to the
+        clipboard -- more than the three rows on screen; see `qbCopyStats`.
+      -->
+      <div class="qb-readout-tables" role="button">
+      <span class="qb-sr" data-i18n="qb.copyStats">Copy statistics</span>
       <table class="qb-stats" data-readout="coins">
         <tbody>
           <tr class="qb-stat">

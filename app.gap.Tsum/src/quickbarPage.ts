@@ -377,7 +377,8 @@ var qbHotspotSent = '';
 
 /**
  * Tells the host where the side column is, so the page toggle stays pressable
- * mid-run -- and the readout toggle beside it, in the same rect.
+ * mid-run -- and the readout chip beside it, in the same rect: its dots flip the
+ * table, and the table itself copies the figures.
  *
  * The strip's window is untouchable while the script runs -- a touchable
  * overlay would eat the taps the script injects. The host covers just this
@@ -399,8 +400,8 @@ function qbNameHotspot(): void {
     var box = side.getBoundingClientRect();
     var right = box.right;
     var bottom = box.bottom;
-    // The readout toggle sits just right of the side column; one rect covers both.
-    var readout = document.querySelector('.qb-readout-toggle');
+    // The readout chip sits just right of the side column; one rect covers both.
+    var readout = document.querySelector('.qb-readouts');
     if (readout !== null) {
         var rbox = readout.getBoundingClientRect();
         right = Math.max(right, rbox.right);
@@ -672,20 +673,25 @@ function qbSetStat(id: string, value: string | number | boolean | undefined): vo
         ? qbGrouped(value) : '—';
 }
 
-/** Seconds as `hh:mm`, or `m:ss` for a round; a dash for no value. */
+/** Seconds as `hh:mm`, or `m:ss` for a round; `''` for no value. */
+function qbTimeText(value: string | number | boolean | undefined, hours: boolean): string {
+    if (typeof value !== 'number' || value < 0) {
+        return '';
+    }
+    var pad = function (n: number): string { return (n < 10 ? '0' : '') + n; };
+    return hours
+        ? pad(Math.floor(value / 3600)) + ':' + pad(Math.floor(value / 60) % 60)
+        : Math.floor(value / 60) + ':' + pad(value % 60);
+}
+
+/** As `qbTimeText`, into the element with that id; a dash for no value. */
 function qbSetTime(id: string, value: string | number | boolean | undefined, hours: boolean): void {
     var element = document.getElementById(id);
     if (element === null) {
         return;
     }
-    if (typeof value !== 'number' || value < 0) {
-        element.textContent = '—';
-        return;
-    }
-    var pad = function (n: number): string { return (n < 10 ? '0' : '') + n; };
-    element.textContent = hours
-        ? pad(Math.floor(value / 3600)) + ':' + pad(Math.floor(value / 60) % 60)
-        : Math.floor(value / 60) + ':' + pad(value % 60);
+    var text = qbTimeText(value, hours);
+    element.textContent = text !== '' ? text : '—';
 }
 
 /** Thousands separated by hand: `toLocaleString` is not reliable in this WebView. */
@@ -970,6 +976,78 @@ function qbCopyDone(ok: boolean): void {
 }
 
 /**
+ * The readout chip was tapped: the whole run's figures onto the clipboard.
+ *
+ * More than the chip draws -- the two tables show seven readings between them,
+ * and this copies the totals, the per-second rates and the extremes beside
+ * them, which is what someone comparing two runs wants and what the strip has
+ * no room for. Built here rather than by the engine so the format matches what
+ * the chip shows (`qbGrouped`, `qbTimeText`).
+ *
+ * `setClipboard` is the host's, so there is no fallback: a page without it
+ * banners the failure instead of pretending.
+ */
+function qbCopyStats(): void {
+    var bridge = qbBridge();
+    if (bridge === undefined || bridge.setClipboard === undefined) {
+        qbBanner(i18nText(UiText.QbStatsNotCopied));
+        return;
+    }
+    try {
+        bridge.setClipboard(qbStatsText());
+    } catch (e) {
+        qbLog(Log.QuickBar.StatsCopied, 'setClipboard failed', {errorText: '' + e});
+        qbBanner(i18nText(UiText.QbStatsNotCopied));
+        return;
+    }
+    qbLogInfo(Log.QuickBar.StatsCopied, 'The run figures were copied from the Quick Bar');
+    qbBanner(i18nText(UiText.QbStatsCopied));
+}
+
+/** The four lines `qbCopyStats` writes. Ends without a newline. */
+function qbStatsText(): string {
+    var played = typeof qbState.playedSec === 'number' ? qbState.playedSec : 0;
+    return 'Coins: Total = ' + qbStatNum(qbState.finalCoinTotal)
+        + ', Avg = ' + qbStatNum(qbState.finalCoinAvg)
+        + ', PerSec = ' + qbStatRate(qbState.finalCoinTotal, played)
+        + ', Min = ' + qbStatNum(qbState.finalCoinMin)
+        + ', Max = ' + qbStatNum(qbState.finalCoinMax) + '\n'
+        + 'Medals: Total = ' + qbStatNum(qbState.medals)
+        + ', Avg = ' + qbStatNum(qbState.medalAvg)
+        + ', PerSec = ' + qbStatRate(qbState.medals, played)
+        + ', Min = ' + qbStatNum(qbState.medalMin)
+        + ', Max = ' + qbStatNum(qbState.medalMax) + '\n'
+        + 'Duration: AvgDur = ' + qbStatTime(qbState.avgRoundSec, false)
+        + ', TotalDur = ' + qbStatTime(played, true)
+        + ', MinDur = ' + qbStatTime(qbState.minRoundSec, false)
+        + ', MaxDur = ' + qbStatTime(qbState.maxRoundSec, false) + '\n'
+        + 'Rounds: Total = ' + qbStatNum(qbState.rounds);
+}
+
+/** A figure for the copy: grouped as the chip draws it, `-` for the -1 sentinel. */
+function qbStatNum(value: string | number | boolean | undefined): string {
+    return typeof value === 'number' && value >= 0 ? qbGrouped(value) : '-';
+}
+
+/** A span for the copy; `-` for no value. An ASCII dash, not the chip's em dash. */
+function qbStatTime(value: string | number | boolean | undefined, hours: boolean): string {
+    var text = qbTimeText(value, hours);
+    return text !== '' ? text : '-';
+}
+
+/**
+ * `total` per second of play, two decimals. Over the time spent *in rounds*, not
+ * the run's wall clock: the rest between rounds earns nothing and is a setting,
+ * so counting it would make the rate a reading about the delay.
+ */
+function qbStatRate(total: string | number | boolean | undefined, playedSec: number): string {
+    if (typeof total !== 'number' || total < 0 || playedSec <= 0) {
+        return '-';
+    }
+    return (total / playedSec).toFixed(2);
+}
+
+/**
  * One line in the floating window's banner, shown once.
  *
  * Through `runScriptCallback` (the host's blocking Eval), not `runScript`:
@@ -1195,6 +1273,12 @@ function qbBind(): void {
     var copyShare = document.querySelector('.qb-copy-share');
     if (copyShare !== null) {
         copyShare.addEventListener('click', qbCopyShare);
+    }
+
+    // The readout's tables: a readout, and a tap target for the copy.
+    var readoutTables = document.querySelector('.qb-readout-tables');
+    if (readoutTables !== null) {
+        readoutTables.addEventListener('click', qbCopyStats);
     }
 
     // Only the view: which page of cells is on screen. The CSS reads `data-page`.

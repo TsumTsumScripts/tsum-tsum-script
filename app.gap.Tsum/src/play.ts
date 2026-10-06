@@ -902,6 +902,13 @@ Tsum.prototype.taskPlayGameQuick = function() {
   if (roundSeconds > 0) {
     this.runClock.rounds++;
     this.runClock.roundSec += roundSeconds;
+    // -1 is "no round yet", so the first one sets both ends.
+    if (this.runClock.minSec < 0 || roundSeconds < this.runClock.minSec) {
+      this.runClock.minSec = roundSeconds;
+    }
+    if (roundSeconds > this.runClock.maxSec) {
+      this.runClock.maxSec = roundSeconds;
+    }
   }
   this.finishRoundStats();
   // The stop signal, and emitted from here rather than from inside

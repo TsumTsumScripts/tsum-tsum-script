@@ -980,6 +980,15 @@ interface RunCoinTally {
   medalRounds: number;
   /** Medals over the rows that read a medal count (0 when none were earned). */
   medalTotal: number;
+  /**
+   * The lowest and highest single-round figures, for the clipboard copy the
+   * readout chip offers. Final coins and medals only -- those are the two the
+   * copied lines report. -1 until a round contributed one.
+   */
+  finalMin: number;
+  finalMax: number;
+  medalMin: number;
+  medalMax: number;
 }
 
 /**
@@ -993,6 +1002,9 @@ interface RunClock {
   rounds: number;
   /** Their summed play time, seconds. */
   roundSec: number;
+  /** The shortest and longest of them, seconds; -1 until one has ended. */
+  minSec: number;
+  maxSec: number;
 }
 
 /**

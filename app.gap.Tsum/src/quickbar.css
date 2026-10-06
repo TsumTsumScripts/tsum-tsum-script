@@ -606,9 +606,9 @@ body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-
 /* --- the readout: coins, or times --------------------------------------- */
 
 /*
- * A read-only chip on the strip's right edge, so flat with a hairline rather
- * than the blue edge (only its dots are tappable): the toggle down its left side,
- * then a two-column table -- names down the left, figures down the right on one
+ * A chip on the strip's right edge, so flat with a hairline rather than the
+ * blue edge (its dots flip the table; the table itself copies the figures):
+ * the toggle down its left side, then a two-column table -- names down the left, figures down the right on one
  * edge, rows ruled apart. Base against final is the comparison worth
  * making, and that wants the two figures in a column with their digits aligned.
  */
@@ -645,6 +645,9 @@ body[data-readout="times"] .qb-readout-toggle .qb-dot:nth-child(2) { background:
 /* Both tables in one grid area, so the chip is as wide as the wider and does
    not jump when it flips. Hidden rather than removed for the same reason. */
 .qb-readout-tables { display: grid; }
+
+/* It is a tap target too: the whole run's figures to the clipboard. */
+.qb-readout-tables:active { background: var(--qb-chip-press); }
 
 .qb-readout-tables > .qb-stats { grid-area: 1 / 1; }
 

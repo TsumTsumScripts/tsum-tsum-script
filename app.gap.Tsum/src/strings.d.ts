@@ -450,6 +450,10 @@ declare const enum UiText {
   /** The banner after Copy code; the panel's own lines point at a box the strip lacks. */
   QbCodeCopied = 'qb.codeCopied',
   QbCodeNotCopied = 'qb.codeNotCopied',
+  /** The readout chip's accessible name, and the banner after tapping it. */
+  QbCopyStats = 'qb.copyStats',
+  QbStatsCopied = 'qb.statsCopied',
+  QbStatsNotCopied = 'qb.statsNotCopied',
   /** Banners after the Lvl chip, when the engine's own banner does not apply. */
   QbLevelsAlreadyQueued = 'qb.levelsAlreadyQueued',
   QbLevelsNotQueued = 'qb.levelsNotQueued',
