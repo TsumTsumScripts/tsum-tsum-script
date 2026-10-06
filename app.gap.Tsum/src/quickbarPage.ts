@@ -981,8 +981,8 @@ function qbCopyDone(ok: boolean): void {
  * More than the chip draws -- the two tables show seven readings between them,
  * and this copies the totals, the per-second rates and the extremes beside
  * them, which is what someone comparing two runs wants and what the strip has
- * no room for. Built here rather than by the engine so the format matches what
- * the chip shows (`qbGrouped`, `qbTimeText`).
+ * no room for. Built here rather than by the engine so the spans read as the
+ * chip draws them (`qbTimeText`).
  *
  * `setClipboard` is the host's, so there is no fallback: a page without it
  * banners the failure instead of pretending.
@@ -1030,9 +1030,15 @@ function qbStatsText(): string {
         + 'Rounds: Total = ' + qbStatNum(qbState.rounds);
 }
 
-/** A figure for the copy: grouped as the chip draws it, `-` for the -1 sentinel. */
+/**
+ * A figure for the copy; `-` for the -1 sentinel.
+ *
+ * Ungrouped, unlike the chip's own figures (`qbGrouped`): the fields on a line
+ * are separated by commas, so a thousands comma inside one would read as the
+ * next field.
+ */
 function qbStatNum(value: string | number | boolean | undefined): string {
-    return typeof value === 'number' && value >= 0 ? qbGrouped(value) : '-';
+    return typeof value === 'number' && value >= 0 ? String(Math.round(value)) : '-';
 }
 
 /** A span for the copy; `-` for no value. An ASCII dash, not the chip's em dash. */
