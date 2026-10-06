@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // The Tsum List export: every tsum the player owns, off the collection screen,
-// into <storage>/tsum_record/tsum_list_<YYYYMMDD-HHMMSS>.csv.
+// into <device folder>/stats/tsum_list_<YYYYMMDD-HHMMSS>.csv.
 //
 // The collection shows eight cards a page, each with the month it was acquired
 // under its portrait; tapping one fills the detail panel above with its level
@@ -22,7 +22,7 @@
 // library can be extended from it.
 //
 // A whole export (reason `end of list`) also writes
-// tsum_record/tsum_list_<getDeviceId()>.json, overwritten each time: the list a
+// tsum_list_state.json in the device folder, overwritten each time: the list a
 // GAP Companion workflow's Select Tsum reads (src/workflow.ts). Keyed by the
 // device id rather than the name in the CSV's `device` column, because names
 // need not be unique and the storage folder may be seen by more than one install.
@@ -587,7 +587,7 @@ Tsum.prototype.taskExportTsumList = function() {
     return false;
   }
   const stamp = statsFileStamp(new Date());
-  const base = this.storagePath + '/' + Config.recordDir + '/tsum_list_' + stamp;
+  const base = this.devicePath + '/' + Config.statsDir + '/tsum_list_' + stamp;
   const csvPath = base + '.csv';
   const build = this.gameBuild();
   // The host's device name, the one its events carry; older hosts have none.
@@ -718,7 +718,7 @@ function tsumListFilePath(): string {
   if (typeof getStoragePath !== 'function' || typeof getDeviceId !== 'function') {
     return '';
   }
-  return getStoragePath() + '/' + Config.recordDir + '/tsum_list_' + getDeviceId() + '.json';
+  return getDevicePath() + '/tsum_list_state.json';
 }
 
 /** Writes this device's list file from a whole export. Never throws. */

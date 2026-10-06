@@ -30,7 +30,7 @@ orientation, with no personal data on screen (friend names, player ids).
 | `score-page` | architecture/play-loop | The post-round score page: score, coins, medals | needed |
 | `fever-gauge` | guides/lifecycle-hooks | The board during fever time: lights down, the gauge turned into a timer | needed |
 | `logdy-view` | guides/logging-and-events, reference/log-schema | Logdy with a run's log loaded: level, component, event, roundId columns, a row drawer open | needed |
-| `report-folder` | guides/test-without-a-device | The contents of one `tsum_record/reports/<id>` folder: the screen, the trail frames, the manifest, the log excerpt | needed |
+| `report-folder` | guides/test-without-a-device | The contents of one `reports/<id>` folder: the screen, the trail frames, the manifest, the log excerpt | needed |
 
 Also placeholders: `static/img/logo.svg` and `static/img/favicon.svg` are a
 generated three-circle mark, to be replaced with the project's own.

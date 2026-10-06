@@ -20,7 +20,7 @@
 // the pink is.
 //
 // The running total lives at the bottom of this file: `readRecord` /
-// `saveRecord` are `tsum_record/record.txt`, which counts hearts sent from here
+// `saveRecord` are `hearts.json`, which counts hearts sent from here
 // and hearts received in mail.ts.
 // ---------------------------------------------------------------------------
 
@@ -421,13 +421,13 @@ Tsum.prototype.taskSendHearts = function() {
   logInfo(Log.Hearts.SendDone);
 }
 
-// `tsum_record/record.txt` holds one thing: how many hearts this account has
+// `hearts.json` holds one thing: how many hearts this account has
 // received and sent. Read once by `buildRun` and rewritten by `saveRecord`
 // after every heart that lands, so the running total in the hearts log lines
 // survives a restart instead of starting from zero every run.
 Tsum.prototype.readRecord = function() {
   logInfo(Log.Hearts.ReadRecords);
-  const recordFile = this.storagePath + '/' + Config.recordDir + '/record.txt';
+  const recordFile = this.devicePath + '/hearts.json';
   const txt = readFile(recordFile);
   if (txt !== undefined && txt !== "") {
     this.record = JSON.parse(txt);
@@ -436,6 +436,6 @@ Tsum.prototype.readRecord = function() {
 
 Tsum.prototype.saveRecord = function() {
   logInfo(Log.Hearts.SaveRecords);
-  const recordFile = this.storagePath + '/' + Config.recordDir + '/record.txt';
+  const recordFile = this.devicePath + '/hearts.json';
   writeFile(recordFile, JSON.stringify(this.record));
 }

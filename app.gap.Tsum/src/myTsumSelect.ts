@@ -217,7 +217,7 @@ function selectTsumNextPath(): string {
   if (typeof getStoragePath !== 'function' || typeof getDeviceId !== 'function') {
     return '';
   }
-  return getStoragePath() + '/' + Config.recordDir + '/my_tsum_next_' + getDeviceId() + '.json';
+  return getDevicePath() + '/my_tsum_next.json';
 }
 
 /** The saved choice, or null. */

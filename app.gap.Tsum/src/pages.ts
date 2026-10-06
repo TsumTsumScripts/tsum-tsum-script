@@ -411,7 +411,7 @@ class PageRouter {
   historyDepth: number;
   /**
    * Save the matcher's own frame for each visit under
-   * `<storage>/tsum_record/pageHistory`.
+   * `<device folder>/history`.
    *
    * **On by default**, which it did not used to be. It follows a *report*
    * rather than the debug setting now: the screens leading up to a wedge are
@@ -1089,7 +1089,7 @@ class PageRouter {
     for (let i = this.shotDepth; i < this.history.length; i++) {
       const old = this.history[i];
       if (old.shot !== '') {
-        execute('rm -f "' + old.shot + '"');
+        removeFile(old.shot, false);
         old.shot = '';
       }
     }
@@ -1098,14 +1098,14 @@ class PageRouter {
       if (dropped !== undefined && dropped.shot !== '') {
         // Only reachable with shotDepth >= historyDepth, which is what "Debug
         // game" sets. Otherwise the loop above has already taken the frame.
-        execute('rm -f "' + dropped.shot + '"');
+        removeFile(dropped.shot, false);
       }
     }
   }
 
   /** Where the history frames go. */
   historyDir(): string {
-    return this.owner().storagePath + '/' + Config.recordDir + '/pageHistory';
+    return this.owner().devicePath + '/history';
   }
 
   /**
@@ -1121,12 +1121,15 @@ class PageRouter {
     const tsum = this.owner();
     const dir = this.historyDir();
     if (!this.shotDirReady) {
-      execute('mkdir -p ' + dir);
+      makeDirs(dir);
       // Clear the previous run's frames. The sequence numbers restart with the
       // run, so without this a shorter run leaves the tail of a longer one
       // behind and the directory reads as one impossible session. Only the
       // frames this writes are removed, never anything else in the folder.
-      execute('rm -f ' + dir + '/*.png');
+      const names = listDir(dir);
+      for (let i = 0; i < names.length; i++) {
+        if (/\.png$/.test(names[i])) { removeFile(dir + '/' + names[i], false); }
+      }
       this.shotDirReady = true;
     }
     const seq = this.shotSeq++;

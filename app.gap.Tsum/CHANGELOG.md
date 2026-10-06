@@ -43,7 +43,8 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
-- Now requires General Automation Platform 3.0 or newer.
+- Now requires General Automation Platform 3.1 or newer.
+- Each device keeps its own folder, so emulator instances sharing one storage folder no longer overwrite each other's stats, reports and screenshots. Files now live under `devices/<name>_<id>/` with shorter names: `stats/`, `reports/`, `history/`, `corpus/`, `walkthrough/`, `tmp/`. Older files stay where they were and are no longer read, though Tsum Tsum Stats still imports them.
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
 - Quick Bar "Last round" button added: stops the script once the current round is over.
 - Quick Bar Auto Play toggle (a play-on-repeat icon) replaces the Report button: turn round-playing on or off without restarting the script. Preset and Bubble get more room, as the readout is narrower too. Reports are still on the settings page's Debug tab and the Log button's long press.
@@ -183,8 +184,32 @@ release note; they fold back in here when she ships.
 
 - **Host renamed General Automation Platform** in docs, comments and
   `package.json`. Folder, repo and package names keep `GameAutomationPlatform`.
-- **`MinHost` raised to 3.0** (`config.json`): the app will not download or
-  run this build on an older host.
+- **`MinHost` raised to 3.1** (`config.json`): the app will not download or
+  run this build on an older host. 3.1 is where the named host calls below
+  arrived, so the script uses them unguarded rather than keeping a shell
+  fallback behind every `typeof`.
+- **Everything the script writes moved into this device's own folder.**
+  `Tsum.devicePath` is `getDevicePath()` (`<root>/devices/<name>_<id>`) and
+  replaces `storagePath` at every write site. Several emulator instances
+  routinely share one root -- MuMu does by default -- so a fixed path under it
+  meant each instance overwriting the last. The grouping folder went with it,
+  since it is redundant once each device has its own: `Config.statsDir`
+  (`stats`) replaces `recordDir` (`tsum_record`), `pageHistory` became
+  `history`, `record.txt` became `hearts.json`, and `corpus`, `reports`,
+  `walkthrough` and `tmp` sit directly under the device folder. Old files are
+  left alone; Tsum Tsum Stats walks the tree, so it still imports them.
+- **No `execute()` anywhere in the script.** The shell commands became named
+  host calls: `makeDirs`, `listDir`, `removeFile`, `copyFile` for the
+  filesystem; `foregroundApp`, `isInstalled`, `launchApp`, `stopApp` for the
+  game; `deviceInfo` for the report's device block (one call, not a dozen
+  `getprop`s); `dumpUi` for the dialog path's view hierarchy; `touchDevices`
+  and `readTouch` for Click Assist. The host composes each command, which is
+  steadier across devices, and `statsShellValue` and the `getevent` parsing
+  are gone with them.
+- **`statsDeviceTag` no longer probes the shell.** `getDeviceId()` is always
+  there at 3.1, so the `android_id`/`serialno` hash it fell back to on an older
+  host is gone; the cached file and a random tag remain for a host that somehow
+  answers nothing.
 - **Auto Play Game is live** (`LiveWhen.Now`): `quickBarSyncJob` removes the
   PlayRound job (sweeps keep running) or re-adds it with the sweeps it brings.
   The Quick Bar's side column swaps Report for its toggle; `qbReport` and the
@@ -290,7 +315,7 @@ release note; they fold back in here when she ships.
 
 - **Tsum List export** (`src/tsumList.ts`). Sorts the collection by Date acquired
   with owned Tsums only, rewinds, taps each card, and writes
-  `tsum_record/tsum_list_<stamp>.csv` after every page. Queued on a live run.
+  `stats/tsum_list_<stamp>.csv` after every page. Queued on a live run.
   Started from a stopped script (`SettingKey.TsumListOnly`), the run exports and
   stops. Alpha.
 - The Tsum List CSV ends in a `build` column (`global`/`jp`), so a reader such

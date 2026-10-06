@@ -103,7 +103,7 @@ settings". Close the panel instead and the run carries on where it left off.
 | Delay between rounds (min) | Rest after a round before the next (0–120, default 0). Only auto-play waits; the chores keep their clocks. The **Now** button ends a rest already running without changing the setting. |
 | Max round duration (min) | How long one round may last before the script gives up on it (0–60, default 0 = no limit). Timed from the board coming up. |
 | When a round runs long | What happens at that limit. `Stop playing, let the clock run out` (default) stops playing and lets the round finish on its own, so the score screen, the stats and the next round follow as normal. `Stop the script` stops where it stands; the round is not recorded. The game's Pause is never pressed — it would stop the very clock the round has to run down. |
-| Record round stats | One CSV row per played round in `tsum_record/stats_<YYYYMMDD>.csv`: a unique round id, UTC time, skill, duration, score, coins, medals, and the gameplay settings it was played under. Figures that could not be read are left empty and the screen saved beside the CSV. |
+| Record round stats | One CSV row per played round in `stats/stats_<YYYYMMDD>.csv`: a unique round id, UTC time, skill, duration, score, coins, medals, and the gameplay settings it was played under. Figures that could not be read are left empty and the screen saved beside the CSV. |
 | Share round stats | Alpha, off by default. Sends new rows of those CSVs to the stats server about once a minute; needs Record round stats, and a stats server set with network access allowed on this script's Library card in GAP (`ROUND_STATS_URL`). |
 | Tsum app restart frequency (min) | Close and reopen the game this often to clear out a long run, in 30-minute steps. 0 is off; needs Auto Launch. |
 | Run order | Not a setting: a summary of the others. |
@@ -113,11 +113,11 @@ settings". Close the panel instead and the run carries on where it left off.
 
 | Setting | What it does |
 |:--|:--|
-| Report a problem | Save what is on screen, the screens before it, the settings and this run's recent log to `tsum_record/reports`, then share it from Run History in the app. The one row here meant for everybody — see [Reporting a problem](#reporting-a-problem). |
+| Report a problem | Save what is on screen, the screens before it, the settings and this run's recent log to `reports/`, then share it from Run History in the app. The one row here meant for everybody — see [Reporting a problem](#reporting-a-problem). |
 | Debug logs | Write `debug` records to the log file. A report carries them whether or not this is on. |
-| Debug game | Save annotated screenshots while playing, keep a frame of *every* screen visited in `tsum_record/pageHistory`, and log the recent screens with how long each was up. |
-| Walkthrough recorder | Record instead of play: you drive the game by hand and the script writes down every screen it recognises, where you tapped, and what followed, into `tsum_record/walkthrough`. |
-| Collect unknown screens | Save any screen the script cannot recognise to `tsum_record/corpus`, rate-limited. |
+| Debug game | Save annotated screenshots while playing, keep a frame of *every* screen visited in `history/`, and log the recent screens with how long each was up. |
+| Walkthrough recorder | Record instead of play: you drive the game by hand and the script writes down every screen it recognises, where you tapped, and what followed, into `walkthrough/`. |
+| Collect unknown screens | Save any screen the script cannot recognise to `corpus/`, rate-limited. |
 | Page history depth | How many recent screens the script remembers (default 20). Frames of the last few are kept for a report. |
 
 <ImagePlaceholder id="settings-debug-tab" alt="The Debug tab: the Report row with its note field, and the developer switches below it" />
@@ -212,6 +212,6 @@ report taken from there shows the pause menu — the screens *before* it are
 saved too. To catch the live screen, press Report on the Quick Bar while the
 script is still playing, or hold the Log button on the floating bar.
 
-Reports live in `tsum_record/reports`; the newest eight are kept.
+Reports live in `reports/`; the newest eight are kept.
 
 <ImagePlaceholder id="run-history-report-buttons" alt="Run History in the app, with a reported run's card showing Share report and Save to device" />

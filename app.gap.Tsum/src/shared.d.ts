@@ -238,7 +238,7 @@ declare const enum BoxPurchaseSize {
   TenThenOne = 'tenThenOne',
 }
 
-/** The keys of record.txt that are not sender-portrait filenames. */
+/** The keys of hearts.json that are not sender-portrait filenames. */
 declare const enum RecordKey {
   HeartsCount = 'hearts_count',
 }
@@ -381,7 +381,7 @@ declare const enum SettingKey {
 interface Settings {
   [SettingKey.DebugLogs]: boolean;
   [SettingKey.DebugGame]: boolean;
-  /** Save unrecognised screens to tsum_record/corpus for offline work. */
+  /** Save unrecognised screens to corpus/ for offline work. */
   [SettingKey.CollectUnknownScreens]: boolean;
   /**
    * Record a hand-driven walk instead of playing: every screen, every tap, and

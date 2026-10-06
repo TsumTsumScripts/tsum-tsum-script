@@ -476,7 +476,7 @@ function quickBarApplyOne(tsum: Tsum, key: SettingKey,
     case SettingKey.ShareRoundStats:
       applied = !!value;
       if (!applied && tsum.sendRoundStats) {
-        roundShareClear(tsum.storagePath);
+        roundShareClear(tsum.devicePath);
       }
       tsum.sendRoundStats = applied;
       break;

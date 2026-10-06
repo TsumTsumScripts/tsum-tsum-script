@@ -80,7 +80,7 @@ string:
 | `PageName` | `data.ts`, above the `Page` table | every screen the router can report |
 | `SkillType` | `shared.d.ts` | every entry in the Skill Type dropdown |
 | `SettingKey` | `shared.d.ts` | every setting; `interface Settings` is keyed from it, so the enum and the object that crosses the bridge are one list |
-| `RecordKey`, `Locale` | `shared.d.ts` | the keys of `record.txt`; the language tags |
+| `RecordKey`, `Locale` | `shared.d.ts` | the keys of `hearts.json`; the language tags |
 | `Log` | `logEvents.ts` | every log event name, one enum per component inside a namespace |
 | `Emit` | `scriptEvents.ts` | every event broadcast to outside tooling |
 | `SkillReadiness`, `KeyCode` | `globals.d.ts` | the gauge read's answer; the host's key codes |

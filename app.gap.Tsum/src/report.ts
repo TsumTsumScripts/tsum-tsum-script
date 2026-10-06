@@ -81,7 +81,7 @@ var gReportWriting = false;
 // --- writing one -----------------------------------------------------------
 
 Tsum.prototype.reportsDir = function() {
-  return this.storagePath + '/' + Config.recordDir + '/reports';
+  return this.devicePath + '/reports';
 }
 
 /**
@@ -121,7 +121,7 @@ function reportWrite(tsum: Tsum, reason: string, note: string): string {
   const id = statsFileStamp(now) + '-' + statsRandomHex(4)
     + '-' + reason.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   const dir = tsum.reportsDir() + '/' + id;
-  execute('mkdir -p "' + dir + '"');
+  makeDirs(dir);
 
   tsum._reportCount++;
   tsum._lastReportAt = Date.now();
@@ -231,13 +231,12 @@ function reportCopyTrail(dir: string): void {
   if (frames.length === 0) {
     return;
   }
-  execute('mkdir -p "' + dir + '/trail"');
+  makeDirs(dir + '/trail');
   for (let i = 0; i < frames.length; i++) {
     // Numbered by distance from the moment rather than by the router's own
     // sequence, so `00` is always the screen the report was taken on.
     const seq = (i < 10 ? '0' : '') + i;
-    execute('cp -f "' + frames[i] + '" "' + dir + '/trail/' + seq + '_'
-      + reportBaseName(frames[i]) + '"');
+    copyFile(frames[i], dir + '/trail/' + seq + '_' + reportBaseName(frames[i]));
   }
 }
 
@@ -251,18 +250,14 @@ function reportBaseName(path: string): string {
  * Keeps the newest `ReportsKept` folders and removes the rest.
  *
  * The ids begin with a UTC stamp, so a plain lexical sort is chronological and
- * `ls` has already done it. Only folders directly under the reports directory
- * are touched.
+ * `listDir` has already done it. Only folders directly under the reports
+ * directory are touched.
  */
 function reportPrune(tsum: Tsum): void {
   const dir = tsum.reportsDir();
-  const listing = execute('ls -1 "' + dir + '" 2>/dev/null');
-  const names = (listing || '').split('\n')
-    .map(function(n) { return n.replace(/^\s+|\s+$/g, ''); })
-    .filter(function(n) { return n !== ''; })
-    .sort();
+  const names = listDir(dir);
   for (let i = 0; i < names.length - ReportsKept; i++) {
-    execute('rm -rf "' + dir + '/' + names[i] + '"');
+    removeFile(dir + '/' + names[i], true);
   }
 }
 
@@ -350,18 +345,20 @@ function reportManifest(tsum: Tsum, id: string, at: Date,
  * here as well so the manifest alone answers "what was this run playing on".
  */
 function reportDevice(tsum: Tsum): object {
+  const info = deviceInfo() || {
+    model: '', manufacturer: '', device: '',
+    androidRelease: '', fingerprint: '', emulator: false,
+  };
   return {
-    tag: statsDeviceTag(tsum.storagePath),
-    model: statsShellValue('getprop ro.product.model'),
-    manufacturer: statsShellValue('getprop ro.product.manufacturer'),
-    android: statsShellValue('getprop ro.build.version.release'),
-    fingerprint: statsShellValue('getprop ro.build.fingerprint'),
-    // Emulators are most of the reports and are worth naming outright rather
-    // than leaving to be read out of the fingerprint.
-    emulator: statsShellValue('getprop ro.kernel.qemu') === '1'
-      || /generic|emulator|sdk|mumu|nox|ldplayer/i.test(
-        statsShellValue('getprop ro.product.model')
-        + ' ' + statsShellValue('getprop ro.product.device')),
+    tag: statsDeviceTag(tsum.devicePath),
+    // One host call, which also decides "is this an emulator" -- most reports
+    // come from one, and it is worth naming outright rather than leaving it to
+    // be read out of the fingerprint.
+    model: info.model,
+    manufacturer: info.manufacturer,
+    android: info.androidRelease,
+    fingerprint: info.fingerprint,
+    emulator: info.emulator,
     screen: { width: tsum.originScreenWidth, height: tsum.originScreenHeight },
     geometry: {
       gameOffsetX: tsum.gameOffsetX,

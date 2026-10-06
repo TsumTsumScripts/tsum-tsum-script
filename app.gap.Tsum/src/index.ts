@@ -531,7 +531,7 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   // what was sent, as switching it off mid-run does.
   ts.sendRoundStats = settings.shareRoundStats === true;
   if (!ts.sendRoundStats) {
-    roundShareClear(ts.storagePath);
+    roundShareClear(ts.devicePath);
   }
   ts.skillAutoTap = settings.skillAutoTap;
   ts.lorcanaCard = settings.lorcanaCard === true;

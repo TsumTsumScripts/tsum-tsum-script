@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Share round stats
 //
-// Sends new rows of tsum_record/stats_*.csv to the ROUND_STATS_URL env var
+// Sends new rows of stats/stats_*.csv to the ROUND_STATS_URL env var
 // (gap-env.json), which the user sets on this script's Library card in GAP,
 // where network access has to be allowed too. The request names the env var
 // (`env:ROUND_STATS_URL`), never the URL. Off when the var is blank, when
@@ -39,7 +39,7 @@ let gRoundShareRetryAt = 0;
 let gRoundShareThrew = false;
 /** The request waiting on a reply, and what to remember when it is accepted. */
 let gRoundShareInFlight: {
-  id: number; at: number; storagePath: string; source: string; lastId: string; rows: number;
+  id: number; at: number; devicePath: string; source: string; lastId: string; rows: number;
 } | null = null;
 let gRoundShareListening = false;
 
@@ -63,7 +63,7 @@ function roundShareAfterRow(tsum: Tsum): void {
   }
   gRoundShareLastAt = now;
   try {
-    roundShareOnce(tsum.storagePath);
+    roundShareOnce(tsum.devicePath);
   } catch (e) {
     if (!gRoundShareThrew) {
       gRoundShareThrew = true;
@@ -73,8 +73,8 @@ function roundShareAfterRow(tsum: Tsum): void {
 }
 
 /** Forgets what was sent; turning sharing off calls this. */
-function roundShareClear(storagePath: string): void {
-  const path = roundShareCursorPath(storagePath);
+function roundShareClear(devicePath: string): void {
+  const path = roundShareCursorPath(devicePath);
   try {
     const text = readFile(path);
     if (text && text.trim() !== '{}') {
@@ -88,21 +88,19 @@ function roundShareClear(storagePath: string): void {
   gRoundShareInFlight = null;
 }
 
-function roundShareCursorPath(storagePath: string): string {
-  return storagePath + '/' + Config.recordDir + '/' + RoundShareCursorFile;
+function roundShareCursorPath(devicePath: string): string {
+  return devicePath + '/' + Config.statsDir + '/' + RoundShareCursorFile;
 }
 
 /** One pass: the oldest file with unsent rows gets one request. The reply is handled by `roundShareOnEvent`. */
-function roundShareOnce(storagePath: string): void {
-  const dir = storagePath + '/' + Config.recordDir;
-  const names = execute('ls -1 "' + dir + '" 2>/dev/null').split('\n')
-    .map((name) => name.trim())
-    .filter((name) => /^stats_\d+\.csv$/.test(name))
-    .sort();
-  const cursorPath = roundShareCursorPath(storagePath);
+function roundShareOnce(devicePath: string): void {
+  const dir = devicePath + '/' + Config.statsDir;
+  // listDir answers sorted names, so the oldest file is simply the first.
+  const names = listDir(dir).filter((name) => /^stats_\d+\.csv$/.test(name));
+  const cursorPath = roundShareCursorPath(devicePath);
   const cursor = roundShareReadCursor(cursorPath);
   for (const name of names) {
-    const source = Config.recordDir + '/' + name;
+    const source = Config.statsDir + '/' + name;
     const batch = roundShareRows(readFile(dir + '/' + name), cursor[source] || '');
     if (batch.records.length === 0) {
       continue;
@@ -119,7 +117,7 @@ function roundShareOnce(storagePath: string): void {
       addNetworkListener(roundShareOnEvent);
     }
     const id = httpRequest('POST', RoundShareRef, body, { 'Content-Type': 'application/json' });
-    gRoundShareInFlight = { id: id, at: Date.now(), storagePath: storagePath, source: source, lastId: batch.lastId, rows: batch.records.length };
+    gRoundShareInFlight = { id: id, at: Date.now(), devicePath: devicePath, source: source, lastId: batch.lastId, rows: batch.records.length };
     return;
   }
 }
@@ -134,7 +132,7 @@ function roundShareOnEvent(event: NetworkEvent): void {
   try {
     const reply = event.type === 'done' ? event.body || '' : '';
     if (roundShareAccepted(reply)) {
-      roundShareKeep(sent.storagePath, sent.source, sent.lastId);
+      roundShareKeep(sent.devicePath, sent.source, sent.lastId);
       gRoundShareFailures = 0;
       gRoundShareRetryAt = 0;
       logInfo(Log.Stats.Shared, 'Shared round stats', { source: sent.source, rows: sent.rows });
@@ -160,14 +158,14 @@ function roundShareOnEvent(event: NetworkEvent): void {
 }
 
 /** Records `lastId` as accepted for `source`, dropping files that are gone so the cursor stays small. */
-function roundShareKeep(storagePath: string, source: string, lastId: string): void {
-  const dir = storagePath + '/' + Config.recordDir;
-  const names = execute('ls -1 "' + dir + '" 2>/dev/null').split('\n').map((name) => name.trim());
-  const cursorPath = roundShareCursorPath(storagePath);
+function roundShareKeep(devicePath: string, source: string, lastId: string): void {
+  const dir = devicePath + '/' + Config.statsDir;
+  const names = listDir(dir);
+  const cursorPath = roundShareCursorPath(devicePath);
   const cursor = roundShareReadCursor(cursorPath);
   const kept: { [source: string]: string } = {};
   for (const name of names) {
-    const key = Config.recordDir + '/' + name;
+    const key = Config.statsDir + '/' + name;
     if (cursor[key]) {
       kept[key] = cursor[key];
     }

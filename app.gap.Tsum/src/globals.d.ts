@@ -1008,7 +1008,7 @@ interface RunClock {
 }
 
 /**
- * `tsum_record/record.txt` as parsed: the account's running heart tally, and
+ * `hearts.json` as parsed: the account's running heart tally, and
  * nothing else. It used to carry one entry per recorded sender beside this,
  * which is why it is a table rather than the counts themselves.
  *
@@ -1180,7 +1180,8 @@ interface Task {
 
 /** Static tuning constants for the player. */
 interface TsumConfig {
-  recordDir: string;
+  /** Round-stats CSVs and the share cursor, under `getDevicePath()`. */
+  statsDir: string;
   tsumWidth: number;
   screenResize: number;
   colors: number[][];
@@ -1882,9 +1883,53 @@ declare function getDeviceName(): string;
  * `Tsum.prototype.declareReadTop` is the one caller.
  */
 declare function setReadTop(y: number): void;
+/**
+ * Shell as uid 2000. Prefer the named calls below: the host composes the
+ * command, which is steadier across devices, and GAP may gate this.
+ */
 declare function execute(cmd: string): string;
 declare function readFile(path: string): string;
 declare function writeFile(path: string, content: string): void;
+
+// --- Filesystem (host 3.1+) ---
+/** `mkdir -p`. True once it exists; an existing directory is not a failure. */
+declare function makeDirs(path: string): boolean;
+/** Names only, sorted, no `.`/`..`. A missing directory lists empty. */
+declare function listDir(path: string): string[];
+/** Without `recursive` a directory is left alone, as `rm -f` leaves one. */
+declare function removeFile(path: string, recursive: boolean): boolean;
+/** Creates `to`'s parents; overwrites. */
+declare function copyFile(from: string, to: string): boolean;
+
+/**
+ * This device's own folder under the storage root, created on demand:
+ * `<root>/devices/<name>_<id>`. Emulator instances routinely share one root
+ * (MuMu does by default), where a fixed path means each overwrites the others.
+ * Everything this script writes belongs under here.
+ */
+declare function getDevicePath(): string;
+
+// --- Apps, device facts, UI and touch (host 3.1+) ---
+/** The focused window, or null when it cannot be read. */
+declare function foregroundApp(): { package: string; activity: string } | null;
+declare function isInstalled(pkg: string): boolean;
+/** Without `activity`, the package's launcher entry. Never stacks a second copy. */
+declare function launchApp(pkg: string, activity?: string): boolean;
+declare function stopApp(pkg: string): boolean;
+/** What this device is, in one call rather than a dozen `getprop`s. */
+declare function deviceInfo(): {
+  model: string;
+  manufacturer: string;
+  device: string;
+  androidRelease: string;
+  fingerprint: string;
+  emulator: boolean;
+} | null;
+/** The window hierarchy as XML; '' when uiautomator is unavailable. */
+declare function dumpUi(): string;
+declare function touchDevices(): { path: string; xMax: number; yMax: number }[];
+/** The user's next touch in screen px, or null on timeout. Capped at 120s. */
+declare function readTouch(timeoutMs: number): { x: number; y: number; down: boolean } | null;
 
 // --- Image-processing helpers (OpenCV-backed) ---
 declare function smooth(img: NativeImage, type: number, size: number): void;

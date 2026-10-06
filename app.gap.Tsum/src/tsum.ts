@@ -71,7 +71,7 @@ class Tsum {
   boardScaleReads: number[];
   boardScaleTrend: number;
   edgeWashBackoffUntil: number;
-  storagePath: string;
+  devicePath: string;
   originScreenWidth: number;
   originScreenHeight: number;
   screenHeight: number;
@@ -346,7 +346,7 @@ class Tsum {
     this.myTsumIdx = -1;
     this.boardClusters = [];
     this.boardClusterSizes = [];
-    this.storagePath = getStoragePath();
+    this.devicePath = getDevicePath();
     // screen size config
     /** @type {{width: number, height: number}}  */
     const size = getScreenSize();
@@ -541,10 +541,8 @@ Tsum.prototype.init = function(detect) {
     screenWidth: this.screenWidth,
   });
   this.declareReadTop();
-  // No rests around these: `execute` is synchronous, and the 1.4s that used to
-  // sit here waited for nothing.
-  execute("mkdir -p " + this.storagePath + '/tmp');
-  execute("mkdir -p " + this.storagePath + '/' + Config.recordDir);
+  makeDirs(this.devicePath + '/tmp');
+  makeDirs(this.devicePath + '/' + Config.statsDir);
 }
 
 // Quality 100: no JPEG round-trip. This was 80 only because Robotmon captured

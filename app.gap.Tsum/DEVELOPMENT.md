@@ -97,7 +97,7 @@ strings and are what most of the branching actually tests. Each set is a
 | `KeyCode` | `globals.d.ts` | the `keycode()` host call |
 | `SettingKey` | `shared.d.ts` (both compilations need it) | every name a setting has: the `key` of a row in `settings.ts`, its slot in `SHARE_SLOTS`, the lookups the Run order card does, its column heading in the round-stats CSV, and the field `start()` reads. `interface Settings` is *keyed by* these members, so the enum and the shape that crosses the bridge are one list, not two |
 | `RowKey`, `Locale` | `settings.d.ts` (settings UI only) | the rows that hold no value — Run order, the share buttons, the build stamp — and the two language tags stored under `LANG_KEY` |
-| `RecordKey` | `shared.d.ts` | the keys of record.txt, read on both sides |
+| `RecordKey` | `shared.d.ts` | the keys of hearts.json, read on both sides |
 | `Log` | `logEvents.ts` (both compilations need it) | every `event` name written by either program: the four loggers' first argument, the keys of the log catalogues (`logsEn.ts` and the translations beside it), and `LOGGING.md` § Components. A namespace of `const enum`s, one per component, so it reads `Log.Play.GameOver` |
 
 **Why `const enum` and not a `const` object.** A const enum is erased at compile
@@ -1435,7 +1435,7 @@ was left, and its kind. `gPages.trail()` renders the tail as
 when *Debug game* is on.
 
 With debug on it also writes the matcher's own frame for each visit to
-`tsum_record/pageHistory/`, and deletes each frame as its visit falls off the
+`history/`, and deletes each frame as its visit falls off the
 stack — so the directory is bounded by the depth, not by uptime.
 
 ### The generated map

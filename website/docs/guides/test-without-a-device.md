@@ -99,13 +99,13 @@ finished until they have run, and they are the only place a probe threshold
 should be raised.
 
 On the device, the tools you have are the log (*Debug logs* on), the annotated
-screenshots and page-history frames *Debug game* saves under `tsum_record/`,
+screenshots and page-history frames *Debug game* saves under `stats/`,
 *Collect unknown screens* for a screen nothing fingerprinted, and the issue
 report — the screen, the screens before it, the settings and the last few
 hundred records, debug ones included. Press **Report** on the Debug tab or the
 Quick Bar, or let the script write one itself when it gives up.
 
-<ImagePlaceholder id="report-folder" alt="The contents of one report folder under tsum_record/reports: the screen, the trail frames, the manifest and the log excerpt" />
+<ImagePlaceholder id="report-folder" alt="The contents of one report folder under reports/: the screen, the trail frames, the manifest and the log excerpt" />
 
 Before believing a behaviour report, confirm what is on the device: which
 build (`ScriptVersion` in the log's `run.start`), which settings (the

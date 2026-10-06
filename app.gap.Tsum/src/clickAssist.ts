@@ -4,31 +4,13 @@
 // touch event stream and reacts to where the user taps. Auto-play and Click
 // Assist are mutually exclusive (see start()).
 
-// Locate the touchscreen input device by parsing `getevent -lp`. Cached for the
-// life of the Tsum instance -- the device does not change mid-session.
+// The touchscreen the host found, logged once so a device that reports none is
+// visible in the run log rather than silently never assisting.
 Tsum.prototype.findTouchDevice = function() {
   if (this._touchDevice !== undefined) { return this._touchDevice; }
 
-  const raw = execute('getevent -lp 2>&1') || '';
-  const sections = raw.split(/add device \d+:\s*/);
-  let best = null;
-  for (let s = 1; s < sections.length; s++) {
-    const section = sections[s];
-    const firstLineEnd = section.indexOf('\n');
-    if (firstLineEnd === -1) { continue; }
-    const path = section.substring(0, firstLineEnd).trim();
-    if (path.indexOf('/dev/input/event') !== 0) { continue; }
-    if (section.indexOf('ABS_MT_POSITION_X') === -1) { continue; }
-
-    let xMax = 0, yMax = 0;
-    const xm = section.match(/ABS_MT_POSITION_X[^\n]*max\s+(\d+)/);
-    const ym = section.match(/ABS_MT_POSITION_Y[^\n]*max\s+(\d+)/);
-    if (xm) { xMax = parseInt(xm[1], 10); }
-    if (ym) { yMax = parseInt(ym[1], 10); }
-    best = { path: path, xMax: xMax, yMax: yMax };
-    break;
-  }
-
+  const devices = touchDevices();
+  const best = devices.length > 0 ? devices[0] : null;
   this._touchDevice = best;
   if (best) {
     logInfo(Log.Assist.TouchDevice, 'Click Assist found the touch input device',
@@ -39,49 +21,17 @@ Tsum.prototype.findTouchDevice = function() {
   return best;
 };
 
-// Block for up to `timeoutSec` seconds waiting for a BTN_TOUCH DOWN with X/Y
-// coordinates. Returns the touch position in screen pixels, or null on timeout.
-// Uses `timeout` from toybox/busybox; falls back to no-timeout (script must rely
-// on the user actually touching the screen) if the timeout command is missing.
+// Waits up to `timeoutSec` for the user's next touch, in screen pixels, or null
+// on timeout. The host owns the event stream and the scaling from the input
+// device's own range -- the two differ on most devices.
+//
+// Any X/Y in the burst counts as a touch: BTN_TOUCH is not gated on, because
+// protocol B devices and many emulators omit it, and the release position is
+// still the position the user meant.
 Tsum.prototype.pollTouchDown = function(timeoutSec) {
-  const device = this.findTouchDevice();
-  if (!device) { return null; }
-
-  // `-c N` exits after N events. We want the X/Y/BTN_TOUCH triplet plus a
-  // little headroom for tracking-id/sync events.
-  const cmd = 'timeout ' + timeoutSec + ' getevent -lc 12 ' + device.path + ' 2>/dev/null';
-  const raw = execute(cmd) || '';
-  if (raw.length === 0) { return null; }
-
-  const lines = raw.split('\n');
-  let lastX = null, lastY = null;
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    let m;
-    if ((m = line.match(/ABS_MT_POSITION_X\s+([0-9a-fA-F]+)/))) {
-      lastX = parseInt(m[1], 16);
-    } else if ((m = line.match(/ABS_MT_POSITION_Y\s+([0-9a-fA-F]+)/))) {
-      lastY = parseInt(m[1], 16);
-    }
-  }
-  // Any X/Y in the event burst means the user touched (or moved/released) on
-  // the screen. We don't gate on BTN_TOUCH because protocol B devices and many
-  // emulators omit it. Reacting on the release position is still the position
-  // the user intended.
-  if (lastX === null || lastY === null) { return null; }
-
-  // Scale device coords to screen pixels. If the device reports max==0 or
-  // matches the screen pixel size already, the touch is treated as direct
-  // pixel coordinates.
-  let screenX = lastX;
-  let screenY = lastY;
-  if (device.xMax > 0 && device.xMax !== this.originScreenWidth) {
-    screenX = lastX * this.originScreenWidth / device.xMax;
-  }
-  if (device.yMax > 0 && device.yMax !== this.originScreenHeight) {
-    screenY = lastY * this.originScreenHeight / device.yMax;
-  }
-  return { x: screenX, y: screenY };
+  if (!this.findTouchDevice()) { return null; }
+  const touch = readTouch(timeoutSec * 1000);
+  return touch === null ? null : { x: touch.x, y: touch.y };
 };
 
 // Stops auto-linking and waits for the user to tap a tsum. On each tap, finds

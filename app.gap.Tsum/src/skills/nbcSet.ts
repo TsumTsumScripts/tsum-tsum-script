@@ -239,7 +239,7 @@ function nbcSaveRoll(ts: Tsum, dice: number[]) {
   const img = nbcCapture(ts, NbcDice.scan);
   if (!img) { return; }
   try {
-    saveImage(img, ts.storagePath + '/tmp/nbc-dice-' + Date.now() + '-' + dice.join('') + '.png');
+    saveImage(img, ts.devicePath + '/tmp/nbc-dice-' + Date.now() + '-' + dice.join('') + '.png');
   } catch (e) {
     // Diagnostics only.
   } finally {

@@ -201,7 +201,7 @@ const WorkflowTsumNodes: GapWorkflowNodeDef[] = [
     run: workflowChore(function(run) {
       const build = run.gameBuild();
       run.invalidateAppOn();
-      execute('am force-stop ' + GamePackages[build]);
+      stopApp(GamePackages[build]);
       run.awaitAppOff();
       run.invalidateAppOn();
       run.isStartupPhase = true;
