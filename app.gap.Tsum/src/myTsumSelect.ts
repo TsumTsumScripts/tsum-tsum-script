@@ -307,6 +307,9 @@ function selectTsumNextResume(run: Tsum, controller: TsumTaskController): void {
     if (selectTsumNextLoad()?.tsum === next.tsum) {
       selectTsumNextSave(null);
     }
+    if (run.isRunning) {
+      notifyMyTsumChanged(next.tsum, next.name, typeof res === 'object' ? ('fail' in res ? res.fail : res.terminate) : null);
+    }
     gSelectTsumNowQueued = false;
     controller.removeTask(SelectTsumNowTask);
   }, UnlockNowRetryMs, 0, false, JobPriority.SelectTsumNow);

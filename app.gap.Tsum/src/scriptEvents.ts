@@ -83,4 +83,15 @@ namespace Emit {
     /** The workflow is over: `status` is ended, failed or terminated, `reason` why. */
     End        = 'workflow.end',
   }
+
+  /**
+   * GAP Companion's push channel (the app repo's cloud/adapters/README.md §
+   * Notifications). The server turns it into a notification on the phones of
+   * the device's account and keeps it out of the event history; `gap.*` names
+   * are the platform's. Sent only by `gapNotify` (src/companion.ts).
+   */
+  export const enum Companion {
+    /** A notification: title, body, category, tag, lines, progress, actions. */
+    Notify = 'gap.notify',
+  }
 }

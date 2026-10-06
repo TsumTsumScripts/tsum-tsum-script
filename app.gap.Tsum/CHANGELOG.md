@@ -62,8 +62,16 @@ release note; they fold back in here when she ships.
 - Quick Bar's coin readout shows the average medals earned per round.
 - Share round stats setting added (Alpha): sends your round stats to a stats server you set on this script's card in GAP's Library, with network access allowed there.
 - Resuming after a pause mid-round now presses Continue and returns to the round, instead of sometimes tapping Try Again or elsewhere on the pause menu.
+- GAP Companion notifies your phone when a run stops after its round (with that round's score and coins) and when a chore started with Now (unlock levels, buy boxes, export the Tsum list, change My Tsum) is done.
 
 ### Added
+
+- **GAP Companion notifications**: `gapNotify` (`src/companion.ts`) emits the
+  reserved `gap.notify` event (`Emit.Companion.Notify`), which the companion
+  server pushes to the phone (its `cloud/adapters/README.md` § Notifications).
+  Sent by `wrapUpIfAsked` (`run` category, tag `run`), the three Now queues in
+  `src/index.ts` from the sweep's outcome (`Tsum.lastChore`, set by the
+  tasks) and Change My Tsum's queue (with a Try again button on failure).
 
 - **Share round stats** (General, Alpha, off by default): the script now sends
   its own round stats (`src/roundShare.ts`) instead of handing the CSV pattern

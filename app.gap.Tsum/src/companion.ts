@@ -42,6 +42,107 @@ const CompanionRemoteActions = [
     args: { tsum: { type: 'enum', label: 'Tsum', list: 'tsums' } } },
 ];
 
+// --- Notifications (cloud/adapters/README.md § Notifications) -----------------
+
+/** A push to the phone. `category` picks the phone's switch; the same `tag` replaces an earlier one. */
+interface GapNote {
+  title: string;
+  body?: string;
+  category?: 'run' | 'task' | 'alert' | 'info';
+  tag?: string;
+  /** Up to 5 short lines, shown expanded. */
+  lines?: string[];
+  progress?: { value: number; max: number } | { indeterminate: true };
+  /** Buttons that run a `CompanionRemoteActions` action. Never one that spends coins: no confirm there. */
+  actions?: { label: string; action: string; args?: { [key: string]: string | number | boolean } }[];
+  silent?: boolean;
+}
+
+/** Sends `note` to the phones linked to this device. Nothing happens without GAP Companion. */
+function gapNotify(note: GapNote): void {
+  emitScriptEvent(Emit.Companion.Notify, note);
+}
+
+/** 1234567 -> "1,234,567" (toLocaleString is not reliable on every host). */
+function companionCount(n: number): string {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * "Stop after this round" landed (`wrapUpIfAsked`, src/play.ts): the standard
+ * `stopAfter` note, tagged `run` so it replaces a workflow's end on the phone.
+ */
+function notifyWrapUp(run: Tsum, atRoundEnd: boolean): void {
+  const lines: string[] = [];
+  if (run.myTsumName) {
+    lines.push(run.myTsumName);
+  }
+  const r = run.lastRound;
+  if (atRoundEnd && r !== null) {
+    if (r.score !== null) {
+      lines.push('Score ' + companionCount(r.score));
+    }
+    if (r.finalCoins !== null) {
+      lines.push('Coins ' + companionCount(r.finalCoins));
+    }
+  }
+  const rounds = run.runClock.rounds;
+  lines.push(rounds + (rounds === 1 ? ' round' : ' rounds') + ' this run');
+  gapNotify({
+    title: atRoundEnd ? 'Stopped after the round' : 'Stopped before the next round',
+    category: 'run',
+    tag: 'run',
+    lines: lines,
+  });
+}
+
+/** Chore endings that mean it did all it could; any other reason is said. */
+const ChoreDoneReasons = ['end of list', 'no more capped', 'purchase limit'];
+
+/**
+ * A chore started with Now finished (the Now queues in src/index.ts). `outcome`
+ * is the sweep's `Log.*.End` fields (`Tsum.lastChore`); null when the run
+ * stopped under it, which needs no notification.
+ */
+function notifyChoreDone(chore: 'unlock' | 'boxes' | 'tsumList', outcome: LogFields | null): void {
+  if (outcome === null) {
+    return;
+  }
+  const count = (key: string) => (typeof outcome[key] === 'number' ? outcome[key] : 0);
+  let title: string;
+  let body: string;
+  if (chore === 'unlock') {
+    title = 'Level caps raised';
+    body = count('raised') + (count('raised') === 1 ? ' Tsum raised.' : ' Tsums raised.');
+  } else if (chore === 'boxes') {
+    title = 'Boxes bought';
+    body = count('bought') + (count('bought') === 1 ? ' box bought.' : ' boxes bought.');
+  } else {
+    title = 'Tsum list exported';
+    body = count('tsums') + ' Tsums saved.';
+  }
+  const reason = typeof outcome.reason === 'string' ? outcome.reason : '';
+  if (reason !== '' && ChoreDoneReasons.indexOf(reason) < 0) {
+    body += ' Stopped: ' + reason + '.';
+  }
+  gapNotify({ title: title, body: body, category: 'task', tag: 'chore.' + chore });
+}
+
+/** Change My Tsum finished (src/myTsumSelect.ts): `fail` is why not, or null when it worked. */
+function notifyMyTsumChanged(tsum: string, name: string, fail: string | null): void {
+  if (fail === null) {
+    gapNotify({ title: 'My Tsum changed', body: name, category: 'task', tag: 'chore.myTsum' });
+    return;
+  }
+  gapNotify({
+    title: 'Couldn\'t change My Tsum',
+    body: name + ': ' + fail,
+    category: 'task',
+    tag: 'chore.myTsum',
+    actions: [{ label: 'Try again', action: 'selectTsum', args: { tsum: tsum } }],
+  });
+}
+
 /** `remoteSettingsApply`'s refusal reasons as the contract's short codes. */
 const CompanionSetWhy: { [why: string]: string } = {
   'no run': 'no-run',

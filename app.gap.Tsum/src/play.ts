@@ -502,6 +502,7 @@ Tsum.prototype.wrapUpIfAsked = function(at: string) {
   this.wrapUpAsked = false;
   logInfo(Log.Play.WrapUpFired, { at: at });
   this.banner(at === 'roundEnd' ? 'Round over: stopping as asked' : 'Stopping as asked', 5000);
+  notifyWrapUp(this, at === 'roundEnd');
   requestStop();
   return true;
 }

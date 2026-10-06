@@ -663,9 +663,11 @@ Tsum.prototype.taskAutoUnlockLevel = function() {
   const previous = this.sortCollection(CollectionSort.LevelLock);
   if (previous === null) {
     logInfo(Log.Unlock.End);
+    this.lastChore = { raised: 0, reason: 'sort failed' };
     return true;
   }
   const outcome = this.raiseCappedCards();
+  this.lastChore = outcome;
   this.restoreCollectionSort(previous, CollectionSort.LevelLock);
   if (outcome !== null) {
     logInfo(Log.Unlock.End, outcome);
