@@ -108,7 +108,7 @@ var SkillsDeclared: SkillOption[] = [
     {key: SkillType.LightningMcQueenPlus, share: 'q', title: UiText.SkillLightningMcQueenPlus,
      status: ReleaseStatus.Production, group: UiText.SkillGroupBurst},
     {key: SkillType.NightmareSet, share: 'N', title: UiText.SkillNightmareSet,
-     status: ReleaseStatus.Beta, group: UiText.SkillGroupBurst},
+     status: ReleaseStatus.Production, group: UiText.SkillGroupBurst},
     {key: SkillType.VillainsSet, share: 'v', title: UiText.SkillVillainsSet,
      status: ReleaseStatus.Alpha, group: UiText.SkillGroupBurst},
     // Two buttons rather than one, but the clear at the end of it is a burst.

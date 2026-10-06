@@ -120,7 +120,7 @@ release note; they fold back in here when she ships.
   (`countGameTowardStop`), before a round starts, or via the `wrapUpNow` job
   when no round is being played. Reported as `stopAfterThisRound` in
   `quickBarState`.
-- **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`, Beta). A burst
+- **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`, Production). A burst
   declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture
   disc, bubble pass and link reach. Other skills skip the read and stay at 1.
@@ -178,7 +178,7 @@ release note; they fold back in here when she ships.
   lacks (skill, bubble strategy, box type/size, the two stop actions) with
   `{ok:false, why:"invalid value"}` and a `quickBar.invalidValue` warning.
 - Gaston, Coronation Day Elsa and `SkillReactivationTenths` to Production;
-  Nightmare Before Christmas (Set) to Beta. From 4.0.
+  Nightmare Before Christmas (Set) to Production (4.0 shipped it there).
 - Quick Bar: the skill name no longer widens its column (`.qb-cell-fit`), so a
   long name ellipsises at the bonus cluster instead of pushing Report.
 - Tsum List export writes a `device` column: the host's `getDeviceName()`, the
