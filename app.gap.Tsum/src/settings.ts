@@ -27,6 +27,14 @@
 var VERSION = '$VERSION';
 
 /**
+ * The host's panel header: name, version and the channel when it is not
+ * Production. Read by the host after load, like `VERSION`.
+ */
+var PANEL_TITLE = 'Tsum Tsum v' + VERSION
+    + (ReleaseStatusMin === ReleaseStatus.Alpha ? ' (Alpha)'
+        : ReleaseStatusMin === ReleaseStatus.Beta ? ' (Beta)' : '');
+
+/**
  * The localStorage key this page owns. THEME_KEY and TAB_KEY are only ever read
  * from a function, so they stay in their sections; the language tag is not here
  * at all -- `src/i18n.ts` owns it, because the Quick Bar reads the same entry.
@@ -1239,6 +1247,64 @@ function copySettingsCodeForStrip(): void {
             iface.broadcast(ok ? PageMessage.ShareCodeCopied : PageMessage.ShareCodeNotCopied);
         }
     });
+}
+
+/** How long the app bar's Code button says Copied / Failed. */
+var COPY_FLASH_MS = 1500;
+var copyFlashTimer: number | undefined;
+
+/**
+ * The app bar's Code button: the Copy button's code without opening its
+ * panel. The button says how it went; a failure opens the share panel on its
+ * tab instead, where the code can be copied by hand.
+ */
+function copySettingsCodeFromBar(): void {
+    var text = withShareListing(buildSettingsCode(), collectSettingValues(settings, isUnsharedSetting));
+    writeClipboard(text, function (ok) {
+        flashCopyCode(ok);
+        if (!ok) {
+            var tab = shareTabId();
+            if (tab !== undefined) {
+                selectTab(tab);
+            }
+            copySettingsCode();
+            ensureSharePanel().scrollIntoView({block: 'center'});
+        }
+    });
+}
+
+/** The tab holding the Share settings row. */
+function shareTabId(): string | undefined {
+    for (var t = 0; t < tabs.length; t++) {
+        for (var g = 0; g < tabs[t].groups.length; g++) {
+            var rows = tabs[t].groups[g].rows;
+            for (var r = 0; r < rows.length; r++) {
+                if (rows[r].key === RowKey.ShareSettings) {
+                    return tabs[t].id;
+                }
+            }
+        }
+    }
+    return undefined;
+}
+
+/** Shows Copied / Failed on the Code button for a moment, then its label again. */
+function flashCopyCode(ok: boolean): void {
+    var button = document.getElementById('copyCode');
+    var label = document.getElementById('copyCodeText');
+    if (button === null || label === null) {
+        return;
+    }
+    button.setAttribute('data-state', ok ? 'done' : 'failed');
+    label.textContent = i18nText(ok ? UiText.ChromeCopied : UiText.ChromeCopyFailed);
+    if (copyFlashTimer !== undefined) {
+        clearTimeout(copyFlashTimer);
+    }
+    copyFlashTimer = setTimeout(function () {
+        copyFlashTimer = undefined;
+        button!.removeAttribute('data-state');
+        label!.textContent = i18nText(UiText.ChromeCopyCode);
+    }, COPY_FLASH_MS);
 }
 
 /**
@@ -3194,6 +3260,10 @@ function bindPresets(): void {
     if (save !== null) {
         save.addEventListener('click', openPresetPanel);
     }
+    var copy = document.getElementById('copyCode');
+    if (copy !== null) {
+        copy.addEventListener('click', copySettingsCodeFromBar);
+    }
     var field = presetNameField();
     if (field !== null) {
         // Per keystroke rather than on change: the three buttons under it say
@@ -4421,6 +4491,8 @@ function localisePresets(): void {
     };
     labelled('presetSelect', UiText.PresetOpen);
     labelled('presetSave', UiText.PresetManage);
+    labelled('copyCode', UiText.ChromeCopyCodeLabel);
+    titled('copyCodeText', UiText.ChromeCopyCode);
     titled('presetSaveNew', UiText.PresetSaveNew);
     titled('presetUpdate', UiText.PresetUpdate);
     titled('presetDelete', UiText.PresetDelete);

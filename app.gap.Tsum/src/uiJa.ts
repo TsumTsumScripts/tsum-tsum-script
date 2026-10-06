@@ -216,6 +216,10 @@ i18nRegister(Locale.Japanese, '日本語', {
     [UiText.ChromeThemeToLight]: 'ライトモードに切り替え',
     [UiText.ChromeThemeToDark]: 'ダークモードに切り替え',
     [UiText.ChromeMoreTabs]: '他のタブを表示',
+    [UiText.ChromeCopyCode]: 'コード',
+    [UiText.ChromeCopyCodeLabel]: '設定コードをコピー',
+    [UiText.ChromeCopied]: 'コピー済み',
+    [UiText.ChromeCopyFailed]: '失敗',
 
     [UiText.ShareCopied]: '設定コードをコピーしました。必要な人に貼り付けて渡してください。',
     [UiText.ShareCopyFailed]: 'クリップボードを使えません。下のコードを手動でコピーしてください。',

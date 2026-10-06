@@ -8,7 +8,7 @@
  * InlineAlert. Their specs are in the kit's design-system/components.md (v2).
  *
  * Sized below the kit on purpose: the overlay is small, so rows, type and
- * controls are compact (`--ctl`, 32px) and the chrome is one row.
+ * controls are compact (`--ctl`, 32px) and the chrome is two short rows.
  *
  * v2's three signals: a blue `tap` edge is tappable, solid `selected` is on or
  * current, red is destructive. Controls inside a card are fill only.
@@ -28,7 +28,7 @@
     --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     --icon-warning: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.5L21.5 20h-19zM12 10v4.5M12 17.2v.3' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
-    /* Page-local sizes: the compact control and the one-row header. */
+    /* Page-local sizes: the compact control and the app bar's height. */
     --ctl: 32px;
     --head-h: 44px;
 }
@@ -99,8 +99,8 @@ p {
 
 /* --- App bar ---------------------------------------------------------------
 
-   One row: the tabs take what the preset and theme controls leave. No title:
-   the host's panel draws one above this page. */
+   Presets on the left, the icon buttons on the right. No title: the host's
+   panel header names the script. */
 
 .app-bar {
     position: sticky;
@@ -163,17 +163,17 @@ p {
 
 /* --- Presets ---------------------------------------------------------------
 
-   The dropdown is a Select, capped in width; the tabs give way to it. */
+   The dropdown is a Select; it is the only thing in the bar that can shrink. */
 
 .preset-select {
-    flex: none;
+    flex: 0 1 auto;
     display: flex;
     align-items: center;
     gap: var(--space-2);
     min-width: 0;
-    max-width: 120px;
+    max-width: 200px;
     height: var(--ctl);
-    margin: 0;
+    margin: 0 auto 0 0;
     padding: 0 var(--space-2) 0 var(--space-4);
     border: 0;
     border-radius: var(--radius-md);
@@ -204,6 +204,46 @@ p {
     text-overflow: ellipsis;
     white-space: nowrap;
     text-align: left;
+}
+
+/* Copy share code: an icon and a one-word label, which flashes the result. */
+.copy-code {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: var(--ctl);
+    margin: 0;
+    padding: 0 var(--space-4) 0 var(--space-3);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--tap-soft);
+    box-shadow: inset 0 0 0 1.5px var(--tap);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.copy-code .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.copy-code:active {
+    background: var(--disc);
+}
+
+.copy-code[data-state="done"] {
+    background: var(--selected);
+    box-shadow: none;
+    color: var(--on-selected);
+}
+
+.copy-code[data-state="failed"] {
+    background: var(--danger-band);
+    box-shadow: inset 0 0 0 1.5px var(--danger);
+    color: var(--danger);
 }
 
 .preset-caret {
@@ -245,10 +285,17 @@ p {
    bold label. When tabs run past an edge, the edge fades and a "+N" button says how
    many are hidden there. */
 
+.tab-strip {
+    position: sticky;
+    top: var(--head-h);
+    z-index: 2;
+    padding: var(--space-1) var(--space-3);
+    background: var(--bg);
+    border-bottom: 1px solid var(--divider);
+}
+
 .tab-scroll {
     position: relative;
-    flex: 1 1 0;
-    min-width: 0;
 }
 
 .tab-bar {

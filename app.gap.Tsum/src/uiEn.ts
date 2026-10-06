@@ -261,6 +261,10 @@ i18nRegister(Locale.English, 'English', {
     [UiText.ChromeThemeToLight]: 'Switch to light mode',
     [UiText.ChromeThemeToDark]: 'Switch to dark mode',
     [UiText.ChromeMoreTabs]: 'Show more tabs',
+    [UiText.ChromeCopyCode]: 'Code',
+    [UiText.ChromeCopyCodeLabel]: 'Copy settings code',
+    [UiText.ChromeCopied]: 'Copied',
+    [UiText.ChromeCopyFailed]: 'Failed',
 
     [UiText.ShareCopied]: 'Settings code copied. Paste it to whoever wants it.',
     [UiText.ShareCopyFailed]: 'No clipboard access here - copy the code below by hand.',
