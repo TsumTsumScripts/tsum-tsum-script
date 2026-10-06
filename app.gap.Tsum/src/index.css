@@ -487,10 +487,11 @@ p {
     overflow-wrap: anywhere;
 }
 
+/* A step under the group title above it, so the card reads as its child. */
 .row-title {
     display: block;
-    font-size: 14px;
-    line-height: 18px;
+    font-size: 13px;
+    line-height: 17px;
     font-weight: 600;
     color: var(--ink);
 }
