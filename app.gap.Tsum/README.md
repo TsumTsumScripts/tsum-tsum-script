@@ -127,11 +127,12 @@ round (m:ss), **Played** the total time spent in rounds, and **Run** how long th
 script has been going, pauses included (both hh:mm).
 
 **Tapping the readout copies the run's figures** to the clipboard, and a banner
-says when they are on it. More than the chip can draw: coins and medals each with
-their total, average, per-second rate and smallest and largest round, the round
-durations (average, total, shortest, longest), and the round count. The
-per-second rates are over time spent *in* rounds, so the rest between them does
-not count against them.
+says when they are on it. More than the chip can draw: base coins and medals each
+with their total, average, per-second rate and smallest and largest round, the
+round durations (average, total, shortest, longest), and the round count. Base
+coins rather than final, so two runs compare on the play and not on which items
+were bought; the per-second rates are over time spent *in* rounds, so the rest
+between them does not count against them.
 
 **Preset** shows the name of the preset your settings currently are, or *No
 preset* when they are not any of them, and tapping it lists the ones you have

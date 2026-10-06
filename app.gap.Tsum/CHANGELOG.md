@@ -63,7 +63,7 @@ release note; they fold back in here when she ships.
 - Share round stats setting added (Alpha): sends your round stats to a stats server you set on this script's card in GAP's Library, with network access allowed there.
 - Resuming after a pause mid-round now presses Continue and returns to the round, instead of sometimes tapping Try Again or elsewhere on the pause menu.
 - GAP Companion notifies your phone when a run stops after its round (with that round's score and coins) and when a chore started with Now (unlock levels, buy boxes, export the Tsum list, change My Tsum) is done.
-- Tapping the Quick Bar's readout copies the run's figures to the clipboard: coin and medal totals, averages, per-second rates and best and worst rounds, the round durations, and the round count.
+- Tapping the Quick Bar's readout copies the run's figures to the clipboard: base coin and medal totals, averages, per-second rates and best and worst rounds, the round durations, and the round count.
 
 ### Added
 
@@ -96,8 +96,8 @@ release note; they fold back in here when she ships.
 - **Quick Bar Medals row**: average medals per round, from the tally's medal reading, under Base and Final; a dash until a round earns some. The readout type is smaller so four rows fit the band.
 - **Quick Bar readout copies the run's figures** (`qbCopyStats`,
   `src/quickbarPage.ts`): four lines through `setClipboard`, then a banner.
-  `RunCoinTally` and `RunClock` grew min/max fields for it; the per-second rates
-  are over time in rounds, not the wall clock. The host hotspot now covers the
+  `RunCoinTally` and `RunClock` grew min/max fields for it; the coin line is base
+  coins, and the per-second rates are over time in rounds, not the wall clock. The host hotspot now covers the
   whole readout chip so the tap works mid-run.
 - **GAP Companion workflows** (dormant until a sync arrives; `WORKFLOWS.md`).
   `src/gapWorkflow.ts` is the generic runner other scripts vendor; `src/workflow.ts`

@@ -982,11 +982,11 @@ interface RunCoinTally {
   medalTotal: number;
   /**
    * The lowest and highest single-round figures, for the clipboard copy the
-   * readout chip offers. Final coins and medals only -- those are the two the
+   * readout chip offers. Base coins and medals only -- those are the two the
    * copied lines report. -1 until a round contributed one.
    */
-  finalMin: number;
-  finalMax: number;
+  baseMin: number;
+  baseMax: number;
   medalMin: number;
   medalMax: number;
 }

@@ -1004,14 +1004,20 @@ function qbCopyStats(): void {
     qbBanner(i18nText(UiText.QbStatsCopied));
 }
 
-/** The four lines `qbCopyStats` writes. Ends without a newline. */
+/**
+ * The four lines `qbCopyStats` writes. Ends without a newline.
+ *
+ * The coin line is **base** coins -- what the round itself earned, before the
+ * bonuses the Final row adds -- so two runs compare on the play rather than on
+ * which items were bought.
+ */
 function qbStatsText(): string {
     var played = typeof qbState.playedSec === 'number' ? qbState.playedSec : 0;
-    return 'Coins: Total = ' + qbStatNum(qbState.finalCoinTotal)
-        + ', Avg = ' + qbStatNum(qbState.finalCoinAvg)
-        + ', PerSec = ' + qbStatRate(qbState.finalCoinTotal, played)
-        + ', Min = ' + qbStatNum(qbState.finalCoinMin)
-        + ', Max = ' + qbStatNum(qbState.finalCoinMax) + '\n'
+    return 'Coins: Total = ' + qbStatNum(qbState.baseCoinTotal)
+        + ', Avg = ' + qbStatNum(qbState.baseCoinAvg)
+        + ', PerSec = ' + qbStatRate(qbState.baseCoinTotal, played)
+        + ', Min = ' + qbStatNum(qbState.baseCoinMin)
+        + ', Max = ' + qbStatNum(qbState.baseCoinMax) + '\n'
         + 'Medals: Total = ' + qbStatNum(qbState.medals)
         + ', Avg = ' + qbStatNum(qbState.medalAvg)
         + ', PerSec = ' + qbStatRate(qbState.medals, played)
