@@ -200,11 +200,12 @@ function quickBarState(): string {
       ? Math.round(coins.finalTotal / coins.finalRounds) : -1;
     // The run's medals; the companion app's Stats tab shows it.
     state.medals = coins.medalTotal;
-    // Nothing on the strip draws these four: they are what the readout chip
-    // copies to the clipboard when it is tapped (`qbCopyStats`).
-    state.finalCoinTotal = coins.finalTotal;
-    state.finalCoinMin = coins.finalMin;
-    state.finalCoinMax = coins.finalMax;
+    // Nothing on the strip draws these five: they are what the readout chip
+    // copies to the clipboard when it is tapped (`qbCopyStats`). Base coins,
+    // not final: the copy's coin line is the figure the board earned.
+    state.baseCoinTotal = coins.baseTotal;
+    state.baseCoinMin = coins.baseMin;
+    state.baseCoinMax = coins.baseMax;
     state.medalMin = coins.medalMin;
     state.medalMax = coins.medalMax;
     // A dash until a round has actually earned medals, so a run without them
