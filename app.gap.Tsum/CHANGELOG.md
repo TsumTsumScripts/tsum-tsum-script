@@ -45,7 +45,7 @@ release note; they fold back in here when she ships.
 
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
 - Quick Bar "Last round" button added: stops the script once the current round is over.
-- Quick Bar Auto Play toggle replaces the Report button: turn round-playing on or off without restarting the script. Reports are still on the settings page's Debug tab and the Log button's long press.
+- Quick Bar Auto Play toggle (a play-on-repeat icon) replaces the Report button: turn round-playing on or off without restarting the script. Preset and Bubble get more room, as the readout is narrower too. Reports are still on the settings page's Debug tab and the Log button's long press.
 - Disney Villains (Set) now plays properly, records score and coins in the stats file, and works with Auto Unlock MyTsum Level. Its own skill setting (Alpha) keeps it chaining when its skill turns the tsums into big neon villains.
 - Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums, and rerolls Oogie Boogie's dice only on a roll under 7.
 - Gaston and Coronation Day Elsa skills and the Delay Skill ReActivation setting are out of Beta.

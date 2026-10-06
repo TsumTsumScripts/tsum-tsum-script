@@ -333,9 +333,16 @@
             <span class="qb-sr" data-i18n="qb.page">Page</span>
           </button>
 
-          <!-- Auto Play Game: a plain setting toggle, live when paused like the rest. -->
+          <!-- Auto Play Game: a setting toggle drawn as a play-on-repeat glyph,
+               its word kept for screen readers. Live when paused, like the rest. -->
           <div class="qb-cell" data-key="autoPlayGame">
-            <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.autoPlay">Auto</button>
+            <button class="qb-toggle qb-icon-toggle" type="button" role="switch" aria-checked="false">
+              <svg class="qb-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/>
+                <path class="qb-icon-fill" d="M10 8.5v7l5.5-3.5z"/>
+              </svg>
+              <span class="qb-sr" data-i18n="qb.autoPlay">Auto Play</span>
+            </button>
           </div>
         </div>
       </div>
