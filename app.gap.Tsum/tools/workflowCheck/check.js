@@ -303,6 +303,8 @@ function fakeCollection(opts) {
     sortCollection: () => ({ order: 'favorites', ownedOnly: false }),
     restoreCollectionSort: () => { seen.restored = true; },
     rewindCollection: () => true,
+    // No scrubber jump: the fake walks from page 1.
+    skipCollectionToEnd: () => false,
     awaitCollectionLoaded: () => true,
     collectionAtLastPage: () => seen.turns >= (opts.pages === undefined ? 99 : opts.pages - 1),
     readCollectionCards: () => [0, 1, 2, 3, 4, 5, 6, 7].map((s) => (s === selected ? 'selected' : 'card')),
