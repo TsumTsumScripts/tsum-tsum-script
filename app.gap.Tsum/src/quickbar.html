@@ -29,7 +29,7 @@
       be iterated on directly, and quickbar.css is the other half of it.
 
       The strip is two pages of controls drawn in the same place, a side
-      column with the page toggle over the Report button, and a readout with
+      column with the page toggle over the Auto Play toggle, and a readout with
       its own toggle between coins and times. Page one is a grid of three columns and two rows: column one is
       the skill name over its level and the two bonus chips; column two is the
       scan stepper over the chain stepper; column three is the preset over the
@@ -59,11 +59,9 @@
           settings, and have no `data-key` either;
         * `.qb-wrap-up` (Stop after this round) is a `.qb-toggle` with no
           `data-key`: a run-time flag the engine reports, never stored;
-        * `.qb-report` changes nothing at all: it asks the
-          engine to write an issue report of what is on screen;
         * `.qb-page-toggle` flips `<body data-page>` between `1` and `2`, which
-          is what the CSS shows a `.qb-page[data-page]` from. It and Report
-          share `.qb-side`, which with `.qb-readout-toggle` is the one patch
+          is what the CSS shows a `.qb-page[data-page]` from. It sits in
+          `.qb-side`, which with `.qb-readout-toggle` is the one patch
           live while the run is *going*, not only paused -- the script names
           its rect to the host, which keeps it touchable;
         * a cell with a `data-key` is given `data-when` -- `now` or `nextRound`
@@ -74,9 +72,8 @@
           `times`; it sits outside `.qb-controls`, so it is never disabled;
         * `<body>` carries `data-state`, which is what the CSS reads;
         * every control is a `<button>` inside `.qb-controls` -- that is what
-          quickbarPage.ts disables while the script is running, `.qb-side`
-          excepted: the page toggle is never disabled, and Report only while
-          there is no run;
+          quickbarPage.ts disables while the script is running, the page
+          toggle excepted: it is never disabled;
         * a label carries `data-i18n` naming a `UiText` key (src/strings.d.ts),
           and quickbarPage.ts fills its text in from the chosen language once the
           markup is up. The key is spelt out here because HTML cannot name a
@@ -121,7 +118,7 @@
   <!--
     `data-state` is one of `paused`, `running` or `idle`, set by the host through
     onGapState(). `paused` and `idle` are interactive -- see quickbar.css -- and
-    the Report chip is live in `running` too. Nothing is ever covered up: the
+    the page toggle is live in `running` too. Nothing is ever covered up: the
     strip is up for a whole run and its job is to be read, so the controls grey
     out rather than disappearing behind a veil.
 
@@ -321,10 +318,10 @@
         </div>
 
         <!--
-          The side column: the page toggle over Report, one row each. Stacked
+          The side column: the page toggle over Auto Play, one row each. Stacked
           rather than side by side so the page toggle costs the strip no width,
-          and together so the one rect named to the host keeps both pressable
-          mid-run (`qbNameHotspot`).
+          and together so the one rect named to the host keeps the page toggle
+          pressable mid-run (`qbNameHotspot`).
 
           The page toggle is two dots, the lit one being the page on screen.
           Its word is for screen readers only.
@@ -336,28 +333,10 @@
             <span class="qb-sr" data-i18n="qb.page">Page</span>
           </button>
 
-        <!--
-          Report what is on screen: the warning triangle alone, its word kept
-          for screen readers, because this is the only control here that is not
-          a setting and must not be mistaken for one.
-
-          Like the preset chip it carries no `data-key` -- it changes nothing --
-          and quickbarPage.ts finds it by class. What it writes is the engine's
-          `reportIssue`; see src/report.ts.
-
-          The strip is untouchable while the run is going -- except here.
-          Pausing presses the game's own Pause button, so a report taken from a
-          paused strip shows the pause menu; this chip is instead named to the
-          host as a hotspot it keeps touchable while the run is going, so a
-          press mid-round catches the live screen. The screens *before* it are
-          copied from the router's trail either way.
-        -->
-          <button class="qb-report" type="button">
-            <svg class="qb-report-glyph" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 3.5L21.5 20h-19zM12 10v4.5M12 17.2v.3"/>
-            </svg>
-            <span class="qb-sr" data-i18n="qb.report">Report</span>
-          </button>
+          <!-- Auto Play Game: a plain setting toggle, live when paused like the rest. -->
+          <div class="qb-cell" data-key="autoPlayGame">
+            <button class="qb-toggle" type="button" role="switch" aria-checked="false" data-i18n="qb.autoPlay">Auto</button>
+          </div>
         </div>
       </div>
 

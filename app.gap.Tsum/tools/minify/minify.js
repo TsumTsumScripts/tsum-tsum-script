@@ -107,7 +107,7 @@ function checkBundle(file) {
                   // needs no edit here.
                   'LogsEn', 'gLogCatalogues', 'logStringsFor',
                   'onPause', 'onResume', 'quickBarState', 'quickBarApply', 'applyLiveSettings',
-                  // Both pages have a Report button, and the host's Log chip
+                  // The settings page has a Report button, and the host's Log chip
                   // reaches the same name over the IPC socket on a long press.
                   'reportIssue',
                   // GAP Companion's adapter calls these by name (src/companion.ts,

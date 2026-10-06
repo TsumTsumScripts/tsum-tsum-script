@@ -11,8 +11,8 @@
 // Two ways one is made, and they are the same folder either way:
 //
 //   reportIssue(reason, note)  a person pressed something -- the settings page's
-//                              Report button, the Quick Bar's chip, or a long
-//                              press on the host's Log chip
+//                              Report button, or a long press on the host's
+//                              Log chip
 //   reportOnLogged(...)        the script noticed its own failure. `ReportTriggers`
 //                              below is the list, and the logger is what checks
 //                              it, so no call site has to remember
@@ -410,7 +410,7 @@ function reportOnLogged(event: string): void {
  * Writes a report of what is on screen now, and returns its id.
  *
  * A global for the same reason `start`, `stop` and `roundDelaySkip` are: the
- * settings page and the Quick Bar reach it by evaluating its name through
+ * settings page reaches it by evaluating its name through
  * `JavaScriptInterface.runScript`, and the host's own Log-chip long press
  * evaluates it over the IPC socket.
  *
@@ -419,7 +419,7 @@ function reportOnLogged(event: string): void {
  * would deliver the Resume (see `tools/liveSettings/check.js`, the `entry`
  * check). Captures and file writes are deliberately left working while paused,
  * which is the whole reason a report can be taken from a paused panel at all.
- * The Quick Bar's chip and the Log-chip long press reach it mid-run as well,
+ * The Log-chip long press reaches it mid-run as well,
  * between two steps of the play loop, and that is the route that catches the
  * live screen rather than the pause menu.
  *

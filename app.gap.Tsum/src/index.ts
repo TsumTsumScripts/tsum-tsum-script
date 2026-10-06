@@ -572,6 +572,7 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   ts.stopAfterGames = !gWorkflowRun && typeof settings.stopAfterGames === 'number'
     && settings.stopAfterGames > 0 ? Math.round(settings.stopAfterGames) : 0;
   ts.stopAfterAction = stopAfterActionOf(settings.stopAfterAction);
+  ts.autoPlayGame = settings.autoPlayGame;
   ts.sendHearts = settings.sendHeartsAuto;
   ts.receiveOneByOne = settings.receiveHeartsOneByOne;
   ts.keepRuby = settings.receiveHeartsSkipRuby;

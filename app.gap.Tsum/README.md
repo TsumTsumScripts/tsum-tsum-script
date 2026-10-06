@@ -119,7 +119,7 @@ steps aside and the log moves up over it.
 | Copy code | *Page two.* Not a setting: copies your settings code, as the Copy button on the settings panel does. The chip shimmers while it works, and a banner says when the code is on the clipboard |
 | Last round | *Page two.* Not a setting: stop the script once the round in progress is over, or before the next round starts if none is being played. For this run only — never saved, and off at the next start. Tap again to cancel. Needs a run |
 | Games, Then | *Page two.* Stop after games and what happens then. Take effect at once |
-| ⚠ Report | Not a setting either: saves a report of what is on screen — see [Reporting a problem](#reporting-a-problem). It and the page dots are the only buttons here that work while the script is still playing; everything else needs it paused |
+| Auto | Auto Play Game, under the page dots. Takes effect at once: off lets the round in progress finish and plays no more; on starts playing again |
 
 **Page two's readout** swaps the coin figures for times: **Avg** is the average
 round (m:ss), **Played** the total time spent in rounds, and **Run** how long the
@@ -293,8 +293,7 @@ Something went wrong and you would like it fixed. What makes that possible is
 the screen it went wrong on and the log around it, and both are gone by the time
 you have finished typing the message — so the script collects them for you.
 
-**Press Report.** It is on the Debug tab of the settings panel, and there is a
-Report button on the Quick Bar as well. You can add a line saying what happened;
+**Press Report.** It is on the Debug tab of the settings panel. You can add a line saying what happened;
 you do not have to. Either way the script writes a folder holding the screen,
 the screens before it, your settings, and the last few hundred log lines. It also
 writes one by itself whenever it gives up on a screen, a chore throws repeatedly,
@@ -319,9 +318,8 @@ One thing to know about which screen you get. Opening the settings panel pauses
 the run, and pausing presses the game's own Pause button — so a report taken
 from there shows the pause menu rather than the thing you were looking at. The
 screens *before* it are saved too, which is usually where the problem is. To
-catch the live screen, press **Report on the Quick Bar** (the ⚠ button) while the
-script is still playing — it works without pausing —
-or **hold the Log button** on the floating bar. Neither route pauses first.
+catch the live screen, **hold the Log button** on the floating bar while the
+script is still playing — it does not pause first.
 
 Reports live in `tsum_record/reports`. The newest eight are kept and older ones
 are deleted, so the folder cannot grow without limit.

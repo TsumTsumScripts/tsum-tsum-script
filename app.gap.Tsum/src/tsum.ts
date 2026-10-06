@@ -172,6 +172,8 @@ class Tsum {
    * ends the wait by clearing it.
    */
   nextRoundAt: number;
+  /** Auto Play Game. Its round job is added or removed live, like `sendHearts`'s. */
+  autoPlayGame: boolean;
   sendHearts: boolean;
   /** Receive Hearts One By One. Like `sendHearts`, its job is added or removed live. */
   receiveOneByOne: boolean;
@@ -413,6 +415,7 @@ class Tsum {
     // A new world per start(), so pressing Play always plays now rather than
     // resuming a wait the previous run was in.
     this.nextRoundAt = 0;
+    this.autoPlayGame = false;
     this.sendHearts = false;
     this.receiveOneByOne = false;
     this.keepRuby = false;

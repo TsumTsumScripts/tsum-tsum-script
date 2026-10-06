@@ -364,7 +364,7 @@ function main() {
     ['applyLiveSettings(' + preset + ')', (r) => /^applied /.test(r)],
     ['ts.nextRoundAt = Date.now() + 60000; roundDelaySkip(); roundDelaySkip()',
       (r) => r === 'nothing waiting'],
-    // Both pages have a Report button and the host's Log chip reaches the same
+    // The settings page has a Report button and the host's Log chip reaches the same
     // name, so it is a page entry point like the rest. The answer is the report
     // id, which always opens with the UTC stamp report.ts builds it from.
     ['reportIssue("liveCheck", ""); reportIssue("liveCheck", "")',
