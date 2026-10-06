@@ -41,8 +41,11 @@ const CompanionScreens = {
   barNote: [{ text: 'The run stops when this round ends.', when: 'state.flags.stopPending' }],
   tabs: [
     { id: 'stats', label: 'Stats', items: [
-      { card: 'My Tsum', icon: 'tsum', when: 'state.active', items: [
-        { facts: [{ label: 'My Tsum', bind: 'state.info.myTsum', icon: 'tsum' }] },
+      { card: 'My Tsum', icon: 'tsum', items: [
+        { facts: [
+          { label: 'My Tsum', bind: 'state.info.myTsum', icon: 'tsum' },
+          { label: 'Next', bind: 'state.info.nextTsum', icon: 'tsum' },
+        ] },
         { button: 'selectTsum' },
       ] },
       { slot: 'totals' },

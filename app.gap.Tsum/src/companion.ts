@@ -86,8 +86,12 @@ function gapRemoteState(): string {
       wrapUpArmed: s.stopAfterThisRound === true,
       stopPending: s.stopAfterThisRound === true,
     },
-    // The full name, null until the pre-round screen identified it.
-    info: { myTsum: typeof s.myTsum === 'string' && s.myTsum !== '' ? s.myTsum : null },
+    // Full names; myTsum is null until the pre-round screen identified it.
+    info: {
+      myTsum: typeof s.myTsum === 'string' && s.myTsum !== '' ? s.myTsum : null,
+      // Change My Tsum's choice until it is set: on this run, or the next one.
+      nextTsum: selectTsumNextLoad()?.name ?? null,
+    },
   });
 }
 
@@ -123,7 +127,7 @@ function gapRemoteAction(name: string, argsJson: string): string {
   if (name === 'selectTsum') {
     // The adapter already checked `tsum` against the list.
     const status = selectMyTsumNow(String(JSON.parse(argsJson).tsum));
-    return JSON.stringify(status === 'queued' ? { ok: true, status: status } : { ok: false, why: status });
+    return JSON.stringify(status === 'queued' || status === 'saved' ? { ok: true, status: status } : { ok: false, why: status });
   }
   if (name === 'lastSettings') {
     return JSON.stringify({ ok: true, settings: lastRunSettings() });
