@@ -42,6 +42,7 @@ type GapWorkflowValue = GapWorkflowScalar | { perLoop: GapWorkflowScalar[] };
 interface GapWorkflowListItem {
   value: string;
   label: string;
+  favorite?: boolean; // the phone lists it first, starred
 }
 
 /** What the phone shows for a list that is `null` on this device. */
