@@ -56,8 +56,8 @@
    * The strip's design pixel, and what the window's size changes.
    * Every width, gap, glyph and type size below is written as a count of these
    * rather than in px, so the whole block scales with the window it is drawn
-   * in: full size at 460dp -- the width the two control rows, the Report
-   * button and the coin readout need at their drawn size in Inter, which runs
+   * in: full size at 460dp -- the width the two control rows, the side column
+   * and the coin readout need at their drawn size in Inter, which runs
    * wider than the Plex it replaced -- and shrinking with anything narrower,
    * down to 72%, which still fits them all on a 320dp screen and is as small as
    * they go. So nothing runs off the edge of a phone, and nothing is blown up
@@ -211,7 +211,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
  *
  * No `min-width: 0` on the grid itself: its minimum is what its columns need,
  * so when the strip cannot fit it the controls scroll rather than the grid
- * being drawn over the Report button.
+ * being drawn over the side column.
  */
 .qb-grid {
   display: grid;
@@ -240,7 +240,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 
 /* The skill name adds no width to its column, so the cluster under it sets the
    width and a long name ellipsises at the 5>4 chip's edge instead of pushing
-   the Report button. `width: 0` drops its contribution; `min-width: 100%`
+   the side column. `width: 0` drops its contribution; `min-width: 100%`
    stretches it back over the column. */
 .qb-cell-fit { width: 0; min-width: 100%; }
 
@@ -491,14 +491,9 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 /* Nothing loaded is a dash, and a dash is not a reading -- keep it quiet. */
 .qb-preset-value[data-empty="true"] { color: var(--qb-muted); }
 
-/* --- the side column: page toggle and report ---------------------------- */
+/* --- the side column: page toggle and auto play ------------------------- */
 
-/*
- * The page toggle over Report, one row each, both as wide as the wider. It never
- * shrinks: Report is the one control pressed when something has already gone
- * wrong, and a screen narrow enough to squeeze it is exactly the kind of device
- * the report would be about.
- */
+/* The page toggle over Auto Play, one row each, both as wide as the wider. */
 .qb-side {
   flex: 0 0 auto;
   display: grid;
@@ -506,8 +501,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   row-gap: var(--qb-vpad);
 }
 
-.qb-page-toggle,
-.qb-report {
+.qb-page-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -519,8 +513,10 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   font: inherit;
 }
 
-.qb-page-toggle:active,
-.qb-report:active { background: var(--qb-chip-press); }
+.qb-page-toggle:active { background: var(--qb-chip-press); }
+
+/* Stretched to the column so it lines up with the page toggle above. */
+.qb-side .qb-toggle { width: 100%; }
 
 /* Text for screen readers only: the chip draws a glyph instead. */
 .qb-sr {
@@ -545,40 +541,6 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 
 body[data-page="1"] .qb-page-toggle .qb-dot:nth-child(1),
 body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-on); opacity: 1; }
-
-/*
- * Report is deliberately quiet -- the same chip as the rest, with the glyph in
- * the warning colour rather than the whole button. It is not an alert
- * and not an action anyone should feel steered towards.
- */
-.qb-report-glyph {
-  flex: 0 0 auto;
-  /* Capped by the row so a short band cannot push it out of its chip. */
-  width: min(calc(15 * var(--qb-u)), calc(var(--qb-row) - 6px));
-  height: min(calc(15 * var(--qb-u)), calc(var(--qb-row) - 6px));
-  fill: none;
-  stroke: var(--warning);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* Saved: the chip says so for a few seconds rather than a toast over the game. */
-.qb-report[data-said="saved"] {
-  border-color: var(--success);
-  color: var(--success);
-}
-
-.qb-report[data-said="saved"] .qb-report-glyph { stroke: var(--success); }
-
-/*
- * Live by the run, not by the pause: the host keeps this one chip touchable
- * while the script plays (quickbarPage.ts, `qbNameHotspot`), so it keeps its
- * full edge and glyph where the chips around it recede. Only with no run at
- * all does it go quiet with them.
- */
-.qb-report:disabled { border-color: var(--qb-chip-edge-off); }
-.qb-report:disabled .qb-report-glyph { stroke: var(--qb-off); }
 
 /* --- skill select ------------------------------------------------------- */
 

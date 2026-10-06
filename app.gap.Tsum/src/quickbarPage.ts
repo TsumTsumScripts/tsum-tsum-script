@@ -74,7 +74,7 @@ var qbLive = false;
 /** No run at all: changes go to the store for the next Play, not to the engine. */
 var qbIdle = true;
 var qbVisible = false;
-/** A run is up, paused or not: the one state the Report chip is live in. */
+/** A run is up, paused or not. */
 var qbActive = false;
 var qbTimer: number | undefined;
 
@@ -267,9 +267,8 @@ function qbMeasureStrip(): void {
  * `{"active":bool,"paused":bool,"visible":bool,"stripHeight":px}`. The first
  * three are the only thing that decides whether the controls are live -- the
  * window's own touchability is set from the same fact on the host side, so what
- * the strip will accept and what it looks like cannot disagree. The side
- * column (page toggle and Report) is the one exception, live for the whole
- * run: see `qbNameHotspot`.
+ * the strip will accept and what it looks like cannot disagree. The page
+ * toggle is the one exception, live for the whole run: see `qbNameHotspot`.
  *
  * `stripHeight` is the band the host settled on, which is not the window's own
  * height while a sheet is open and is not 62 whenever the status line is sharing
@@ -305,7 +304,6 @@ function onGapState(json: string): void {
     document.body.setAttribute('data-state',
         state.paused ? 'paused' : (state.active ? 'running' : 'idle'));
     qbSetEnabled(qbLive);
-    qbSetReportEnabled(qbActive);
     // After `qbSetEnabled`, which knows nothing about an empty preset list.
     qbRenderPreset();
     if (!qbLive) {
@@ -358,15 +356,13 @@ function onGapMessage(topic: string): void {
  * anything, and unlike the veil it refuses the tap itself -- the window is
  * untouchable while running anyway, so this is that one fact on the control.
  *
- * All but the side column: the Report chip lives by the run rather than by the
- * pause (`qbSetReportEnabled`), and the page toggle only changes the view, so it
- * is never disabled.
+ * All but the page toggle, which only changes the view, so it is never disabled.
  */
 function qbSetEnabled(enabled: boolean): void {
     var buttons = document.querySelectorAll('.qb-controls button');
     for (var i = 0; i < buttons.length; i++) {
         var button = buttons[i] as HTMLButtonElement;
-        if (button.classList.contains('qb-report') || button.classList.contains('qb-page-toggle')) {
+        if (button.classList.contains('qb-page-toggle')) {
             continue;
         }
         // Unlock and Stop after this round act on a run, so they also need one.
@@ -376,28 +372,17 @@ function qbSetEnabled(enabled: boolean): void {
     }
 }
 
-/** The Report chip is live whenever there is a run to report on, paused or not. */
-function qbSetReportEnabled(enabled: boolean): void {
-    var report = document.querySelector('.qb-report') as HTMLButtonElement | null;
-    if (report !== null) {
-        report.disabled = !enabled;
-    }
-}
-
 /** The rect last named to the host, so a relayout only sends a change. */
 var qbHotspotSent = '';
 
 /**
- * Tells the host where the side column is, so Report and the page toggle stay
- * pressable mid-run -- and the readout toggle beside it, in the same rect.
+ * Tells the host where the side column is, so the page toggle stays pressable
+ * mid-run -- and the readout toggle beside it, in the same rect.
  *
  * The strip's window is untouchable while the script runs -- a touchable
- * overlay would eat the taps the script injects -- so a press on Report used
- * to need the run paused first, and pausing presses the game's own Pause
- * button: the report then showed the pause menu rather than the screen that
- * went wrong. The host covers just this rect with a touchable window of its
- * own while the run is going and forwards the presses, so the chip catches
- * the live screen. Geometry only: when the window is up is the host's call.
+ * overlay would eat the taps the script injects. The host covers just this
+ * rect with a touchable window of its own while the run is going and forwards
+ * the presses. Geometry only: when the window is up is the host's call.
  *
  * Measured after anything that can move the chip -- the band, a resize, the
  * labels, a redraw that changes a name's length -- and sent on a change alone.
@@ -656,7 +641,7 @@ function qbRenderPreset(): void {
         }
     }
     // The block is centred at its content's width, so a name of a different
-    // length here -- or a value `qbRender` just drew -- moves the Report chip.
+    // length here -- or a value `qbRender` just drew -- moves the side column.
     qbNameHotspot();
 }
 
@@ -788,8 +773,8 @@ function qbFlushApplies(): void {
  * settings page's own save goes through, so the two cannot disagree about what
  * a run in progress will take from it. Most of a preset lands there and then;
  * the tsum on the board and the colours it was dealt with wait for the next
- * round (`LiveSettings`, src/quickbar.ts), and `autoPlayGame` and
- * `clickAssist` wait for the next `start()` because they choose the task set.
+ * round (`LiveSettings`, src/quickbar.ts), and `clickAssist` waits
+ * for the next `start()` because it chooses the task set.
  * All three cases go to the store as well, which is what the next start reads.
  *
  * One difference from the settings page's own load, and it is a limit rather
@@ -852,68 +837,6 @@ function onQuickBarPresetApplied(): void {
         bridge.broadcast(PageMessage.Presets);
     }
     qbRequestState();
-}
-
-// --- reporting a problem ---------------------------------------------------
-
-/** How long the chip says "Saved" before going back to its own word. */
-var QB_REPORT_SAID_MS = 6000;
-var qbReportTimer: number | undefined;
-
-/**
- * Asks the engine to write an issue report of what is on screen.
- *
- * The one control here that changes nothing, so it goes through none of the
- * apply machinery: no debounce, no `qbState`, no localStorage, and nothing for
- * the settings page to be nudged about. What it writes is `reportIssue`
- * (src/report.ts).
- *
- * Not gated on the pause, unlike every other press: the run is what a report
- * needs, and the host keeps this one chip touchable while the run is going
- * (`qbNameHotspot`). Pressed mid-round, the engine writes the report between
- * two steps of the play loop, so the screen it catches is the live one.
- */
-function qbReport(): void {
-    var bridge = qbBridge();
-    if (!qbActive || bridge === undefined) {
-        return;
-    }
-    // Anything the debounce is still holding goes down first, so the settings
-    // the report writes down are the ones the strip has actually asked for.
-    qbFlushApplies();
-    qbLogInfo(Log.QuickBar.ReportAsked, 'A report was asked for from the Quick Bar');
-    bridge.runScriptCallback('typeof reportIssue === "function" ? reportIssue('
-        + JSON.stringify('quickBar') + ',"") : "no script"', 'onQuickBarReport');
-}
-
-/**
- * The engine's answer: a report id, or a sentence saying why there is none.
- *
- * The chip itself says what happened rather than a toast or a line in the log
- * HUD -- the strip is what the user is looking at, and it is the only surface
- * here that is certainly on screen. The engine banners the id beside it.
- */
-function onQuickBarReport(answer: string): void {
-    var found = document.querySelector('.qb-report') as HTMLElement | null;
-    if (found === null) {
-        return;
-    }
-    var chip = found;
-    var id = String(answer === undefined || answer === null ? '' : answer);
-    // An id always begins with the UTC stamp `report.ts` builds it from, so its
-    // shape is the whole test -- anything else is one of the refusals.
-    if (!/^\d{8}-\d{6}-/.test(id)) {
-        qbLog(Log.QuickBar.ReportFailed, 'The engine wrote no report', {why: id});
-        return;
-    }
-    chip.setAttribute('data-said', 'saved');
-    if (qbReportTimer !== undefined) {
-        clearTimeout(qbReportTimer);
-    }
-    qbReportTimer = setTimeout(function () {
-        chip.removeAttribute('data-said');
-        qbReportTimer = undefined;
-    }, QB_REPORT_SAID_MS);
 }
 
 /** The busy animation runs at least this long, so a fast answer still shows it. */
@@ -1261,12 +1184,6 @@ function qbBind(): void {
         preset.addEventListener('click', qbOpenPresetSheet);
     }
 
-    // The other control that is not a setting -- it changes nothing at all.
-    var report = document.querySelector('.qb-report');
-    if (report !== null) {
-        report.addEventListener('click', qbReport);
-    }
-
     var unlock = document.querySelector('.qb-unlock-now');
     if (unlock !== null) {
         unlock.addEventListener('click', qbUnlockNow);
@@ -1351,7 +1268,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // it after the first paint means a visible jump.
     qbMeasureStrip();
     // The host resizes this window whenever the status line comes or goes, and
-    // the resize is the one telling that cannot go missing. The Report chip
+    // the resize is the one telling that cannot go missing. The side column
     // moves with the band, so the host is told where it landed.
     window.addEventListener('resize', function () {
         qbMeasureStrip();
@@ -1362,7 +1279,6 @@ document.addEventListener('DOMContentLoaded', function () {
     qbBind();
     // Dead until the host says otherwise: `data-state` starts at `idle`.
     qbSetEnabled(false);
-    qbSetReportEnabled(false);
     // Before the first reply, and without one: the preset chip reads
     // localStorage, so it has its name to draw with no engine behind it at all.
     // After the labels are in, so the hotspot it names is measured on them.

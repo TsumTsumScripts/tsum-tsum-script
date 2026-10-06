@@ -459,7 +459,7 @@ declare const enum UiText {
   QbChain = 'qb.chain',
   QbPreset = 'qb.preset',
   QbBubble = 'qb.bubble',
-  QbReport = 'qb.report',
+  QbAutoPlay = 'qb.autoPlay',
   QbBase = 'qb.base',
   QbFinal = 'qb.final',
   QbMedals = 'qb.medals',

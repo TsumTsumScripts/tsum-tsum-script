@@ -140,6 +140,7 @@ function quickBarState(): string {
     state[SettingKey.AutoUnlockMyTsumLevel] = ts.autoUnlockMyTsumLevel;
     state[SettingKey.SendHeartsAuto] = ts.sendHearts;
     state[SettingKey.ReceiveHeartsOneByOne] = ts.receiveOneByOne;
+    state[SettingKey.AutoPlayGame] = ts.autoPlayGame;
     // Reported without being drawn, for the reason above: the strip's own Rest
     // stepper made way for the preset chip, and the settings panel's row is now
     // the only one that moves it -- which means the panel reads this back.
@@ -248,11 +249,13 @@ function quickBarApply(key: SettingKey, value: string | number | boolean): strin
 }
 
 /**
- * Whether a running workflow owns `key`, so neither page may change it:
- * Stop after games, which `buildRun` forces to 0 for one.
+ * Whether a running workflow owns `key`, so neither page may change it: Stop
+ * after games, which `buildRun` forces to 0 for one, and Auto Play, since a
+ * workflow's nodes play the rounds.
  */
 function quickBarWorkflowOwns(key: string): boolean {
-  return gWorkflowRun && quickBarRunning() && key === SettingKey.StopAfterGames;
+  return gWorkflowRun && quickBarRunning()
+    && (key === SettingKey.StopAfterGames || key === SettingKey.AutoPlayGame);
 }
 
 /**
@@ -413,6 +416,17 @@ function quickBarApplyOne(tsum: Tsum, key: SettingKey,
       applied = !!value;
       tsum.receiveOneByOne = applied;
       quickBarSyncJob(tsum, TaskName.ReceiveOneItem, key, applied);
+      break;
+    // Off drops only the round job, as Stop after games does; the sweeps keep
+    // their schedules. On adds back whichever of the three a fresh start would.
+    case SettingKey.AutoPlayGame:
+      applied = !!value;
+      tsum.autoPlayGame = applied;
+      quickBarSyncJob(tsum, TaskName.PlayRound, key, applied);
+      if (applied) {
+        quickBarSyncJob(tsum, TaskName.UnlockLevel, key, true);
+        quickBarSyncJob(tsum, TaskName.BuyBoxes, key, true);
+      }
       break;
     case SettingKey.HoldBubblesLastFeverSec:
       applied = quickBarClamp(value, 0, 10);
@@ -652,6 +666,9 @@ const LiveSettings: { [key: string]: LiveWhen } = {
   // round in front of the loop is untouched. Not preset rows.
   [SettingKey.SendHeartsAuto]: LiveWhen.Now,
   [SettingKey.ReceiveHeartsOneByOne]: LiveWhen.Now,
+  // The round job, synced the same way. Off lets the round in progress finish:
+  // the job is only taken off the schedule, never interrupted.
+  [SettingKey.AutoPlayGame]: LiveWhen.Now,
 
   // --- The round in front of the loop was set up under the old value -------
   //
@@ -688,11 +705,8 @@ const LiveSettings: { [key: string]: LiveWhen } = {
 
   // --- Only a fresh start() ------------------------------------------------
   //
-  // These two choose which tasks a run registers (`runTaskTable`), so there is
-  // no field to write: the task set is built once, by `buildRun`. Auto Play Game
-  // is the one of the pair no preset carries -- whether rounds are played at all
-  // is the shape of the run, not of a round.
-  [SettingKey.AutoPlayGame]: LiveWhen.Restart,
+  // Chooses which tasks a run registers (`runTaskTable`), so there is no field
+  // to write: the task set is built once, by `buildRun`.
   [SettingKey.ClickAssist]: LiveWhen.Restart,
 };
 

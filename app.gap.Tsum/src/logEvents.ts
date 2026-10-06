@@ -559,8 +559,6 @@ namespace Log {
     /** The whistle: what a round in progress could not take is on now. */
     PendingApplied = 'quickBar.pendingApplied',
     PresetApplied  = 'quickBar.presetApplied',
-    ReportAsked    = 'quickBar.reportAsked',
-    ReportFailed   = 'quickBar.reportFailed',
     UnlockNowAsked = 'quickBar.unlockNowAsked',
     WrapUpAsked    = 'quickBar.wrapUpAsked',
     CopyShareAsked = 'quickBar.copyShareAsked',
