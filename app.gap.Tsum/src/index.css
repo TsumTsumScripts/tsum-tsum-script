@@ -7,9 +7,11 @@
  * Stepper, Select with a BottomSheet picker, TextField, Button, Badge and
  * InlineAlert. Their specs are in the kit's design-system/components.md (v2).
  *
+ * Sized below the kit on purpose: the overlay is small, so rows, type and
+ * controls are compact (`--ctl`, 32px) and the chrome is one row.
+ *
  * v2's three signals: a blue `tap` edge is tappable, solid `selected` is on or
- * current, red is destructive. Controls inside a card are fill only. Text sizes
- * stay a step above the kit's so the page reads as it did on a phone.
+ * current, red is destructive. Controls inside a card are fill only.
  *
  * Dark is the default theme; settings.ts sets `data-theme` on <html>.
  *
@@ -26,8 +28,9 @@
     --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     --icon-warning: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.5L21.5 20h-19zM12 10v4.5M12 17.2v.3' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
-    /* Page-local sizes that are layout, not design tokens. */
-    --page-width: 720px;
+    /* Page-local sizes: the compact control and the one-row header. */
+    --ctl: 32px;
+    --head-h: 44px;
 }
 
 /* --- Base ------------------------------------------------------------------ */
@@ -53,8 +56,8 @@ body {
     background: var(--bg) radial-gradient(420px 260px at 20% 0%, var(--bg-glow), transparent 70%) no-repeat;
     color: var(--ink);
     font-family: var(--font-sans);
-    font-size: 15px;
-    line-height: 22px;
+    font-size: 14px;
+    line-height: 20px;
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
 }
@@ -81,9 +84,7 @@ p {
 }
 
 .container {
-    max-width: var(--page-width);
-    margin: 0 auto;
-    padding: 0 var(--space-5);
+    padding: 0 var(--space-3);
 }
 
 .icon {
@@ -98,8 +99,8 @@ p {
 
 /* --- App bar ---------------------------------------------------------------
 
-   No title: the host's panel draws one above this page. The script version is
-   an ID, so it is set in mono. */
+   One row: the tabs take what the preset and theme controls leave. No title:
+   the host's panel draws one above this page. */
 
 .app-bar {
     position: sticky;
@@ -107,32 +108,30 @@ p {
     z-index: 3;
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    height: var(--size-bar);
-    padding: 0 var(--space-5);
+    gap: var(--space-2);
+    height: var(--head-h);
+    padding: 0 var(--space-3);
     background: var(--bg);
     border-bottom: 1px solid var(--divider);
 }
 
+/* The script version, in the foot. An ID, so mono. */
 .app-title {
-    margin-inline-end: auto;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    margin-top: var(--space-4);
     font-family: var(--font-mono);
-    font-size: 13px;
-    line-height: 18px;
+    font-size: 11px;
+    line-height: 14px;
     color: var(--ink-muted);
+    text-align: center;
 }
 
-/* The kit's round header button: 40px, tap-soft with the blue edge. */
+/* The kit's round header button, at the compact size. */
 .icon-button {
     flex: none;
     display: grid;
     place-items: center;
-    width: var(--size-button);
-    height: var(--size-button);
+    width: var(--ctl);
+    height: var(--ctl);
     margin: 0;
     padding: 0;
     border: 0;
@@ -148,8 +147,8 @@ p {
 
 .icon-button .icon {
     grid-area: 1 / 1;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 /* The moon offers dark, the sun offers light. */
@@ -164,24 +163,24 @@ p {
 
 /* --- Presets ---------------------------------------------------------------
 
-   The dropdown is a Select; it is the only thing in the bar that can shrink. */
+   The dropdown is a Select, capped in width; the tabs give way to it. */
 
 .preset-select {
-    flex: 0 1 auto;
+    flex: none;
     display: flex;
     align-items: center;
     gap: var(--space-2);
     min-width: 0;
-    max-width: 180px;
-    height: var(--size-button);
+    max-width: 120px;
+    height: var(--ctl);
     margin: 0;
-    padding: 0 var(--space-4) 0 var(--space-5);
+    padding: 0 var(--space-2) 0 var(--space-4);
     border: 0;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     background: var(--tap-soft);
     box-shadow: inset 0 0 0 1.5px var(--tap);
     color: var(--ink);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
 }
 
@@ -208,8 +207,8 @@ p {
 }
 
 .preset-caret {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     color: var(--tap);
 }
 
@@ -217,16 +216,16 @@ p {
    for even on a scrolled page. */
 .preset-panel {
     position: sticky;
-    top: var(--size-bar);
+    top: var(--head-h);
     z-index: 4;
-    padding: var(--space-5);
+    padding: var(--space-4);
     background: linear-gradient(160deg, var(--card-top), var(--card-bottom));
     border-bottom: 1.5px solid var(--edge-strong);
     box-shadow: var(--shadow-float);
 }
 
 .preset-input {
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-4);
 }
 
 .preset-actions {
@@ -246,25 +245,16 @@ p {
    bold label. When tabs run past an edge, the edge fades and a "+N" button says how
    many are hidden there. */
 
-.tab-strip {
-    position: sticky;
-    top: var(--size-bar);
-    z-index: 2;
-    padding: var(--space-4) var(--space-5);
-    background: var(--bg);
-    border-bottom: 1px solid var(--divider);
-}
-
 .tab-scroll {
     position: relative;
-    max-width: var(--page-width);
-    margin: 0 auto;
+    flex: 1 1 0;
+    min-width: 0;
 }
 
 .tab-bar {
     position: relative;
     display: flex;
-    gap: var(--space-3);
+    gap: var(--space-2);
     padding: 2px 0;
     overflow-x: auto;
     scrollbar-width: none;
@@ -278,15 +268,15 @@ p {
     flex: none;
     display: inline-flex;
     align-items: center;
-    height: var(--size-button);
+    height: var(--ctl);
     margin: 0;
-    padding: 0 var(--space-6);
+    padding: 0 var(--space-5);
     border: 0;
     border-radius: var(--radius-pill);
     background: var(--tap-soft);
     box-shadow: inset 0 0 0 1.5px var(--tap);
     color: var(--ink);
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
     white-space: nowrap;
     transition: background-color .12s;
@@ -310,7 +300,7 @@ p {
     top: 0;
     bottom: 0;
     z-index: 1;
-    width: 72px;
+    width: 40px;
     pointer-events: none;
     opacity: 0;
     transition: opacity .15s;
@@ -337,16 +327,16 @@ p {
     z-index: 2;
     display: inline-flex;
     align-items: center;
-    height: 32px;
+    height: 24px;
     margin: 0;
-    padding: 0 var(--space-3) 0 var(--space-4);
+    padding: 0 var(--space-2) 0 var(--space-3);
     transform: translateY(-50%);
     border: 1.5px solid var(--edge-strong);
     border-radius: var(--radius-pill);
     background: linear-gradient(160deg, var(--card-top), var(--card-bottom));
     box-shadow: var(--shadow-float);
     color: var(--ink);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
@@ -359,7 +349,7 @@ p {
 
 .tab-more-left {
     left: 0;
-    padding: 0 var(--space-4) 0 var(--space-2);
+    padding: 0 var(--space-3) 0 var(--space-2);
 }
 
 .tab-more-right {
@@ -371,31 +361,31 @@ p {
    Settings groups are read-only cards: flat, hairline edge, no glow. */
 
 .group {
-    padding-top: calc(var(--space-6) + var(--space-3));
+    padding-top: var(--space-4);
 }
 
-/* title-section, a step up. */
 .group-title {
+    padding: 0 var(--space-1);
     font-family: var(--font-display);
-    font-size: 18px;
-    line-height: 24px;
+    font-size: 14px;
+    line-height: 18px;
     font-weight: 700;
     color: var(--ink);
 }
 
 .group-help {
-    margin-top: var(--space-1);
+    padding: 0 var(--space-1);
     overflow-wrap: anywhere;
-    font-size: 13px;
-    line-height: 18px;
+    font-size: 12px;
+    line-height: 16px;
     color: var(--ink-muted);
 }
 
 .group-rows {
-    margin-top: var(--space-4);
+    margin-top: var(--space-2);
     background: var(--card-static);
     border: 1px solid var(--card-static-edge);
-    border-radius: var(--radius-card);
+    border-radius: var(--radius-md);
 }
 
 /* A group that can break things: a danger edge, and its note as an alert. */
@@ -406,20 +396,20 @@ p {
 .group-warn .group-help {
     display: flex;
     gap: var(--space-3);
-    margin-top: var(--space-4);
-    padding: var(--space-4) var(--space-5);
-    border-radius: var(--radius-lg);
+    margin-top: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
     background: var(--danger-band);
     color: var(--ink);
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 13px;
+    line-height: 18px;
 }
 
 .group-warn .group-help::before {
     content: "";
     flex: none;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     background: var(--danger);
     -webkit-mask: var(--icon-warning) center / contain no-repeat;
     mask: var(--icon-warning) center / contain no-repeat;
@@ -434,9 +424,9 @@ p {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-3) var(--space-4);
-    min-height: 60px;
-    padding: var(--space-4) var(--space-5);
+    gap: var(--space-1) var(--space-3);
+    min-height: 40px;
+    padding: var(--space-1) var(--space-4);
 }
 
 .setting-row:not(:first-child) {
@@ -444,7 +434,7 @@ p {
 }
 
 .row-label {
-    flex: 1 1 140px;
+    flex: 1 1 120px;
     min-width: 0;
     /* File paths and other unbroken strings still wrap. */
     overflow-wrap: anywhere;
@@ -452,17 +442,16 @@ p {
 
 .row-title {
     display: block;
-    font-size: 15px;
-    line-height: 22px;
+    font-size: 14px;
+    line-height: 18px;
     font-weight: 600;
     color: var(--ink);
 }
 
 .row-help {
     display: block;
-    margin-top: 1px;
-    font-size: 13px;
-    line-height: 18px;
+    font-size: 12px;
+    line-height: 15px;
     color: var(--ink-muted);
 }
 
@@ -475,7 +464,7 @@ p {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: var(--space-3);
+    gap: var(--space-2);
     max-width: 100%;
     margin-inline-start: auto;
 }
@@ -483,8 +472,8 @@ p {
 /* The build line and other notes: machine strings, so mono. */
 .setting-note .note-text {
     font-family: var(--font-mono);
-    font-size: 13px;
-    line-height: 18px;
+    font-size: 12px;
+    line-height: 16px;
     color: var(--ink-muted);
     word-break: break-word;
 }
@@ -500,8 +489,8 @@ p {
     appearance: none;
     position: relative;
     flex: none;
-    width: 52px;
-    height: 32px;
+    width: 44px;
+    height: 26px;
     margin: 0;
     border: 0;
     border-radius: var(--radius-pill);
@@ -522,9 +511,9 @@ p {
 }
 
 .setting-switch::before {
-    left: 8px;
-    width: 16px;
-    height: 16px;
+    left: 6px;
+    width: 14px;
+    height: 14px;
     background: var(--ink-muted);
 }
 
@@ -534,16 +523,16 @@ p {
 }
 
 .setting-switch:checked::before {
-    left: 24px;
-    width: 24px;
-    height: 24px;
+    left: 21px;
+    width: 20px;
+    height: 20px;
     background: var(--on-selected);
 }
 
 .setting-switch:checked::after {
-    left: 28px;
-    width: 16px;
-    height: 16px;
+    left: 24px;
+    width: 14px;
+    height: 14px;
     border-radius: 0;
     background: var(--selected);
     -webkit-mask: var(--icon-check) center / contain no-repeat;
@@ -568,10 +557,10 @@ p {
     min-width: 0;
     margin: 0;
     border: 0;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     background: var(--tap-soft);
     color: var(--ink);
-    font-size: 15px;
+    font-size: 14px;
 }
 
 .preset-input {
@@ -581,12 +570,12 @@ p {
 .setting-text,
 .preset-input,
 .report-note {
-    height: var(--size-input);
-    padding: 0 var(--space-5);
+    height: var(--ctl);
+    padding: 0 var(--space-4);
 }
 
 .row-control .setting-text {
-    width: 200px;
+    width: 180px;
 }
 
 .setting-text:focus,
@@ -613,17 +602,17 @@ p {
 .setting-select {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    min-width: 160px;
+    gap: var(--space-1);
+    min-width: 120px;
     max-width: 100%;
-    height: var(--size-button);
+    height: var(--ctl);
     margin: 0;
-    padding: 0 var(--space-4) 0 var(--space-5);
+    padding: 0 var(--space-2) 0 var(--space-4);
     border: 0;
     border-radius: var(--radius-md);
     background: var(--tap-soft);
     color: var(--ink);
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     text-align: left;
 }
@@ -657,8 +646,8 @@ p {
 }
 
 .select-caret {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     color: var(--tap);
 }
 
@@ -696,7 +685,7 @@ p {
     display: block;
     width: 40px;
     height: 4px;
-    margin: 0 auto var(--space-5);
+    margin: 0 auto var(--space-3);
     border-radius: 4px;
     background: var(--ink-muted);
     opacity: .7;
@@ -707,14 +696,14 @@ p {
     align-items: center;
     gap: var(--space-3);
     width: 100%;
-    min-height: var(--size-input);
+    min-height: 38px;
     margin: 0;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-2) var(--space-4);
     border: 0;
     border-radius: var(--radius-md);
     background: transparent;
     color: var(--ink);
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
     text-align: left;
 }
@@ -743,10 +732,10 @@ p {
 
 /* A heading over a block of options: a label, not tiny grey caps. */
 .select-group {
-    padding: var(--space-5) var(--space-4) var(--space-1);
+    padding: var(--space-3) var(--space-4) var(--space-1);
     color: var(--ink-muted);
-    font-size: 13px;
-    line-height: 18px;
+    font-size: 12px;
+    line-height: 16px;
     font-weight: 700;
 }
 
@@ -776,13 +765,13 @@ p {
     flex: none;
     display: inline-flex;
     align-items: center;
-    height: 20px;
-    margin-inline-start: var(--space-3);
-    padding: 0 var(--space-2);
+    height: 18px;
+    margin-inline-start: var(--space-2);
+    padding: 0 var(--space-1);
     border-radius: var(--radius-sm);
     background: var(--status-soft);
     color: var(--status);
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1;
     font-weight: 700;
     letter-spacing: .04em;
@@ -796,7 +785,7 @@ p {
 
 /* --- Stepper ---------------------------------------------------------------
 
-   40px tap-soft buttons with blue glyphs either side of the number (fill only:
+   Compact tap-soft buttons with blue glyphs either side of the number (fill only:
    they sit in a card). The fine pair (dropped when the step is already 1) has
    no fill, so four buttons do not read as one row of equals. At a limit a
    button turns dashed and dim. */
@@ -806,19 +795,19 @@ p {
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-    gap: var(--space-1);
+    gap: 2px;
 }
 
 .stepper .setting-number {
-    width: 56px;
-    height: var(--size-button);
+    width: 48px;
+    height: var(--ctl);
     margin: 0;
     padding: 0;
     border: 0;
     border-radius: var(--radius-md);
     background: transparent;
     color: var(--ink);
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     text-align: center;
@@ -840,15 +829,15 @@ p {
 
 .step {
     flex: none;
-    min-width: var(--size-button);
-    height: var(--size-button);
+    min-width: var(--ctl);
+    height: var(--ctl);
     margin: 0;
     padding: 0 var(--space-1);
     border: 0;
     border-radius: var(--radius-md);
     background: var(--tap-soft);
     color: var(--tap);
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     transition: background-color .12s;
@@ -861,7 +850,7 @@ p {
 .step-fine {
     background: transparent;
     box-shadow: inset 0 0 0 1.5px var(--tap-soft);
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .step:disabled {
@@ -883,7 +872,7 @@ p {
 .share-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-3);
+    gap: var(--space-2);
 }
 
 .row-button,
@@ -892,15 +881,15 @@ p {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: var(--size-button);
+    height: var(--ctl);
     margin: 0;
-    padding: 0 var(--space-6);
+    padding: 0 var(--space-5);
     border: 0;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     background: var(--tap-soft);
     box-shadow: inset 0 0 0 1.5px var(--tap);
     color: var(--ink);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     white-space: nowrap;
     transition: background-color .12s;
@@ -936,7 +925,7 @@ p {
 }
 
 .preset-quiet {
-    padding: 0 var(--space-5);
+    padding: 0 var(--space-4);
     background: transparent;
     box-shadow: none;
     color: var(--tap);
@@ -972,10 +961,10 @@ p {
 /* Number, job, interval; the detail spans the last two columns. */
 .run-step {
     display: grid;
-    grid-template-columns: 28px 1fr auto;
+    grid-template-columns: 22px 1fr auto;
     align-items: center;
-    column-gap: var(--space-4);
-    padding: var(--space-3) 0;
+    column-gap: var(--space-3);
+    padding: var(--space-1) 0;
 }
 
 .run-step + .run-step {
@@ -987,12 +976,12 @@ p {
     content: counter(run-step);
     display: grid;
     place-items: center;
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     background: var(--disc);
     color: var(--on-disc);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
 }
@@ -1004,14 +993,14 @@ p {
 }
 
 .run-what {
-    font-size: 15px;
-    line-height: 22px;
+    font-size: 14px;
+    line-height: 18px;
     font-weight: 500;
 }
 
 .run-every {
     justify-self: end;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
@@ -1019,8 +1008,8 @@ p {
 
 .run-detail {
     grid-column: 2 / -1;
-    font-size: 13px;
-    line-height: 18px;
+    font-size: 12px;
+    line-height: 15px;
     color: var(--ink-muted);
 }
 
@@ -1029,35 +1018,36 @@ p {
 }
 
 .run-note {
-    margin-top: var(--space-3);
-    font-size: 13px;
-    line-height: 18px;
+    margin-top: var(--space-2);
+    font-size: 12px;
+    line-height: 16px;
     color: var(--ink-muted);
 }
 
 /* Nothing will play: a state to know about, so a warning alert. */
 .run-order-warn .run-note {
-    padding: var(--space-4) var(--space-5);
-    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
     background: var(--warning-band);
     color: var(--ink);
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 13px;
+    line-height: 18px;
 }
 
 .run-flow-title {
-    margin: var(--space-6) 0 var(--space-3);
-    font-size: 13px;
-    line-height: 18px;
+    margin: var(--space-4) 0 var(--space-2);
+    font-size: 12px;
+    line-height: 16px;
     font-weight: 700;
 }
 
 .run-flow {
-    padding: var(--space-3) var(--space-5);
-    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
     background: var(--inset);
-    font-size: 13px;
-    line-height: 24px;
+    font-size: 12px;
+    line-height: 20px;
 }
 
 .run-chip {
@@ -1073,27 +1063,27 @@ p {
 
 /* A sibling after its row, so it shares the row's padding and no divider. */
 .share-panel {
-    padding: 0 var(--space-5) var(--space-5);
+    padding: 0 var(--space-4) var(--space-4);
 }
 
 .share-code {
-    padding: var(--space-4) var(--space-5);
-    margin-bottom: var(--space-5);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-3);
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: 12px;
     line-height: 18px;
     word-break: break-all;
     resize: vertical;
 }
 
 .report-note {
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-3);
 }
 
 .share-status,
 .preset-status {
-    margin-top: var(--space-3);
-    font-size: 13px;
+    margin-top: var(--space-2);
+    font-size: 12px;
     line-height: 18px;
     color: var(--ink);
     word-break: break-word;
@@ -1115,7 +1105,7 @@ p {
 .share-qr {
     display: block;
     max-width: 100%;
-    margin: var(--space-5) auto var(--space-1);
+    margin: var(--space-4) auto var(--space-1);
     border-radius: var(--radius-sm);
     background: #ffffff;
     image-rendering: pixelated;
@@ -1127,27 +1117,27 @@ p {
    is the danger-soft Button, full width. */
 
 .page-foot {
-    padding-top: calc(var(--space-6) + var(--space-3));
-    padding-bottom: calc(var(--space-6) * 2);
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-6);
 }
 
 .restart-note {
     display: flex;
     gap: var(--space-3);
-    margin-bottom: var(--space-6);
-    padding: var(--space-4) var(--space-5);
-    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
     background: var(--warning-band);
     color: var(--ink);
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 13px;
+    line-height: 18px;
 }
 
 .restart-note::before {
     content: "";
     flex: none;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     background: var(--warning);
     -webkit-mask: var(--icon-warning) center / contain no-repeat;
     mask: var(--icon-warning) center / contain no-repeat;
@@ -1156,11 +1146,11 @@ p {
 .reset-button {
     display: flex;
     width: 100%;
-    height: var(--size-input);
+    height: 36px;
     background: var(--danger-band);
     box-shadow: inset 0 0 0 1.5px var(--danger);
     color: var(--danger);
-    font-size: 15px;
+    font-size: 14px;
 }
 
 .reset-button:active {
