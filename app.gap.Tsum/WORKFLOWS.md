@@ -18,8 +18,9 @@ This document is what Tsum does with it.
 
 ## A workflow run
 
-The adapter calls `startWorkflow(settings, refJson)` (it has already run
-`gapWorkflowCheck`). That arms the ref and calls `start(settings)`:
+A remote start with a workflow reaches `gapRemoteStartRun` (src/companion.ts;
+the adapter has already run `gapWorkflowCheck`), which calls
+`startWorkflow(settings, refJson)`. That arms the ref and calls `start(settings)`:
 
 1. `buildRun` takes the ref and clears it in the same call, so a refused
    (`busy`) start leaves nothing armed. The ref is never put in `Settings`, so
@@ -39,7 +40,7 @@ The adapter calls `startWorkflow(settings, refJson)` (it has already run
 
 While it runs:
 - `remoteSettingsApply` and `quickBarApply` refuse `stopAfterGames` with
-  `why: 'workflow'` (the adapter answers `workflow-run`); `applyLiveSettings`
+  `why: 'workflow'` (`gapRemoteSet` answers `workflow-run`); `applyLiveSettings`
   skips it. `quickBarState` reports the page's own value, so neither page adopts
   the forced 0.
 - The Send / Receive hearts switches add no job (`quickBarSyncJob`).
@@ -143,7 +144,7 @@ The presets live in each page's WebView localStorage, out of the engine's reach.
 On every save (`presetsStore`) and as each page opens, the page calls
 `presetsMirror(json)` (through `runScriptCallback`: a `runScript` would count as
 a run on the host), which writes `<script folder>/presets-<device id>.json`.
-`presetsLocal()` reads it back for GAP Companion's Import from device.
+`gapPresetsLocal()` reads it back for GAP Companion's Import from device.
 
 ## Checks
 

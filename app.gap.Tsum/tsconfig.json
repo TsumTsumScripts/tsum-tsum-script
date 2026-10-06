@@ -159,6 +159,8 @@
     "src/index.ts",
     // GAP Companion's screens (gapScreens): data only, read by the adapter.
     "src/companionScreens.ts",
+    // GAP Companion's standard globals (gapCompanion, gapRemote*), read by the adapter.
+    "src/companion.ts",
     // Tsum's workflow nodes and run mode. Registers into gapWorkflow.ts at load;
     // everything else it touches (index.ts, quickbar.ts) only at run time.
     "src/workflow.ts",

@@ -80,6 +80,12 @@ release note; they fold back in here when she ships.
   rounds), event wording, My Tsum headline and Stop after this round button
   now come from the script (UI contract 3), so changing them needs no phone
   release. `round.over` carries `round`.
+- **GAP Companion standard globals** (`src/companion.ts`): `gapCompanion`,
+  `gapRemoteState`, `gapRemoteSet`, `gapRemoteAction`,
+  `gapRemoteStartPrepare` / `gapRemoteStartRun`, `gapPresetsLocal` (was
+  `presetsLocal`), read by the companion's one generic adapter instead of a
+  Tsum adapter. The build signs `dist/` into `gap-signature.json` when
+  `GAP_SCRIPT_KEY` is set (`tools/build/signScript.js`); adb pushes all of `dist/`.
 - **Save One Mid Chain bubble strategy** (`BubbleStrategy.SaveOneMidChain`,
   share `S`, chip "Save 1 mid"). `popGameBubbles` on a long chain taps all but
   the richest (`richestFirst`), ripe or not; short post-skill hold; the

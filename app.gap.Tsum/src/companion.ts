@@ -1,0 +1,155 @@
+// --- GAP Companion's standard globals -----------------------------------------
+//
+// The companion's one generic adapter reads these by name: what the phone shows
+// for a run, the actions it can send, and how a remote start runs. Settings
+// come from `gapSettingsSchema` (src/index.ts), screens from `gapScreens`
+// (src/companionScreens.ts). Contract: "What a script implements" in the
+// companion repo's cloud/adapters/README.md. JSON crosses as strings both ways.
+//
+// Rule from the contract: nothing here may tap, sleep or wait (except
+// `gapRemoteStartRun`). The engine calls these outside the pause gate.
+
+/** Readouts the phone shows for a run; keys match `gapRemoteState().readouts`. */
+const CompanionReadouts = [
+  { key: 'rounds', label: 'Rounds', unit: 'count' },
+  { key: 'runSec', label: 'Run time', unit: 'sec' },
+  { key: 'playedSec', label: 'Time in rounds', unit: 'sec' },
+  { key: 'avgRoundSec', label: 'Avg round', unit: 'sec' },
+  { key: 'baseCoinAvg', label: 'Avg coins (base)', unit: 'coins' },
+  { key: 'finalCoinAvg', label: 'Avg coins (final)', unit: 'coins' },
+  { key: 'medals', label: 'Medals', unit: 'medals' },
+  { key: 'restRemainingSec', label: 'Rest left', unit: 'sec' },
+];
+
+/** Totals the server keeps from `round.end` until reset on the phone (fields: EVENTS.md). */
+const CompanionStats = [
+  { key: 'rounds', label: 'Rounds', unit: 'count', event: 'round.end', op: 'count' },
+  { key: 'coins', label: 'Coins earned', unit: 'coins', event: 'round.end', field: 'finalCoins', op: 'sum' },
+  { key: 'avgCoins', label: 'Avg coins', unit: 'coins', event: 'round.end', field: 'finalCoins', op: 'avg' },
+  { key: 'bestCoins', label: 'Best round', unit: 'coins', event: 'round.end', field: 'finalCoins', op: 'max' },
+  { key: 'medals', label: 'Medals', unit: 'medals', event: 'round.end', field: 'medals', op: 'sum' },
+  { key: 'played', label: 'Time in rounds', unit: 'sec', event: 'round.end', field: 'seconds', op: 'sum' },
+  { key: 'avgRound', label: 'Avg round', unit: 'sec', event: 'round.end', field: 'seconds', op: 'avg' },
+];
+
+/** Actions the phone can send. `role` names are standard, so the phone needs no Tsum code. */
+const CompanionRemoteActions = [
+  { name: 'wrapUp', label: 'Stop after this round', role: 'stopAfter' },
+  { name: 'cancelWrapUp', label: 'Keep playing', role: 'cancelStopAfter' },
+  { name: 'lastSettings', label: 'Last run settings' },
+];
+
+/** `remoteSettingsApply`'s refusal reasons as the contract's short codes. */
+const CompanionSetWhy: { [why: string]: string } = {
+  'no run': 'no-run',
+  'invalid value': 'bad-value',
+  'unknown setting': 'unknown-key',
+  workflow: 'workflow-run',
+};
+
+/** quickBarState uses -1 for "no round yet"; the phone gets null instead. */
+function companionNum(v: unknown): number | null {
+  return typeof v === 'number' && v >= 0 ? v : null;
+}
+
+/** What the phone shows for this script: readouts, stats rules and actions. */
+// noinspection JSUnusedGlobalSymbols
+function gapCompanion(): string {
+  return JSON.stringify({ readouts: CompanionReadouts, stats: CompanionStats, actions: CompanionRemoteActions });
+}
+
+/** The run as the phone sees it: `{active, values, readouts, flags, info}`. */
+// noinspection JSUnusedGlobalSymbols
+function gapRemoteState(): string {
+  const s = JSON.parse(quickBarState());
+  const active = s.active === true;
+  return JSON.stringify({
+    active: active,
+    values: remoteSettingsValues(),
+    readouts: {
+      rounds: companionNum(s.rounds),
+      runSec: companionNum(s.runSec),
+      playedSec: companionNum(s.playedSec),
+      avgRoundSec: companionNum(s.avgRoundSec),
+      baseCoinAvg: companionNum(s.baseCoinAvg),
+      finalCoinAvg: companionNum(s.finalCoinAvg),
+      // 0 rather than a dash while a run has earned none.
+      medals: active ? (companionNum(s.medals) ?? 0) : null,
+      restRemainingSec: typeof s.roundDelayRemainingMs === 'number'
+        ? Math.ceil(s.roundDelayRemainingMs / 1000) : null,
+    },
+    flags: {
+      inRound: s.inRound === true,
+      wrapUpArmed: s.stopAfterThisRound === true,
+      stopPending: s.stopAfterThisRound === true,
+    },
+    // The full name, null until the pre-round screen identified it.
+    info: { myTsum: typeof s.myTsum === 'string' && s.myTsum !== '' ? s.myTsum : null },
+  });
+}
+
+/**
+ * Changes one setting (the adapter already checked key and value). Answers
+ * `{ok: true, value, applies}` or `{ok: false, why}` with a contract code.
+ */
+// noinspection JSUnusedGlobalSymbols
+function gapRemoteSet(key: string, value: string | number | boolean): string {
+  let res: { ok?: boolean; why?: string; value?: unknown; applies?: string } | null;
+  try {
+    res = JSON.parse(remoteSettingsApply(key, value));
+  } catch (e) {
+    res = null;
+  }
+  if (res === null || res.ok !== true) {
+    const why = res !== null && res.why !== undefined && CompanionSetWhy.hasOwnProperty(res.why)
+      ? CompanionSetWhy[res.why] : 'apply-failed';
+    return JSON.stringify({ ok: false, why: why });
+  }
+  return JSON.stringify({ ok: true, value: res.value, applies: res.applies });
+}
+
+/** Runs one `gapCompanion` action. These take no args. */
+// noinspection JSUnusedGlobalSymbols
+function gapRemoteAction(name: string, argsJson: string): string {
+  if (name === 'wrapUp' || name === 'cancelWrapUp') {
+    const armed = name === 'wrapUp';
+    const status = armed ? stopAfterThisRound() : cancelStopAfterThisRound();
+    return JSON.stringify(status === 'no run' ? { ok: false, why: 'no-run' }
+      : { ok: true, status: status, armed: armed });
+  }
+  if (name === 'lastSettings') {
+    return JSON.stringify({ ok: true, settings: lastRunSettings() });
+  }
+  return JSON.stringify({ ok: false, why: 'unknown-action' });
+}
+
+/**
+ * What a remote start runs with: the defaults with the last run's settings on
+ * top, so a device that never ran the script starts too. `optsJson` is `{}` or
+ * `{workflow: {id, rev}}`, already checked by the adapter.
+ */
+// noinspection JSUnusedGlobalSymbols
+function gapRemoteStartPrepare(optsJson: string): string {
+  let opts: { workflow?: unknown } = {};
+  try {
+    opts = JSON.parse(optsJson) || {};
+  } catch (e) {
+    // No opts: a plain start.
+  }
+  const settings = remoteStartSettings();
+  if (settings === null || typeof settings !== 'object') {
+    return JSON.stringify({ ok: false, why: 'state-unreadable' });
+  }
+  return JSON.stringify({ settings: settings, workflow: opts.workflow || null });
+}
+
+/** Starts the run `gapRemoteStartPrepare` answered. Returns when the run ends. */
+// noinspection JSUnusedGlobalSymbols
+function gapRemoteStartRun(preparedJson: string): void {
+  const p = JSON.parse(preparedJson) as { settings: Settings; workflow: unknown };
+  if (p.workflow) {
+    startWorkflow(p.settings, JSON.stringify(p.workflow));
+  } else {
+    start(p.settings);
+  }
+}

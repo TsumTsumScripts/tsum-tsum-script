@@ -283,9 +283,9 @@ check('catalog: skills include nokill', catalog.lists.skills.some((s) => s.value
 ctx.getScriptPath = () => storage;
 ctx.presetsMirror(JSON.stringify([{ name: 'A', values: { skillLevel: 3, bad: { x: 1 } } }, { nope: 1 }]));
 check('presets mirror: round trip keeps scalar values only',
-  ctx.presetsLocal() === JSON.stringify([{ name: 'A', values: { skillLevel: 3 } }]), ctx.presetsLocal());
+  ctx.gapPresetsLocal() === JSON.stringify([{ name: 'A', values: { skillLevel: 3 } }]), ctx.gapPresetsLocal());
 fs.rmSync(path.join(storage, 'presets-' + ctx.getDeviceId() + '.json'), { force: true });
-check('presets mirror: missing file is []', ctx.presetsLocal() === '[]');
+check('presets mirror: missing file is []', ctx.gapPresetsLocal() === '[]');
 
 // --- Select My Tsum (src/myTsumSelect.ts), against a fake collection ----------------------
 // Only the flow's logic: which page and slot, the one confirming read, the Set
