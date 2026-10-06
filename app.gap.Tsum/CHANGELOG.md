@@ -54,7 +54,7 @@ release note; they fold back in here when she ships.
 - Auto Play Game setting moved from General to the Round tab.
 - Tsum app restart frequency now counts in minutes (30-minute steps) and sits under Device, out of Experimental.
 - Large tsums are now chained instead of popped, and bridge longer gaps.
-- GAP Companion can change the running device's My Tsum (Stats tab, or Settings > Actions): pick from the device's Tsum List, favourites first; it is set between rounds.
+- GAP Companion can change a device's My Tsum (Stats tab, or Settings > Actions): pick from the device's Tsum List, favourites first; it is set between rounds, or when the script next runs if it is stopped.
 - Tsum List export now records which Tsums are favourites (listed first and starred in GAP Companion's Select Tsum), and it and Unlock Level jump straight to the first page of the Tsum collection instead of paging back one at a time.
 - Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, the Mid Chain strategies no longer let them pile up, and new Save One and Save One Mid Chain strategies pop all but one (on sight, or as a chain lands).
 - Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen. The settings page is compact, fitting far more settings on screen, with a Code button by the presets that copies the settings code, and its window title names the script, version and channel.
@@ -64,10 +64,13 @@ release note; they fold back in here when she ships.
 ### Added
 
 - **Change My Tsum** (GAP Companion action `selectTsum`, arg `tsum` from the
-  `tsums` list): `selectMyTsumNow` queues Select My Tsum as a one-shot task
-  (`JobPriority.SelectTsumNow`), run between rounds, a failed step tried 3
-  times; refused with no run, in a workflow or a walkthrough. A My Tsum card
-  with its button opens the Stats tab while running. Needs adapter 2.1.0.
+  `tsums` list): `selectMyTsumNow` saves the choice to
+  `my_tsum_next_<device id>.json` and queues Select My Tsum as a one-shot task
+  (`JobPriority.SelectTsumNow`) between rounds; with no run, the next
+  non-workflow run's start queues it. Cleared once set or given up (a failed
+  step is tried 3 times). Refused during a workflow or walkthrough. The Stats
+  tab's My Tsum card shows the current and next MyTsum (`info.nextTsum`) and
+  the button. Needs adapter 2.1.0.
 - **Tsum List `favorite` column** (`1`/`0`, empty when the card would not
   select), off the gold/blue star by the panel portrait
   (`TsumListRegions.favorite`); the workflow list file carries it too, and

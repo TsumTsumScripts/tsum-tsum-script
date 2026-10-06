@@ -194,51 +194,99 @@ function selectMyTsumStale(fields: LogFields, seen: LogFields): GapWorkflowResul
 // --- Change My Tsum from GAP Companion ------------------------------------------
 //
 // The phone's Change My Tsum action (`gapRemoteAction`, src/companion.ts) may
-// not tap, so it queues the same Select My Tsum as a one-shot task, run
-// between rounds like the other "Now" chores.
+// not tap. It saves the choice to this device's "next MyTsum" file; a live run
+// (paused or not) queues it as a one-shot task between rounds, and with no run
+// the next run's start does (`selectTsumNextResume`). The file is cleared once
+// the selection is done or given up, so a run stopped before then keeps it.
 
-/** Name of the one-shot task `selectMyTsumNow` queues. */
+/** Name of the one-shot task that selects the saved MyTsum. */
 const SelectTsumNowTask = 'selectTsumNow';
 /** Tries of a failed step before giving up (the workflow node's retry count). */
 const SelectTsumNowAttempts = 3;
 
-/** The tsum a queued change is waiting to select, or null. */
-let gSelectTsumNowQueued: string | null = null;
+/** True while the task is registered on the live run. */
+let gSelectTsumNowQueued = false;
+
+/** The saved choice: the tsum's short id and its full name, for the phone. */
+interface SelectTsumNext {
+  tsum: string;
+  name: string;
+}
+
+function selectTsumNextPath(): string {
+  if (typeof getStoragePath !== 'function' || typeof getDeviceId !== 'function') {
+    return '';
+  }
+  return getStoragePath() + '/' + Config.recordDir + '/my_tsum_next_' + getDeviceId() + '.json';
+}
+
+/** The saved choice, or null. */
+function selectTsumNextLoad(): SelectTsumNext | null {
+  const o = readJsonObject(selectTsumNextPath());
+  return typeof o.tsum === 'string' && o.tsum !== ''
+    ? { tsum: o.tsum, name: typeof o.name === 'string' ? o.name : o.tsum } : null;
+}
+
+/** Saves (or with null clears) the choice. Never throws. */
+function selectTsumNextSave(next: SelectTsumNext | null): void {
+  const path = selectTsumNextPath();
+  try {
+    if (path !== '') {
+      writeFile(path, next === null ? '{}' : JSON.stringify(next));
+    }
+  } catch (e) {
+    logWarn(Log.Workflow.SelectTsumNowQueued, 'Could not save the next MyTsum', { file: path });
+  }
+}
 
 /**
- * Queues `short` as the next MyTsum on the live run. Answers what the action
- * returns: 'queued', or why not ('no run', 'workflow run', 'walkthrough',
- * 'tsum list missing'). A second call before the first ran replaces its tsum.
+ * Makes `short` the next MyTsum. Answers what the action returns: 'queued' on
+ * a live run, 'saved' for the next run, or why not ('workflow run',
+ * 'walkthrough', 'tsum list missing', 'tsum not in list').
  */
 function selectMyTsumNow(short: string): string {
-  if (!gRunActive || ts === undefined || gTaskController === undefined) {
-    return 'no run';
-  }
   // A workflow picks its own tsums; a walkthrough records the player's taps.
-  if (gWorkflowRun) {
+  if (gRunActive && gWorkflowRun) {
     return 'workflow run';
   }
-  if (gWalkthroughRun) {
+  if (gRunActive && gWalkthroughRun) {
     return 'walkthrough';
   }
-  if (tsumListLoadFile() === null) {
+  const file = tsumListLoadFile();
+  if (file === null) {
     return 'tsum list missing';
   }
-  const replacing = gSelectTsumNowQueued !== null;
-  gSelectTsumNowQueued = short;
-  logInfo(Log.Workflow.SelectTsumNowQueued, 'Changing the MyTsum next', { tsum: short });
-  ts.banner('Changing My Tsum next', 4000);
-  if (replacing) {
-    return 'queued';
+  const row = file.tsums.filter((r) => r.tsum === short)[0];
+  if (row === undefined) {
+    return 'tsum not in list';
   }
-  const run = ts;
-  const controller = gTaskController;
+  selectTsumNextSave({ tsum: short, name: row.name !== '' ? row.name : short });
+  logInfo(Log.Workflow.SelectTsumNowQueued, 'Changing the MyTsum next', { tsum: short, running: gRunActive });
+  if (!gRunActive || ts === undefined || gTaskController === undefined) {
+    return 'saved';
+  }
+  ts.banner('Changing My Tsum next', 4000);
+  selectTsumNextResume(ts, gTaskController);
+  return 'queued';
+}
+
+/**
+ * Queues the saved choice on this run, once. Called by `selectMyTsumNow` and
+ * at a run's start (`buildRun`, not for a workflow or walkthrough).
+ */
+function selectTsumNextResume(run: Tsum, controller: TsumTaskController): void {
+  if (gSelectTsumNowQueued || selectTsumNextLoad() === null) {
+    return;
+  }
+  gSelectTsumNowQueued = true;
   let failures = 0;
   run.yieldAsked = true;
   controller.newTask(SelectTsumNowTask, function() {
     run.yieldAsked = false;
-    const target = gSelectTsumNowQueued;
-    if (target === null) {
+    // Read each turn: the phone may have picked another meanwhile.
+    const next = selectTsumNextLoad();
+    if (next === null) {
+      gSelectTsumNowQueued = false;
       controller.removeTask(SelectTsumNowTask);
       return;
     }
@@ -246,7 +294,7 @@ function selectMyTsumNow(short: string): string {
       run.yieldAsked = true;
       return;
     }
-    const res = selectMyTsum(target);
+    const res = selectMyTsum(next.tsum);
     // Paused mid-way: try again on the next turn.
     if (res === 'wait') {
       run.yieldAsked = true;
@@ -255,8 +303,11 @@ function selectMyTsumNow(short: string): string {
     if (typeof res === 'object' && 'fail' in res && ++failures < SelectTsumNowAttempts) {
       return;
     }
-    gSelectTsumNowQueued = null;
+    // Done, out of date, or out of tries: not carried to another run.
+    if (selectTsumNextLoad()?.tsum === next.tsum) {
+      selectTsumNextSave(null);
+    }
+    gSelectTsumNowQueued = false;
     controller.removeTask(SelectTsumNowTask);
   }, UnlockNowRetryMs, 0, false, JobPriority.SelectTsumNow);
-  return 'queued';
 }
