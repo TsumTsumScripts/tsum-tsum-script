@@ -294,6 +294,11 @@ declare const enum UiText {
   ChromeThemeToLight = 'chrome.themeToLight',
   ChromeThemeToDark = 'chrome.themeToDark',
   ChromeMoreTabs = 'chrome.moreTabs',
+  /** The app bar's short copy-code button; `ChromeCopyCodeLabel` is its spoken name. */
+  ChromeCopyCode = 'chrome.copyCode',
+  ChromeCopyCodeLabel = 'chrome.copyCodeLabel',
+  ChromeCopied = 'chrome.copied',
+  ChromeCopyFailed = 'chrome.copyFailed',
 
   // --- the share panel ----------------------------------------------------
   ShareCopied = 'share.copied',

@@ -55,7 +55,7 @@ release note; they fold back in here when she ships.
 - Large tsums are now chained instead of popped, and bridge longer gaps.
 - Tsum List export now records which Tsums are favourites, and it and Unlock Level jump straight to the first page of the Tsum collection instead of paging back one at a time.
 - Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, the Mid Chain strategies no longer let them pile up, and new Save One and Save One Mid Chain strategies pop all but one (on sight, or as a chain lands).
-- Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen. The settings page is compact, fitting far more settings on screen.
+- Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen. The settings page is compact, fitting far more settings on screen, with a Code button by the presets that copies the settings code, and its window title names the script, version and channel.
 - Quick Bar's coin readout shows the average medals earned per round.
 - Resuming after a pause mid-round now presses Continue and returns to the round, instead of sometimes tapping Try Again or elsewhere on the pause menu.
 
@@ -147,9 +147,12 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
-- **Compact settings page.** App bar and tab strip merged into one 44px sticky
-  row (version moved to the foot); 32px controls (`--ctl`), smaller type and
-  padding, no 720px width cap. Below the kit's sizes on purpose (`DEVELOPMENT.md`).
+- **Compact settings page.** A 44px app bar over a slim tab row (version
+  moved to the foot); 32px controls (`--ctl`), smaller type and padding, no
+  720px width cap. Below the kit's sizes on purpose (`DEVELOPMENT.md`). The
+  bar's Code button copies the share code (`copySettingsCodeFromBar`), opening
+  the share panel if the clipboard fails. `PANEL_TITLE` names the script,
+  version and channel for the host's panel header (host 3.0 reads it).
 - **Collection scrubber.** The track under the grid jumps to the first page
   when tapped at its left end, the last at its right (`CollectionGrid.scrubFirst`
   / `scrubLast`). `rewindCollection` taps it first, keeping the chevron bursts

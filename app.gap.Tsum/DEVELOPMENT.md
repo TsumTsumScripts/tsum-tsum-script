@@ -270,7 +270,7 @@ Styling is the **GAP Design System**: `src/gapTokens.css` is the kit's token
 sheet copied verbatim, and `index.css` / `quickbar.css` build its components
 from those tokens alone. Both pages may bend the kit's sizing rules to fit
 the overlay: the settings page is deliberately compact (32px controls, one
-header row for tabs and presets, no width cap), and the Quick Bar scales to its
+bar over a slim tab row, no width cap), and the Quick Bar scales to its
 strip. Colours and signals still follow the kit. The fonts are Latin subsets in `src/fonts/`, which the
 build turns into `font-*.css` sheets of data URIs. Everything is inlined —
 **never a CDN**: the page is opened from `file://` on a device that is often

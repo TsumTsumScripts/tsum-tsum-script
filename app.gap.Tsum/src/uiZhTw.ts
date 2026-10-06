@@ -254,6 +254,10 @@ i18nRegister(Locale.Taiwan, '中文', {
     [UiText.ChromeThemeToLight]: '切換為淺色模式',
     [UiText.ChromeThemeToDark]: '切換為深色模式',
     [UiText.ChromeMoreTabs]: '顯示更多分頁',
+    [UiText.ChromeCopyCode]: '代碼',
+    [UiText.ChromeCopyCodeLabel]: '複製設定碼',
+    [UiText.ChromeCopied]: '已複製',
+    [UiText.ChromeCopyFailed]: '失敗',
 
     [UiText.ShareCopied]: '設定碼已複製，貼給別人即可。',
     [UiText.ShareCopyFailed]: '無法存取剪貼簿，請手動複製下方的設定碼。',

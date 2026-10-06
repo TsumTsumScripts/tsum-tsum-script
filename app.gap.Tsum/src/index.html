@@ -56,22 +56,8 @@
     <script src="settings.js"></script>
   </head>
   <body>
-    <!--
-      One sticky row for all the chrome, so the settings get the height: the
-      tabs scroll in what is left beside the preset and theme controls. The
-      version is in the foot.
-    -->
+    <!-- No title: the host's panel header names the script (`PANEL_TITLE`). -->
     <header class="app-bar">
-      <!--
-        Seven tabs, so they scroll. The edge fades and the "+N" buttons say how
-        many tabs are past each edge; settings.ts (`updateTabOverflow`) keeps
-        them current.
-      -->
-      <div id="tabScroll" class="tab-scroll">
-        <nav id="tabBar" class="tab-bar" role="tablist"></nav>
-        <button id="tabMoreLeft" class="tab-more tab-more-left" type="button" hidden></button>
-        <button id="tabMoreRight" class="tab-more tab-more-right" type="button" hidden></button>
-      </div>
       <!--
         Presets: which saved configuration the form currently is, and the panel
         that saves, overwrites or deletes one. Here rather than on a tab because
@@ -94,6 +80,14 @@
           <path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>
         </svg>
       </button>
+      <!-- Copy share code: the Share settings row's Copy, kept short. -->
+      <button id="copyCode" class="copy-code" type="button">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="8" y="8" width="12" height="12" rx="2"/>
+          <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>
+        </svg>
+        <span id="copyCodeText"></span>
+      </button>
       <!-- Sun and moon are not in the GAP icon set yet; drawn to its 2px line style. -->
       <button id="themeToggle" class="theme-toggle icon-button" type="button" aria-live="polite">
         <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true">
@@ -105,6 +99,19 @@
         </svg>
       </button>
     </header>
+
+    <!--
+      Seven tabs, so they scroll. The edge fades and the "+N" buttons say how
+      many tabs are past each edge; settings.ts (`updateTabOverflow`) keeps
+      them current.
+    -->
+    <div class="tab-strip">
+      <div id="tabScroll" class="tab-scroll">
+        <nav id="tabBar" class="tab-bar" role="tablist"></nav>
+        <button id="tabMoreLeft" class="tab-more tab-more-left" type="button" hidden></button>
+        <button id="tabMoreRight" class="tab-more tab-more-right" type="button" hidden></button>
+      </div>
+    </div>
 
     <!--
       The Save panel behind the app bar's save button: one name field and what
