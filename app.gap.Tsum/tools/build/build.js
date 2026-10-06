@@ -55,6 +55,21 @@ const tsc = local('node_modules', 'typescript', 'bin', 'tsc');
 
 const DEPLOY_DIR = '/sdcard/Download/GameAutomationPlatform/scripts/DEV';
 
+/**
+ * The host's install ledger, written beside a DEV push so the app lists the
+ * folder as "Tsum Tsum DEV - <local deploy time>" rather than "DEV".
+ */
+function devLedger() {
+  const at = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  const stamp = `${at.getFullYear()}-${p(at.getMonth() + 1)}-${p(at.getDate())} ${p(at.getHours())}:${p(at.getMinutes())}`;
+  const file = local('build', 'gap-install.json');
+  fs.writeFileSync(file, JSON.stringify({
+    source: 'local', name: `Tsum Tsum DEV - ${stamp}`, version, installedAt: at.getTime(),
+  }, null, 2));
+  return file;
+}
+
 // The page scripts, minified in one process. All ES5, to match what
 // tsconfig.settings.json and tsconfig.quickbar.json emit. `verify` is only
 // spelled out where the file declares something reached by name from outside
@@ -348,6 +363,7 @@ async function main() {
   if (has('adb')) {
     const devices = valueOf('device') ? [valueOf('device')] : connectedEmulators();
     const failed = [];
+    const ledger = devLedger();
     for (const device of devices) {
       console.log(`[build] pushing to ${device}...`);
       try {
@@ -356,6 +372,7 @@ async function main() {
         // Every dist/ file: gap-signature.json lists them all, and a missing one fails it.
         const files = fs.readdirSync(local('dist')).map((name) => 'dist/' + name);
         await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'push', ...files, DEPLOY_DIR]);
+        await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'push', ledger, `${DEPLOY_DIR}/.gap-install.json`]);
       } catch (err) {
         // Keep going so one bad emulator doesn't block the rest.
         console.error(`[build] push to ${device} failed: ${err && err.message ? err.message : err}`);
