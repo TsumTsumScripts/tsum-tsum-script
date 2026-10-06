@@ -62,6 +62,10 @@ release note; they fold back in here when she ships.
 
 ### Added
 
+- **Share round stats** (General, Alpha, off by default): the script now sends
+  its own round stats (`src/roundShare.ts`) instead of handing the CSV pattern
+  to the host's `publishStats`, which is gone. Inert while
+  `Config.roundStatsUrl` is blank, as it is today.
   non-workflow run's start queues it. Cleared once set or given up (a failed
   step is tried 3 times). Refused during a workflow or walkthrough. The Stats
   the button. Needs adapter 2.1.0.

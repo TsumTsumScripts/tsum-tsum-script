@@ -1169,6 +1169,8 @@ interface Task {
 /** Static tuning constants for the player. */
 interface TsumConfig {
   recordDir: string;
+  /** Share round stats endpoint; blank is off. */
+  roundStatsUrl: string;
   tsumWidth: number;
   screenResize: number;
   colors: number[][];
@@ -1848,7 +1850,7 @@ declare function getScriptPath(): string;
  * folder as their script root, which is what a tag kept in a file cannot be.
  *
  * Newer than the rest of the API, so it may be missing on an older host --
- * reach for it behind `typeof getDeviceId === 'function'`, like `publishStats`.
+ * reach for it behind `typeof getDeviceId === 'function'`.
  */
 declare function getDeviceId(): string;
 /**
@@ -1939,24 +1941,6 @@ declare function httpClient(method: string, url: string, body: string, headers: 
  */
 declare function showBanner(message: string, duration?: number, plays?: number): void;
 
-/**
- * Register a file of this script's whose recorded rows the host should send to
- * its stats endpoint.
- *
- * `pattern` is relative to the script's own folder and may use `*` in the file
- * name. The rows must be CSV with a header and a unique, time-sortable `id`
- * column -- which is what `roundStats.ts` already writes.
- *
- * Registration only: this never names a URL and never causes a request. The
- * host remembers the last id it managed to send for each file and sends what is
- * newer, at most once a minute, and only if the user switched it on. So it is
- * safe to call once a run and harmless to call more often.
- *
- * Newer than the rest of the API, so it may be missing on an older host --
- * reach for it behind `typeof publishStats === 'function'`, since a bare
- * reference to a missing global is a ReferenceError.
- */
-declare function publishStats(pattern: string): void;
 
 /**
  * Ask the host to pause this script, as its own Pause button would. Returns at

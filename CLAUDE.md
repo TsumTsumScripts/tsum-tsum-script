@@ -29,9 +29,9 @@ path:
 
 - The engine is QuickJS-ng, so `tsconfig.json` targets `ES2023`.
 - Every one of the 52 documented raw APIs is present, so guards around optional
-  natives are not needed for new code. `checkFunction()` is gone; the one native
-  newer than the rest, `publishStats`, is reached behind a plain
-  `typeof publishStats === 'function'`.
+  natives are not needed for new code. `checkFunction()` is gone; a native
+  newer than the rest (`pauseScript`, `getDeviceId`) is reached behind a plain
+  `typeof x === 'function'`.
 - `Tsum.screenshot()` captures at quality 100. It was on 80 only because
   Robotmon compressed there, and that compression was moving colour probes by
   far more than their thresholds allowed.

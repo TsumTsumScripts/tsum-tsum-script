@@ -714,6 +714,16 @@ var tabs: TabSpec[] = [
                         // Bookkeeping about rounds, not a rule one is played
                         // under -- see SHARE_TABS.
                         neverShared: true
+                    },
+                    {
+                        key: SettingKey.ShareRoundStats,
+                        title: UiText.SettingShareRoundStats,
+                        help: UiText.SettingShareRoundStatsHelp,
+                        default: SettingDefaults[SettingKey.ShareRoundStats],
+                        // Alpha until Config.roundStatsUrl is set; inert
+                        // while it is blank.
+                        status: ReleaseStatus.Alpha,
+                        neverShared: true
                     }
                 ]
             },

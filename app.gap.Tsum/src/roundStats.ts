@@ -2599,6 +2599,8 @@ Tsum.prototype.writeRoundStats = function(date, seconds, score, baseCoins, final
       path: path,
     });
     this.banner('Round stats saved!', 2000);
+    // Share round stats, if on and due. Never throws.
+    roundShareAfterRow(this);
   } catch (e) {
     logError(Log.Stats.WriteFailed, 'Could not write the stats CSV',
       { path: path, errorText: '' + e });

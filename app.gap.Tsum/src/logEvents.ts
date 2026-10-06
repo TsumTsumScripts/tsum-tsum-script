@@ -423,10 +423,13 @@ namespace Log {
     JoinedGlyphsCut = 'stats.joinedGlyphsCut',
     NeverRead       = 'stats.neverRead',
     NeverSettled    = 'stats.neverSettled',
-    Publishing      = 'stats.publishing',
     ReadFailed      = 'stats.readFailed',
     RoundWritten    = 'stats.roundWritten',
     ScorePageGaveUp = 'stats.scorePageGaveUp',
+    /** Share round stats: the server accepted a batch. */
+    Shared          = 'stats.shared',
+    /** Share round stats: a batch was refused or failed; backing off. */
+    ShareFailed     = 'stats.shareFailed',
     ShotSaveFailed  = 'stats.shotSaveFailed',
     TallyCovered    = 'stats.tallyCovered',
     TallySkipped    = 'stats.tallySkipped',

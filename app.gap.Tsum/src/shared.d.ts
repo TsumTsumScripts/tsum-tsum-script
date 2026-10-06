@@ -312,6 +312,7 @@ declare const enum SettingKey {
   AutoLaunchApp = 'autoLaunchApp',
   AutoPlayGame = 'autoPlayGame',
   TrackRoundStats = 'trackRoundStats',
+  ShareRoundStats = 'shareRoundStats',
   ClickAssist = 'clickAssist',
   RoundDelayMinutes = 'roundDelayMinutes',
   MaxRoundMinutes = 'maxRoundMinutes',
@@ -408,6 +409,8 @@ interface Settings {
   [SettingKey.AutoLaunchApp]: boolean;
   [SettingKey.AutoPlayGame]: boolean;
   [SettingKey.TrackRoundStats]: boolean;
+  /** Send new round stats rows to `Config.roundStatsUrl`; needs TrackRoundStats. */
+  [SettingKey.ShareRoundStats]: boolean;
   [SettingKey.ClickAssist]: boolean;
   /**
    * Minutes to wait after a round before starting the next one; 0 plays

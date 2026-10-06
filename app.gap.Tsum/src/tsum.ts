@@ -245,6 +245,8 @@ class Tsum {
 
   // Per-round metrics; see roundStats.ts.
   trackRoundStats: boolean;
+  /** Share round stats; see roundShare.ts. */
+  sendRoundStats: boolean;
   /**
    * Rounds this run has started, counted here rather than off `runCoins.rounds`:
    * that one only moves when round stats are on, and the emitted events must not
@@ -460,6 +462,7 @@ class Tsum {
     this._reportCount = 0;
     // Per-round metrics; see the Round stats section.
     this.trackRoundStats = true;
+    this.sendRoundStats = false;
     this.roundNumber = 0;
     this.openingRound = false;
     this.roundUid = '';
