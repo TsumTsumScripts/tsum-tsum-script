@@ -119,7 +119,7 @@ steps aside and the log moves up over it.
 | Copy code | *Page two.* Not a setting: copies your settings code, as the Copy button on the settings panel does. The chip shimmers while it works, and a banner says when the code is on the clipboard |
 | Last round | *Page two.* Not a setting: stop the script once the round in progress is over, or before the next round starts if none is being played. For this run only — never saved, and off at the next start. Tap again to cancel. Needs a run |
 | Games, Then | *Page two.* Stop after games and what happens then. Take effect at once |
-| Auto | Auto Play Game, under the page dots. Takes effect at once: off lets the round in progress finish and plays no more; on starts playing again |
+| ⟳▶ (under the page dots) | Auto Play Game, drawn as a play-on-repeat icon; solid blue when on. Takes effect at once: off lets the round in progress finish and plays no more; on starts playing again |
 
 **Page two's readout** swaps the coin figures for times: **Avg** is the average
 round (m:ss), **Played** the total time spent in rounds, and **Run** how long the

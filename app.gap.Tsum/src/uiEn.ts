@@ -382,7 +382,7 @@ i18nRegister(Locale.English, 'English', {
     [UiText.QbChain]: 'Chain',
     [UiText.QbPreset]: 'Preset',
     [UiText.QbBubble]: 'Bubble',
-    [UiText.QbAutoPlay]: 'Auto',
+    [UiText.QbAutoPlay]: 'Auto Play',
     [UiText.QbBase]: 'Base',
     [UiText.QbFinal]: 'Final',
     [UiText.QbMedals]: 'Medals',

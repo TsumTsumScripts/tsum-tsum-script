@@ -518,6 +518,26 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 /* Stretched to the column so it lines up with the page toggle above. */
 .qb-side .qb-toggle { width: 100%; }
 
+/* A toggle drawn as a glyph, as narrow as the page toggle over it. */
+.qb-icon-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 calc(5 * var(--qb-u));
+}
+
+.qb-icon {
+  width: min(calc(14 * var(--qb-u)), calc(var(--qb-row) - 6px));
+  height: min(calc(14 * var(--qb-u)), calc(var(--qb-row) - 6px));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.qb-icon .qb-icon-fill { fill: currentColor; stroke-width: 1.5; }
+
 /* Text for screen readers only: the chip draws a glyph instead. */
 .qb-sr {
   position: absolute;
@@ -609,7 +629,7 @@ body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-
   align-items: center;
   justify-content: center;
   gap: calc(4 * var(--qb-u));
-  padding: 0 calc(4 * var(--qb-u));
+  padding: 0 calc(3 * var(--qb-u));
   border: 0;
   border-right: 1px solid var(--qb-static-edge);
   border-radius: var(--radius-md) 0 0 var(--radius-md);
@@ -643,7 +663,7 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
    * ~54px band, hence the small type and a line height of 1.
    */
   line-height: 1;
-  padding: calc(var(--qb-vpad) / 2) calc(7 * var(--qb-u)) calc(var(--qb-vpad) / 2) calc(6 * var(--qb-u));
+  padding: calc(var(--qb-vpad) / 2) calc(5 * var(--qb-u)) calc(var(--qb-vpad) / 2) calc(4 * var(--qb-u));
 }
 
 /* The hairline between two readings, on the cells for the reason above. */
@@ -654,7 +674,7 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
  * half of the row, and the figure beside it is what the eye is going to.
  */
 .qb-stat-label {
-  padding: calc(1px * var(--qb-vs)) calc(8 * var(--qb-u)) calc(1px * var(--qb-vs)) 0;
+  padding: calc(1px * var(--qb-vs)) calc(5 * var(--qb-u)) calc(1px * var(--qb-vs)) 0;
   color: var(--qb-muted);
   font-size: calc(8 * var(--qb-u));
   font-weight: inherit;
@@ -662,9 +682,9 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
   white-space: nowrap;
 }
 
-/* Wide enough for the longest coin figure, at whatever size the strip is. */
+/* Wide enough for a five-figure coin average (`99,999`); a longer one grows the chip. */
 .qb-stat-value {
-  min-width: calc(44 * var(--qb-u));
+  min-width: calc(34 * var(--qb-u));
   padding: calc(1px * var(--qb-vs)) 0;
   text-align: right;
   font-variant-numeric: tabular-nums;
