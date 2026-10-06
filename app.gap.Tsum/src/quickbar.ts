@@ -200,6 +200,13 @@ function quickBarState(): string {
       ? Math.round(coins.finalTotal / coins.finalRounds) : -1;
     // The run's medals; the companion app's Stats tab shows it.
     state.medals = coins.medalTotal;
+    // Nothing on the strip draws these four: they are what the readout chip
+    // copies to the clipboard when it is tapped (`qbCopyStats`).
+    state.finalCoinTotal = coins.finalTotal;
+    state.finalCoinMin = coins.finalMin;
+    state.finalCoinMax = coins.finalMax;
+    state.medalMin = coins.medalMin;
+    state.medalMax = coins.medalMax;
     // A dash until a round has actually earned medals, so a run without them
     // does not show a row of zeros.
     state.medalAvg = coins.medalTotal > 0
@@ -210,6 +217,9 @@ function quickBarState(): string {
     state.avgRoundSec = clock.rounds > 0 ? Math.round(clock.roundSec / clock.rounds) : -1;
     state.playedSec = clock.roundSec;
     state.runSec = Math.round((Date.now() - clock.startedAt) / 1000);
+    // The copy's shortest and longest round, drawn nowhere.
+    state.minRoundSec = clock.minSec;
+    state.maxRoundSec = clock.maxSec;
   }
   return JSON.stringify(state);
 }

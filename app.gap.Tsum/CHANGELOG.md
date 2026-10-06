@@ -61,6 +61,7 @@ release note; they fold back in here when she ships.
 - Quick Bar's coin readout shows the average medals earned per round.
 - Share round stats setting added (Alpha): sends your round stats to a stats server you set on this script's card in GAP's Library, with network access allowed there.
 - Resuming after a pause mid-round now presses Continue and returns to the round, instead of sometimes tapping Try Again or elsewhere on the pause menu.
+- Tapping the Quick Bar's readout copies the run's figures to the clipboard: coin and medal totals, averages, per-second rates and best and worst rounds, the round durations, and the round count.
 
 ### Added
 
@@ -85,6 +86,11 @@ release note; they fold back in here when she ships.
   (`TsumListRegions.favorite`); the workflow list file carries it too, and
   the `tsums` list flags it (`GapWorkflowListItem.favorite`).
 - **Quick Bar Medals row**: average medals per round, from the tally's medal reading, under Base and Final; a dash until a round earns some. The readout type is smaller so four rows fit the band.
+- **Quick Bar readout copies the run's figures** (`qbCopyStats`,
+  `src/quickbarPage.ts`): four lines through `setClipboard`, then a banner.
+  `RunCoinTally` and `RunClock` grew min/max fields for it; the per-second rates
+  are over time in rounds, not the wall clock. The host hotspot now covers the
+  whole readout chip so the tap works mid-run.
 - **GAP Companion workflows** (dormant until a sync arrives; `WORKFLOWS.md`).
   `src/gapWorkflow.ts` is the generic runner other scripts vendor; `src/workflow.ts`
   is Tsum's catalog and nodes, and `startWorkflow` a run mode that registers

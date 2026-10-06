@@ -2128,10 +2128,24 @@ Tsum.prototype.finishRoundStats = function() {
     if (finalCoins !== null) {
       this.runCoins.finalRounds++;
       this.runCoins.finalTotal += finalCoins;
+      // -1 is "nothing yet", so the first round sets both ends rather than
+      // being compared against a sentinel that would win every minimum.
+      if (this.runCoins.finalMin < 0 || finalCoins < this.runCoins.finalMin) {
+        this.runCoins.finalMin = finalCoins;
+      }
+      if (finalCoins > this.runCoins.finalMax) {
+        this.runCoins.finalMax = finalCoins;
+      }
     }
     if (medals !== null) {
       this.runCoins.medalRounds++;
       this.runCoins.medalTotal += medals;
+      if (this.runCoins.medalMin < 0 || medals < this.runCoins.medalMin) {
+        this.runCoins.medalMin = medals;
+      }
+      if (medals > this.runCoins.medalMax) {
+        this.runCoins.medalMax = medals;
+      }
     }
   } finally {
     // Closes the round for `sampleBaseCoins`, so nothing on the way back out to
