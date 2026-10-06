@@ -40,6 +40,8 @@ game-automation-scripts/
     ├── docs/              data the documents are generated from: the observed page
     │                      graph (transitions.json) and the clip library (media.json)
     ├── build/ dist/       build output, git-ignored (also the release zip + .sha256)
+    ├── gap-backup.json    the localStorage keys (settings, presets, language,
+    │                      theme) GAP's Library card backs up and restores
     ├── config.json        release identity: game, one entry per channel (name,
     │                      archive, note, and `Status` -- the lowest SkillStatus
     │                      that channel offers), how many versions stay

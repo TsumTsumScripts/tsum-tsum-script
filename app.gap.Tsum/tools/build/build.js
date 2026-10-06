@@ -339,10 +339,21 @@ const steps = [
     },
   },
 
+  // The page localStorage keys GAP's Library backs up (Back up / Restore settings).
+  {
+    id: 'dist:backup',
+    run: ({ log }) => {
+      const text = fs.readFileSync(local('gap-backup.json'), 'utf8');
+      JSON.parse(text); // a broken manifest fails the build, not the device
+      fs.writeFileSync(local('dist', 'gap-backup.json'), text);
+      log('[build] dist/gap-backup.json\n');
+    },
+  },
+
   // Last into dist/: it hashes every file there, so the archive and the push carry it.
   {
     id: 'sign',
-    needs: ['dist:index', 'dist:quickbar', 'dist:bundle', 'dist:library', 'dist:notices', 'dist:env', 'dist:companion'],
+    needs: ['dist:index', 'dist:quickbar', 'dist:bundle', 'dist:library', 'dist:notices', 'dist:env', 'dist:backup', 'dist:companion'],
     run: ({ log }) => signDist(log),
   },
   { id: 'archive', needs: ['sign'], run: ({ log }) => writeArchive(log) },

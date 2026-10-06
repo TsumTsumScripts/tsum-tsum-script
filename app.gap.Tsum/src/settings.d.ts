@@ -111,7 +111,8 @@ declare const enum PageMessage {
  * Two pages read and write the same two entries -- the settings page owns them,
  * and the Quick Bar patches the settings one so a value changed mid-run is
  * still there at the next start. Written once here so they cannot drift; a
- * `const enum`, so nothing exists at runtime but the string.
+ * `const enum`, so nothing exists at runtime but the string. `gap-backup.json`
+ * lists them by name too (GAP's Back up / Restore), so a rename goes there as well.
  */
 declare const enum StorageKey {
   Language = 'tsumtsumlanguage',
