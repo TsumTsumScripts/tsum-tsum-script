@@ -259,7 +259,7 @@ function gapWorkflowListValues(): { [name: string]: GapWorkflowListItem[] | null
   return out;
 }
 
-/** JSON `{api, nodes, lists, listInfo?}` -- the adapter adds `syncHash` and `presetFields`. */
+/** JSON `{api, nodes, lists, listInfo?}` -- the companion adapter adds `syncHash`, `presetFields`, `stats` and `screens`. */
 function gapWorkflowCatalog(): string {
   const nodes: { [key: string]: unknown }[] = [];
   const types = gapWorkflowNodeOrder.concat(['loop', 'stop']);

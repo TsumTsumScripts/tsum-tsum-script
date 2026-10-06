@@ -177,7 +177,7 @@ const WorkflowPresetSkip: string[] = [
 
 /**
  * The only preset keys the Skill node applies: how a round is played. Mirrors
- * the adapter's `presets.fields` (settings.ts's SHARE_SLOTS minus clickAssist,
+ * gapSettingsSchema's `presetFields` (settings.ts's SHARE_SLOTS minus clickAssist,
  * which is a chore). A hand-made preset cannot push run-level keys this way.
  */
 const WorkflowPresetKeys: string[] = [
@@ -377,7 +377,7 @@ function workflowTsumsList(): GapWorkflowListItem[] | null {
 
 /**
  * Readable skill names for the `skills` list (contract § 2). Mirrors the
- * adapter's SKILLS table; the bundle has no display names of its own (those
+ * settings page's skill labels; the bundle has no display names of its own (those
  * live in the pages' UiText). A skill missing here shows under its id.
  */
 const WorkflowSkillLabels: { [id: string]: string } = {
