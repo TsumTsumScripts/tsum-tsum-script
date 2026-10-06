@@ -1,7 +1,7 @@
 {
   "name": "app.gap.tsum",
   "version": "5.0a2",
-  "description": "Game Automation Platform automation script for Tsum Tsum.",
+  "description": "General Automation Platform automation script for Tsum Tsum.",
   "main": "src/index.ts",
   "scripts": {
     "build": "node tools/build/build.js",

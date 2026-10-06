@@ -49,8 +49,9 @@ game-automation-scripts/
                            tools/build/, which is the build
 ```
 
-It runs on **Game Automation Platform** and only that — see
-[External trees](#external-trees) and `CLAUDE.md` for what that means. The
+It runs on **General Automation Platform** (formerly *Game* Automation
+Platform; folder, repo and package names keep the old spelling) and only that —
+see [External trees](#external-trees) and `CLAUDE.md` for what that means. The
 tooling that *develops* it is the development toolkit, a separate private
 repository beside this one — `DEVELOPMENT.md` § The development toolkit.
 
@@ -481,7 +482,7 @@ The contributor site is its own package with its own scripts, run from
 
 | Tree | Path | Relationship |
 |:--|:--|:--|
-| **Game Automation Platform** | `../game-automation-app` | The host app these scripts run on, and the only target — it declares the natives, runs the bundle, and installs it. Editing it is allowed (`CLAUDE.md`); see [the host app at a glance](#the-host-app-at-a-glance) below |
+| **General Automation Platform** | `../game-automation-app` | The host app these scripts run on, and the only target — it declares the natives, runs the bundle, and installs it. Editing it is allowed (`CLAUDE.md`); see [the host app at a glance](#the-host-app-at-a-glance) below |
 | **game-automation-catalogue** | `../../game-automation-catalogue` | Where a release is published: the release commands write the archive and its metadata file into `Official/LineTsumTsum/Alpha`, `.../Beta` or `.../Production`, and the catalogue's own build-official script folds them into its index. The last few archives stay there so the app can offer them as older versions. Only the release tool writes here |
 
 ### The host app at a glance

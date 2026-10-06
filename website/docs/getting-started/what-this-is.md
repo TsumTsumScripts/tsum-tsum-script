@@ -7,7 +7,7 @@ description: The host app, the script, and what the script does.
 
 ## The host app
 
-**Game Automation Platform** is an Android app that runs automation scripts
+**General Automation Platform** is an Android app that runs automation scripts
 against games. It owns everything that touches the device: taking screenshots,
 reading pixel colours, tapping and dragging, running shell commands, launching
 apps. A script is a folder the app loads:

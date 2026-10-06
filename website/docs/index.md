@@ -2,13 +2,13 @@
 id: index
 slug: /
 title: Contributor guide
-description: How the Tsum Tsum script for Game Automation Platform is built, and how to change it.
+description: How the Tsum Tsum script for General Automation Platform is built, and how to change it.
 ---
 
 # Contributor guide
 
 This site explains the **Tsum Tsum script** — an automation script that plays
-Disney Tsum Tsum on Android through the **Game Automation Platform** host app —
+Disney Tsum Tsum on Android through the **General Automation Platform** host app —
 to someone who has never opened its source. It covers what the script is, how
 it is put together, how to make the changes people most often want to make, and
 how to ship a build or publish a script library of your own.
@@ -42,7 +42,7 @@ repository on GitHub, so what you read is what is on `main`.
 
 ```mermaid
 flowchart LR
-  app["<b>Game Automation Platform</b><br/>the Android host app<br/>(private)"]
+  app["<b>General Automation Platform</b><br/>the Android host app<br/>(private)"]
   scripts["<b>game-automation-scripts</b><br/>this script and its build<br/>(public)"]
   catalogue["<b>game-automation-catalogue</b><br/>the libraries the app downloads<br/>(public)"]
   scripts -- "npm run release" --> catalogue

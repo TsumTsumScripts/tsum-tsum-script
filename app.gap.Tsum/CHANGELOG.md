@@ -43,7 +43,7 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
-- Now requires Game Automation Platform 3.0 or newer.
+- Now requires General Automation Platform 3.0 or newer.
 - Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
 - Quick Bar "Last round" button added: stops the script once the current round is over.
 - Quick Bar Auto Play toggle (a play-on-repeat icon) replaces the Report button: turn round-playing on or off without restarting the script. Preset and Bubble get more room, as the readout is narrower too. Reports are still on the settings page's Debug tab and the Log button's long press.
@@ -167,6 +167,8 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
+- **Host renamed General Automation Platform** in docs, comments and
+  `package.json`. Folder, repo and package names keep `GameAutomationPlatform`.
 - **`MinHost` raised to 3.0** (`config.json`): the app will not download or
   run this build on an older host.
 - **Auto Play Game is live** (`LiveWhen.Now`): `quickBarSyncJob` removes the

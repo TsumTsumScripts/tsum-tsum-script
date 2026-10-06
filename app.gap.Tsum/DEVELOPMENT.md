@@ -858,7 +858,7 @@ to be pointed at the new key, or every code in circulation loses that setting.
 base, so it is not a secure context: `navigator.clipboard` does not exist, and
 what is left is `document.execCommand('copy')` — which needs the text selected
 and on screen. That is why the share box exists and why the code is always shown
-in it, selected. Game Automation Platform grew
+in it, selected. General Automation Platform grew
 `JavaScriptInterface.setClipboard` / `getClipboard` for this, and
 `writeClipboard` / `readClipboard` feature-detect them, falling back to the box
 without saying anything about it on any host that lacks the bridge.
