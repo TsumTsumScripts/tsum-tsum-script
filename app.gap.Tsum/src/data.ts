@@ -2883,6 +2883,11 @@ var TsumListRegions = {
    */
   skillBar: {fromX: 570, toX: 946, stepX: 2, fromY: 732, toY: 788, stepY: 4, zeroX: 583, fullX: 946.6},
   skillFill: {rMin: 200, gMin: 110, bMax: 130},
+  /**
+   * The star at the portrait's lower left: gold for a favourite, blue
+   * otherwise. A 3x3 vote over its body; measured 9 of 9 either way.
+   */
+  favorite: {x: 88, y: 608, step: 12, rMin: 180, gMin: 130, bMax: 100, votes: 6},
   dateReads: [
     {scale: 4, lo: 170}, {scale: 3, lo: 180}, {scale: 2, lo: 180},
     {scale: 3, lo: 130}, {scale: 3, lo: 190}

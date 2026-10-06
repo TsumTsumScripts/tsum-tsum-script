@@ -9,8 +9,9 @@
 //   sort by Date acquired, owned tsums only  (sortCollection, levelCap.ts)
 //   rewind to the first page                 (rewindCollection)
 //   per page: read which slots hold a card and each card's date, then tap each
-//   card and read the panel -- level, skill, and the big portrait, which names
-//   the tsum against its own library (`TsumListPortrait`, data.ts)
+//   card and read the panel -- level, skill, the favourite star, and the big
+//   portrait, which names the tsum against its own library (`TsumListPortrait`,
+//   data.ts)
 //   next page until a slot is empty or there is no next chevron
 //   put the player's order back
 //
@@ -45,7 +46,7 @@ const TsumListPortraitWaitMs = 3000;
 const TsumListPortraitChanged = 0.9;
 /** Two reads in a row this alike are a settled portrait; sparkles cost ~0.01. */
 const TsumListPortraitStill = 0.98;
-const TsumListColumns = ['order', 'tsum', 'name', 'level', 'level_cap', 'skill', 'skill_max', 'skill_progress', 'acquired', 'build', 'device'];
+const TsumListColumns = ['order', 'tsum', 'name', 'level', 'level_cap', 'skill', 'skill_max', 'skill_progress', 'acquired', 'favorite', 'build', 'device'];
 
 /** The collection library, loaded on first use. */
 var gTsumListLibrary: MyTsumEntry[] | null = null;
@@ -426,7 +427,7 @@ Tsum.prototype.readCollectionCard = function(slot, order, date, shotDir) {
   const selected = tsumListSelectCard(this, slot);
   const row: TsumListRow = {
     order: order, tsum: '', name: '', level: null, levelCap: null,
-    skill: null, skillMax: null, skillProgress: null, acquired: date
+    skill: null, skillMax: null, skillProgress: null, acquired: date, favorite: null
   };
   if (!selected) {
     logWarn(Log.TsumList.CardMissed, 'A card would not select; its row has only the date',
@@ -434,6 +435,7 @@ Tsum.prototype.readCollectionCard = function(slot, order, date, shotDir) {
     return row;
   }
   const detail = this.readTsumDetail();
+  row.favorite = this.readTsumFavorite();
   if (detail.level !== null) {
     row.level = detail.level[0];
     row.levelCap = detail.level[1];
@@ -499,6 +501,31 @@ Tsum.prototype.awaitCollectionPortrait = function(before) {
   return false;
 }
 
+/** The favourite star by the portrait: gold votes over a 3x3 grid. */
+Tsum.prototype.readTsumFavorite = function() {
+  const f = TsumListRegions.favorite;
+  const points: Coord[] = [];
+  for (let dy = -f.step; dy <= f.step; dy += f.step) {
+    for (let dx = -f.step; dx <= f.step; dx += f.step) {
+      points.push({x: f.x + dx, y: f.y + dy});
+    }
+  }
+  let gold = 0;
+  const img = this.screenshot();
+  try {
+    const read = this.getColors(img, points);
+    for (let i = 0; i < read.length; i++) {
+      const c = read[i];
+      if (c.r >= f.rMin && c.g >= f.gMin && c.b <= f.bMax) {
+        gold++;
+      }
+    }
+  } finally {
+    releaseImage(img);
+  }
+  return gold >= f.votes;
+}
+
 /**
  * Percent through the current skill level: where the bar's yellow fill ends,
  * on the line `TsumListRegions.skillBar` was fitted to. 0 when there is no fill.
@@ -545,7 +572,8 @@ function tsumListCsv(rows: TsumListRow[], build: GameBuild, device: string): str
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
     lines.push([String(r.order), statsCsvField(r.tsum), statsCsvField(r.name), cell(r.level),
-      cell(r.levelCap), cell(r.skill), cell(r.skillMax), cell(r.skillProgress), r.acquired, build, statsCsvField(device)].join(','));
+      cell(r.levelCap), cell(r.skill), cell(r.skillMax), cell(r.skillProgress), r.acquired,
+      r.favorite === null ? '' : r.favorite ? '1' : '0', build, statsCsvField(device)].join(','));
   }
   return lines.join('\n') + '\n';
 }
@@ -678,7 +706,7 @@ function tsumListCellRect(slot: number): MyTsumRect {
 interface TsumListFile {
   at: string;
   build: GameBuild;
-  tsums: { order: number; tsum: string; name: string }[];
+  tsums: { order: number; tsum: string; name: string; favorite: boolean }[];
 }
 
 /** Where this device's list file is; '' on a host without the natives. */
@@ -697,7 +725,7 @@ function tsumListSaveFile(rows: TsumListRow[], build: GameBuild): void {
   }
   const file: TsumListFile = { at: new Date().toISOString(), build: build, tsums: [] };
   for (let i = 0; i < rows.length; i++) {
-    file.tsums.push({ order: rows[i].order, tsum: rows[i].tsum, name: rows[i].name });
+    file.tsums.push({ order: rows[i].order, tsum: rows[i].tsum, name: rows[i].name, favorite: rows[i].favorite === true });
   }
   try {
     writeFile(path, JSON.stringify(file));
@@ -725,7 +753,8 @@ function tsumListLoadFile(): TsumListFile | null {
       const row = parsed.tsums[i];
       if (row !== null && typeof row === 'object' && typeof row.order === 'number'
           && typeof row.tsum === 'string') {
-        tsums.push({ order: row.order, tsum: row.tsum, name: typeof row.name === 'string' ? row.name : '' });
+        tsums.push({ order: row.order, tsum: row.tsum, name: typeof row.name === 'string' ? row.name : '',
+          favorite: row.favorite === true });
       }
     }
     return { at: String(parsed.at || ''), build: parsed.build, tsums: tsums };

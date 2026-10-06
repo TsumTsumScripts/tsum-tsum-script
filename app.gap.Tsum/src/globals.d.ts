@@ -859,6 +859,8 @@ interface TsumListRow {
   skillProgress: number | null;
   /** "YYYY-MM". */
   acquired: string;
+  /** Starred as a favourite; null when the card would not select. */
+  favorite: boolean | null;
 }
 
 /** A portrait rect in logical 1080x1920 coordinates. `MyTsumPortrait` holds two. */
@@ -1544,6 +1546,8 @@ interface Tsum {
   saveCollectionPortrait(path: string): void;
   /** Select card `slot` and read its row; unnamed portraits are saved under `shotDir`. */
   readCollectionCard(slot: number, order: number, date: string, shotDir: string): TsumListRow;
+  /** Whether the detail panel's tsum is starred as a favourite. */
+  readTsumFavorite(): boolean;
   /** The Tsum List export. False only when it stood aside for a round. */
   taskExportTsumList(): boolean;
   /** How many of the eight cards are still loading placeholders. */
