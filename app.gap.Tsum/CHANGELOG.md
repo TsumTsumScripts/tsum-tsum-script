@@ -54,7 +54,7 @@ release note; they fold back in here when she ships.
 - Auto Play Game setting moved from General to the Round tab.
 - Tsum app restart frequency now counts in minutes (30-minute steps) and sits under Device, out of Experimental.
 - Large tsums are now chained instead of popped, and bridge longer gaps.
-- Tsum List export now records which Tsums are favourites, and it and Unlock Level jump straight to the first page of the Tsum collection instead of paging back one at a time.
+- Tsum List export now records which Tsums are favourites (listed first and starred in GAP Companion's Select Tsum), and it and Unlock Level jump straight to the first page of the Tsum collection instead of paging back one at a time.
 - Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, the Mid Chain strategies no longer let them pile up, and new Save One and Save One Mid Chain strategies pop all but one (on sight, or as a chain lands).
 - Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen. The settings page is compact, fitting far more settings on screen, with a Code button by the presets that copies the settings code, and its window title names the script, version and channel.
 - Quick Bar's coin readout shows the average medals earned per round.
@@ -64,7 +64,8 @@ release note; they fold back in here when she ships.
 
 - **Tsum List `favorite` column** (`1`/`0`, empty when the card would not
   select), off the gold/blue star by the panel portrait
-  (`TsumListRegions.favorite`); the workflow list file carries it too.
+  (`TsumListRegions.favorite`); the workflow list file carries it too, and
+  the `tsums` list flags it (`GapWorkflowListItem.favorite`).
 - **Quick Bar Medals row**: average medals per round, from the tally's medal reading, under Base and Final; a dash until a round earns some. The readout type is smaller so four rows fit the band.
 - **GAP Companion workflows** (dormant until a sync arrives; `WORKFLOWS.md`).
   `src/gapWorkflow.ts` is the generic runner other scripts vendor; `src/workflow.ts`

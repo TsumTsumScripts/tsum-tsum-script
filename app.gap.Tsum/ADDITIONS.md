@@ -19,6 +19,7 @@ docs), then drop its rows here.
 | `TsumListPortrait`, `TsumListRegions`, `src/tsumsCollection.dat` | Tsum List: naming by portrait, level/skill/date reads | `src/data.ts`, build, lexicon | used |
 | `TsumListRegions.skillBar`/`skillFill`, `readSkillProgress` | Tsum List: `skill_progress` column | `src/data.ts`, `src/tsumList.ts` | used |
 | `TsumListRegions.favorite`, `readTsumFavorite` | Tsum List: `favorite` column | `src/data.ts`, `src/tsumList.ts` | used |
+| `GapWorkflowListItem.favorite` | Select Tsum: favorites first and starred on the phone | `src/gapWorkflow.ts`, `src/workflow.ts`, companion `ListItem` / `Option.favorite` | used |
 | `TsumListName`, `src/tsumNames.dat`, `myTsumUnpack` | Tsum List: printed-name fallback for art twins | `src/data.ts`, `src/tsumList.ts`, `src/roundStats.ts`, build, lexicon | used |
 | `SettingKey.StopAfterGames`, `SettingKey.StopAfterAction`, `StopAfterAction`, `src/stopAfterOptions.ts` | Stop after games | `src/shared.d.ts`, `src/settings.ts`, `src/quickbar.ts`, `src/quickbar.html`, `src/play.ts` | used |
 | `emitTrace()` / `traceAttached()` host natives, `src/trace.ts` (`Trace.Kind`, `traceOn`, `traceSend`), `Log.Log.TraceFailed`, `traceWantFrame()` / `traceFrameId()` host natives, `traceFrameAsk`, `traceFrameOf`, `traceMarks`, `Tsum.squareFrame` | Trace stream: live debug data, frames and marks for dev tools | `src/globals.d.ts`, `src/trace.ts`, `src/logging.ts`, `src/board.ts`, `src/forecast.ts`, `src/logEvents.ts`, host `api_system.cpp` / `TraceStream.kt` | used |

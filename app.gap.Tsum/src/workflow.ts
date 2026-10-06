@@ -356,7 +356,7 @@ function workflowNodeLabel(type: string): string {
 
 // --- Lists and the check --------------------------------------------------------
 
-/** `tsums`: this device's Tsum List, by its build's full names; null without the file. */
+/** `tsums`: this device's Tsum List, by its build's full names, favorites flagged; null without the file. */
 function workflowTsumsList(): GapWorkflowListItem[] | null {
   const file = tsumListLoadFile();
   if (file === null) {
@@ -370,7 +370,11 @@ function workflowTsumsList(): GapWorkflowListItem[] | null {
       continue;
     }
     seen[row.tsum] = true;
-    items.push({ value: row.tsum, label: row.name !== '' ? row.name : row.tsum });
+    const item: GapWorkflowListItem = { value: row.tsum, label: row.name !== '' ? row.name : row.tsum };
+    if (row.favorite) {
+      item.favorite = true;
+    }
+    items.push(item);
   }
   return items;
 }
