@@ -4,8 +4,13 @@ given name is defined, and what the invariants are. One read of it replaces most
 of a scan, and it is checked against the tree by `npm run map:check`, so it is
 current. Anything it does not cover is worth adding to it once found.
 
-These scripts target **Game Automation Platform** (source at `../game-automation-app`),
+These scripts target **General Automation Platform** (source at `../game-automation-app`),
 and only that. Feel free to perform updates in that folder as needed.
+
+GAP used to stand for *Game* Automation Platform. Only the display name
+changed: the device folder `GameAutomationPlatform`, the `game-automation-*`
+repos, the `game-automation-platform` GitHub org and `com.gameautomation.platform`
+keep the old spelling on purpose (the host's `GENERAL-AUTOMATION-PLAN.md`).
 
 **The development toolkit is a private sibling checkout, not part of this
 tree.** Comments and docs here cite its commands by name — `pages:eval`,
@@ -41,7 +46,7 @@ path:
   abort every time.
 
 Deploy targets **`sdcard/Download/GameAutomationPlatform/scripts/...`**. That is the one
-folder Game Automation Platform reads; it used to cross six parent directories
+folder General Automation Platform reads; it used to cross six parent directories
 with `Robotmon`, `AutoGameAssistance` and `GameAutomationPlatform`, and no longer
 does. A tree somewhere else is reachable only by starting its service with
 `--root=`.

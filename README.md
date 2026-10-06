@@ -1,7 +1,7 @@
 # game-automation-scripts
 
 An automation script that plays **Disney Tsum Tsum** on Android through the
-**Game Automation Platform** host app, and the build that packages it. The
+**General Automation Platform** host app, and the build that packages it. The
 script reads the screen, draws the chains, fires the skills, and does the chores
 between rounds — the mailbox, hearts, level caps, boxes.
 

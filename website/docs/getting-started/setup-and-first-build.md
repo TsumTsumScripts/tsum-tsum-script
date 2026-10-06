@@ -14,7 +14,7 @@ description: Clone, install, type-check, build, and push to a device.
   [Windows and line endings](../contributing/windows-and-line-endings).
 - **adb** on your PATH if you want to push to a device or emulator. Optional
   until you do.
-- The **Game Automation Platform** app on an Android device or emulator, with
+- The **General Automation Platform** app on an Android device or emulator, with
   the game installed, to see a change work for real.
 
 You do **not** need the development toolkit. It is a separate, private

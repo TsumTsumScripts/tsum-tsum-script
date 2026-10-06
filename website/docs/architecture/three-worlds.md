@@ -9,7 +9,7 @@ The script folder holds three programs, and they never share memory.
 
 ```mermaid
 flowchart LR
-  subgraph host["Game Automation Platform (the host app)"]
+  subgraph host["General Automation Platform (the host app)"]
     direction LR
     settings["<b>index.html</b><br/>settings page<br/>WebView, ES5"]
     quickbar["<b>quickbar.html</b><br/>Quick Bar<br/>WebView, ES5"]

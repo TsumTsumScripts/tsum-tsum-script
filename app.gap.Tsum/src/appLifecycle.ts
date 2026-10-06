@@ -172,7 +172,7 @@ Tsum.prototype.gameBuild = function() {
 //
 // So the prefix had been quietly disabling `dumpUiXml`: two aborted dumps in a
 // row and the system-dialog path gives up on the view hierarchy and runs on
-// pixels alone for the rest of the session. Game Automation Platform runs
+// pixels alone for the rest of the session. General Automation Platform runs
 // `sh -c` with the process environment, which already carries the correct
 // BOOTCLASSPATH.
 function startTsumTsumApp(build: GameBuild): void {

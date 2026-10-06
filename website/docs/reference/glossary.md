@@ -49,7 +49,7 @@ recognised when enough of them read the expected colour within threshold.
 **Goal** — the destination a look is made with. Only `gPages.navigate()`
 passes one, and only a look with a goal lets the `navigate` band act.
 
-**Host** — the Game Automation Platform app: the natives (capture, colour
+**Host** — the General Automation Platform app: the natives (capture, colour
 reads, taps, shell), the WebViews, the floating bar, the installer.
 
 **Look** — one detection: capture, sweep, broadcast. `detect` runs the queue

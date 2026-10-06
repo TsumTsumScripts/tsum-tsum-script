@@ -1,4 +1,4 @@
-// Ambient declarations for the Game Automation Platform runtime, the shared
+// Ambient declarations for the General Automation Platform runtime, the shared
 // value shapes, and the parts of `Tsum` that are defined outside its
 // constructor.
 //

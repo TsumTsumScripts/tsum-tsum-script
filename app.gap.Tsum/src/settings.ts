@@ -2278,8 +2278,8 @@ function copyFieldSelection(node: HTMLTextAreaElement | undefined): boolean {
  * Puts `text` on the system clipboard, then calls `done` with whether it got
  * there.
  *
- * Three routes, best first: Game Automation Platform's bridge -- the only one
- * that works from a file:// page, and the reason the app grew a clipboard
+ * Three routes, best first: General Automation Platform's bridge -- the only
+ * one that works from a file:// page, and the reason the app grew a clipboard
  * method at all -- then the async clipboard API for when this page is opened in
  * a browser, then `execCommand` on the visible box. A host without the bridge
  * always lands on the last one, and the code stays selected either way.

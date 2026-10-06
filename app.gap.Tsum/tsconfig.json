@@ -1,8 +1,8 @@
 {
   // The game script has no import/export -- every file shares one global scope.
   // `outFile` concatenates the files listed below (in this order) into a single
-  // build/index.js, which is what Game Automation Platform loads. settings.ts is
-  // intentionally NOT listed here; it compiles separately via
+  // build/index.js, which is what General Automation Platform loads.
+  // settings.ts is intentionally NOT listed here; it compiles separately via
   // tsconfig.settings.json into build/settings.js, which the settings UI
   // (index.html) loads on its own.
   //

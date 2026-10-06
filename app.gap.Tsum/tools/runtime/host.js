@@ -1,4 +1,4 @@
-// A Node stand-in for the Game Automation Platform host API, faithful to
+// A Node stand-in for the General Automation Platform host API, faithful to
 // the semantics in `../../../../game-automation-app/app/src/main/cpp`.
 //
 // The point of shimming the *host* rather than reimplementing the matcher is
