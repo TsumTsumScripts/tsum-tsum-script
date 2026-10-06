@@ -15,9 +15,10 @@ how to ship a build or publish a script library of your own.
 
 It is written from the repository's own documents (`CODEMAP.md`,
 `DEVELOPMENT.md`, `DRIVING_SCREENS.md`, `LOGGING.md`, `README.md` and the
-generated `PAGE_DISPATCH.md` and `EVENTS.md`) with the detail kept and the
-density taken out. Where a page shows code, it is pulled live from the
-repository on GitHub, so what you read is what is on `main`.
+generated `PAGE_DISPATCH.md` and `EVENTS.md`). It covers what a contributor
+needs to work in the tree; the source's own header comments are the long form.
+Where a page shows code, it is pulled live from the repository on GitHub, so
+what you read is what is on `main`.
 
 ## Where to start
 
@@ -60,11 +61,9 @@ flowchart LR
   and offers each entry for download. [Your own library source](publishing/your-own-library-source)
   shows how to publish one of your own.
 
-A fourth, private repository holds the **development toolkit** — screenshots
-of the game, the studio that authors screen fingerprints, the detection
-regression. Comments in the source cite its commands by name (`pages:eval`,
-`chain:bench`, `report:open`, …); none of those is a script in this package,
-and nothing on this site needs it.
+Comments in the source sometimes cite a command that `package.json` does not
+define. Those belong to a separate, private maintainers' repository. Nothing on
+this site needs it.
 
 :::note Images
 Screenshots have not been captured yet. Where one belongs you will see a dashed

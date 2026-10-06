@@ -25,17 +25,15 @@ flowchart LR
 Two consequences to internalise:
 
 - **Order in `tsconfig.json` matters — for load-time work only.** Anything that
-  *executes as the bundle evaluates* (a top-level `var SkillHandlers = {}`, the
-  `registerSkill(...)` calls in every skill file, `var gPages = new
-  PageRouter()`) must be listed after what it depends on. Function declarations
-  hoist across the whole bundle, so calls made *at runtime* are order-independent.
+  *executes as the bundle evaluates* (a top-level table, the `registerSkill(...)`
+  calls in every skill file, `var gPages = new PageRouter()`) must be listed
+  after what it depends on. Function declarations hoist across the whole bundle,
+  so calls made *at runtime* are order-independent.
 - **Name collisions are silent.** Two files declaring the same symbol will not
-  error; the later one wins. This has bitten the project: a bad merge restored
-  an old monolithic `index.ts` beside the split files, and because `index.ts`
-  is concatenated near the end, its duplicates quietly overwrote everything.
-  Which is why `index.ts` is kept thin.
+  error; the later one wins. `index.ts` is concatenated near the end and is
+  deliberately kept thin for that reason.
 
-The file list, with the comments that say why each slot is where it is:
+The file list carries a comment per slot saying why it is where it is:
 
 ```jsonc reference title="app.gap.Tsum/tsconfig.json"
 https://github.com/game-automation-platform/game-automation-scripts/blob/main/app.gap.Tsum/tsconfig.json#L31-L143
@@ -51,15 +49,11 @@ enormous file.
 
 The two halves are joined by declaration merging: `interface Tsum` in
 `globals.d.ts` declares every method, and TypeScript merges the interface into
-the class of the same name. That buys:
-
-- `ts.foo()` and `this.foo()` are checked, completed and find-referenced across
-  the bundle;
-- inside each `Tsum.prototype.name = function (...)`, `this` and the parameters
-  are typed from the interface — which is why those assignments carry no
-  annotations of their own and should not grow any;
-- `Tsum.prototype.typo = ...` is an error, so a method cannot be defined under
-  a name nothing calls.
+the class of the same name. That is what makes `ts.foo()` checked and
+find-referenceable across the bundle, lets each `Tsum.prototype.name =
+function (...)` take its `this` and parameter types from the interface rather
+than annotating them again, and turns a method defined under a name nothing
+declares into an error.
 
 **Adding a method to `Tsum` therefore means adding its signature to
 `interface Tsum` as well.** The interface is grouped by the file that
@@ -69,17 +63,11 @@ implements each member:
 https://github.com/game-automation-platform/game-automation-scripts/blob/main/app.gap.Tsum/src/globals.d.ts#L1077-L1093
 ```
 
-The file that declares the class says the same thing from its side:
-
-```ts reference title="app.gap.Tsum/src/tsum.ts"
-https://github.com/game-automation-platform/game-automation-scripts/blob/main/app.gap.Tsum/src/tsum.ts#L1-L31
-```
-
 The same idea one level down is why `Button`, `Page` and the log tables carry
-**no type annotation**: `{[k: string]: any}` would erase the key set, and with
-it go-to-definition on `Button.gameSkill1` and any chance of catching
-`Button.gameSkil1`. `Page` uses `satisfies PageMap`, which validates each entry
-without losing its keys.
+**no type annotation**: a broad index signature would erase the key set, and
+with it both go-to-definition and any chance of catching a misspelt key.
+`Page` uses `satisfies PageMap`, which validates each entry without losing its
+keys.
 
 ## The string vocabularies are `const enum`s
 
@@ -97,27 +85,20 @@ string:
 | `Emit` | `scriptEvents.ts` | every event broadcast to outside tooling |
 | `SkillReadiness`, `KeyCode` | `globals.d.ts` | the gauge read's answer; the host's key codes |
 
-A const enum is erased at compile time: `page === PageName.GamePlaying` emits
-`page === "GamePlaying"`. That costs nothing at runtime, gives each name one
-definition to jump to and rename, and — the reason it matters here — is the
-only kind of shared constant that *can* span the three compilations, since
-they share no memory.
+A const enum is erased at compile time, so it costs nothing at runtime, gives
+each name one definition to jump to and rename, and — the reason it matters
+here — is the only kind of shared constant that *can* span the three
+compilations, since they share no memory.
 
-What it does and does not prevent: a **misspelt** name is an error everywhere
-(`Did you mean 'GamePlaying'?`). A **correctly spelled raw string** still
-compiles, because TypeScript allows comparing a string enum against a literal
-of the same value. The rule is a convention the reviewers hold: use the member.
-
-`Log` is the same trick one level out: const enums cannot nest, so the
-components are separate enums inside a namespace that is erased with them.
-`Log.Skill.TiaraNoDream` is `'skill.tiara.noDream'`.
+A misspelt member is an error everywhere. A correctly spelled raw string still
+compiles, so the rule is a convention reviewers hold: **use the member.**
 
 ## Three compilations
 
 | Config | Output | Target | Shares |
 |:--|:--|:--|:--|
 | `tsconfig.json` | `build/index.js` — the game bundle | ES2023, `strict` | `shared.d.ts`, `logEvents.ts` |
-| `tsconfig.settings.json` | `build/settings.js` — the settings page | ES5 (the WebView), looser | the above plus `settings.d.ts`, `strings.d.ts`, `i18n.ts`, the `ui*` catalogues, `skillOptions.ts`, `bubbleOptions.ts`, `presets.ts`, `releaseStatus.ts`, `runPlan.ts` |
+| `tsconfig.settings.json` | `build/settings.js` — the settings page | ES5 (the WebView), looser | the above plus the page-side files: the string catalogues, the option lists, `presets.ts`, `runPlan.ts` |
 | `tsconfig.quickbar.json` | `build/quickbar.js` — the Quick Bar page | ES5, `strict` | the same page-side files |
 
 Only the first has a name an editor discovers automatically, so `settings.ts`
@@ -128,12 +109,11 @@ server checks it against the right files. `npm run typecheck` runs all three.
 
 `tools/minify/minify.js` runs terser over both outputs with **`compress:
 false` and `mangle: false`**: it parses and reprints without the formatting.
-Nothing is renamed, inlined, folded or dropped. The whole set of
-behaviour-changing transforms was measured at about 23 K on a 157 K bundle,
-and a script that runs unattended for hours on a phone, with no source map and
-an error handler that logs `String(e)`, does not buy a misplay for 10 %.
-`build/index.js` is left alone entirely so the offline tools and a stack
-trace stay readable.
+Nothing is renamed, inlined, folded or dropped. A script that runs unattended
+for hours on a phone, with no source map and an error handler that logs
+`String(e)`, cannot pay for a smaller file with a behaviour change.
+`build/index.js` is left alone entirely so the offline tools and a stack trace
+stay readable.
 
 TypeScript is pinned to 6.x on purpose: 7 removes `outFile` and `module:
 none`, and the no-imports design depends on both. Moving would mean a bundler

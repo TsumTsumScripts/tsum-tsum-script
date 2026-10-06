@@ -63,13 +63,12 @@ arbitrary got that way.
 
 ## What the tree does not accept
 
-- **Anything naming the private toolkit repository or describing what it
-  holds** beyond "the development toolkit". Cite its commands by name
-  (`pages:eval`) and no more. This tree is public.
+- **Anything naming the private maintainers' repository or describing what it
+  holds.** This tree is public, and so is this site.
 - **Anything copied from the host app's code.** Describe its behaviour in
   prose; the natives are declared in `globals.d.ts` and that is the extent of
   it.
-- **Game art or screenshots.** They belong in the toolkit's corpus.
+- **Game art or screenshots.** They belong in the private frame corpus.
 - **A behaviour reintroduced because the original Robotmon script had it.**
   The break is complete; there is no upstream.
 - **CRLF line endings.** `.gitattributes` pins LF; see

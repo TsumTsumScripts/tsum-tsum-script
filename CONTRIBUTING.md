@@ -18,8 +18,8 @@ The short version:
    player sees — and give any new file, tool or document its row in
    `CODEMAP.md`.
 4. Keep line endings LF (`.gitattributes` pins them; `core.autocrlf` off).
-5. This tree is public. Nothing in it may name the private development
-   toolkit repository or describe what it holds beyond "the development
-   toolkit", carry anything of the game's, or copy code from the host app.
+5. This tree is public, and so is the documentation site built from it.
+   Nothing in either may name the private maintainers' repository or describe
+   what it holds, carry anything of the game's, or copy code from the host app.
 
 Bugs and wanted features are in `app.gap.Tsum/BACKLOG.md`.

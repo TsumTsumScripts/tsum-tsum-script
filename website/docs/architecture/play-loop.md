@@ -7,33 +7,23 @@ description: One round, from the walk in to proving it is over.
 
 `taskPlayGameQuick` in `play.ts` is one round: the between-rounds delay, the
 walk to the board, then **scan, link, skill** until the board stops answering.
-The board itself — the scan, the chains, the bubbles — is `board.ts`; the
-chain planning is `pathfinding.ts`; the skills are `skills/`.
+The board itself — the scan, the chains, the bubbles — is `board.ts`; the chain
+planning is `pathfinding.ts`; the skills are `skills/`. Those four files are
+where the detail lives, and this page is only their shape.
 
 ```mermaid
 flowchart TD
-  delay["between-rounds delay?<br/>return and try again in 3 s"]
-  whistle["<b>the whistle</b><br/>quickBarApplyPending · logBeginRound"]
-  nav["gPages.navigate(GamePlaying)<br/>the pre-round screen sets the bonus items and opens the round"]
-  open["openRound(): roundId, frozen settings, emit round.start"]
-  scan["scanBoardQuick(): one capture → tsums, colours, bubbles"]
-  stall{"same chain still<br/>standing after 3 scans?"}
-  fan["Fan ×2, settle, re-scan"]
-  paths["calculatePaths() → skillOrderPaths() → cut to chains-per-scan"]
-  link["link(): drag each chain; pop bubbles per the Bubble Strategy"]
-  skill{"useSkill(board)?<br/>gauge full, not in fever hold-off"}
-  choreo["the skill's afterActivate choreography"]
-  extras["Lorcana card · pile-up sweep (All Bubbles ASAP) · periodic fan"]
-  live{"watchRoundEnd(): is the HUD still there?"}
-  over["finishRoundStats() · emit round.end · start the delay"]
-  delay --> whistle --> nav --> open --> scan --> stall
-  stall -- yes --> fan --> paths
-  stall -- no --> paths
-  paths --> link --> skill
-  skill -- yes --> choreo --> skill
-  skill -- no --> extras --> live
-  live -- board up --> scan
-  live -- over --> over
+  whistle["<b>the whistle</b><br/>held settings land · the roundId opens"]
+  nav["navigate to the board<br/>the pre-round screen sets the bonus items"]
+  scan["<b>scan</b> — one capture → tsums, colours, bubbles"]
+  plan["<b>plan</b> — chains, under the chain cap<br/>the skill may reorder them"]
+  link["<b>link</b> — drag each chain, spend bubbles per the Bubble Strategy"]
+  skill["<b>skill</b> — if the gauge is full, activate and run its choreography"]
+  live{"is the round still up?"}
+  over["read the score page · write the stats row · emit round.end"]
+  whistle --> nav --> scan --> plan --> link --> skill --> live
+  live -- "board still there" --> scan
+  live -- "over" --> over
 ```
 
 ## The walk in
@@ -52,61 +42,38 @@ https://github.com/game-automation-platform/game-automation-scripts/blob/main/ap
 
 ## One turn of the loop
 
-1. **Cap check.** If *Max round duration* is set and has elapsed, either stop
-   the script or *coast*: stop playing and keep only the liveness check, so the
-   round times out on its own and the tally, the stats and the next round
-   follow as usual. A coast has no deadline — it watches until the game over
-   screen, however long that takes, logging `play.roundCoasting` once a minute.
-   The game's Pause is never pressed here — it would stop the very clock the
-   round has to run down.
-2. **Scan.** `scanBoardQuick()` takes one capture and reads the tsums (circle
-   detection, colour clustering) and the bubbles off it.
-3. **Stall check.** A chain the game refused leaves the board exactly as it
-   was, so the next scan plans the same chain and draws it again. The loop
-   remembers the chain it drew; if it is still standing after enough scans, two
-   Fan taps shake the board loose. This is the "same few tsums lit up over and
-   over with nothing clearing" case, and `board.stalled` in the log is its
-   fingerprint.
-4. **Plan.** `calculatePaths` finds the longest chain per colour component
-   under the chain cap (the *Maximum Chain Number* setting unless the skill
-   overrides it through `chainLimits`); `skillOrderPaths` lets a skill reorder
-   them (Formal Beast picks by colour to keep his twin gauge level); then the
-   list is cut to *chains per scan*.
-5. **Link.** `link()` drags each chain as a touch-down, a run of moves and a
-   touch-up. The 10/10/10 ms drag timing is load-bearing: the game drops
-   tsums out of a chain drawn too fast. Bubbles are spent inside chains
-   according to the **Bubble Strategy** — a bubble popped while a chain is
-   clearing takes a bigger area with it, so the loop hoards them and
-   `bubbleTapBudget` says how many a chain may pop. Right after the scan,
-   *All Bubbles ASAP* pops every bubble and the other strategies pop any
-   overflow (`popBubbleOverflow`: all but one under *Save One*, all but two
-   past four under the Mid Chain ones; *Save One Mid Chain*'s chain pop is
-   all but one).
-6. **Skill.** `while (useSkill(board))`: the shared core checks the gauge,
-   respects the fever hold-off, taps the button and hands over to the skill's
-   choreography ([Add a skill](../guides/add-a-skill)). A skill that turns
-   tsums into bubbles sweeps them itself and says so with `sweepsBubbles`.
-7. **Extras.** Tap the Lorcana card if it is up; sweep the bottom band blind if
-   the strategy is *All Bubbles ASAP*, the scan saw a pile, and no skill has a
-   standing claim on the bubbles; use the Fan every fourth turn if the setting is on and the gauge is
-   not about to fill anyway.
-8. **Liveness.** `watchRoundEnd` asks whether the HUD is still there. A burst
-   skill's animation covers the same pixels, so an unreadable frame is played
-   through a few times before the loop concludes the round is over — only a
-   page a round can genuinely end on, or `confirmGameOver`'s grace window,
-   proves it.
+Each turn scans the board once, plans chains from what it saw, draws them, and
+fires the skill if the gauge is ready — then asks whether the round is still
+running and goes round again. Four things are worth knowing before changing any
+of it:
+
+- **The scan is the budget.** A capture is the expensive half of a turn, so the
+  loop takes one per turn and everything else is read off it.
+- **The chain cap comes from the settings unless the skill overrides it**
+  through `chainLimits`, and a skill may reorder what gets linked
+  (`orderPaths`). Neither is written back into the settings.
+- **Bubbles are hoarded, not spent on sight.** They are worth more popped
+  inside a chain, so the **Bubble Strategy** setting decides how many a chain
+  may spend. A skill that makes its own bubbles declares `sweepsBubbles` or
+  `claimsBubbles` rather than popping them behind the setting's back — see
+  [Add a skill](../guides/add-a-skill).
+- **Liveness is not a single reading.** A skill animation can cover the parts
+  of the screen the check reads, so an unreadable frame is not proof the round
+  ended; only a page a round can genuinely end on is.
+
+The *Max round duration* setting can stop the script or **coast** — stop
+playing and keep only the liveness check, so the round times out on its own and
+the tally, the stats and the next round follow as usual.
 
 ## The end
 
 On the turn the round is proven over, `watchRoundEnd` stamps `roundEndedAt` and
-broadcasts `round.over`. The loop exits, `finishRoundStats` reads the score
-page (template digit reading — the engine has no OCR) and writes the CSV row,
+broadcasts `round.over`. The loop exits, `finishRoundStats` reads the score page
+(template digit reading — the engine has no OCR) and writes the CSV row,
 `round.end` goes out with the figures, and if a delay is configured the clock
 for the next round starts from the game being back at the start screen.
 
 <ImagePlaceholder id="board-chain-drawn" alt="The game board during a round, with one planned chain drawn over the tsums it links" />
-
-<ImagePlaceholder id="skill-button-gauge" alt="The skill button in its three states: gauge filling, full, and the Lorcana medallion" />
 
 <ImagePlaceholder id="score-page" alt="The post-round score page with the score, coins and medals the stats reader picks up" />
 
@@ -114,19 +81,18 @@ for the next round starts from the game being back at the start screen.
 
 Two things change how a round is played without being screens:
 
-- **Fever.** `fever.ts` reads it off its own probe table, debounces the
-  answer and broadcasts start/end to subscribers (`gFever.subscribe`). The
-  *No skill last fever seconds* setting is the hold-off `useSkill` honours.
-- **The Lorcana transformation.** `lorcana.ts` reads the skill button (a
-  gold-rimmed medallion until the transformation, the ordinary button after)
-  with hysteresis each way, taps the card when it appears, and pops the ink
-  stone bubble each activation leaves. It is a setting rather than a skill,
-  because every Lorcana tsum transforms the same way whatever its skill does.
+- **Fever.** `fever.ts` reads it off its own probe table, debounces the answer
+  and broadcasts start/end to subscribers (`gFever.subscribe`). The *No skill
+  last fever seconds* setting is a hold-off `useSkill` honours.
+- **The Lorcana transformation.** `lorcana.ts` watches the skill button change
+  appearance, taps the card when it appears, and clears what each activation
+  leaves behind. It is a setting rather than a skill, because every Lorcana
+  tsum transforms the same way whatever its skill does.
 
 ## Reading a round afterwards
 
 Every record in the round carries its `roundId`; `round.start` … `round.end`
-carry the same `id`. The stats CSV (`tsum_record/stats_<YYYYMMDD>.csv`) has
-one row per round with the settings it was played under, read from the frozen
+carry the same `id`. The stats CSV (`tsum_record/stats_<YYYYMMDD>.csv`) has one
+row per round with the settings it was played under, read from the frozen
 `roundSettings` copy — so a Quick Bar change made mid-round is written on the
 *next* round's row, not this one's.

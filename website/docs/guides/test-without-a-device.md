@@ -16,8 +16,7 @@ copy of it.
 `tools/runtime/load.js` evaluates `build/index.js` in a vm; `host.js` shims
 the ~15 host primitives under it — captures off a PNG, colour reads, template
 matching, taps that record rather than tap — faithful to the app's own
-semantics. Every offline tool, here and in the development toolkit, goes
-through this pair.
+semantics. Every offline tool goes through this pair.
 
 ```js reference title="app.gap.Tsum/tools/runtime/load.js"
 https://github.com/game-automation-platform/game-automation-scripts/blob/main/app.gap.Tsum/tools/runtime/load.js#L82-L143
@@ -81,26 +80,23 @@ printed and never block — except `live:check`, which is required.
 `build/index.html` (the settings page before inlining) opens in any browser
 from `file://`; without the host bridge the clipboard falls back to the share
 box and the live-settings poll finds nothing, which is what the
-feature-detection is for. The Quick Bar has a staged preview the development
-toolkit can produce, with a stand-in engine behind it.
+feature-detection is for.
 
-The desktop browser is not the device's engine. The emulator's WebView is
-**Chromium 110**, and it measures a flex container's intrinsic width from what
-its items contain: a bare `flex-basis` counts for nothing, and a percentage
-`max-width` inside a content-sized box resolves to nothing. A strip that fits
-on the desktop can come out with its buttons clipped on the device. Give a
-fixed-size flex item a `width`, and when a layout change matters, check it
-under that engine — a Win64 snapshot of 110 run headless with `--screenshot
---window-size=360,62` draws the strip the way the device does.
+The desktop browser is not the device's engine. The WebView the pages run in
+is several Chromium releases behind, and it measures a flex container's
+intrinsic width differently: a strip that fits on the desktop can come out with
+its buttons clipped on the device. Give a fixed-size flex item an explicit
+`width`, and check any layout change under a browser of that vintage rather
+than the one on your desk.
 
 ## What needs a device
 
 Anything about **pixels the shim has not seen**: a new fingerprint against
 frames the corpus does not hold, a colour threshold, an animation's real
-duration, a drag the game refuses when drawn too fast. The development toolkit
-holds the corpus and the detection regression (`pages:eval`, `pages:calibrate`,
-`pages:audit`); a fingerprint change is not finished until that has run, and
-it is the only place a probe threshold should be raised.
+duration, a drag the game refuses when drawn too fast. The frame corpus and the
+detection regression live outside this package; a fingerprint change is not
+finished until they have run, and they are the only place a probe threshold
+should be raised.
 
 On the device, the tools you have are the log (*Debug logs* on), the annotated
 screenshots and page-history frames *Debug game* saves under `tsum_record/`,
