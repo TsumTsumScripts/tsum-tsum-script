@@ -280,6 +280,7 @@ function createHost(options) {
       fs.writeFileSync(p, String(content));
     },
     httpClient: () => '',
+    httpRequest: () => 0,
     getUserPlan: () => -1,
     sendNormalMessage: () => '',
     // The floating banner has no screen out here; a script may still call it.

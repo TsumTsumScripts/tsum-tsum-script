@@ -1,10 +1,12 @@
 // ---------------------------------------------------------------------------
 // Share round stats
 //
-// Sends new rows of tsum_record/stats_*.csv to `Config.roundStatsUrl`. The
-// script owns this; the host only provides `httpClient`. Off when the URL is
-// blank, when the Share round stats setting is off, or when round stats are
-// not recorded (nothing calls it then: `writeRoundStats` is the one caller).
+// Sends new rows of tsum_record/stats_*.csv to the ROUND_STATS_URL env var
+// (gap-env.json), which the user sets on this script's Library card in GAP,
+// where network access has to be allowed too. The request names the env var
+// (`env:ROUND_STATS_URL`), never the URL. Off when the var is blank, when
+// the Share round stats setting is off, or when round stats are not recorded
+// (nothing calls it then: `writeRoundStats` is the one caller).
 //
 // The CSV files are the queue. Each row's `id` starts with its round's UTC
 // time, so remembering the last id the server accepted per file (the cursor,
@@ -12,9 +14,11 @@
 // The cursor moves only after the server answers `{"ok": true}`, so a failure
 // costs a re-send, never a loss; the server drops duplicates by id.
 //
-// At most one request per call and one call a minute. `httpClient` returns only
-// the body ("" on a network failure), so anything but `ok: true` backs off:
-// 30s, doubling, up to 30min. Nothing here may throw into the round loop.
+// Sent with `httpRequest`, so the round loop never waits on the server; the
+// reply comes back as a network event (`roundShareOnEvent`). One request in
+// flight at a time, and a try at most once a minute. Anything but `ok: true`
+// backs off: 30s, doubling, up to 30min. Nothing here may throw into the
+// round loop.
 // ---------------------------------------------------------------------------
 
 const RoundShareSchema = 'gap.round-stats/1';
@@ -23,6 +27,9 @@ const RoundShareMaxRows = 50;
 const RoundShareBackoffMinMs = 30 * 1000;
 const RoundShareBackoffMaxMs = 30 * 60 * 1000;
 const RoundShareCursorFile = 'round_share_cursor.json';
+const RoundShareRef = 'env:ROUND_STATS_URL';
+/** A reply this late is taken as lost (the host drops queued work on a reload). */
+const RoundShareLostMs = 5 * 60 * 1000;
 
 /** Per run: when the last send was tried, and the backoff after failures. */
 let gRoundShareLastAt = 0;
@@ -30,14 +37,28 @@ let gRoundShareFailures = 0;
 let gRoundShareRetryAt = 0;
 /** An unexpected throw is logged once a run, not once a round. */
 let gRoundShareThrew = false;
+/** The request waiting on a reply, and what to remember when it is accepted. */
+let gRoundShareInFlight: {
+  id: number; at: number; storagePath: string; source: string; lastId: string; rows: number;
+} | null = null;
+let gRoundShareListening = false;
+
+/** The server's address, if the user set one and the host can send to it. */
+function roundShareEnabled(): boolean {
+  return typeof getEnv === 'function' && typeof httpRequest === 'function' &&
+    typeof addNetworkListener === 'function' && !!getEnv('ROUND_STATS_URL');
+}
 
 /** Called after a round's row is written. Sends one batch if one is due. */
 function roundShareAfterRow(tsum: Tsum): void {
-  if (!Config.roundStatsUrl || !tsum.sendRoundStats || !tsum.trackRoundStats) {
+  if (!tsum.sendRoundStats || !tsum.trackRoundStats || !roundShareEnabled()) {
     return;
   }
   const now = Date.now();
-  if (now - gRoundShareLastAt < RoundShareIntervalMs || now < gRoundShareRetryAt) {
+  if (gRoundShareInFlight && now - gRoundShareInFlight.at > RoundShareLostMs) {
+    gRoundShareInFlight = null;
+  }
+  if (gRoundShareInFlight || now - gRoundShareLastAt < RoundShareIntervalMs || now < gRoundShareRetryAt) {
     return;
   }
   gRoundShareLastAt = now;
@@ -64,13 +85,14 @@ function roundShareClear(storagePath: string): void {
   }
   gRoundShareFailures = 0;
   gRoundShareRetryAt = 0;
+  gRoundShareInFlight = null;
 }
 
 function roundShareCursorPath(storagePath: string): string {
   return storagePath + '/' + Config.recordDir + '/' + RoundShareCursorFile;
 }
 
-/** One pass: the oldest file with unsent rows gets one request. */
+/** One pass: the oldest file with unsent rows gets one request. The reply is handled by `roundShareOnEvent`. */
 function roundShareOnce(storagePath: string): void {
   const dir = storagePath + '/' + Config.recordDir;
   const names = execute('ls -1 "' + dir + '" 2>/dev/null').split('\n')
@@ -92,35 +114,66 @@ function roundShareOnce(storagePath: string): void {
       sentAt: new Date().toISOString(),
       records: batch.records,
     });
-    const reply = httpClient('POST', Config.roundStatsUrl, body,
-      { 'Content-Type': 'application/json' });
-    if (roundShareAccepted(reply)) {
-      // Drop files that are gone, so the cursor stays small.
-      const kept: { [source: string]: string } = {};
-      for (const other of names) {
-        const key = Config.recordDir + '/' + other;
-        if (cursor[key]) {
-          kept[key] = cursor[key];
-        }
-      }
-      kept[source] = batch.lastId;
-      writeFile(cursorPath, JSON.stringify(kept));
-      gRoundShareFailures = 0;
-      gRoundShareRetryAt = 0;
-      logInfo(Log.Stats.Shared, 'Shared round stats', { source: source, rows: batch.records.length });
-    } else {
-      gRoundShareFailures++;
-      const wait = Math.min(RoundShareBackoffMaxMs,
-        RoundShareBackoffMinMs * Math.pow(2, gRoundShareFailures - 1));
-      gRoundShareRetryAt = Date.now() + wait;
-      logWarn(Log.Stats.ShareFailed, 'The stats server did not accept the rows', {
-        source: source,
-        reply: (reply || '').substring(0, 200),
-        retryInSec: Math.round(wait / 1000),
-      });
+    if (!gRoundShareListening) {
+      gRoundShareListening = true;
+      addNetworkListener(roundShareOnEvent);
     }
+    const id = httpRequest('POST', RoundShareRef, body, { 'Content-Type': 'application/json' });
+    gRoundShareInFlight = { id: id, at: Date.now(), storagePath: storagePath, source: source, lastId: batch.lastId, rows: batch.records.length };
     return;
   }
+}
+
+/** The reply to the request in flight: move the cursor on `ok: true`, else back off. */
+function roundShareOnEvent(event: NetworkEvent): void {
+  const sent = gRoundShareInFlight;
+  if (!sent || event.id !== sent.id || (event.type !== 'done' && event.type !== 'failed' && event.type !== 'refused')) {
+    return;
+  }
+  gRoundShareInFlight = null;
+  try {
+    const reply = event.type === 'done' ? event.body || '' : '';
+    if (roundShareAccepted(reply)) {
+      roundShareKeep(sent.storagePath, sent.source, sent.lastId);
+      gRoundShareFailures = 0;
+      gRoundShareRetryAt = 0;
+      logInfo(Log.Stats.Shared, 'Shared round stats', { source: sent.source, rows: sent.rows });
+      return;
+    }
+    gRoundShareFailures++;
+    const wait = Math.min(RoundShareBackoffMaxMs,
+      RoundShareBackoffMinMs * Math.pow(2, gRoundShareFailures - 1));
+    gRoundShareRetryAt = Date.now() + wait;
+    logWarn(Log.Stats.ShareFailed, 'The stats server did not accept the rows', {
+      source: sent.source,
+      status: event.status,
+      error: event.error || '',
+      reply: reply.substring(0, 200),
+      retryInSec: Math.round(wait / 1000),
+    });
+  } catch (e) {
+    if (!gRoundShareThrew) {
+      gRoundShareThrew = true;
+      logWarn(Log.Stats.ShareFailed, 'Could not share round stats', { errorText: '' + e });
+    }
+  }
+}
+
+/** Records `lastId` as accepted for `source`, dropping files that are gone so the cursor stays small. */
+function roundShareKeep(storagePath: string, source: string, lastId: string): void {
+  const dir = storagePath + '/' + Config.recordDir;
+  const names = execute('ls -1 "' + dir + '" 2>/dev/null').split('\n').map((name) => name.trim());
+  const cursorPath = roundShareCursorPath(storagePath);
+  const cursor = roundShareReadCursor(cursorPath);
+  const kept: { [source: string]: string } = {};
+  for (const name of names) {
+    const key = Config.recordDir + '/' + name;
+    if (cursor[key]) {
+      kept[key] = cursor[key];
+    }
+  }
+  kept[source] = lastId;
+  writeFile(cursorPath, JSON.stringify(kept));
 }
 
 /** The cursor file: source path -> last id accepted. Empty when unreadable. */

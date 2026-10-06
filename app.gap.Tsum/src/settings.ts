@@ -720,8 +720,8 @@ var tabs: TabSpec[] = [
                         title: UiText.SettingShareRoundStats,
                         help: UiText.SettingShareRoundStatsHelp,
                         default: SettingDefaults[SettingKey.ShareRoundStats],
-                        // Alpha until Config.roundStatsUrl is set; inert
-                        // while it is blank.
+                        // Alpha. Inert until the user sets ROUND_STATS_URL
+                        // and allows network access in GAP (gap-env.json).
                         status: ReleaseStatus.Alpha,
                         neverShared: true
                     }
