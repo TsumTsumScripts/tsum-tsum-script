@@ -275,6 +275,11 @@ class Tsum {
    * Written by `finishRoundStats`; see roundStats.ts.
    */
   lastRound: RoundOutcome | null;
+  /**
+   * What the last chore sweep came to (its `Log.*.End` fields), for the Now
+   * queue's notification. Null when the run stopped under it.
+   */
+  lastChore: LogFields | null;
   roundStartedAt: number;
   /**
    * The run's pauses, as `onPause` (quickbar.ts) found them. `pauses` counts
@@ -467,6 +472,7 @@ class Tsum {
     this.openingRound = false;
     this.roundUid = '';
     this.lastRound = null;
+    this.lastChore = null;
     this.roundStartedAt = 0;
     this.pauses = 0;
     this.pausedAt = 0;

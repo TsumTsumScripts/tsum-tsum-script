@@ -14,14 +14,14 @@ format are the host's document --
 Names are declared once, in `src/scriptEvents.ts`, and reached through
 `ts.emit()`, which is silent on a host too old to have `emitEvent`.
 
-`11` event(s) from `11` call site(s).
+`12` event(s) from `12` call site(s).
 
 | event | emitted from | payload |
 |---|---|---|
 | `task.start` | `src/taskController.ts:93` | `task` |
 | `round.over` | `src/play.ts:367` | `id`, `round`, `seconds` |
-| `round.start` | `src/play.ts:546` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `settings` |
-| `round.end` | `src/play.ts:911` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
+| `round.start` | `src/play.ts:547` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `settings` |
+| `round.end` | `src/play.ts:912` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
 | `workflow.end` | `src/gapWorkflow.ts:589` | `id`, `rev`, `status`, `reason`, `loop`, `index` |
 | `workflow.start` | `src/gapWorkflow.ts:644` | `id`, `rev`, `name`, `total` |
 | `workflow.node` | `src/gapWorkflow.ts:686` | `id`, `loop`, `index`, `nodeId`, `node` |
@@ -29,6 +29,7 @@ Names are declared once, in `src/scriptEvents.ts`, and reached through
 | `workflow.nodeFailed` | `src/gapWorkflow.ts:745` | `id`, `loop`, `index`, `nodeId`, `node`, `error`, `tries` |
 | `run.started` | `src/index.ts:86` | `version`, `skill`, `locale` |
 | `run.stopped` | `src/index.ts:769` | `rounds` |
+| `gap.notify` | `src/companion.ts:63` | _none_ |
 
 ## The events
 
@@ -74,7 +75,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/play.ts:546` — `this.emit(Emit.Round.Start, …)`
+- `src/play.ts:547` — `this.emit(Emit.Round.Start, …)`
 
 ### `round.end`
 
@@ -97,7 +98,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/play.ts:911` — `this.emit(Emit.Round.End, …)`
+- `src/play.ts:912` — `this.emit(Emit.Round.End, …)`
 
 ### `workflow.end`
 
@@ -203,3 +204,13 @@ Emitted from:
 Emitted from:
 
 - `src/index.ts:769` — `emitScriptEvent(Emit.Run.Stopped, …)`
+
+### `gap.notify`
+
+`Emit.Companion.Notify` — A notification: title, body, category, tag, lines, progress, actions.
+
+Payload built elsewhere: `note`, of type `GapNote`.
+
+Emitted from:
+
+- `src/companion.ts:63` — `emitScriptEvent(Emit.Companion.Notify, …)`

@@ -64,6 +64,12 @@ release note; they fold back in here when she ships.
 
 ### Added
 
+- **GAP Companion notifications**: `gapNotify` (`src/companion.ts`) emits the
+  reserved `gap.notify` event (`Emit.Companion.Notify`), which the companion
+  server pushes to the phone (its `cloud/adapters/README.md` § Notifications).
+  Sent by `wrapUpIfAsked` (`run` category, tag `run`), the three Now queues in
+  `src/index.ts` from the sweep's outcome (`Tsum.lastChore`, set by the
+
 - **Share round stats** (General, Alpha, off by default): the script now sends
   its own round stats (`src/roundShare.ts`) instead of handing the CSV pattern
   to the host's `publishStats`, which is gone. The server is the

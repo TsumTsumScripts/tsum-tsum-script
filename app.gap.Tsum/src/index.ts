@@ -1019,6 +1019,7 @@ function queueUnlockSweep(run: Tsum, controller: TsumTaskController): void {
     }
     gUnlockNowQueued = false;
     controller.removeTask(UnlockNowTask);
+    notifyChoreDone('unlock', run.lastChore);
   }, UnlockNowRetryMs, 0, false, JobPriority.UnlockNow);
   logInfo(Log.Unlock.NowQueued);
   run.banner('Raising level caps next', 4000);
@@ -1101,6 +1102,7 @@ function queueBuyBoxSweep(run: Tsum, controller: TsumTaskController): void {
     }
     gBuyBoxNowQueued = false;
     controller.removeTask(BuyBoxNowTask);
+    notifyChoreDone('boxes', run.lastChore);
   }, UnlockNowRetryMs, 0, false, JobPriority.BuyBoxesNow);
   logInfo(Log.Box.NowQueued);
   run.banner('Buying boxes next', 4000);
@@ -1174,6 +1176,7 @@ function queueTsumListExport(run: Tsum, controller: TsumTaskController, stopAfte
     }
     gTsumListNowQueued = false;
     controller.removeTask(TsumListNowTask);
+    notifyChoreDone('tsumList', run.lastChore);
     if (stopAfter) {
       requestStop();
     }

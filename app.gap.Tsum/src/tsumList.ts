@@ -594,15 +594,18 @@ Tsum.prototype.taskExportTsumList = function() {
   const device = typeof getDeviceName === 'function' ? getDeviceName() : '';
   logInfo(Log.TsumList.Start, {file: csvPath});
   this.banner('Exporting the Tsum list', 4000);
+  this.lastChore = null;
 
   gPages.navigate(PageName.TsumsPage);
   if (!this.awaitPage(PageName.TsumsPage, UnlockReturnWaitMs, Log.TsumList.PageMissed)) {
     logInfo(Log.TsumList.End, {tsums: 0, reason: 'no collection'});
+    this.lastChore = {tsums: 0, reason: 'no collection'};
     return true;
   }
   const previous = this.sortCollection(CollectionSort.DateAcquired, true);
   if (previous === null) {
     logInfo(Log.TsumList.End, {tsums: 0, reason: 'sort failed'});
+    this.lastChore = {tsums: 0, reason: 'sort failed'};
     return true;
   }
   this.rewindCollection();
@@ -659,6 +662,7 @@ Tsum.prototype.taskExportTsumList = function() {
   this.restoreCollectionSort(previous, CollectionSort.DateAcquired);
   logInfo(Log.TsumList.End,
     {tsums: rows.length, unnamed: unnamed, pages: pages, reason: reason, file: csvPath});
+  this.lastChore = reason === 'stopped' ? null : {tsums: rows.length, reason: reason};
   this.banner('Tsum list: ' + rows.length + ' saved', 6000);
   return true;
 }
