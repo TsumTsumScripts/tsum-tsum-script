@@ -37,6 +37,9 @@ const CompanionRemoteActions = [
   { name: 'wrapUp', label: 'Stop after this round', role: 'stopAfter' },
   { name: 'cancelWrapUp', label: 'Keep playing', role: 'cancelStopAfter' },
   { name: 'lastSettings', label: 'Last run settings' },
+  // `list`: the options are this device's `tsums` workflow list, read on each use.
+  { name: 'selectTsum', label: 'Change My Tsum',
+    args: { tsum: { type: 'enum', label: 'Tsum', list: 'tsums' } } },
 ];
 
 /** `remoteSettingsApply`'s refusal reasons as the contract's short codes. */
@@ -108,7 +111,7 @@ function gapRemoteSet(key: string, value: string | number | boolean): string {
   return JSON.stringify({ ok: true, value: res.value, applies: res.applies });
 }
 
-/** Runs one `gapCompanion` action. These take no args. */
+/** Runs one `gapCompanion` action with its args, already checked by the adapter. */
 // noinspection JSUnusedGlobalSymbols
 function gapRemoteAction(name: string, argsJson: string): string {
   if (name === 'wrapUp' || name === 'cancelWrapUp') {
@@ -116,6 +119,11 @@ function gapRemoteAction(name: string, argsJson: string): string {
     const status = armed ? stopAfterThisRound() : cancelStopAfterThisRound();
     return JSON.stringify(status === 'no run' ? { ok: false, why: 'no-run' }
       : { ok: true, status: status, armed: armed });
+  }
+  if (name === 'selectTsum') {
+    // The adapter already checked `tsum` against the list.
+    const status = selectMyTsumNow(String(JSON.parse(argsJson).tsum));
+    return JSON.stringify(status === 'queued' ? { ok: true, status: status } : { ok: false, why: status });
   }
   if (name === 'lastSettings') {
     return JSON.stringify({ ok: true, settings: lastRunSettings() });

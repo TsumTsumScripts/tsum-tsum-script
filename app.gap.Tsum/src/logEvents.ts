@@ -406,6 +406,8 @@ namespace Log {
     SelectTsumEndChanged = 'workflow.selectTsum.endChanged',
     /** Select Tsum: going to the listed page and slot. */
     SelectTsumStart   = 'workflow.selectTsum.start',
+    /** Change My Tsum from GAP Companion: queued for the next turn between rounds. */
+    SelectTsumNowQueued = 'workflow.selectTsum.nowQueued',
     /** `presetsMirror` could not write the presets file. */
     PresetsNotSaved = 'workflow.presetsNotSaved',
     /** A setting the workflow owns (`stopAfterGames`) was refused. */

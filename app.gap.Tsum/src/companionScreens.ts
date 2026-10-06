@@ -19,6 +19,7 @@ const CompanionTasks: { [task: string]: string } = {
   buyBoxes: 'Buying boxes',
   buyBoxesNow: 'Buying boxes',
   exportTsumListNow: 'Exporting the Tsum list',
+  selectTsumNow: 'Changing My Tsum',
   wrapUpNow: 'Stopping after this round',
   taskWalkthrough: 'Recording a walkthrough',
   taskPlayGameQuick: 'Playing rounds',
@@ -40,6 +41,10 @@ const CompanionScreens = {
   barNote: [{ text: 'The run stops when this round ends.', when: 'state.flags.stopPending' }],
   tabs: [
     { id: 'stats', label: 'Stats', items: [
+      { card: 'My Tsum', icon: 'tsum', when: 'state.active', items: [
+        { facts: [{ label: 'My Tsum', bind: 'state.info.myTsum', icon: 'tsum' }] },
+        { button: 'selectTsum' },
+      ] },
       { slot: 'totals' },
       { card: 'This run', icon: 'play', items: [
         { stats: [
