@@ -105,6 +105,8 @@ declare const enum UiText {
   SettingPrioritizeMyTsumHelp = 'setting.prioritizeMyTsum.help',
   SettingTrackRoundStats = 'setting.trackRoundStats',
   SettingTrackRoundStatsHelp = 'setting.trackRoundStats.help',
+  SettingShareRoundStats = 'setting.shareRoundStats',
+  SettingShareRoundStatsHelp = 'setting.shareRoundStats.help',
   SettingBubbleStrategy = 'setting.bubbleStrategy',
   SettingBubbleStrategyHelp = 'setting.bubbleStrategy.help',
   SettingHoldBubblesLastFever = 'setting.holdBubblesLastFever',

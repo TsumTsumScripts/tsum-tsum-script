@@ -63,6 +63,10 @@ release note; they fold back in here when she ships.
 
 ### Added
 
+- **Share round stats** (General, Alpha, off by default): the script now sends
+  its own round stats (`src/roundShare.ts`) instead of handing the CSV pattern
+  to the host's `publishStats`, which is gone. Inert while
+  `Config.roundStatsUrl` is blank, as it is today.
 - **Change My Tsum** (GAP Companion action `selectTsum`, arg `tsum` from the
   `tsums` list): `selectMyTsumNow` saves the choice to
   `my_tsum_next_<device id>.json` and queues Select My Tsum as a one-shot task

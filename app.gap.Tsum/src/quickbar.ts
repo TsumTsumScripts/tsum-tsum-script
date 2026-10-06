@@ -138,6 +138,7 @@ function quickBarState(): string {
     state[SettingKey.BuyBoxMaxPurchases] = ts.buyBoxMaxPurchases > 0
       ? ts.buyBoxMaxPurchases : BuyBoxDefaultMax;
     state[SettingKey.AutoUnlockMyTsumLevel] = ts.autoUnlockMyTsumLevel;
+    state[SettingKey.ShareRoundStats] = ts.sendRoundStats;
     state[SettingKey.SendHeartsAuto] = ts.sendHearts;
     state[SettingKey.ReceiveHeartsOneByOne] = ts.receiveOneByOne;
     state[SettingKey.AutoPlayGame] = ts.autoPlayGame;
@@ -454,15 +455,19 @@ function quickBarApplyOne(tsum: Tsum, key: SettingKey,
       applied = quickBarClamp(value, 100, 400);
       Config.linkReach = (applied as number) / 100;
       break;
-    // The CSV is written per round off this flag, so it can move mid-run. The
-    // handoff cannot be undone -- the host keeps sending a pattern once given
-    // one -- so it is made once, the way `buildRun` makes it.
+    // The CSV is written per round off this flag, so it can move mid-run.
     case SettingKey.TrackRoundStats:
       applied = !!value;
-      if (applied && !tsum.trackRoundStats && typeof publishStats === 'function') {
-        publishStats(Config.recordDir + '/stats_*.csv');
-      }
       tsum.trackRoundStats = applied;
+      break;
+    // Read after each row is written (roundShareAfterRow). Off clears the
+    // cursor, so nothing is kept about what was shared.
+    case SettingKey.ShareRoundStats:
+      applied = !!value;
+      if (!applied && tsum.sendRoundStats) {
+        roundShareClear(tsum.storagePath);
+      }
+      tsum.sendRoundStats = applied;
       break;
     // The Box Buying sweep reads these off `ts` when it runs, so a change made
     // between sweeps lands on the next one -- including the one the panel's Now
@@ -661,6 +666,8 @@ const LiveSettings: { [key: string]: LiveWhen } = {
   // Read at the round's end -- by the level-up record handler and then the
   // play task's tail -- so a switch thrown mid-round counts for this round.
   [SettingKey.AutoUnlockMyTsumLevel]: LiveWhen.Now,
+  // Read after each round's row is written, never during play.
+  [SettingKey.ShareRoundStats]: LiveWhen.Now,
   // Each chooses a job in the run's task set, and `quickBarSyncJob` adds or
   // removes that job on the live scheduler. A job runs between rounds, so the
   // round in front of the loop is untouched. Not preset rows.

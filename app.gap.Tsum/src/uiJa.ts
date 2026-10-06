@@ -85,6 +85,8 @@ i18nRegister(Locale.Japanese, '日本語', {
     [UiText.SettingPrioritizeMyTsumHelp]: 'スキルゲージが早くたまります。',
     [UiText.SettingTrackRoundStats]: 'ラウンド統計を記録',
     [UiText.SettingTrackRoundStatsHelp]: '1日 (UTC) ごとに CSV を1つ tsum_record/ に保存します: stats_YYYYMMDD.csv。',
+    [UiText.SettingShareRoundStats]: 'ラウンド統計を共有',
+    [UiText.SettingShareRoundStatsHelp]: '新しい行を約1分ごとに統計サーバーへ送信します。「ラウンド統計を記録」が必要です。',
     [UiText.SettingBubbleStrategy]: 'ボムの使い方',
     [UiText.SettingBubbleStrategyHelp]: 'チェーン途中で割ったボムはより多く消します。デフォルトはそのためにボムを残します。',
     [UiText.SettingHoldBubblesLastFever]: 'フィーバー終盤にボムを残す秒数',

@@ -137,6 +137,8 @@
     // and scorePage (tsum.ts), so it is concatenated after both.
     "src/corpus.ts",
     "src/roundStats.ts",
+    // Share round stats: called from writeRoundStats, reads its CSV helpers.
+    "src/roundShare.ts",
     // Issue reports. Writes frames the way corpus.ts does and reads the device
     // tag and the file stamp off roundStats.ts, so it follows both. Nothing
     // here runs at load time -- the logger calls into it, which is why its slot

@@ -58,6 +58,7 @@ var SettingDefaults: Readonly<Settings> = {
   [SettingKey.StopAfterGames]: 0,
   [SettingKey.StopAfterAction]: StopAfterAction.AutoPlayOff,
   [SettingKey.TrackRoundStats]: true,
+  [SettingKey.ShareRoundStats]: false,
   [SettingKey.TsumAppRestartFrequency]: 0,
   [SettingKey.DebugLogs]: false,
   [SettingKey.DebugGame]: false,

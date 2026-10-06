@@ -225,6 +225,7 @@ const RemoteSettingKinds: { [key: string]: RemoteKind } = {
   [SettingKey.AutoLaunchApp]: RemoteKind.Bool,
   [SettingKey.AutoPlayGame]: RemoteKind.Bool,
   [SettingKey.TrackRoundStats]: RemoteKind.Bool,
+  [SettingKey.ShareRoundStats]: RemoteKind.Bool,
   [SettingKey.ClickAssist]: RemoteKind.Bool,
   [SettingKey.RoundDelayMinutes]: RemoteKind.Int,
   [SettingKey.MaxRoundMinutes]: RemoteKind.Int,
@@ -526,16 +527,11 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   ts.skillLevel = settings.skillLevel;
   ts.skillType = settings.skillType;
   ts.trackRoundStats = settings.trackRoundStats;
-  // Hand the CSV to the host, which does the sending: it remembers the last id
-  // it managed to send for each file, so nothing here has to track progress or
-  // retry. Guarded on the *host* rather than on the settings: a bare reference
-  // to a missing global is a ReferenceError on a host older than this native.
-  if (ts.trackRoundStats && typeof publishStats === 'function') {
-    const pattern = Config.recordDir + '/stats_*.csv';
-    publishStats(pattern);
-    logInfo(Log.Stats.Publishing, 'Handed the round stats to the host to send', {
-      pattern: pattern,
-    });
+  // `=== true` for a stored form from before the row existed. Off forgets
+  // what was sent, as switching it off mid-run does.
+  ts.sendRoundStats = settings.shareRoundStats === true;
+  if (!ts.sendRoundStats) {
+    roundShareClear(ts.storagePath);
   }
   ts.skillAutoTap = settings.skillAutoTap;
   ts.lorcanaCard = settings.lorcanaCard === true;
