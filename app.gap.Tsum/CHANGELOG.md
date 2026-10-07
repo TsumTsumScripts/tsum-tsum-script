@@ -45,14 +45,14 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
-## [5.0a2]
+## [5.0b1]
 
 ### Summary
 
 **Additions**
 
 *Skills*
-- Disney Villains (Set) plays properly (Alpha), with score and coins recorded.
+- Disney Villains (Set) plays properly, with score and coins recorded.
 - Nightmare Before Christmas (Set) rerolls Oogie Boogie's dice only under 7 and tracks shrinking tsums better.
 - Gaston, Coronation Day Elsa and Delay Skill ReActivation are out of Beta.
 - Large tsums are recognised and chained.
@@ -77,7 +77,7 @@ release note; they fold back in here when she ships.
 *Platform and data*
 - Requires General Automation Platform 3.1 or newer.
 - Each device keeps its own folder, so emulators sharing storage stop overwriting each other's files.
-- Share round stats (Alpha): sends your round stats to a server set in GAP's Library.
+- Share round stats (Beta): sends your round stats to a server set in GAP's Library.
 - Receiving hearts one by one always skips the ad mail; Skip first person is gone.
 
 **Fixes**
@@ -98,7 +98,7 @@ release note; they fold back in here when she ships.
   `src/index.ts` from the sweep's outcome (`Tsum.lastChore`, set by the
   tasks) and Change My Tsum's queue (with a Try again button on failure).
 
-- **Share round stats** (General, Alpha, off by default): the script now sends
+- **Share round stats** (General, Beta, off by default): the script now sends
   its own round stats (`src/roundShare.ts`) instead of handing the CSV pattern
   to the host's `publishStats`, which is gone. The server is the
   `ROUND_STATS_URL` env var declared in `gap-env.json` (new, shipped in
@@ -181,7 +181,7 @@ release note; they fold back in here when she ships.
   declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture
   disc, bubble pass and link reach. Other skills skip the read and stay at 1.
-- **Disney Villains (Set)** (`SkillType.VillainsSet`, Alpha). A burst declaring
+- **Disney Villains (Set)** (`SkillType.VillainsSet`, Beta). A burst declaring
   `colorBlur` 15 and the new `SkillHandler.chromaCap` 80, which caps each
   tsum's sampled saturation in `findTsums`. Its neon board split one villain
   over many clusters; offline, linkable tsums per board 6.4 -> 10.9.
@@ -346,7 +346,7 @@ release note; they fold back in here when she ships.
   with owned Tsums only, rewinds, taps each card, and writes
   `stats/tsum_list_<stamp>.csv` after every page. Queued on a live run.
   Started from a stopped script (`SettingKey.TsumListOnly`), the run exports and
-  stops. Alpha.
+  stops. Beta.
 - The Tsum List CSV ends in a `build` column (`global`/`jp`), so a reader such
   as the stats site can tell an INTL list from a JP one.
 - `round.start` and `round.end` carry `build`, and `round.end` also `myTsum` and
