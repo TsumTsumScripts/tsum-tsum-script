@@ -548,7 +548,7 @@ var tabs: TabSpec[] = [
                         key: RowKey.ExportTsumList,
                         title: UiText.SettingExportTsumList,
                         help: UiText.SettingExportTsumListHelp,
-                        status: ReleaseStatus.Alpha,
+                        status: ReleaseStatus.Beta,
                         buttons: [
                             {text: i18nThunk(UiText.ButtonNow), onClick: function () { askExportTsumListNow(); },
                                 remote: 'exportTsumListNow'}
@@ -714,9 +714,9 @@ var tabs: TabSpec[] = [
                         title: UiText.SettingShareRoundStats,
                         help: UiText.SettingShareRoundStatsHelp,
                         default: SettingDefaults[SettingKey.ShareRoundStats],
-                        // Alpha. Inert until the user sets ROUND_STATS_URL
+                        // Beta. Inert until the user sets ROUND_STATS_URL
                         // and allows network access in GAP (gap-env.json).
-                        status: ReleaseStatus.Alpha,
+                        status: ReleaseStatus.Beta,
                         neverShared: true
                     }
                 ]
