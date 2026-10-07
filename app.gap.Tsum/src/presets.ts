@@ -3,8 +3,8 @@
 // A preset is a name and **how a round is played** -- exactly the rows
 // `SHARE_SLOTS` (src/settings.ts) names, which is the Skills, Round and
 // Gameplay tabs. The rows that shape the run rather than the round (Auto Play
-// Game, the between-rounds delay, Track round statistics) are on General and
-// stay out. Not the language, the device, the chores, the mailbox or the
+// Game, the between-rounds delay, Track round statistics, Max Round Duration,
+// Stop after games) are `neverShared` and stay out. Not the language, the device, the chores, the mailbox or the
 // hearts either: those describe the account, and switching between setups
 // should not touch any of it.
 //

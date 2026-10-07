@@ -772,20 +772,23 @@ under; the next one says the new value.
 
 Copy and Paste on the **Share settings** row move a whole configuration between
 devices as one line of text, and the format is built around getting that line
-short enough to paste into a chat message — 18 characters for stock settings,
-33 for the twelve-change example below:
+short enough to paste into a chat message — 14 characters for stock settings,
+42 for the twelve-change example below (Gaston, a longer chain, Use Fan and Coin
+on, Prioritize MyTsum off, and seven more):
 
 ```
-TSUM4-y2f.YiDACgg.K5.T2.U5.Vo.fu~
-│     ││  │       └── one field per non-boolean setting that is NOT at its
-│     ││  │           default: a slot character, then the value in base36
-│     ││  └── all 23 slots, one bit each, six bits per character
+TSUM4-c5.CBQA.C8.D7.M3.N5.OG.Pa.R5k.TA.Uc~
+│     ││ │    └── one field per non-boolean setting that is NOT at its
+│     ││ │        default, in slot order: a slot character, then the value
+│     ││ │        (base36 for a number, the one-character `share` id for a
+│     ││ │        dropdown entry: `OG` is slot O, skillType, Gaston)
+│     ││ └── all 23 slots, one bit each, six bits per character (four here)
 │     │└── the script version in base36, for the status line
 │     └── one character of checksum over everything after it
 └── format marker; the digit changes when the payload shape does
 ```
 
-Two decisions do the work. Booleans — 12 of the 23 settings a code carries — cost a bit each
+Two decisions do the work. Booleans — 12 of the 23 slots a code carries — cost a bit each
 instead of a name and a value, and anything still at its default is not written
 down at all. The second is why **a code is a whole configuration rather than a
 patch**: what it omits is *defined* as default, so applying a code resets the
@@ -799,8 +802,9 @@ What keeps that honest:
   is: **how a round is played**, and nothing else. That is `SHARE_TABS`
   (Skills, Round and Gameplay) less the rows on them that shape the *run* rather than
   the round, which say so with `neverShared` — Auto Play Game (on Round), the
-  between-rounds delay, Track round statistics, and the Max Round Duration pair
-  (how long the run will spend on one round). A setting's position in the
+  between-rounds delay, Track round statistics, Share round stats, and the Max
+  Round Duration and Stop after games pairs (how long the run will spend on one
+  round, and when it stops). A setting's position in the
   list is its identity on the wire — the character that names it, and its bit in
   the bitmap — so reordering or reusing one silently turns one setting into
   another in every code in circulation; a setting that goes away leaves `''`
@@ -815,7 +819,7 @@ What keeps that honest:
   in no code until 0.12.
 - **The rows outside the set are not touched.** Applying a code puts the rows it
   does not mention back to their defaults, and leaves the language, the chores,
-  the mailbox, the hearts, the box buying and the three run-shaped rows exactly
+  the mailbox, the hearts, the box buying and the run-shaped rows exactly
   where they are. A code cannot carry those, so resetting them would be an edit
   made on no evidence — and it is what made a paste unusable for someone who had
   their mailbox set up.

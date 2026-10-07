@@ -53,8 +53,8 @@ not match before writing anything**, so the hash is what makes a source safe
 to trust with an install.
 
 ```bash
-sha256sum TsumTsum-Beta-0.12.zip        # Linux / Git Bash
-Get-FileHash TsumTsum-Beta-0.12.zip     # PowerShell
+sha256sum TsumTsum-Beta-5.0a2.zip        # Linux / Git Bash
+Get-FileHash TsumTsum-Beta-5.0a2.zip     # PowerShell
 ```
 
 This repository's build writes it beside the archive as

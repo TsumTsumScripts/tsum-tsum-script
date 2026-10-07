@@ -60,7 +60,7 @@ The build is a dependency graph of steps that run concurrently
 | `dist/tsums.dat`, `tsumsCollection.dat`, `tsumNames.dat` | The tsum libraries, copied without their headers. |
 | `dist/gap-env.json`, `gap-backup.json`, `companionSettings.json` | What the app reads beside the script: env vars, backed-up page keys, GAP Companion's Settings tab. |
 | `dist/LICENSE`, `dist/NOTICE` | Travel with the archive. |
-| `TsumTsum-Alpha-0.12.zip` + `.sha256` | The release archive, named from `config.json` (channel) and `package.json` (version), and its digest. |
+| `TsumTsum-Alpha-5.0a2.zip` + `.sha256` | The release archive, named from `config.json` (channel) and `package.json` (version), and its digest. |
 
 The build also regenerates `PAGE_DISPATCH.md` and `EVENTS.md`, runs the
 dispatch traces and the code-map check (all *optional*: they report and never
@@ -82,7 +82,8 @@ Three ways, from quickest to most official:
 
 1. **`npm run adb`** pushes an existing `dist/` to the folder the app reads:
    `/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/`.
-   `npm run buildAndAdb` builds first, then pushes to `scripts/DEV` instead.
+   `npm run buildAndAdb` builds first, then pushes to its own `scripts/DEV`
+   folder ("Tsum Tsum DEV" in the app), leaving the installed script alone.
 2. **`debug_deploy.ps1`** builds and pushes over the *installed* script's
    folder, which it derives from `config.json`, so your build lands on top of
    the release the app already has rather than beside it. This is the debug

@@ -19,7 +19,7 @@ npm run release:alpha -- --yes       # skip the note review (for scripts; needs 
 
 ## Before you start
 
-1. **`package.json` carries the version.** Bump it (`npm version 0.13
+1. **`package.json` carries the version.** Bump it (`npm version 5.0a3
    --no-git-tag-version`, or edit it) — it is the one place the version lives.
 2. **`CHANGELOG.md` has a `## [<that version>]` section with a `### Summary`
    block.** There is no `[Unreleased]`: the section named for the version is
@@ -60,8 +60,8 @@ https://github.com/game-automation-platform/game-automation-scripts/blob/main/ap
 
    ```
    ../game-automation-catalogue/Official/LineTsumTsum/Beta/
-   ├── TsumTsum-Beta-0.12.zip     the build
-   ├── TsumTsum-Beta-0.11.zip     and the ones before it, up to HistoryLimit
+   ├── TsumTsum-Beta-5.0a2.zip     the build
+   ├── TsumTsum-Beta-5.0a1.zip     and the ones before it, up to HistoryLimit
    ├── metadata.json              describes the newest build and lists the rest
    └── CHANGELOG.md               every release cut on this channel, newest first
    ```
@@ -85,7 +85,7 @@ https://github.com/game-automation-platform/game-automation-scripts/blob/main/ap
 ```bash
 cd ../../game-automation-catalogue
 bash build-official.sh        # or build-official.ps1; regenerates official.json locally
-git add -A && git commit -m "Tsum Tsum Beta 0.12" && git push
+git add -A && git commit -m "Tsum Tsum Beta 5.0a2" && git push
 ```
 
 `official.json` itself is git-ignored there: the catalogue's GitHub Actions
@@ -102,4 +102,8 @@ install was *pinned* by choosing its version by name.
 - `npm run release:*` publishes an archive for the app to **install** from
   the catalogue. This is what a user gets.
 - `debug_deploy.ps1` and `npm run adb` push `dist/` straight over the
-  installed script's folder, skipping the catalogue. This is the debug loop.
+  catalogue-installed script's folder (`scripts/Official GAP/Tsum Tsum/`),
+  skipping the catalogue.
+- `npm run buildAndAdb` builds, then pushes to its own `scripts/DEV` folder,
+  listed in the app as "Tsum Tsum DEV" beside the installed script. This is the
+  everyday debug loop.

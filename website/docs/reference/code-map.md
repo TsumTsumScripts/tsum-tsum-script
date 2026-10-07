@@ -25,6 +25,7 @@ In bundle order.
 | `uiEn.ts`, `uiZhTw.ts`, `uiJa.ts` | One language each, keyed by `UiText`. English must be complete. |
 | `taskController.ts` | `TsumTaskController`, the cooperative scheduler. Five consecutive throws from one job restart the app. |
 | `runPlan.ts` | The run's task table, in the game and settings compilations, so the Run order card lists exactly what runs. |
+| `settingDefaults.ts` | Every setting's default, in the game and settings compilations. `remoteStartSettings` fills a GAP Companion start from it. |
 | `state.ts` | The two script-wide globals: `ts`, `gTaskController`. |
 | `utils.ts` | `isSameColor`, `absColor`, `channelDiff`. |
 | `data.ts` | Every coordinate and tuning constant, no logic: the page fingerprints, the navigation plans, one table per screen a chore walks. Shared tables only. |
@@ -32,7 +33,8 @@ In bundle order.
 | `scriptEvents.ts` | `Emit` — the emitted event vocabulary. |
 | `logs.ts`, `logsEn.ts`, `logsZhTw.ts`, `logsJa.ts` | The log sentence registry and one table per language. |
 | `logging.ts` | The structured logger: the JSONL record, the correlation ids, the flood guard, the ring of recent records a report carries. |
-| `pathfinding.ts` | Board reading and chain planning, no tapping: circle detection, clustering, `calculatePaths`, the chroma colour model. |
+| `trace.ts` | The trace stream a dev tool attaches to: `Trace.Kind`, `traceOn`, `traceSend`, and the frame helpers. |
+| `pathfinding.ts` | Board reading and chain planning, no tapping: circle detection (tsums, bubbles, large tsums), clustering, `calculatePaths`, the chroma colour model. |
 | `pages.ts` | `PageRouter` and `gPages`: score, `observe`, `react`, `detect`, `peek`, `navigate`, the page sets, and `perform`. |
 | `tsum.ts` | The `Tsum` object: the fields, the geometry, the capture and touch wrappers, the coordinate conversions. Reopened by most files below. |
 | `waits.ts` | `sleep`, `sleepUntil`, `settleScreen`, `settleBoard`, `mayContinue`. |
@@ -43,6 +45,9 @@ In bundle order.
 | `hearts.ts` | The send-hearts sweep and the sent/received tally. |
 | `levelCap.ts` | The level-cap sweep. `awaitPage` is shared with `boxes.ts`. |
 | `boxes.ts` | The Box Buying chore. |
+| `tsumList.ts` | The Tsum List export: walk the collection by Date acquired and write `stats/tsum_list_<stamp>.csv`. |
+| `myTsumSelect.ts` | Select My Tsum for the workflow's Select Tsum node, and the phone's Change My Tsum. Shares the page turn and card tap with `tsumList.ts`. |
+| `tsumNames.dat`, `tsumsCollection.dat` | Generated, not part of the bundle: the collection screen's name and portrait libraries, deployed beside it. |
 | `fever.ts` | Fever time: one look with no memory, plus `gFever`, the debounced state and its start/end broadcast. |
 | `lorcana.ts` | The Lorcana transformation: the medallion reader, the state with hysteresis, the ink-stone bubbles. |
 | `skills/` | One file per skill plus `skillCore.ts` — the table below. |
@@ -52,19 +57,26 @@ In bundle order.
 | `report.ts` | The issue-report folder a player sends in, and `ReportTriggers`. |
 | `walkthrough.ts` | The walkthrough recorder: watches rather than plays; feeds `docs/transitions.json`. |
 | `roundStats.ts` | The per-round CSV, template digit reading, the row id minted at the whistle. |
+| `chainCounter.ts` | The game's own count of a chain, read off the number it draws beside the head; logged as `registered` beside `chain`. |
+| `roundShare.ts` | Share round stats: POSTs a CSV's unsent rows to the `ROUND_STATS_URL` env var, at most once a minute, with a cursor and backoff. |
 | `tsums.dat` | Generated, not part of the bundle: the tsum library, deployed beside it. |
 | `forecast.ts` | What the script is about to do, without doing it. Read forward only. |
 | `pageHandlers.ts` | Every reaction to a page, one subscription each; reading it top to bottom is the dispatch order. |
+| `gapWorkflow.ts` | The GAP Companion workflow runner: generic, references nothing else here. |
 | `index.ts` | The entry point: `start()` / `stop()` / `requestStop()`, the run lifecycle, the globals the settings page evaluates by name. Kept thin. |
+| `companionScreens.ts` | GAP Companion's screens (`gapScreens`): tabs, Stats cards, event wording, as data. |
+| `companion.ts` | GAP Companion's standard globals: `gapCompanion`, `gapRemoteState` / `Set` / `Action` / `StartPrepare` / `StartRun`, and `gapNotify` push notifications. |
+| `workflow.ts` | Tsum's workflow half: the node catalog, each node's implementation, the Tsum List check, and the run mode `startWorkflow` arms. |
 | `quickbar.ts` | The engine half of the Quick Bar, and `LiveSettings`. |
 | `settings.ts` | The settings page: the `tabs` schema, rendering, persistence, share codes, the Run order card, presets. |
 | `index.html`, `index.css` | The settings page shell, one `<template>` per piece of structure. |
 | `releaseStatus.ts` | `ReleaseStatus` and the channel floor: what this build may offer. |
-| `skillOptions.ts`, `bubbleOptions.ts` | The two dropdown lists, written once for both pages. |
+| `skillOptions.ts`, `bubbleOptions.ts`, `stopAfterOptions.ts` | The Skill, Bubble Strategy and Stop-after-action dropdown lists, written once for both pages. |
 | `presets.ts` | Named configurations, and the store both pages read them from. |
 | `qrCode.ts` | A QR encoder for the share code. Settings compilation only. |
 | `quickbarPage.ts` | The Quick Bar's page script: wiring only, by `data-key`. |
-| `quickbar.html`, `quickbar.css` | The Quick Bar's whole appearance. |
+| `quickbar.html`, `quickbar.css` | The Quick Bar's whole appearance: two pages of cells. |
+| `gapTokens.css`, `fonts/` | The GAP Design System's tokens (copied verbatim, never hand-edited) and font subsets. |
 
 ## Skills — `src/skills/`
 
@@ -87,6 +99,8 @@ In bundle order.
 | `formalBeast.ts` | `FormalBeast` | Steers the play loop: reads his twin gauge and picks chains by colour. |
 | `tiaraMinniePlus.ts` | `TiaraMinniePlus` | The largest: board signature, cloud sampling, candidate scoring. |
 | `coronationElsa.ts` | `CoronationElsa` | The only choreography that plays: a timed freeze window swept a row at a time, one capture per chain, then one break. |
+| `nbcSet.ts` | `NightmareSet` | Watches every scan for Oogie Boogie's cut-in, rerolls a low dice roll, and scales the board for the shrinking tsums. |
+| `villainsSet.ts` | `VillainsSet` | A burst that turns the board into big neon villains; narrows the colour blur and caps chroma. |
 | `lorcanaAurora.ts` | `LorcanaAurora` | Two skills with one gauge; after the card, the bubbles become a standing claim. |
 | `gaston.ts` | `Gaston` | The longest chain over the Gastons, from wherever it starts; ignores the chain settings. |
 | `rapunzelPlus.ts` | `RapunzelPlus` | The one chain that ignores colour, with its own paced drag. |
@@ -102,6 +116,8 @@ In bundle order.
 | `codemap/` | Checks `CODEMAP.md` against the tree; `symbols.js` is the reusable symbol extractor. | `map:check` |
 | `i18n/` | What each language is missing. | `i18n:check` |
 | `liveSettings/` | When each setting reaches a run in progress, by driving the bundle. | `live:check` |
+| `companion/` | Writes `dist/companionSettings.json`, GAP Companion's Settings tab, from the settings page. | `dist:companion` build step |
+| `workflowCheck/` | Drives the workflow runner and Tsum's run mode in the built bundle. | `workflow:check` |
 | `release/` | Cuts a release into the catalogue; `review.js` is the note gate. | `release:alpha`, `release:beta`, `release:production` |
 | `build/` | The build as a dependency graph; `zip.js` the deterministic archive writer. | `build`, `buildAndAdb` |
 | `inline/`, `minify/` | Fold the pages into single files; whitespace-only terser. | by the build |
@@ -125,6 +141,14 @@ A prefix usually settles it; `map:check` enforces every row.
 | `applyLiveSettings` / `pushLiveSettings`, `pullLiveSettings` | `index.ts` / `settings.ts` |
 | `preset*`, `Preset*` | `presets.ts`, `settings.ts`, `settings.d.ts` |
 | `stats*`, `myTsum*` | `roundStats.ts` |
+| `roundShare*` | `roundShare.ts` |
+| `chain*` (the counter's reader, `ChainDigits`) | `chainCounter.ts` |
+| `tsumList*` | `tsumList.ts`, `data.ts` |
+| `selectMyTsum*` | `myTsumSelect.ts` |
+| `stopAfter*`, `wrapUp*` | `play.ts`, `index.ts`, `stopAfterOptions.ts` |
+| `Trace`, `trace*` | `trace.ts` |
+| `gapWorkflow*` / `workflow*`, `startWorkflow` | `gapWorkflow.ts` / `workflow.ts` |
+| `gapCompanion`, `gapRemote*`, `gapNotify` / `gapScreens` | `companion.ts` / `companionScreens.ts` |
 | `maxRound*`, `RoundCoast*`, `watchRoundEnd` | `play.ts` |
 | `Box*`, `buyBox*` | `boxes.ts`, `shared.d.ts`, `data.ts` |
 | `dialog*`, `Stall*` | `dialogs.ts` |

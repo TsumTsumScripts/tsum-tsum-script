@@ -90,6 +90,7 @@ settings". Close the panel instead and the run carries on where it left off.
 | Box to buy | Premium Box+, Premium Box, Select Box, Pick-Up Capsule or Happiness Box. Only ever this one. Select Box and Pick-Up Capsule share the limited-time slot. |
 | Boxes per purchase | One at a time; ten at a time, ending the sweep once the store refuses ten because the box is almost sold out; or ten, then one until the box sells out. A box that only sells single ones is bought singly whichever is picked. |
 | Purchases per sweep | The safety limit (1–50) on a chore that spends coins. |
+| Export Tsum list | Taps through the collection sorted by Date acquired and writes each tsum's name, level, skill, acquisition month and favourite star to `stats/tsum_list_<stamp>.csv`, a few seconds per tsum. **Now** starts it; started from here the run stops when it is done. The workflow's Select Tsum node needs this file — see `WORKFLOWS.md`. |
 
 ## General
 
@@ -104,6 +105,8 @@ settings". Close the panel instead and the run carries on where it left off.
 | When a round runs long | What happens at that limit. `Stop playing, let the clock run out` (default) stops playing and lets the round finish on its own, so the score screen, the stats and the next round follow as normal. `Stop the script` stops where it stands; the round is not recorded. The game's Pause is never pressed — it would stop the very clock the round has to run down. |
 | Record round stats | One CSV row per played round in `stats/stats_<YYYYMMDD>.csv`: a unique round id, UTC time, skill, duration, score, coins, medals, and the gameplay settings it was played under. Figures that could not be read are left empty and the screen saved beside the CSV. |
 | Share round stats | Alpha, off by default. Sends new rows of those CSVs to the stats server about once a minute; needs Record round stats, and a stats server set with network access allowed on this script's Library card in GAP (`ROUND_STATS_URL`). |
+| Stop after games | Rounds to play before the action below (0–999, default 0 = never). Counted at each round's end; never shared in a code. |
+| When the games are played | What happens at that count: `Auto Play off`, `Pause` or `Stop`. |
 | Tsum app restart frequency (min) | Close and reopen the game this often to clear out a long run, in 30-minute steps. 0 is off; needs Auto Launch. |
 | Run order | Not a setting: a summary of the others. |
 | Share settings | **Copy** turns the gameplay settings into a short code; **Paste** applies one. See [Sharing settings](#sharing-settings). |
@@ -137,14 +140,25 @@ the floating bar opens it.
 | Preset | Not one setting: which saved configuration is loaded |
 | Bubble | Bubble strategy, short: **1 mid**, **All mid**, **Save 1 mid**, **Save 1**, **All now** |
 
-- **The controls work while the script is paused.** Press ⏸ and they come
-  alive; press ▶ and they grey out. A live strip would swallow the taps the
-  script aims at the game underneath.
+- **The controls work while the script is paused or stopped.** Press ⏸ and
+  they come alive; press ▶ and they grey out. A live strip would swallow the
+  taps the script aims at the game underneath. The two exceptions are the
+  side column's page toggle and Auto Play toggle, live for the whole run.
 - **Pausing pauses the round too**: the script presses the game's Pause on
   the way out and Continue on the way back.
 - **Most changes wait for the next round, and the strip says which.** A
   teal bar along a chip's bottom edge means this round, amber the next; the
   Preset chip's is half of each. Between rounds the bars go away.
+- **Page two** (the dots in the side column) holds: ♥ Send and ♥ 1-by-1 (the
+  two hearts chores, added or dropped at once), 🔓 Lvl (raise level caps after
+  the current round, like Unlock Level's **Now**), Copy code (your settings
+  code, as on the settings page), **Last round** (stop once the round in
+  progress is over; this run only, never saved, tap again to cancel) and
+  Games / Then (Stop after games and its action). Its readout swaps the coin
+  figures for **Avg**, **Played** and **Run** times, and tapping the readout
+  copies the run's figures to the clipboard.
+- The **Auto Play** toggle under the dots is Auto Play Game, live at once: off
+  lets the round in progress finish and plays no more.
 - Everything changed here is applied to the run already going *and* saved,
   so the settings page shows it and the next Play starts with it.
 - On the right: this run's average base and final coins per round, and how
@@ -177,11 +191,11 @@ the round statistics; a line pasted into the share box is the way back in.
 **Copy** turns the current gameplay settings into one line of text and puts
 it on the clipboard; **Paste** reads one back and applies it. The same code is
 drawn as a QR under the box, for the way between two phones. A whole
-configuration is 20 to 40 characters, because everything at its default is not
+configuration is 14 to 50 characters, because everything at its default is not
 written down:
 
 ```
-TSUM4-y2f.YiDACgg.K5.T2.U5.Vo.fu~
+TSUM4-c5.CBQA.C8.D7.M3.N5.OG.Pa.R5k.TA.Uc~
 ```
 
 A code carries how a round is played and nothing else. Applying one gives you

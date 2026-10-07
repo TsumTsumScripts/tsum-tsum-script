@@ -49,7 +49,7 @@ release note; they fold back in here when she ships.
 - Quick Bar "Last round" button added: stops the script once the current round is over.
 - Quick Bar Auto Play toggle (a play-on-repeat icon) replaces the Report button: turn round-playing on or off without restarting the script. Preset and Bubble get more room, as the readout is narrower too. Reports are still on the settings page's Debug tab and the Log button's long press.
 - Disney Villains (Set) now plays properly, records score and coins in the stats file, and works with Auto Unlock MyTsum Level. Its own skill setting (Alpha) keeps it chaining when its skill turns the tsums into big neon villains.
-- Nightmare Before Christmas (Set) skill added: keeps making chains after its skill shrinks the tsums, and rerolls Oogie Boogie's dice only on a roll under 7.
+- Nightmare Before Christmas (Set) skill improved by rerolling Oogie Boogie's dice only on a roll under 7, and by tracking the shrinking tsums more steadily.
 - Gaston and Coronation Day Elsa skills and the Delay Skill ReActivation setting are out of Beta.
 - Chains no longer break in a round's last seconds.
 - Round stats no longer lose the score and coins when the rank-up panel appears after a round, and base coins read more reliably.
@@ -154,7 +154,7 @@ release note; they fold back in here when she ships.
   (`countGameTowardStop`), before a round starts, or via the `wrapUpNow` job
   when no round is being played. Reported as `stopAfterThisRound` in
   `quickBarState`.
-- **Nightmare Before Christmas (Set)** (`SkillType.NightmareSet`, Production). A burst
+- **NBC Set board scale** (`SkillType.NightmareSet`; the skill shipped in 4.0). A burst
   declaring `scalesBoard`: each scan reads tsum spacing (ALT Hough, median of
   5) into `Config.boardScale`, which scales the circle pass, blurs, texture
   disc, bubble pass and link reach. Other skills skip the read and stay at 1.
@@ -243,8 +243,7 @@ release note; they fold back in here when she ships.
 - **Quick Bar enum checks.** `quickBarApply` refuses a value an enum setting
   lacks (skill, bubble strategy, box type/size, the two stop actions) with
   `{ok:false, why:"invalid value"}` and a `quickBar.invalidValue` warning.
-- Gaston, Coronation Day Elsa and `SkillReactivationTenths` to Production;
-  Nightmare Before Christmas (Set) to Production (4.0 shipped it there).
+- Gaston, Coronation Day Elsa and `SkillReactivationTenths` to Production.
 - Quick Bar: the skill name no longer widens its column (`.qb-cell-fit`), so a
   long name ellipsises at the bonus cluster instead of pushing the side column.
 - Tsum List export writes a `device` column: the host's `getDeviceName()`, the

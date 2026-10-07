@@ -214,7 +214,7 @@ one.
 
 That is the Skills, Round and Gameplay tabs. Everything else stays as you
 have it, whichever preset you load — your language, the run settings on General
-(the **wait between rounds**, **Track round statistics**),
+(the **wait between rounds**, **Track round statistics**, **Stop after games**),
 the mailbox, the hearts, the chore schedules, the box buying. Those describe your account, and you should not
 have to re-set them to try a different setup.
 
@@ -268,11 +268,11 @@ what is in the box rather than your current settings, so a code you pasted
 draws the code you pasted.
 
 A code is short enough to read out or put in a message — a whole configuration
-is usually 20 to 40 characters, because everything left at its default is not
+is usually 14 to 50 characters, because everything left at its default is not
 written down at all:
 
 ```
-TSUM4-y2f.YiDACgg.K5.T2.U5.Vo.fu~
+TSUM4-c5.CBQA.C8.D7.M3.N5.OG.Pa.R5k.TA.Uc~
 ```
 
 It carries **how a round is played, and nothing else** — the chain and board
@@ -280,9 +280,10 @@ settings, which items are set, and how the skill is used. Nothing about your
 account or about your run travels with it, and none of it is touched by applying
 one: your language, the mailbox, the hearts, the chores, the box buying and the
 developer options, and **Auto Play Game** (on Round), and the run settings on General: the
-**wait between rounds**, **Track round statistics** and **Max round duration**
-with the action beside it. Someone else's code cannot stop your script playing,
-keep it waiting, turn your statistics off, or make it stop after a few minutes.
+**wait between rounds**, **Track round statistics**, **Max round duration** and
+**Stop after games**, each with the action beside it. Someone else's code cannot
+stop your script playing, keep it waiting, turn your statistics off, or make it
+stop after a few minutes or a few games.
 
 **Within that, a code is a whole configuration, not a patch.** Applying one
 gives you the setup the sender had: a setting the code carries but does not
