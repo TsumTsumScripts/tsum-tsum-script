@@ -32,18 +32,18 @@ const path = require('path');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { projectDir, loadConfig, resolveChannel, archiveName } = require('./config');
-const { bulletsFrom, noteProblem, reviewNote } = require('./review');
+const { parseNote, bulletsOf, renderNote, noteProblem, reviewNote } = require('./review');
 
 // --- the release note ------------------------------------------------------
 
 /**
- * The `### Summary` bullets of `## [<version>]`.
+ * The `### Summary` items (bullets and their group labels) of `## [<version>]`.
  *
  * Every change is filed under the version package.json is on, so the section to
  * publish is the one named for the version being built. There is no
  * `[Unreleased]` to fall back to.
  */
-function summaryBullets(changelog, version) {
+function summaryItems(changelog, version) {
   const sections = changelog.split(/^## /m).slice(1);
   const wanted = sections.find((s) => s.startsWith(`[${version}]`));
   if (!wanted) {
@@ -58,13 +58,20 @@ function summaryBullets(changelog, version) {
       'That CHANGELOG section has no "### Summary" block. The release note is ' +
       'read from it -- add one line per change, written for a player on a phone.');
   }
-  return bulletsFrom(summary.split('\n').slice(1).join('\n'));
+  return parseNote(summary.split('\n').slice(1).join('\n'));
 }
 
-/** Markdown, as the host app's renderer reads it: a bold lead, a numbered list. */
-function releaseMessage(bullets, note) {
-  const list = bullets.map((b, i) => `${i + 1}. ${b}`).join('\n');
-  return `**Changes**\n${list}` + (note ? `\n\n${note}` : '');
+/**
+ * Markdown, as the host app's renderer and Discord read it: grouped
+ * (`**Additions**`, `*Skills*`, bullets) when the Summary has labels, else a bold
+ * lead over a numbered list, as flat Summaries always were.
+ */
+function releaseMessage(items, note) {
+  const grouped = items.some((i) => i.label !== undefined);
+  const body = grouped
+    ? renderNote(items)
+    : '**Changes**\n' + bulletsOf(items).map((b, i) => `${i + 1}. ${b.text}`).join('\n');
+  return body + (note ? `\n\n${note}` : '');
 }
 
 /**
@@ -77,12 +84,12 @@ function releaseMessage(bullets, note) {
  * version already in the file is rewritten in place, so re-publishing one cannot
  * leave two sections for it.
  */
-function writeCatalogueChangelog(file, channel, bullets, date) {
+function writeCatalogueChangelog(file, channel, items, date) {
   const header = `# ${channel.Name}\n\n` +
     `What shipped in each release, newest first. ` +
     (channel.Note ? `\n${channel.Note}\n` : '');
   const section = `## ${channel.Version} - ${date.slice(0, 10)}\n\n` +
-    bullets.map((b) => `- ${b}`).join('\n') + '\n';
+    renderNote(items) + '\n';
 
   let existing = '';
   try {
@@ -171,13 +178,13 @@ async function main() {
   const changelogFile = path.join(projectDir, 'CHANGELOG.md');
   const changelog = fs.readFileSync(changelogFile, 'utf8');
   const limit = config.MessageMaxChars || 600;
-  const render = (lines) => releaseMessage(lines, channel.Note);
+  const render = (items) => releaseMessage(items, channel.Note);
 
-  let bullets = summaryBullets(changelog, channel.Version);
-  let message = render(bullets);
+  let items = summaryItems(changelog, channel.Version);
+  let message = render(items);
 
   if (skipReview) {
-    const problem = noteProblem(bullets, message, limit);
+    const problem = noteProblem(items, message, limit);
     if (problem) throw new Error(problem);
   } else {
     if (!process.stdin.isTTY || !process.stdout.isTTY) {
@@ -186,12 +193,12 @@ async function main() {
         'Run this interactively, or pass --yes to publish the CHANGELOG Summary as it stands.');
     }
     const reviewed = await reviewNote({
-      bullets, channel, limit, render, changelogFile, allowSave: !dryRun,
+      items, channel, limit, render, changelogFile, allowSave: !dryRun,
     });
     if (!reviewed.approved) {
       throw new Error('Denied -- nothing was built, and nothing was published.');
     }
-    ({ bullets, message } = reviewed);
+    ({ items, message } = reviewed);
   }
 
   console.log(`\nReleasing ${channel.Name} ${channel.Version} (${archive})`);
@@ -257,7 +264,7 @@ async function main() {
 
   fs.writeFileSync(path.join(target, archive), bytes);
   fs.writeFileSync(path.join(target, 'metadata.json'), JSON.stringify(metadata, null, 2) + '\n');
-  writeCatalogueChangelog(path.join(target, 'CHANGELOG.md'), channel, bullets, metadata.Date);
+  writeCatalogueChangelog(path.join(target, 'CHANGELOG.md'), channel, items, metadata.Date);
   pruned.forEach((file) => fs.rmSync(path.join(target, file)));
 
   console.log(`Published to ${target}`);

@@ -25,6 +25,12 @@ card a few lines tall. A bullet is:
 - **never internals**: refactors, tooling, docs, detection plumbing, tests, and
   build or release machinery all stay below.
 
+**Layout.** `**Additions**` first, its bullets grouped under an italic `*Area*`
+line (`*Skills*`, `*Bubbles*`, `*Run control*` ...), then `**Fixes**` with flat
+bullets. Release renders those lines as written, so the phone card and the
+Discord post match this file. A Summary with no headings still works and ships
+as a numbered list.
+
 Keep the list short enough to read on that card; over `MessageMaxChars`
 (`config.json`) the release refuses rather than shipping one that scrolls.
 
@@ -43,27 +49,45 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
-- Now requires General Automation Platform 3.1 or newer.
-- Each device keeps its own folder, so emulator instances sharing one storage folder no longer overwrite each other's stats, reports and screenshots. Files now live under `devices/<name>_<id>/` with shorter names: `stats/`, `reports/`, `history/`, `corpus/`, `walkthrough/`, `tmp/`. Older files stay where they were and are no longer read, though Tsum Tsum Stats still imports them.
-- Stop after games setting added (General, and the Quick Bar's second page): after a set number of rounds, turn off Auto Play, pause or stop the script.
-- Quick Bar "Last round" button added: stops the script once the current round is over.
-- Quick Bar Auto Play toggle (a play-on-repeat icon) replaces the Report button: turn round-playing on or off without restarting the script. Preset and Bubble get more room, as the readout is narrower too. Reports are still on the settings page's Debug tab and the Log button's long press.
-- Disney Villains (Set) now plays properly, records score and coins in the stats file, and works with Auto Unlock MyTsum Level. Its own skill setting (Alpha) keeps it chaining when its skill turns the tsums into big neon villains.
-- Nightmare Before Christmas (Set) skill improved by rerolling Oogie Boogie's dice only on a roll under 7, and by tracking the shrinking tsums more steadily.
-- Gaston and Coronation Day Elsa skills and the Delay Skill ReActivation setting are out of Beta.
+**Additions**
+
+*Skills*
+- Disney Villains (Set) plays properly (Alpha): keeps chaining, records score and coins, works with Auto Unlock MyTsum Level.
+- Nightmare Before Christmas (Set) improved: rerolls Oogie Boogie's dice only under 7, tracks shrinking tsums better.
+- Gaston, Coronation Day Elsa and Delay Skill ReActivation are out of Beta.
+- Large tsums are recognised and chained.
+
+*Bubbles*
+- Bottom-row bubbles are spotted and popped faster; Mid Chain strategies no longer let them pile up.
+- New Save One and Save One Mid Chain strategies pop all but one.
+
+*Run control*
+- Stop after games: turn off Auto Play, pause or stop after a set number of rounds.
+- Quick Bar "Last round" button, and an Auto Play toggle replacing Report (reports stay on the Debug tab and the Log button's long press).
+- Auto Play Game moved to the Round tab; app restart frequency counts in minutes, under Device.
+
+*Quick Bar and settings*
+- Settings page and Quick Bar redesigned in the GAP look: light and dark themes, compact settings, a Code button that copies the settings code.
+- Quick Bar shows average medals per round; tapping the readout copies the run's figures.
+
+*Tsum List*
+- Tsum List export (Chores > Tsum List > Now): every Tsum you own with level, skill level, progress and month acquired, favourites marked, to a CSV.
+- It and Unlock Level jump straight to the collection's first page.
+
+*Platform and data*
+- Requires General Automation Platform 3.1 or newer.
+- Each device keeps its own folder, so emulators sharing storage stop overwriting each other's files.
+- Share round stats (Alpha): sends your round stats to a server set on the script's card in GAP's Library.
+- Receiving hearts one by one always skips the ad mail; Skip first person is gone.
+
+**Fixes**
 - Chains no longer break in a round's last seconds.
-- Round stats no longer lose the score and coins when the rank-up panel appears after a round, and base coins read more reliably.
-- Auto Play Game setting moved from General to the Round tab.
-- Tsum app restart frequency now counts in minutes (30-minute steps) and sits under Device, out of Experimental.
-- Large tsums are now recognised and used in chains, linking from farther away as the game allows; they used to be skipped or mistaken for a small tsum.
-- Tsum List export now records which Tsums are favourites, and it and Unlock Level jump straight to the first page of the Tsum collection instead of paging back one at a time.
-- Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, the Mid Chain strategies no longer let them pile up, and new Save One and Save One Mid Chain strategies pop all but one (on sight, or as a chain lands).
-- Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen. The settings page is compact, fitting far more settings on screen, with a Code button by the presets that copies the settings code, and its window title names the script, version and channel.
-- Quick Bar's coin readout shows the average medals earned per round.
-- Share round stats setting added (Alpha): sends your round stats to a stats server you set on this script's card in GAP's Library, with network access allowed there.
-- Resuming after a pause mid-round now presses Continue and returns to the round, instead of sometimes tapping Try Again or elsewhere on the pause menu.
-- Tapping the Quick Bar's readout copies the run's figures to the clipboard: base coin and medal totals, averages, per-second rates and best and worst rounds, the round durations, and the round count.
-- Receiving hearts one by one now always skips the ad mail, so the Skip first person setting is gone. Skill and premium ticket mail is left in the mailbox too.
+- Round stats keep score and coins when the rank-up panel appears, and base coins read more reliably.
+- Resuming after a pause presses Continue instead of sometimes Try Again.
+- Auto Unlock MyTsum Level raises a capped single-tsum party.
+- Disney Villains (Set) no longer re-fires its skill with no chains.
+- Receiving hearts one by one no longer spins on the ad row.
+- Select My Tsum closes the "MyTsum has been changed." dialog.
 
 ### Added
 

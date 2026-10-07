@@ -41,6 +41,8 @@ it:
   line per *feature*, not per change, and only what a player sees or
   interacts with. A new skill is "Coronation Day Elsa skill added"; later work
   on it folds into that same line ("… improved by making clears faster").
+  Lay it out as `**Additions**` (bullets under an italic `*Area*` line each),
+  then `**Fixes**`.
 - Everything else — implementation detail, refactors, tooling, docs — goes in
   `### Added`, `### Changed`, `### Fixed`, `### Removed` below it. Keep it
   succinct.
