@@ -37,10 +37,10 @@ npm install
 npm run typecheck
 ```
 
-Runs all three TypeScript compilations — the game bundle, the settings page
-and the Quick Bar page (why there are three is [The bundle](../architecture/the-bundle)).
-`npm run typecheck:game`, `typecheck:settings` and `typecheck:quickbar` run one
-each. The game bundle is `strict: true` and clean; keep it that way.
+Runs all four TypeScript compilations — the game bundle, the settings page,
+the Quick Bar page (why there are three is [The bundle](../architecture/the-bundle))
+and `src/gapWorkflow.ts` on its own. `npm run typecheck:game`, `typecheck:settings`,
+`typecheck:quickbar` and `typecheck:workflow` run one each. The game bundle is `strict: true` and clean; keep it that way.
 
 ## Build
 
@@ -57,7 +57,8 @@ The build is a dependency graph of steps that run concurrently
 | `dist/index.js` | The same bundle with whitespace removed — what ships. Nothing is renamed or rewritten. |
 | `dist/index.html` | The settings page with its CSS and script inlined, so it needs no network. |
 | `dist/quickbar.html` | The Quick Bar page, inlined the same way. |
-| `dist/tsums.dat` | The tsum library, copied without its header. |
+| `dist/tsums.dat`, `tsumsCollection.dat`, `tsumNames.dat` | The tsum libraries, copied without their headers. |
+| `dist/gap-env.json`, `gap-backup.json`, `companionSettings.json` | What the app reads beside the script: env vars, backed-up page keys, GAP Companion's Settings tab. |
 | `dist/LICENSE`, `dist/NOTICE` | Travel with the archive. |
 | `TsumTsum-Alpha-0.12.zip` + `.sha256` | The release archive, named from `config.json` (channel) and `package.json` (version), and its digest. |
 
@@ -72,7 +73,7 @@ decides which unfinished skills and settings the build offers.
 The package's scripts, as they are on `main`:
 
 ```json reference title="app.gap.Tsum/package.json"
-https://github.com/game-automation-platform/game-automation-scripts/blob/main/app.gap.Tsum/package.json#L6-L27
+https://github.com/game-automation-platform/game-automation-scripts/blob/main/app.gap.Tsum/package.json#L6-L30
 ```
 
 ## Put it on a device
@@ -81,7 +82,7 @@ Three ways, from quickest to most official:
 
 1. **`npm run adb`** pushes an existing `dist/` to the folder the app reads:
    `/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/`.
-   `npm run buildAndAdb` builds first.
+   `npm run buildAndAdb` builds first, then pushes to `scripts/DEV` instead.
 2. **`debug_deploy.ps1`** builds and pushes over the *installed* script's
    folder, which it derives from `config.json`, so your build lands on top of
    the release the app already has rather than beside it. This is the debug

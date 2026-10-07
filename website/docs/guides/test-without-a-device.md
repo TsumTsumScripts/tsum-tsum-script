@@ -70,7 +70,7 @@ page the change was not about is exactly the failure the tool exists for.
 | `npm run live:check` | A setting a preset carries with no `LiveSettings` answer, an answer with no `case`, a value that does not survive the round trip, a held key that writes the world anyway. Drives the built bundle rather than reading it. |
 | `npm run map:check` | `CODEMAP.md` names a path that does not exist, a source file or tool nobody listed, a name family that escaped its file, a script not in the command table. |
 | `npm run i18n:check` | What each language is missing; a `data-i18n` naming no key. |
-| `npm run build -- --verify bundle` | The shipped `dist/index.js` still has every name the bridge reaches by name, evaluated under the shim. |
+| `npm run build` (its minify step, `--verify bundle`) | The shipped `dist/index.js` still has every name the bridge reaches by name, evaluated under the shim. |
 
 `npm run build` runs the doc and check steps as *optional* — findings are
 printed and never block — except `live:check`, which is required.
@@ -102,8 +102,8 @@ On the device, the tools you have are the log (*Debug logs* on), the annotated
 screenshots and page-history frames *Debug game* saves under `stats/`,
 *Collect unknown screens* for a screen nothing fingerprinted, and the issue
 report — the screen, the screens before it, the settings and the last few
-hundred records, debug ones included. Press **Report** on the Debug tab or the
-Quick Bar, or let the script write one itself when it gives up.
+hundred records, debug ones included. Press **Report** on the Debug tab, hold the
+floating bar's Log button, or let the script write one itself when it gives up.
 
 <ImagePlaceholder id="report-folder" alt="The contents of one report folder under reports/: the screen, the trail frames, the manifest and the log excerpt" />
 

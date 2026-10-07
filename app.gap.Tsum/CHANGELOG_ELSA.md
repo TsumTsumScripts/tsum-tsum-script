@@ -1,10 +1,10 @@
 # Changelog -- Coronation Day Elsa
 
-Every change to the Coronation Day Elsa skill, and her Legacy twin, from 1.0
-on. Kept out of `CHANGELOG.md` because she is not on the production build and
-that file's `### Summary` ships as the release note. Same shape, one section
-per version, so the day she ships her Summary lines fold back into that
-file's. Her pre-1.0 history -- she was added in 0.6 -- is in
+Every change to the Coronation Day Elsa skill, and her Legacy twin (removed in
+3.0b5), from 1.0 on. Kept out of `CHANGELOG.md` because she was not on the
+production build and that file's `### Summary` ships as the release note. She
+is Production as of 5.0a2, so new work goes in `CHANGELOG.md`; her Summary
+lines below still fold back into that file's. Her pre-1.0 history -- she was added in 0.6 -- is in
 `CHANGELOG_0.x.md` with everything else of that time.
 
 ## [3.0b5]

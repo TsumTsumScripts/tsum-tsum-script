@@ -22,7 +22,7 @@ held by review.
 3. **Three compilations.** The game bundle (`strict`, ES2023), the settings
    page and the Quick Bar page (ES5, for the WebView). They share only the
    `.d.ts` vocabularies and the files listed in both page configs. `npm run
-   typecheck` runs all three.
+   typecheck` runs these and a fourth (`tsconfig.workflow.json`, type check only).
 4. **A setting is named by `SettingKey`, never by a literal.** The enum keys
    `interface Settings`, the schema row, the share slot and the read in
    `buildRun`. Misspelling one is a build error; *forgetting* the read is not.

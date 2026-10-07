@@ -27,11 +27,11 @@ settings". Close the panel instead and the run carries on where it left off.
 | Skill Type | Which skill the play loop plays, grouped by what the skill leaves behind: **Burst** (fires and clears), **Bubble** (turns tsums into bubbles the script sweeps), **Unique** (changes how the script plays while it is up). `Burst` is the general-purpose entry; `Burst + clear bubbles` adds a sweep after the wait; `Pair Tsum` activates either half as soon as it is ready; `No Skill` never activates one. Skills named after a tsum are tuned for it — [Add a skill](../guides/add-a-skill) explains what a tuned one can do. |
 | Skill Level | Only read by skills whose choreography changes with it: Cinderella, Cpt. Lightyear (how many aiming taps) and Coronation Day Elsa (how long the freeze window stays open). |
 | Lorcana Card | For the Lorcana tsums, which play in two halves: pop the ink-stone bubble after each skill and tap the card when it appears. Works with any skill type; picking *Lorcana Aurora* switches it on. |
-| Skill auto-tap | Tap the skill the moment the gauge fills, even mid-batch, for skills that can take it. |
+| Auto Tap Skill | Tap the skill the moment the gauge fills, even mid-batch, for skills that can take it. |
 | Wait for Settle (s) | Once the gauge is full, wait up to this long for the board to refill before firing, so the skill lands on a full board. 0 fires at once. |
 | No skill last fever seconds | Do not fire the skill if the running fever ends within this many seconds. |
 | Skill Waiting time | The most time the script leaves the board alone after a skill. It plays on as soon as the tsums stop falling, so a generous value costs nothing. |
-| Delay Skill ReActivation (sec) | Beta. After firing, hold a full gauge this long so a skill with a duration is not restarted while it runs. 0 never holds. |
+| Delay Skill ReActivation (sec) | After firing, hold a full gauge this long so a skill with a duration is not restarted while it runs. 0 never holds. |
 
 ## Round
 
@@ -136,7 +136,6 @@ the floating bar opens it.
 | +Coin, 5>4 | Those two bonus items |
 | Preset | Not one setting: which saved configuration is loaded |
 | Bubble | Bubble strategy, short: **1 mid**, **All mid**, **Save 1 mid**, **Save 1**, **All now** |
-| Report | Saves a report of what is on screen. The one control that works while the script is still playing |
 
 - **The controls work while the script is paused.** Press ⏸ and they come
   alive; press ▶ and they grey out. A live strip would swallow the taps the
@@ -195,7 +194,7 @@ A damaged code is refused outright.
 
 ## Reporting a problem
 
-Press **Report** — on the Debug tab, or on the Quick Bar — and the script
+Press **Report** on the Debug tab — or hold the floating bar's Log button — and the script
 writes a folder holding the screen, the screens before it, your settings and
 the last few hundred log lines. It also writes one by itself whenever it gives
 up on a screen, a chore throws repeatedly, a round ends without the script
@@ -208,8 +207,8 @@ Nothing leaves the device unless you send it.
 
 Opening the settings panel pauses the run and presses the game's Pause, so a
 report taken from there shows the pause menu — the screens *before* it are
-saved too. To catch the live screen, press Report on the Quick Bar while the
-script is still playing, or hold the Log button on the floating bar.
+saved too. To catch the live screen, hold the Log button on the floating bar while the
+script is still playing.
 
 Reports live in `reports/`; the newest eight are kept.
 

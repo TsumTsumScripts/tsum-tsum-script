@@ -21,7 +21,7 @@ optional findings; before a pull request, run them as gates:
 
 | Command | Fails when |
 |:--|:--|
-| `npm run typecheck` | Any of the three compilations has an error. |
+| `npm run typecheck` | Any of the four compilations (game, settings page, Quick Bar page, workflow runner) has an error. |
 | `npm run pages:docs:check` | `PAGE_DISPATCH.md` does not match the bundle. Run `pages:docs` and commit the result. |
 | `npm run events:docs:check` | `EVENTS.md` does not match the emit sites. Run `events:docs` and commit. |
 | `npm run dispatch:eval` | A dispatch or scheduler trace row changed. If the change is yours and intended, `dispatch:update` and **read the diff** before committing it. |

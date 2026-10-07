@@ -24,18 +24,21 @@ flowchart LR
   tscs["tsc:settings"]
   tscq["tsc:quickbar"]
   minp["minify:pages"]
-  stage["stage:assets<br/>pico.css, index.css…"]
+  stage["stage:assets<br/>index.css, GAP fonts…"]
   di["dist:index<br/>index.html inlined"]
   dq["dist:quickbar<br/>quickbar.html inlined"]
   db["dist:bundle<br/>index.js, whitespace only"]
-  dl["dist:library<br/>tsums.dat"]
+  dl["dist:library<br/>tsums.dat + 2"]
   dn["dist:notices<br/>LICENSE, NOTICE"]
   de["dist:env<br/>gap-env.json"]
+  dk["dist:backup<br/>gap-backup.json"]
+  dc["dist:companion<br/>companionSettings.json"]
+  sg["sign<br/>gap-signature.json, if a key is set"]
   arc["archive<br/>zip + .sha256"]
   tscg --> docsp & evald & live & db
-  tscs --> tscq --> minp --> di & dq
+  tscs --> tscq --> minp --> di & dq & dc
   stage --> di & dq
-  di & dq & db & dl & dn & de --> arc
+  di & dq & db & dl & dn & de & dk & dc --> sg --> arc
 ```
 
 Steps marked ⁽ᵒ⁾ are **optional**: a stale document, a drifted code map or a

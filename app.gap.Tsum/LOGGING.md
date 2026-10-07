@@ -7,7 +7,7 @@ is the whole design; everything below is detail.
 {"timestamp":"2026-08-22T14:30:00.123Z","level":"info","component":"play","event":"play.gameOver","message":"Game Over","runId":"mt4uenqrug","roundId":7,"data":{"chains":63,"hudLostMs":1840}}
 ```
 
-**A fixed envelope, and one `data` bag.** The top level is the same eight keys
+**A fixed envelope, and one `data` bag.** The top level is the same keys
 whatever the line is about; everything a particular call site had to say lives
 under `data`.
 
@@ -88,9 +88,9 @@ line said `roundId` or `round_id` is a viewer you cannot filter.
 
 `run` · `task` · `app` · `screen` · `page` · `nav` · `forecast` · `board` ·
 `bubble` · `play` · `tsums` · `skill` · `fever` · `hearts` · `gifts` ·
-`unlock` · `box` (buying boxes in the store) · `stats` · `dialog` · `stall` ·
+`unlock` · `box` (buying boxes in the store) · `tsumList` · `stats` · `dialog` · `stall` ·
 `corpus` · `report` (the folder a player sends in) · `walk` · `assist` · `log` ·
-`settings` (the settings page) · `workflow` (a GAP Companion workflow run,
+`settings` (the settings page) · `quickBar` · `workflow` (a GAP Companion workflow run,
 `WORKFLOWS.md`) · `host` (the host app's own lines).
 
 One `const enum` per component in [`src/logEvents.ts`](src/logEvents.ts), in

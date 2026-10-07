@@ -23,7 +23,7 @@ has its reasoning anywhere near the code that would be changed:
   chain that is drawn too fast. `DRIVING_SCREENS.md` § 5 is the general form of
   the problem.
 - **`taskTsumAppRestart` inlines its restart** rather than calling
-  `forceRestartApp()` (`dialogs.ts`). The two are not the same job: the helper
+  `forceRestartApp()` (`appLifecycle.ts`). The two are not the same job: the helper
   is the stall-recovery path, gated on "Auto launch app" and always
   relaunching, while the task is a scheduled restart that navigates to a known
   screen at both ends.
@@ -67,7 +67,7 @@ interface into the class of the same name. What that buys:
   the whole bundle. Before this, `ts` was `any` and none of that worked.
 - Inside each `Tsum.prototype.NAME = function (...)`, **`this` and the
   parameters are contextually typed from the interface** — which is why those
-  97 assignments carry no annotations of their own and should not grow any.
+  assignments carry no annotations of their own and should not grow any.
 - `Tsum.prototype.typo = ...` is an error, so a method cannot be defined under a
   name that nothing calls.
 
@@ -96,7 +96,7 @@ strings and are what most of the branching actually tests. Each set is a
 | `SkillReadiness` | `globals.d.ts` | `checkSkillReadiness()`'s return and its three callers |
 | `KeyCode` | `globals.d.ts` | the `keycode()` host call |
 | `SettingKey` | `shared.d.ts` (both compilations need it) | every name a setting has: the `key` of a row in `settings.ts`, its slot in `SHARE_SLOTS`, the lookups the Run order card does, its column heading in the round-stats CSV, and the field `start()` reads. `interface Settings` is *keyed by* these members, so the enum and the shape that crosses the bridge are one list, not two |
-| `RowKey`, `Locale` | `settings.d.ts` (settings UI only) | the rows that hold no value — Run order, the share buttons, the build stamp — and the two language tags stored under `LANG_KEY` |
+| `RowKey`, `StorageKey` | `settings.d.ts` (both page compilations) | the rows that hold no value — Run order, the share buttons, the build stamp — and the localStorage keys, the language among them (`StorageKey.Language`). `Locale` is in `shared.d.ts` |
 | `RecordKey` | `shared.d.ts` | the keys of hearts.json, read on both sides |
 | `Log` | `logEvents.ts` (both compilations need it) | every `event` name written by either program: the four loggers' first argument, the keys of the log catalogues (`logsEn.ts` and the translations beside it), and `LOGGING.md` § Components. A namespace of `const enum`s, one per component, so it reads `Log.Play.GameOver` |
 
@@ -779,13 +779,13 @@ short enough to paste into a chat message — 18 characters for stock settings,
 TSUM4-y2f.YiDACgg.K5.T2.U5.Vo.fu~
 │     ││  │       └── one field per non-boolean setting that is NOT at its
 │     ││  │           default: a slot character, then the value in base36
-│     ││  └── all 48 slots, one bit each, six bits per character
+│     ││  └── all 23 slots, one bit each, six bits per character
 │     │└── the script version in base36, for the status line
 │     └── one character of checksum over everything after it
 └── format marker; the digit changes when the payload shape does
 ```
 
-Two decisions do the work. Booleans — 28 of the 42 settings — cost a bit each
+Two decisions do the work. Booleans — 12 of the 23 settings a code carries — cost a bit each
 instead of a name and a value, and anything still at its default is not written
 down at all. The second is why **a code is a whole configuration rather than a
 patch**: what it omits is *defined* as default, so applying a code resets the
@@ -797,7 +797,7 @@ What keeps that honest:
 - **`SHARE_SLOTS` is the set, and it is append-only.** It is not a subset of
   what could travel — it *is* what a code carries, and therefore what a preset
   is: **how a round is played**, and nothing else. That is `SHARE_TABS`
-  (Gameplay and Skills) less the rows on them that shape the *run* rather than
+  (Skills, Round and Gameplay) less the rows on them that shape the *run* rather than
   the round, which say so with `neverShared` — Auto Play Game (on Round), the
   between-rounds delay, Track round statistics, and the Max Round Duration pair
   (how long the run will spend on one round). A setting's position in the
@@ -897,7 +897,7 @@ that reads neither the budget nor this flag silently undoes the setting.
 
 Every skill file is a **leaf**: nothing outside `src/skills/` references its
 symbols, and it is reached only through `SkillHandlers[skillType]` at runtime.
-An unregistered `skillType` falls back to `skillRandomizeAndWait`; `no_skill`
+An unregistered `skillType` falls back to `skillRandomizeAndWait`; `SkillType.NoSkill`
 short-circuits before dispatch.
 
 **To add a skill:** create `src/skills/<name>.ts` with a `registerSkill` call,
@@ -1446,7 +1446,7 @@ npm run pages:docs:check   # fail if it is stale (CI)
 ```
 
 [`PAGE_DISPATCH.md`](PAGE_DISPATCH.md) is every subscription, the order it runs
-in, the queue for each of the 34 pages, and the permanent/transient table. It is
+in, the queue for each of the 46 pages, and the permanent/transient table. It is
 **generated by asking the loaded bundle's own `PageRouter.plan`**, not by
 re-deriving the rule, and the build regenerates it as soon as `tsc` has emitted
 the bundle — so it is never a version behind the code. Do not edit it by hand.
