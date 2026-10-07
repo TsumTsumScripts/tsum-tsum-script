@@ -1,0 +1,19 @@
+# Where this tool's adb comes from.
+#
+# Google publishes adb inside "platform-tools". The first time the tool runs
+# it downloads the archive for this computer from the URL below, checks it
+# against the sha256 here, keeps adb out of it (into adb/<system>/) and deletes
+# the rest. Nothing else is ever downloaded without being asked.
+#
+# Bumping the revision: starter/build-starter.sh --rev <new> --record-sums
+# rewrites this file. Edit the checksums by hand and the download is refused.
+revision=37.0.1
+url_windows=https://dl.google.com/android/repository/platform-tools_r37.0.1-win.zip
+sha256_windows=45f4d63113e895ebde0c90f194099a4676b6ac653bd28d54314a9e022bbc1a99
+size_windows=8044989
+url_darwin=https://dl.google.com/android/repository/platform-tools_r37.0.1-darwin.zip
+sha256_darwin=ee39ad5967e95c2a07f04dbcbde96b1a0c916ba376096db5d2f498b7727a5d1d
+size_darwin=16110554
+url_linux=https://dl.google.com/android/repository/platform-tools_r37.0.1-linux.zip
+sha256_linux=d230f13842f60f782a8645f9c813f8f845bf36089ea7289f28c48f17979313f1
+size_linux=9054187
