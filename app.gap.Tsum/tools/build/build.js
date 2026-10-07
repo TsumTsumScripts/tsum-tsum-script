@@ -216,7 +216,7 @@ function writeArchive(log) {
  * they just get no companion. The id is `GAP_SCRIPT_ID` in src/index.ts.
  */
 function signDist(log) {
-  const keyFile = process.env.GAP_SCRIPT_KEY;
+  const keyFile = process.env.GAP_SCRIPT_KEY || devScriptKey();
   if (!keyFile) {
     log('[build] GAP_SCRIPT_KEY unset: dist/ is not signed (no GAP Companion)\n');
     return;
@@ -227,6 +227,17 @@ function signDist(log) {
   const manifest = signScript({ dir: local('dist'), script: id[1], version: pkgVersion,
     keyPem: fs.readFileSync(keyFile, 'utf8') });
   log(`[build] dist/${SIGNATURE_FILE}: ${id[1]} ${pkgVersion}, ${Object.keys(manifest.files).length} files\n`);
+}
+
+/**
+ * A DEV push (--adb) signs with the GAP Devkit's dev script key when the
+ * gap-companion checkout sits beside this repo, as the Devkit's own deploy does.
+ * Release builds never fall back to it.
+ */
+function devScriptKey() {
+  if (!has('adb')) return undefined;
+  const pem = path.join(projectDir, '..', '..', 'gap-companion', 'cloud', 'adapters', '.dev-key', 'script-private.pem');
+  return fs.existsSync(pem) ? pem : undefined;
 }
 
 // Declaration order is print order. What actually runs when is decided by
@@ -390,6 +401,11 @@ async function main() {
       try {
         // A multi-file push fails if the target folder is missing.
         await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'shell', 'mkdir', '-p', `'${DEPLOY_DIR}'`]);
+        // An unsigned build would leave an older push's signature behind, which
+        // no longer matches the files, so GAP silently gives no companion.
+        if (!fs.existsSync(local('dist', SIGNATURE_FILE))) {
+          await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'shell', 'rm', '-f', `'${DEPLOY_DIR}/${SIGNATURE_FILE}'`]);
+        }
         // Every dist/ file: gap-signature.json lists them all, and a missing one fails it.
         const files = fs.readdirSync(local('dist')).map((name) => 'dist/' + name);
         await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'push', ...files, DEPLOY_DIR]);
