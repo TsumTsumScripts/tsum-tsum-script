@@ -107,8 +107,9 @@ flowchart LR
 1. Reads the `### Summary` bullets of the `## [<version>]` section of
    `CHANGELOG.md`. There is no `[Unreleased]`; a missing section or a section
    with no Summary fails **before** anything is built.
-2. Renders the note exactly as the app will show it — a numbered list, the
-   channel's note, the character count against `MessageMaxChars` — and waits:
+2. Renders the note exactly as the app and Discord will show it — the Summary's
+   `**Additions**` / `*Area*` / `**Fixes**` groups (a numbered list when it has no
+   headings), the channel's note, the character count against `MessageMaxChars` — and waits:
    `a` approve, `e` edit in `$EDITOR`, `d` deny. An approved edit is offered
    back to `CHANGELOG.md`. `--yes` skips the gate; `--dry-run` writes nothing.
 3. Builds the channel.

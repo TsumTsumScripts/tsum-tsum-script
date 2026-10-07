@@ -1183,8 +1183,9 @@ block.** `CHANGELOG.md` has one section per version, named for `package.json`'s
 `version` — there is no `[Unreleased]`, so the section to publish is simply the
 one for the version being built, and a missing section fails the release. Each
 opens with a Summary: one line per change, and only changes a player would
-notice, internals excluded. The release turns those bullets into a numbered
-Markdown list, appends the channel's `Note`, and that string is the `Message`
+notice, internals excluded, grouped as `**Additions**` (under italic `*Area*`
+lines) and `**Fixes**`. The release renders those lines as written (a numbered
+list when there are no headings), appends the channel's `Note`, and that string is the `Message`
 field. The host app renders it with its own small Markdown subset
 (`ui/Markdown.kt`: headings, emphasis, code, lists, links, rules), so a bullet is
 a sentence and not a paragraph. A section with no Summary fails the release

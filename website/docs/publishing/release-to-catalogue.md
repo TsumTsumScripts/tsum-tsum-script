@@ -26,7 +26,9 @@ npm run release:alpha -- --yes       # skip the note review (for scripts; needs 
    the one that ships, and a missing section or an empty Summary fails the
    release before anything is built. The Summary is the player-facing note —
    one line per *feature*, not per change, and only what a player sees. Later
-   work on a feature folds into its existing line.
+   work on a feature folds into its existing line. It is laid out as
+   `**Additions**` (bullets under an italic `*Area*` line each), then `**Fixes**`,
+   and ships — and is announced on Discord — exactly so.
 3. The catalogue checkout is beside this repository, at the path
    `config.json`'s `Catalogue` names (`../../game-automation-catalogue/Official/LineTsumTsum`).
 
