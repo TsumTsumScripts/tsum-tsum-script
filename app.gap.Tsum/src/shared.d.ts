@@ -354,7 +354,6 @@ declare const enum SettingKey {
   ReceiveAllHearts = 'receiveAllHearts',
   ReceiveAllHeartsMinWait = 'receiveAllHeartsMinWait',
   ReceiveHeartsOneByOne = 'receiveHeartsOneByOne',
-  ReceiveHeartsSkipFirst = 'receiveHeartsSkipFirst',
   ReceiveHeartsSkipRuby = 'receiveHeartsSkipRuby',
   ReceiveHeartsSkipMedals = 'receiveHeartsSkipMedals',
   ClaimAllWithoutCoins = 'claimAllWithoutCoins',
@@ -522,7 +521,6 @@ interface Settings {
   [SettingKey.ReceiveAllHearts]: boolean;
   [SettingKey.ReceiveAllHeartsMinWait]: number;
   [SettingKey.ReceiveHeartsOneByOne]: boolean;
-  [SettingKey.ReceiveHeartsSkipFirst]: boolean;
   [SettingKey.ReceiveHeartsSkipRuby]: boolean;
   /**
    * Leave the Mission Clear medal mails where they are and take the first mail

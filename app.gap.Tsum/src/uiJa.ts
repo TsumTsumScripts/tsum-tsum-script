@@ -146,8 +146,6 @@ i18nRegister(Locale.Japanese, '日本語', {
     [UiText.SettingSendWaitHelp]: '次に友だちリストを回るまでの待機時間。',
     [UiText.SettingReceiveOneByOne]: 'ハートを1通ずつ受け取り',
     [UiText.SettingReceiveOneByOneHelp]: 'メールを1通ずつ開き、全員にハートを送り返します。一括受け取りより遅いです。',
-    [UiText.SettingSkipFirstPerson]: '先頭をスキップ',
-    [UiText.SettingSkipFirstPersonHelp]: '広告になっている先頭のメールを残します。',
     [UiText.SettingSkipRuby]: 'ルビーをスキップ',
     [UiText.SettingSkipRubyHelp]: 'ルビーのギフトをメールボックスに残します。',
     [UiText.SettingSkipMedals]: 'メダルをスキップ',

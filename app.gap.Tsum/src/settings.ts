@@ -313,12 +313,6 @@ var tabs: TabSpec[] = [
                         default: SettingDefaults[SettingKey.ReceiveHeartsOneByOne]
                     },
                     {
-                        key: SettingKey.ReceiveHeartsSkipFirst,
-                        title: UiText.SettingSkipFirstPerson,
-                        help: UiText.SettingSkipFirstPersonHelp,
-                        default: SettingDefaults[SettingKey.ReceiveHeartsSkipFirst]
-                    },
-                    {
                         key: SettingKey.ReceiveHeartsSkipRuby,
                         title: UiText.SettingSkipRuby,
                         help: UiText.SettingSkipRubyHelp,

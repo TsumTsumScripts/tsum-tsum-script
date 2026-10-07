@@ -1457,24 +1457,22 @@ interface Tsum {
   fetchAllMails(): void;
   /**
    * The mail rows drawn in full on this frame, as offsets to add to the
-   * `outReceive*` probes to reach each one, top to bottom. Negative for a row
-   * above the one "Skip first person" starts at; 0 is that row itself.
+   * `outReceive*` probes to reach each one, top to bottom; 0 is the top row.
    *
    * Found rather than assumed, because a scrolled list does not come to rest on
    * a row boundary -- see `MailList` (`src/data.ts`).
    */
   readMailRows(img: NativeImage): number[];
   /**
-   * Which mail row a Skip Medals / Skip Ruby pass should open, as one of
+   * Which mail row a one-by-one pass should open, as one of
    * `readMailRows`' offsets; `MailNoRow` when nothing on screen can be opened,
-   * `MailAllSkipped` when every row on screen is a medal or ruby being stepped
+   * `MailAllSkipped` when every row on screen is the ad, a medal or a ruby stepped
    * past and the hearts under them are only out of sight. A row whose badge is
    * still under the Claim All bar is never opened: it counts as out of sight.
    */
   mailRowToOpen(img: NativeImage): number;
   /** Drag the mail list on; false when it did not move, so the mail ended. */
   scrollMailList(): boolean;
-  skipAd(): void;
   taskReceiveOneItem(): void;
 
   // --- hearts.ts -------------------------------------------------------

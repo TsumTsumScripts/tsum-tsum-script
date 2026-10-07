@@ -63,8 +63,7 @@ settings". Close the panel instead and the run carries on where it left off.
 
 | Setting | What it does |
 |:--|:--|
-| Receive Hearts One By One | Open every message in turn. Slower, but sends a heart back to each sender, unknown ones included. |
-| Skip first person | Ignore the first message when claiming one by one (an ad, in some regions). |
+| Receive Hearts One By One | Open every message in turn. Slower, but sends a heart back to each sender, unknown ones included. The ad mail some regions pin at the top is always left alone. |
 | Skip ruby | Do not open messages containing rubies (they are not shared between Apple and Android). |
 | Skip Medals | Leave Mission Clear medals in the mailbox. |
 | Claim All old mails | Claim coin mails one by one until none carry coins, then Claim All. |

@@ -42,7 +42,6 @@
     "receiveAllHearts": true,
     "receiveAllHeartsMinWait": 60,
     "receiveHeartsOneByOne": true,
-    "receiveHeartsSkipFirst": false,
     "receiveHeartsSkipRuby": true,
     "claimAllWithoutCoins": false,
     "mailOpenMax": 30,

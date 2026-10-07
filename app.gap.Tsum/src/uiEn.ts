@@ -154,8 +154,6 @@ i18nRegister(Locale.English, 'English', {
     [UiText.SettingSendWaitHelp]: 'Wait before the next pass down the friends list.',
     [UiText.SettingReceiveOneByOne]: 'Receive Hearts One By One',
     [UiText.SettingReceiveOneByOneHelp]: 'Opens each mail, sending a heart back to everyone. Slower than Claim All.',
-    [UiText.SettingSkipFirstPerson]: 'Skip first person',
-    [UiText.SettingSkipFirstPersonHelp]: 'Leaves the top mail, where it is an ad.',
     [UiText.SettingSkipRuby]: 'Skip Ruby',
     [UiText.SettingSkipRubyHelp]: 'Leaves Ruby gifts in the mailbox.',
     [UiText.SettingSkipMedals]: 'Skip Medals',

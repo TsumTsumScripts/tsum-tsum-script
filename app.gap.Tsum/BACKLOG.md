@@ -50,8 +50,6 @@ consumer: `navigate()` does not walk the graph, it takes the `NavPlans` `via`
 hop, and most exit rows name no destination. The remaining work is to give the
 rows a `to` somebody can justify, then have `navigate()` walk them.
 
-- **`skipAd`** (`src/mail.ts`) -- three bare coordinates with 4s/4s/2s sleeps and
-  no probe of any kind, crossing three screens that have no names.
 - **`taskReceiveOneItem`** (`src/mail.ts`) -- a parallel recognition system. It
   is screen-driven, but through per-button `isSameColor` probes rather than
   `gPages`, so none of it is visible to the detection suite:

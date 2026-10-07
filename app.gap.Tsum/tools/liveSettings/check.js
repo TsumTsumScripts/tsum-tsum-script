@@ -148,7 +148,6 @@ function newWorld() {
     ts.isRunning = true;
     ts.settings = {};
     ts.bonus5to4 = false;
-    ts.receiveSecondItem = false;
     ts.tsumAppRestartFrequency = 0;
     gRunActive = true;
     Config.maxChain = 12;
