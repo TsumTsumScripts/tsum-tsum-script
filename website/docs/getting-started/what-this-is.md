@@ -17,7 +17,7 @@ apps. A script is a folder the app loads:
 | `index.js` | The automation itself, run on the app's embedded JavaScript engine (QuickJS-ng). It has to declare a global `start(settings)` and `stop()`. |
 | `index.html` | The settings page, shown in a floating window over the game. It builds the settings object and calls `start(...)` when you press Play. |
 | `quickbar.html` | Optional. A strip of live controls the app draws along the bottom of the screen. |
-| `tsums.dat` | This script's own data file: a library of tsum portraits, deployed beside the bundle. |
+| `tsums.dat` | This script's own data files (`tsums.dat` and two more libraries): tsum portraits, deployed beside the bundle. |
 
 The app installs scripts from **sources** — catalogues it downloads — or from a
 folder copied in by hand. Its floating bar has Play, Stop, a Log panel, a

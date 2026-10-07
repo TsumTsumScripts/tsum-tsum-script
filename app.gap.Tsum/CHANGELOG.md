@@ -246,7 +246,7 @@ release note; they fold back in here when she ships.
 - Gaston, Coronation Day Elsa and `SkillReactivationTenths` to Production;
   Nightmare Before Christmas (Set) to Production (4.0 shipped it there).
 - Quick Bar: the skill name no longer widens its column (`.qb-cell-fit`), so a
-  long name ellipsises at the bonus cluster instead of pushing Report.
+  long name ellipsises at the bonus cluster instead of pushing the side column.
 - Tsum List export writes a `device` column: the host's `getDeviceName()`, the
   name its events carry, so GAP Stats can filter its Catalog by device. Empty on
   a host without it.

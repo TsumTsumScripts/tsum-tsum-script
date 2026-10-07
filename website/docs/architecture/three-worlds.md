@@ -72,12 +72,12 @@ something away:
 Two more things follow from `file://`: the page is not a secure context, so
 there is no `navigator.clipboard` (the host provides
 `JavaScriptInterface.setClipboard` / `getClipboard`, feature-detected), and
-nothing may be fetched — Pico CSS is copied out of `node_modules` and inlined
-at build time, never loaded from a CDN.
+nothing may be fetched — the GAP tokens, fonts and page CSS are inlined at
+build time, never loaded from a CDN.
 
 <ImagePlaceholder id="settings-tabs-general" alt="The settings page open on the General tab, with the Run order card at the top and the light/dark toggle in the app bar" />
 
-<ImagePlaceholder id="quick-bar-strip" alt="The Quick Bar strip along the bottom edge of the game: Skill, Lv, Scan, Chain, +Coin, 5>4, Preset, Bubble and Report chips, with the coin averages on the right" />
+<ImagePlaceholder id="quick-bar-strip" alt="The Quick Bar strip along the bottom edge of the game: Skill, Lv, Scan, Chain, +Coin, 5>4, Preset, Bubble chips, the Auto Play toggle, with the coin averages on the right" />
 
 ## Two threads
 

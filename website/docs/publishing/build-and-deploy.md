@@ -21,8 +21,9 @@ but cannot be picked on a Beta build. It also names the archive:
 `TsumTsum-Beta-0.12.zip`, from the channel's `Archive` and `package.json`'s
 `version`.
 
-What lands: `dist/index.js`, `dist/index.html`, `dist/quickbar.html`,
-`dist/tsums.dat`, `dist/LICENSE`, `dist/NOTICE`, and the zip with its
+What lands: `dist/index.js`, `dist/index.html`, `dist/quickbar.html`, the
+`dist/*.dat` libraries, `dist/LICENSE`, `dist/NOTICE`, the `gap-*.json` and
+`companionSettings.json` manifests, and the zip with its
 `.sha256` sidecar in the package root. `build/` keeps the readable bundle the
 offline tools load. [Setup and first build](../getting-started/setup-and-first-build)
 lists them; [Build and release](../architecture/build-and-release) is how the
@@ -35,12 +36,14 @@ a failure; `--adb` pushes afterwards; `--device <serial>` picks which one.
 
 ```bash
 npm run adb            # push an existing dist/
-npm run buildAndAdb    # build, then push
+npm run buildAndAdb    # build, then push to the DEV folder
 ```
 
-Both push `dist/index.js`, `index.html`, `quickbar.html` and `tsums.dat` to
+`adb` pushes `dist/` to
 `/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/` —
-the folder the app reads for the official script. The app's script root is
+a folder the app reads. `buildAndAdb` pushes every `dist/` file to
+`.../scripts/DEV` on each connected emulator instead (listed in the app as
+"Tsum Tsum DEV"). The app's script root is
 `/sdcard/Download/GameAutomationPlatform/`; the Library lists what it finds
 under `scripts/` up to three levels deep, stopping at the first folder that
 holds an `index.js` or `index.html`.

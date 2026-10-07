@@ -19,8 +19,8 @@ All potential changes which would improve the script will be documented in this 
 
 Every screen interaction should be anchored to an explicit page, so that no tap
 is aimed at a screen nobody confirmed was there. These are the places that are
-not, worst first. The root cause is shared: `NavPlans` (`src/data.ts`) has four
-destinations, so `gPages.navigate()` can only be asked for those four -- any task
+not, worst first. The root cause is shared: `NavPlans` (`src/data.ts`) has six
+destinations, so `gPages.navigate()` can only be asked for those six -- any task
 that needs to get somewhere deeper has to hand-drive, and the hand-driven part is
 where the blind taps are.
 
@@ -31,7 +31,7 @@ gating cost, not the code.
 the page-to-page edges the navigate band already implements one subscription at a
 time -- plus the anchors (`mail`, `tsums`, `home`) which are edges in the `Page`
 table already -- and let `navigate()` find a path over them instead of accepting
-only the five names in `NavPlans`. Used *forward* like this, a missing edge means
+only the six names in `NavPlans`. Used *forward* like this, a missing edge means
 "no route", which is a loud failure; the same graph used backwards, to constrain
 what the next page can be, produces a spurious `Unknown` instead and was turned
 down for good (`PAGE_DISPATCH.md` § The sitemap says why a map, not a filter).
@@ -53,9 +53,9 @@ rows a `to` somebody can justify, then have `navigate()` walk them.
 - **`taskReceiveOneItem`** (`src/mail.ts`) -- a parallel recognition system. It
   is screen-driven, but through per-button `isSameColor` probes rather than
   `gPages`, so none of it is visible to the detection suite:
-  six `Button.*.color` points decide what screen it is on and `gPages` is called
-  once, while `MailBox`, `Received`, `ReceiveHeart`, `ReceiveSkillTicket` and
-  `ReceivePremiumTicket` sit unused. The heart sender was the other half of this
+  six `Button.*.color` points decide what screen it is on and `gPages` is only
+  asked about `MailBox` and `ReceiveHeartWithoutCoins`, while `Received`,
+  `ReceiveHeart`, `ReceiveSkillTicket` and `ReceivePremiumTicket` sit unused. The heart sender was the other half of this
   and is now `gPages`-driven throughout.
 - **The rest of `taskReceiveAllItems`** (`src/mail.ts`) -- the hop into the
   mailbox is a real navigation now (`nav.move.toMail` + the `MailBox` plan), but
@@ -76,5 +76,4 @@ anchored to `PageName.Unknown`), and app start/restart.
 
 ### Features
 - Add "Spam skill" option to check for skill after every finished chain instead of every chain batch.
-- Skill: Jedi Luke (13 swipes technique)
 - Rewrite of Settings UI (became too large as single-page, not dynamic regarding settings like "skill level" of Cinderella)

@@ -69,7 +69,7 @@ screenshot lands beside it in `MuMuSharedFolder\Screenshots`.
 
 **Every instance mounts the same folder.** Each writes its own log — that is
 what the device id in the name is for — but the stats files, `hearts.json`,
-`pageHistory/` and the reports are one set for all of them, so two instances
+`history/` and the reports are one set for all of them, so two instances
 at once will interleave their stats.
 
 ## Other emulators
@@ -118,7 +118,7 @@ On MuMu the first line is enough — the file appears in
 `adb exec-out screencap -p > screen.png` is the one-liner; PowerShell's `>` is
 not byte-clean, so use the two-step form there.
 
-For what the *script* saw, `pageHistory/` and the report folders are the
+For what the *script* saw, `history/` and the report folders are the
 record; *Debug game* on the Debug tab keeps a frame of every screen the router
 visits rather than the last few. The offline harness reads any of these like a
 capture — [Test without a device](test-without-a-device).

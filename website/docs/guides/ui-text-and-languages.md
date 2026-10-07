@@ -9,8 +9,8 @@ There are two catalogues, because there are two kinds of text:
 
 | Text | Vocabulary | English | Other languages |
 |:--|:--|:--|:--|
-| Settings page and Quick Bar | `UiText` in `strings.d.ts` | `uiEn.ts` — **must be complete** | `uiZhTw.ts` — partial, falls back key by key |
-| Log sentences | `Log` in `logEvents.ts` | `logsEn.ts` — **must be complete** for catalogued events | `logsZhTw.ts` — partial, falls back key by key |
+| Settings page and Quick Bar | `UiText` in `strings.d.ts` | `uiEn.ts` — **must be complete** | `uiZhTw.ts`, `uiJa.ts` — partial, fall back key by key |
+| Log sentences | `Log` in `logEvents.ts` | `logsEn.ts` — **must be complete** for catalogued events | `logsZhTw.ts`, `logsJa.ts` — partial, fall back key by key |
 
 In both, **the key is the interface, not the sentence**: wording changes
 freely and nothing else has to know.
@@ -50,7 +50,7 @@ the compiler cannot see.
 
 1. A `UiText` member in `strings.d.ts`, in the group it belongs to.
 2. English in `uiEn.ts` — required.
-3. The same key in `uiZhTw.ts` and any other language, or it falls back.
+3. The same key in `uiZhTw.ts`, `uiJa.ts` and any other language, or it falls back.
 4. `npm run typecheck`, `npm run i18n:check`.
 
 ## Log sentences
@@ -72,7 +72,7 @@ Additive, by design — nothing existing changes:
 3. A log catalogue beside `logsEn.ts` (`logs<Tag>.ts`) calling
    `logRegisterStrings`.
 4. The new files listed in the two page tsconfigs (`tsconfig.settings.json`,
-   `tsconfig.quickbar.json`), in `tsconfig.json`, and in both build scripts.
+   `tsconfig.quickbar.json`), in `tsconfig.json`, and in `PAGE_SCRIPTS` in `tools/build/build.js`.
 5. A `<script>` tag for the compiled catalogue in `src/index.html` and
    `src/quickbar.html`.
 

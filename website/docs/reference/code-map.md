@@ -22,7 +22,7 @@ In bundle order.
 | `settings.d.ts` | The settings page schema (`SettingSpec`, `GroupSpec`, `TabSpec`, `RowKey`), `Preset`, `PageMessage`. Both page compilations. |
 | `strings.d.ts` | `UiText`, and `UiStrings` mapped over it. Both page compilations. |
 | `i18n.ts` | The page-side i18n runtime; resolves at render time. |
-| `uiEn.ts`, `uiZhTw.ts` | One language each, keyed by `UiText`. English must be complete. |
+| `uiEn.ts`, `uiZhTw.ts`, `uiJa.ts` | One language each, keyed by `UiText`. English must be complete. |
 | `taskController.ts` | `TsumTaskController`, the cooperative scheduler. Five consecutive throws from one job restart the app. |
 | `runPlan.ts` | The run's task table, in the game and settings compilations, so the Run order card lists exactly what runs. |
 | `state.ts` | The two script-wide globals: `ts`, `gTaskController`. |
@@ -30,7 +30,7 @@ In bundle order.
 | `data.ts` | Every coordinate and tuning constant, no logic: the page fingerprints, the navigation plans, one table per screen a chore walks. Shared tables only. |
 | `logEvents.ts` | `Log` — the log event vocabulary, one `const enum` per component. |
 | `scriptEvents.ts` | `Emit` — the emitted event vocabulary. |
-| `logs.ts`, `logsEn.ts`, `logsZhTw.ts` | The log sentence registry and one table per language. |
+| `logs.ts`, `logsEn.ts`, `logsZhTw.ts`, `logsJa.ts` | The log sentence registry and one table per language. |
 | `logging.ts` | The structured logger: the JSONL record, the correlation ids, the flood guard, the ring of recent records a report carries. |
 | `pathfinding.ts` | Board reading and chain planning, no tapping: circle detection, clustering, `calculatePaths`, the chroma colour model. |
 | `pages.ts` | `PageRouter` and `gPages`: score, `observe`, `react`, `detect`, `peek`, `navigate`, the page sets, and `perform`. |

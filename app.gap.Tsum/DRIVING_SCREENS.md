@@ -126,8 +126,8 @@ whole `timeout` — that is where a detection's budget goes, and it is why
 `Log.Page.Unmatched` carries `durationMs` / `captureMs` / `scoreMs` / `passes`.
 
 `FriendPage`'s plan is `holdMs: 3000`, `restMs: 1000`, `startupWaitMs: 5000`,
-because it is where a new event window flies in from. Every plan that declares a
-`via` declares `FriendPage`. That arithmetic — two passes home, the arrival, a 1s
+because it is where a new event window flies in from. Every `via` chain ends at
+`FriendPage` (the store goes via the collection, which goes via the friend page). That arithmetic — two passes home, the arrival, a 1s
 rest, then the collection's own loop — is exactly the **11–12 seconds** a run
 reported for reaching the collection.
 
@@ -263,7 +263,8 @@ Four things to know before using it.
   count-in is neither a screen nor a fall.
 - **Small perpetual motion is not an animation.** A pulsing badge or a looping
   banner never stops, so "still" is *at most `ScreenSettle.maxMoved` of the
-  sixty points moved* rather than none. A panel sliding or fading moves twenty.
+  sixty points moved* rather than none. A settled collection moves up to 16; a real
+  transition moves 36 to 55.
 - **Still is not the same as ready.** A screen whose contents are still being
   fetched is motionless behind its own fingerprint, so the gate passes at once
   and the reading that follows describes an empty frame. Nothing watching for

@@ -1427,7 +1427,7 @@ class PageRouter {
    * about not acting on a frame caught mid-transition, and what the hop does
    * next is a tap the outer loop re-confirms anyway. A wrong belief costs one
    * missed tap and another pass; the ceremony costs 3s of settle and 1s a pass
-   * on the friend page, which is the `via` of every plan that has one -- most
+   * on the friend page, which is the end of every `via` chain -- most
    * of what it took to reach the collection.
    */
   private drive(goal: PageName, waypoint: boolean, abort?: () => boolean): boolean {

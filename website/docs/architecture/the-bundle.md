@@ -103,7 +103,8 @@ compiles, so the rule is a convention reviewers hold: **use the member.**
 
 Only the first has a name an editor discovers automatically, so `settings.ts`
 opens with `/// <reference>` lines that exist purely so a TypeScript language
-server checks it against the right files. `npm run typecheck` runs all three.
+server checks it against the right files. `npm run typecheck` runs these three and a fourth, `tsconfig.workflow.json`,
+which proves `gapWorkflow.ts` compiles on its own.
 
 ## What ships is compacted, and only in ways that cannot change it
 
