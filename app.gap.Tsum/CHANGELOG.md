@@ -64,7 +64,7 @@ release note; they fold back in here when she ships.
 *Run control*
 - Stop after games: turn off Auto Play, pause or stop after a set number of rounds.
 - Quick Bar "Last round" button, and an Auto Play toggle replacing Report.
-- Auto Play Game moved to the Round tab; app restart frequency is in minutes, under Device.
+- Auto Play Game moved to the Round tab; app restart frequency is in minutes, under Device (a saved value in hours is converted).
 
 *Quick Bar and settings*
 - Redesigned in the GAP look, with light and dark themes and a Code button that copies the settings code.
@@ -167,7 +167,7 @@ release note; they fold back in here when she ships.
   file is unchanged. The host adds every capture (`frame.*`) and touch
   (`input.*`), `board.scan` names its frame, and the hearts sweep sends `marks`.
   Unwatched, it costs one `traceAttached()` call a second.
-- **App restart frequency** stored in minutes (was hours; a saved `6` is now 6 min), moved from Experimental to Device.
+- **App restart frequency** stored in minutes under a new key, `tsumAppRestartMinutes`, moved from Experimental to Device. A saved `tsumAppRestartFrequency` (hours) loads once as hours × 60 (`carryRestartHours`, settings.ts). 4.0 reading a 5.0 save finds no hours key and does not restart.
 - **Last run settings.** `start()` writes its settings, minus the one-shot
   flags, to `last-settings-<getDeviceId()>.json` in the script folder; a failed
   write only warns. `lastRunSettings()` reads it back, or null.

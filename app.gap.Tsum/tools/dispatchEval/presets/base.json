@@ -50,7 +50,7 @@
     "sendHeartsToZeroScore": false,
     "sendHeartsMaxRuntime": 0,
     "sendHeartsMinWait": 240,
-    "tsumAppRestartFrequency": 360
+    "tsumAppRestartMinutes": 360
   },
   "durationsMs": {
     "receiveOneItem": 240000,

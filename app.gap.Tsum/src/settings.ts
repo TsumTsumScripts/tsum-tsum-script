@@ -997,6 +997,7 @@ function loadSettings(settings: SettingSpec[][]) {
             }
         })();
         carryBuyBoxTenTimes(recordSettings);
+        carryRestartHours(recordSettings);
     } else {
         logInfo(Log.Settings.NoneFound, i18nText(UiText.LogNoSettings));
         return;
@@ -1019,6 +1020,25 @@ function carryBuyBoxTenTimes(stored: { [key: string]: SettingValue }) {
     var row = rowByKey(SettingKey.BuyBoxSize);
     if (row !== undefined) {
         row.default = BoxPurchaseSize.Ten;
+    }
+}
+
+/** The key App restart frequency had up to 4.0, when it held hours. Read here once; nothing writes it. */
+var RETIRED_RESTART_HOURS = 'tsumAppRestartFrequency';
+
+/**
+ * A stored restart frequency in hours becomes minutes, once: only while the
+ * minutes key has no value of its own. 4.0's max (120h) is 5.0's max (7200min).
+ * The next save writes the new key and drops the old one.
+ */
+function carryRestartHours(stored: { [key: string]: SettingValue }) {
+    var hours = stored[RETIRED_RESTART_HOURS];
+    if (stored[SettingKey.TsumAppRestartFrequency] !== undefined || typeof hours !== 'number') {
+        return;
+    }
+    var row = rowByKey(SettingKey.TsumAppRestartFrequency);
+    if (row !== undefined) {
+        row.default = hours * 60;
     }
 }
 
