@@ -98,13 +98,20 @@ function selectMyTsumOnGrid(run: Tsum, short: string, name: string, page: number
   // Grey already: the card is the MyTsum even though the last round's read
   // did not say so.
   let set = run.collectionShowsMyTsum();
+  let tapped = false;
   for (let i = 0; i < SelectMyTsumSetAttempts && !set && run.isRunning; i++) {
     run.tap(CollectionGrid.setButton);
+    tapped = true;
     run.settleScreen(UnlockOptionSettleMs);
     set = run.collectionShowsMyTsum();
   }
   if (!set) {
     return run.isRunning ? selectMyTsumFailed('set not taken', fields) : 'wait';
+  }
+  // The tap raises a "MyTsum has been changed." dialog that stays until tapped.
+  if (tapped) {
+    run.tap(CollectionGrid.setDoneDialog);
+    run.settleScreen(UnlockOptionSettleMs);
   }
   // The next round's pre-round read (identifyMyTsum) checks this again.
   run.myTsum = short;
