@@ -105,8 +105,7 @@ release note; they fold back in here when she ships.
   only the Workflow job. A whole Tsum List export also writes
   `tsum_list_<device id>.json`, which Select Tsum requires: Select My Tsum
   goes straight to the card's listed page and slot, confirms it with one read
-  (`tsum-list-stale` otherwise) and taps MyTsum Set (its position still to
-  verify on a device, INTL and JP). Pages mirror presets to
+  (`tsum-list-stale` otherwise) and taps MyTsum Set. Pages mirror presets to
   `presets-<device id>.json` for Import. `npm run workflow:check`. Restart app
   walks the startup screens to the friend list before handing off.
 - **GAP Companion screens** (`src/companionScreens.ts`, `gapScreens`): the
@@ -228,7 +227,7 @@ release note; they fold back in here when she ships.
   as fallback; `skipCollectionToEnd` is new. Select My Tsum comes from the last
   page and turns back (`tsumListTurnPage(run, true)`) when that is fewer turns
   and the last card is still the list's last tsum (`selectMyTsumEndMatches`);
-  otherwise it walks from page 1. Untested on a device.
+  otherwise it walks from page 1. Confirmed on a device.
 - **Bubble popping.** Measured on a Villains Set recording: the scan found
   about half of a packed bottom row, and the 2s post-skill hold blocked pops
   for ~30% of the round.
