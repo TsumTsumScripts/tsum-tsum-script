@@ -69,7 +69,7 @@ https://github.com/game-automation-platform/game-automation-scripts/blob/main/ap
 
 The **version is not there**. It is `package.json`'s `version`, so `npm
 version` and the release cannot disagree. The archive is named from both:
-`TsumTsum-Alpha-0.12.zip`. The settings page carries a `$VERSION` placeholder
+`TsumTsum-Alpha-5.0a2.zip`. The settings page carries a `$VERSION` placeholder
 substituted at build time, and so does the game bundle (`ScriptVersion` in
 `data.ts`), so the stats CSV can say which build played a round.
 
@@ -92,7 +92,7 @@ travelled to a device can be checked back against the build it came from.
 
 ```mermaid
 flowchart LR
-  cl["CHANGELOG.md<br/>## [0.12] › ### Summary"]
+  cl["CHANGELOG.md<br/>## [5.0a2] › ### Summary"]
   review["review.js<br/>approve · edit · deny"]
   build["build the channel"]
   cat["catalogue repo<br/>Official/LineTsumTsum/&lt;Channel&gt;/<br/>zip · metadata.json · CHANGELOG.md"]

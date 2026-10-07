@@ -88,7 +88,8 @@ A row on the **Gameplay** or **Skills** tab is either *how a round is played* â€
 in which case it gets a slot on the end of `SHARE_SLOTS`, which is what puts it
 into share codes and presets â€” or it shapes the *run* instead and says so with
 `neverShared: true` (Auto Play Game, the between-rounds delay, Track round
-statistics, the Max Round Duration pair). A row on any other tab needs
+statistics, Share round stats, the Max Round Duration and Stop after games
+pairs). A row on any other tab needs
 neither.
 
 ```ts reference title="app.gap.Tsum/src/settings.ts"

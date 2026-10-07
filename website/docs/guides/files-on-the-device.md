@@ -6,7 +6,7 @@ description: Where the log, the round stats and the screenshots land, and how to
 # Files on the device
 
 Everything the script writes lands under the app's script root on shared
-storage — the same root `npm run adb` pushes into
+storage — the same root `npm run adb` and `buildAndAdb` push into
 ([Build and deploy](../publishing/build-and-deploy)):
 
 ```

@@ -1640,8 +1640,8 @@ var SHARE_SLOTS: (SettingKey | '')[] = [
  *
  * **What travels is how a round is played, and nothing else.** The rows about
  * the *run* rather than the round -- Auto Play Game, the between-rounds delay,
- * Track round statistics and the Max Round Duration pair -- live on the General
- * tab and are marked `neverShared`. Nothing else off these tabs travels either:
+ * Track round statistics, Share round stats, and the Max Round Duration and
+ * Stop after games pairs -- are marked `neverShared`. Nothing else off these tabs travels either:
  * not the language, the device, the chores, the mailbox or the hearts, which
  * are about the account.
  *
@@ -2108,7 +2108,7 @@ function applySettingValue(setting: SettingSpec, value: SettingValue): boolean {
  * into whatever was already here.
  *
  * The rows no slot names are not touched at all -- the language, the chores, the
- * mailbox, the hearts, the box buying, and the three run-shaped rows on the
+ * mailbox, the hearts, the box buying, and the run-shaped rows on the
  * shared tabs (SHARE_TABS). A code cannot carry them, so putting them back to
  * default would be an edit made on no evidence.
  */

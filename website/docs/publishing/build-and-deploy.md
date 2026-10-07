@@ -18,7 +18,7 @@ The channel decides which unfinished skills and settings the build offers:
 `config.json` gives each channel a `Status`, and a skill or row whose
 `ReleaseStatus` is below it is not listed — an Alpha skill is in the bundle
 but cannot be picked on a Beta build. It also names the archive:
-`TsumTsum-Beta-0.12.zip`, from the channel's `Archive` and `package.json`'s
+`TsumTsum-Beta-5.0a2.zip`, from the channel's `Archive` and `package.json`'s
 `version`.
 
 What lands: `dist/index.js`, `dist/index.html`, `dist/quickbar.html`, the
@@ -35,13 +35,13 @@ a failure; `--adb` pushes afterwards; `--device <serial>` picks which one.
 ## Push to a device
 
 ```bash
-npm run adb            # push an existing dist/
-npm run buildAndAdb    # build, then push to the DEV folder
+npm run adb            # push an existing dist/ over the installed script
+npm run buildAndAdb    # build, then push to its own scripts/DEV folder
 ```
 
 `adb` pushes `dist/` to
 `/sdcard/Download/GameAutomationPlatform/scripts/Official GAP/Tsum Tsum/` —
-a folder the app reads. `buildAndAdb` pushes every `dist/` file to
+the folder the installed (catalogue) script lives in. `buildAndAdb` pushes every `dist/` file to
 `.../scripts/DEV` on each connected emulator instead (listed in the app as
 "Tsum Tsum DEV"). The app's script root is
 `/sdcard/Download/GameAutomationPlatform/`; the Library lists what it finds
@@ -70,7 +70,7 @@ other direction — the log, the stats and the screenshots back onto the PC — 
 - A copied archive can be checked against the build it came from:
 
 ```bash
-ZIP=TsumTsum-Beta-0.12.zip
+ZIP=TsumTsum-Beta-5.0a2.zip
 [ "$(sha256sum -b "$ZIP" | cut -d' ' -f1)" = "$(cat "$ZIP.sha256")" ] && echo match
 ```
 
