@@ -52,32 +52,32 @@ release note; they fold back in here when she ships.
 **Additions**
 
 *Skills*
-- Disney Villains (Set) plays properly (Alpha): keeps chaining, records score and coins, works with Auto Unlock MyTsum Level.
-- Nightmare Before Christmas (Set) improved: rerolls Oogie Boogie's dice only under 7, tracks shrinking tsums better.
+- Disney Villains (Set) plays properly (Alpha), with score and coins recorded.
+- Nightmare Before Christmas (Set) rerolls Oogie Boogie's dice only under 7 and tracks shrinking tsums better.
 - Gaston, Coronation Day Elsa and Delay Skill ReActivation are out of Beta.
 - Large tsums are recognised and chained.
 
 *Bubbles*
-- Bottom-row bubbles are spotted and popped faster; Mid Chain strategies no longer let them pile up.
-- New Save One and Save One Mid Chain strategies pop all but one.
+- Bottom-row bubbles are popped faster, and Mid Chain strategies no longer let them pile up.
+- New Save One and Save One Mid Chain strategies.
 
 *Run control*
 - Stop after games: turn off Auto Play, pause or stop after a set number of rounds.
-- Quick Bar "Last round" button, and an Auto Play toggle replacing Report (reports stay on the Debug tab and the Log button's long press).
-- Auto Play Game moved to the Round tab; app restart frequency counts in minutes, under Device.
+- Quick Bar "Last round" button, and an Auto Play toggle replacing Report.
+- Auto Play Game moved to the Round tab; app restart frequency is in minutes, under Device.
 
 *Quick Bar and settings*
-- Settings page and Quick Bar redesigned in the GAP look: light and dark themes, compact settings, a Code button that copies the settings code.
-- Quick Bar shows average medals per round; tapping the readout copies the run's figures.
+- Redesigned in the GAP look, with light and dark themes and a Code button that copies the settings code.
+- Quick Bar shows average medals per round; tap the readout to copy the run's figures.
 
 *Tsum List*
-- Tsum List export (Chores > Tsum List > Now): every Tsum you own with level, skill level, progress and month acquired, favourites marked, to a CSV.
+- Export every Tsum you own to a CSV (Chores > Tsum List > Now), favourites marked.
 - It and Unlock Level jump straight to the collection's first page.
 
 *Platform and data*
 - Requires General Automation Platform 3.1 or newer.
 - Each device keeps its own folder, so emulators sharing storage stop overwriting each other's files.
-- Share round stats (Alpha): sends your round stats to a server set on the script's card in GAP's Library.
+- Share round stats (Alpha): sends your round stats to a server set in GAP's Library.
 - Receiving hearts one by one always skips the ad mail; Skip first person is gone.
 
 **Fixes**
