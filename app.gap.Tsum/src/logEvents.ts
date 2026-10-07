@@ -273,7 +273,6 @@ namespace Log {
 
   /** The gift box. */
   export const enum Gifts {
-    AdIgnored                 = 'gifts.adIgnored',
     AllReceived               = 'gifts.allReceived',
     CheckUnreceived           = 'gifts.checkUnreceived',
     Completed                 = 'gifts.completed',
@@ -284,12 +283,12 @@ namespace Log {
     ReceiveOneByOne           = 'gifts.receiveOneByOne',
     ReceiveOneClosing         = 'gifts.receiveOne.closing',
     ReceiveOneFetchedAllSoFar = 'gifts.receiveOne.fetchedAllSoFar',
-    ReceiveOneHandleAd        = 'gifts.receiveOne.handleAd',
     ReceiveOneIdle            = 'gifts.receiveOne.idle',
     ReceiveOneOk              = 'gifts.receiveOne.ok',
     ReceiveOneProbe           = 'gifts.receiveOne.probe',
     ReceiveOneReceiveAll      = 'gifts.receiveOne.receiveAll',
     ReceiveOneRowUnderBar     = 'gifts.receiveOne.rowUnderBar',
+    ReceiveOneSkipAd          = 'gifts.receiveOne.skipAd',
     ReceiveOneSkipMedal       = 'gifts.receiveOne.skipMedal',
     ReceiveOneSkipRuby        = 'gifts.receiveOne.skipRuby',
     ReceiveOneSkippedOnly     = 'gifts.receiveOne.skippedOnly',
@@ -297,7 +296,6 @@ namespace Log {
     ReceiveOneStuckRetry      = 'gifts.receiveOne.stuckRetry',
     ReceiveOneTimeout         = 'gifts.receiveOne.timeout',
     ReceiveOneWaiting         = 'gifts.receiveOne.waiting',
-    TicketReceived            = 'gifts.ticketReceived',
   }
 
   /** Raising tsum level caps -- the collection sweep. */

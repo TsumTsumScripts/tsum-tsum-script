@@ -30,7 +30,6 @@ var SettingDefaults: Readonly<Settings> = {
   [SettingKey.SendHeartsMaxRuntime]: 0,
   [SettingKey.SendHeartsMinWait]: 26,
   [SettingKey.ReceiveHeartsOneByOne]: false,
-  [SettingKey.ReceiveHeartsSkipFirst]: false,
   [SettingKey.ReceiveHeartsSkipRuby]: false,
   [SettingKey.ReceiveHeartsSkipMedals]: false,
   [SettingKey.ClaimAllWithoutCoins]: false,

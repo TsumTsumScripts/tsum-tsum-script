@@ -223,7 +223,6 @@ class Tsum {
    */
   pendingSettings: { [key: string]: string | number | boolean };
   bonus5to4!: boolean;
-  receiveSecondItem!: boolean;
   tsumAppRestartFrequency!: number;
 
   // Lazily initialised caches, owned by dialogs.ts and clickAssist.ts.

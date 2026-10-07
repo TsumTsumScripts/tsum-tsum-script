@@ -175,8 +175,6 @@ declare const enum UiText {
   SettingSendWaitHelp = 'setting.sendWait.help',
   SettingReceiveOneByOne = 'setting.receiveOneByOne',
   SettingReceiveOneByOneHelp = 'setting.receiveOneByOne.help',
-  SettingSkipFirstPerson = 'setting.skipFirstPerson',
-  SettingSkipFirstPersonHelp = 'setting.skipFirstPerson.help',
   SettingSkipRuby = 'setting.skipRuby',
   SettingSkipRubyHelp = 'setting.skipRuby.help',
   SettingSkipMedals = 'setting.skipMedals',

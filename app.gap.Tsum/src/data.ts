@@ -361,8 +361,7 @@ type GameItemStates = [
   bubble: boolean, fiveToFour: boolean, combo: boolean
 ];
 
-type PatchedYColor = { x: number; y: number; color: Color };
-type PatchedYColorPair = { x: number; y: number; color: Color; color2: Color };
+type ColorProbe = { x: number; y: number; color: Color };
 
 var Button = {
   gameBubblesFrom: {x: 100, y: 632},
@@ -399,18 +398,16 @@ var Button = {
   outReceiveAllOkJP: {x: 835, y: 1258, color: {"a":0,"b":6,"g":175,"r":236}},
   outReceiveItemSetOk: {x: 830, y: 1260, color: {"a":0,"b":8,"g":176,"r":238}},
   outReceiveClose: {x: 530, y: 1372},
-  outReceiveOneBase: {y: 569},
-  outReceiveOne: {x: 840, color: {"a":0,"b":30,"g":181,"r":235}, color2: {"a":0,"b":119,"g":74,"r":40}} as PatchedYColorPair,
-  outReceiveOneRubyBase: {y: 651}, // ruby
-  outReceiveOneRuby: {x: 295, color: {r: 224, g: 93, b: 101}} as PatchedYColor, // ruby
-  outReceiveOneAdBase: { y: 672 }, // ad
-  outReceiveOneAd: { x: 290, color: { r: 90, g: 57, b: 25 } } as PatchedYColor, // ad
-  outReceiveOneMedalBase: { y: 645 }, // mission medal
+  outReceiveOne: {x: 840, y: 569, color: {"a":0,"b":30,"g":181,"r":235}, color2: {"a":0,"b":119,"g":74,"r":40}},
+  outReceiveOneRuby: {x: 295, y: 651, color: {r: 224, g: 93, b: 101}} as ColorProbe, // ruby
+  // The pinned ad mail (some regions). Skill and premium ticket mail reads the
+  // same here, so a one-by-one pass leaves those in the mailbox too.
+  outReceiveOneAd: { x: 290, y: 672, color: { r: 90, g: 57, b: 25 } } as ColorProbe,
   // The item badge over the thumbnail's bottom-right corner, and the pale
   // blue-white of the mission medal there. Past the photo itself, so a row
   // carrying no medal reads as its badge or as the frame, never as a bright
   // corner of someone's profile picture.
-  outReceiveOneMedal: { x: 287, color: { r: 231, g: 247, b: 255 } } as PatchedYColor,
+  outReceiveOneMedal: { x: 287, y: 645, color: { r: 231, g: 247, b: 255 } } as ColorProbe, // mission medal
   outReceiveTimeout: {x: 600, y: 1092, color: {"a":0,"b":11,"g":171,"r":235}},
   // The heart column, the list viewport and the scroll gesture are the three
   // heart tables further down; the four `outSendHeart*` row positions,

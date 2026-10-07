@@ -151,8 +151,6 @@ i18nRegister(Locale.Taiwan, '中文', {
     [UiText.SettingSendWaitHelp]: '下一輪送愛心前要等多久。',
     [UiText.SettingReceiveOneByOne]: '一顆一顆收愛心',
     [UiText.SettingReceiveOneByOneHelp]: '逐一開信並回送愛心給每個人。比「全部領取」慢。',
-    [UiText.SettingSkipFirstPerson]: '從第二行開始接收',
-    [UiText.SettingSkipFirstPersonHelp]: '不動最上面那封信（常是廣告）。',
     [UiText.SettingSkipRuby]: '跳過紅寶石',
     [UiText.SettingSkipRubyHelp]: '紅寶石禮物留在信箱。',
     [UiText.SettingSkipMedals]: '跳過獎章',

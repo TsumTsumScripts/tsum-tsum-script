@@ -65,6 +65,7 @@ release note; they fold back in here when she ships.
 - Resuming after a pause mid-round now presses Continue and returns to the round, instead of sometimes tapping Try Again or elsewhere on the pause menu.
 - GAP Companion notifies your phone when a run stops after its round (with that round's score and coins) and when a chore started with Now (unlock levels, buy boxes, export the Tsum list, change My Tsum) is done.
 - Tapping the Quick Bar's readout copies the run's figures to the clipboard: base coin and medal totals, averages, per-second rates and best and worst rounds, the round durations, and the round count.
+- Receiving hearts one by one now always skips the ad mail, so the Skip first person setting is gone. Skill and premium ticket mail is left in the mailbox too.
 
 ### Added
 
@@ -269,6 +270,11 @@ release note; they fold back in here when she ships.
   stepper buttons turn dashed at the row's min/max (`syncStepLimits`).
 - Quick Bar toggles are solid blue with a check; "applies now" is green,
   "next round" amber; coin and time figures use the data colours.
+- **Ad mail stepped past, not opened.** `outReceiveOneAd` is an always-on
+  `mailRowToOpen` skip (`gifts.receiveOne.skipAd`), so rows are always found
+  rather than only under Skip Medals / Skip Ruby. Removed with it: the
+  `receiveHeartsSkipFirst` setting, the start-time `outReceive*` y patching
+  (the y's are fixed in `data.ts`), and `skipAd`'s blind delete taps.
 
 ### Fixed
 

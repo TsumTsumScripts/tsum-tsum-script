@@ -263,7 +263,6 @@ const RemoteSettingKinds: { [key: string]: RemoteKind } = {
   [SettingKey.ReceiveAllHearts]: RemoteKind.Bool,
   [SettingKey.ReceiveAllHeartsMinWait]: RemoteKind.Int,
   [SettingKey.ReceiveHeartsOneByOne]: RemoteKind.Bool,
-  [SettingKey.ReceiveHeartsSkipFirst]: RemoteKind.Bool,
   [SettingKey.ReceiveHeartsSkipRuby]: RemoteKind.Bool,
   [SettingKey.ReceiveHeartsSkipMedals]: RemoteKind.Bool,
   [SettingKey.ClaimAllWithoutCoins]: RemoteKind.Bool,
@@ -510,7 +509,6 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   ts.timeItem = settings.bonusTime;
   ts.bubbleItem = settings.bonusBubble;
   ts.comboItem = settings.bonusCombo;
-  ts.receiveSecondItem = settings.receiveHeartsSkipFirst;
   ts.sentToZero = settings.sendHeartsToZeroScore;
   ts.receiveCheckLimit = settings.mailOpenMax;
   ts.bubbleStrategy = settings.bubbleStrategy;
@@ -578,12 +576,6 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   if (typeof settings.maxChainsPerScan === 'number' && settings.maxChainsPerScan >= 1) {
     ts.maxChainsPerScan = settings.maxChainsPerScan;
   }
-  const yOffset = ts.receiveSecondItem ? MailList.rowPitch : 0;
-  Button.outReceiveOne.y = Button.outReceiveOneBase.y + yOffset;
-  Button.outReceiveOneRuby.y = Button.outReceiveOneRubyBase.y + yOffset;
-  Button.outReceiveOneAd.y = Button.outReceiveOneAdBase.y + yOffset;
-  Button.outReceiveOneMedal.y = Button.outReceiveOneMedalBase.y + yOffset;
-
   ts.readRecord();
   if (ts.record[RecordKey.HeartsCount] === undefined) {
     ts.record[RecordKey.HeartsCount] = {
