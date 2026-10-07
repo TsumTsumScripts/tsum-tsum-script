@@ -204,6 +204,8 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
+- **Website and starter moved out**: the Docusaurus site left `website/` for the sibling `tsum-tsum-website` repo (it reads this changelog's Summary for its Changelog page); the service starter was copied in as `starter/` (`TsumTsum-Starter` bundle).
+
 - **Host renamed General Automation Platform** in docs, comments and
   `package.json`. Folder, repo and package names keep `GameAutomationPlatform`.
 - **`MinHost` raised to 3.1** (`config.json`): the app will not download or

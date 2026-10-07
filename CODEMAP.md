@@ -27,11 +27,9 @@ game-automation-scripts/
 │                          release zip carries with it
 ├── .gitattributes         LF line endings everywhere, PNGs binary -- see CLAUDE.md
 ├── .editorconfig          stops an editor putting CRLF back
-├── .github/workflows/     docs.yml builds website/ and publishes it to GitHub Pages
-├── website/               the contributor site (Docusaurus): rewrites of the
-│                          documents below for someone new to the tree, with the
-│                          code pulled from GitHub at view time and the generated
-│                          documents synced in at build time -- website/README.md
+├── starter/               the service starter tool (menu-driven, adb): starts GAP's
+│                          helper service, installs the app, copies files off the
+│                          device. build-starter.sh assembles the release bundle
 └── app.gap.Tsum/          the only package: the Disney Tsum Tsum script
     ├── src/               the script -- concatenated into one bundle, no imports,
     │                      plus tsums.dat, the one file shipped beside it
@@ -62,7 +60,7 @@ repository beside this one — `DEVELOPMENT.md` § The development toolkit.
 | Question | Read |
 |:--|:--|
 | What a change has to touch before it is finished | [§ Adding something](#adding-something--what-a-change-has-to-touch), below |
-| How to contribute, explained for someone new to the tree | `CONTRIBUTING.md`, then the site under `website/` (its own commands: `website/README.md`) |
+| How to contribute, explained for someone new to the tree | `CONTRIBUTING.md`, then the site in the sibling `tsum-tsum-website` repo (its own commands: its `README.md`) |
 | Under what terms, and what was inherited from where | `LICENSE`, `NOTICE` |
 | What the script does; what a setting means | `README.md` |
 | The log record schema, the log event vocabulary, reading a run with Logdy | `LOGGING.md` |
@@ -477,14 +475,18 @@ Run from `app.gap.Tsum/`.
 | `npm run live:check` | Every `SHARE_SLOTS` row has a `LiveSettings` answer, and the value survives the round trip (also run by the build) |
 | `npm run release:alpha` | Build the Alpha channel and publish it to the catalogue. `npm run release:beta` and `npm run release:production` are the other two. `-- --dry-run` shows the entry without writing it |
 
-The contributor site is its own package with its own scripts, run from
-`website/` and listed in `website/README.md`.
+The website is its own repository, `../tsum-tsum-website` (Docusaurus): the felt
+landing, features and changelog pages, the starter page and the contributor docs.
+It reads `app.gap.Tsum/CHANGELOG.md`'s `### Summary` blocks and the generated
+documents from this tree at build time. The service starter is `starter/`, built
+by `starter/build-starter.sh`.
 
 ## External trees
 
 | Tree | Path | Relationship |
 |:--|:--|:--|
 | **General Automation Platform** | `../game-automation-app` | The host app these scripts run on, and the only target — it declares the natives, runs the bundle, and installs it. Editing it is allowed (`CLAUDE.md`); see [the host app at a glance](#the-host-app-at-a-glance) below |
+| **tsum-tsum-website** | `../../tsum-tsum-website` | The public site: landing, features, changelog, starter page and the contributor docs. Reads `CHANGELOG.md`'s Summary blocks and the generated documents from here; nothing here reads it |
 | **game-automation-catalogue** | `../../game-automation-catalogue` | Where a release is published: the release commands write the archive and its metadata file into `Official/LineTsumTsum/Alpha`, `.../Beta` or `.../Production`, and the catalogue's own build-official script folds them into its index. The last few archives stay there so the app can offer them as older versions. Only the release tool writes here |
 
 ### The host app at a glance
