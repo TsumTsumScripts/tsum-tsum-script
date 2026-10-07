@@ -363,7 +363,8 @@ declare const enum SettingKey {
   SendHeartsToZeroScore = 'sendHeartsToZeroScore',
   SendHeartsMaxRuntime = 'sendHeartsMaxRuntime',
   SendHeartsMinWait = 'sendHeartsMinWait',
-  TsumAppRestartFrequency = 'tsumAppRestartFrequency',
+  // Minutes. 'tsumAppRestartFrequency' held hours up to 4.0 (carryRestartHours).
+  TsumAppRestartFrequency = 'tsumAppRestartMinutes',
 }
 
 /**
