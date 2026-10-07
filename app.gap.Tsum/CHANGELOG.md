@@ -55,8 +55,8 @@ release note; they fold back in here when she ships.
 - Round stats no longer lose the score and coins when the rank-up panel appears after a round, and base coins read more reliably.
 - Auto Play Game setting moved from General to the Round tab.
 - Tsum app restart frequency now counts in minutes (30-minute steps) and sits under Device, out of Experimental.
-- Large tsums are now chained instead of popped, and bridge longer gaps.
-- GAP Companion can change a device's My Tsum (Stats tab, or Settings > Actions): pick from the device's Tsum List, favourites first; it is set between rounds, or when the script next runs if it is stopped.
+- Large tsums are now recognised and used in chains, linking from farther away as the game allows; they used to be skipped or mistaken for a small tsum.
+- Tsum List export now records which Tsums are favourites, and it and Unlock Level jump straight to the first page of the Tsum collection instead of paging back one at a time.
 - Bubbles get popped faster: more are spotted at the bottom of the board, All Bubbles ASAP pops them on sight, the Mid Chain strategies no longer let them pile up, and new Save One and Save One Mid Chain strategies pop all but one (on sight, or as a chain lands).
 - Settings page and Quick Bar redesigned in the GAP look: clearer cards and controls, blue edges on everything tappable and solid blue when on, a light and dark theme, and tabs that show how many are off-screen. The settings page is compact, fitting far more settings on screen, with a Code button by the presets that copies the settings code, and its window title names the script, version and channel.
 - Quick Bar's coin readout shows the average medals earned per round.
