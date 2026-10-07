@@ -177,7 +177,7 @@ async function main() {
   // stop the release before a build runs rather than after one.
   const changelogFile = path.join(projectDir, 'CHANGELOG.md');
   const changelog = fs.readFileSync(changelogFile, 'utf8');
-  const limit = config.MessageMaxChars || 600;
+  const limit = config.MessageMaxChars ?? 600;
   const render = (items) => releaseMessage(items, channel.Note);
 
   let items = summaryItems(changelog, channel.Version);
