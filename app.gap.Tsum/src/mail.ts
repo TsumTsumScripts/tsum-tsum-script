@@ -192,11 +192,8 @@ Tsum.prototype.taskReceiveOneItem = function() {
   let timeoutCounter = 0;
   const maxTimeoutCount = 100;
   let receivedHeartWithoutCoins = 0;
-  // `mailScrolled` says the list is no longer at the position the fixed probes
-  // were measured at, so from then on the rows have to be found; `mailScrolls`
-  // is the budget for looking past a run of skipped mail, and it is refilled by
-  // every gift that does get taken.
-  let mailScrolled = false;
+  // `mailScrolls` is the budget for looking past a run of skipped mail, and it
+  // is refilled by every gift that does get taken.
   let mailScrolls = 0;
   while (this.isRunning && timeoutCounter < maxTimeoutCount) {
     if (this.yieldAsked) {
@@ -234,9 +231,10 @@ Tsum.prototype.taskReceiveOneItem = function() {
       isHeartWithoutCoins = gPages.matches(PageName.ReceiveHeartWithoutCoins);
       // The scan may only run with the mail list in front of it: a gift dialog
       // has gold buttons of its own, and a row found on one would aim the tap
-      // at it. `isItem` is that proof while the list is at home -- a dialog
-      // never shows gold there -- and once scrolled it has to be asked for.
-      if (isItem || (mailScrolled && gPages.matches(PageName.MailBox))) {
+      // at it. `isItem` is that proof -- a dialog never shows gold there --
+      // and otherwise it is asked for: a scrolled list, or the ad's top row,
+      // whose film icon sits where `outReceiveOne` reads gold.
+      if (isItem || gPages.matches(PageName.MailBox)) {
         rowOffset = this.mailRowToOpen(img);
         if (rowOffset === MailNoRow) {
           // Whatever the fixed probe read, there is no row under it to open.
@@ -259,7 +257,6 @@ Tsum.prototype.taskReceiveOneItem = function() {
       // list refusing to move is what says the mail has actually run out.
       if (mailScrolls < MailList.maxScrolls && this.scrollMailList()) {
         mailScrolls++;
-        mailScrolled = true;
         timeoutCounter = 0;
         receiveTime = Date.now();
         continue;

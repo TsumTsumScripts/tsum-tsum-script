@@ -271,8 +271,10 @@ release note; they fold back in here when she ships.
 - Quick Bar toggles are solid blue with a check; "applies now" is green,
   "next round" amber; coin and time figures use the data colours.
 - **Ad mail stepped past, not opened.** `outReceiveOneAd` is an always-on
-  `mailRowToOpen` skip (`gifts.receiveOne.skipAd`), so rows are always found
-  rather than only under Skip Medals / Skip Ruby. Removed with it: the
+  `mailRowToOpen` skip (`gifts.receiveOne.skipAd`), and rows are found
+  whenever `MailBox` shows, not only under Skip Medals / Skip Ruby or when
+  `outReceiveOne` reads gold -- on the ad row it reads the film icon, which
+  left the loop spinning to its 100-pass limit. Removed with it: the
   `receiveHeartsSkipFirst` setting, the start-time `outReceive*` y patching
   (the y's are fixed in `data.ts`), and `skipAd`'s blind delete taps.
 
