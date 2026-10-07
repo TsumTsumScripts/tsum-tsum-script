@@ -4,7 +4,7 @@
   "Catalogue": "../../game-automation-catalogue/Official/LineTsumTsum",
   "DevicePath": "/sdcard/Download/GameAutomationPlatform",
   "DefaultChannel": "Alpha",
-  "MessageMaxChars": 2000,
+  "MessageMaxChars": 0,
   "HistoryLimit": 5,
   "MinHost": "3.1",
   "Channels": {

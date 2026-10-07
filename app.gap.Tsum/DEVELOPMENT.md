@@ -1149,7 +1149,7 @@ about what this is, and there is one number to bump rather than two:
 | `Publisher` | the catalogue this ships under, and the first segment of the on-device folder |
 | `Catalogue` | where a release is published, relative to the package |
 | `Channels.<name>` | `Name` (what the app shows), `Archive` (the zip's base name), `Directory` (under `Catalogue`), `Note` (a line appended to every release note on that channel) |
-| `MessageMaxChars` | the note is read on a phone; over this, the release refuses rather than shipping a card that scrolls |
+| `MessageMaxChars` | the note is read on a phone; over this, the release refuses rather than shipping a card that scrolls; `0` turns the check off (currently off) |
 | `HistoryLimit` | how many builds stay installable (default 5); older archives are deleted from the catalogue on the next release |
 | `MinHost`, `MaxHost` | the app versions a build runs on, both optional and inclusive; a channel may set its own. Written into `metadata.json` and each `Versions` row, and the app will not download or run a build outside them. Raise `MinHost` when the script starts using an API a newer app added |
 

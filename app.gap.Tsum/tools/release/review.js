@@ -64,7 +64,7 @@ function noteProblem(items, message, limit) {
   if (!bulletsOf(items).length) {
     return 'The note has no bullets. One line per change, written for a player on a phone.';
   }
-  if (message.length > limit) {
+  if (limit > 0 && message.length > limit) {
     return `The note is ${message.length} characters, over the ${limit} in config.json. ` +
       'Shorten it -- it is read on a phone.';
   }
@@ -155,7 +155,7 @@ function printNote(channel, message, items, limit, problem) {
   console.log(message.split('\n').map((l) => (l ? `  ${l}` : '')).join('\n'));
   console.log(`\n${rule}`);
   console.log(`${bullets.length} bullet${bullets.length === 1 ? '' : 's'}, ` +
-    `${message.length} of ${limit} characters`);
+    (limit > 0 ? `${message.length} of ${limit} characters` : `${message.length} characters, no limit`));
   if (problem) console.log(`\nCannot ship as it stands: ${problem}`);
 }
 
