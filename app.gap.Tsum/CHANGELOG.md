@@ -137,7 +137,7 @@ release note; they fold back in here when she ships.
   A hit must repeat at the same spot for 3 scans running, and none is taken for 1.5s after a skill
   (`LargeTsum.skillQuietMs`), whose animation dims the board. Nothing here is
   per skill: a large tsum can turn up under any of them.
-  `board.largeTsums` logs what was found. Checked on one recording only.
+  `board.largeTsums` logs what was found. Confirmed on a device.
 - **Trace stream** (`src/trace.ts`, host 3.1+). With a consumer on the host's
   trace port, every log record (debug included, flood guard bypassed) plus
   `board.scan` and `board.paths` snapshots stream live via `emitTrace`; the log
