@@ -2691,7 +2691,12 @@ var CollectionGrid = {
    * and confirmed on a device. The tap raises a "MyTsum has been changed."
    * dialog over the grid and the button greys out behind it.
    */
-  setButton: {x: 540, y: 1655}
+  setButton: {x: 540, y: 1655},
+  /**
+   * The dialog is permanent and has no button: a tap on its body closes it.
+   * Its middle (frame x 84-994, y 650-1110), clear of the Set button samples.
+   */
+  setDoneDialog: {x: 540, y: 880}
 };
 
 // ---------------------------------------------------------------------------
