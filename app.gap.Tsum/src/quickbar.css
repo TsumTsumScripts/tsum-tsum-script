@@ -1,6 +1,6 @@
 /*
- * The Quick Bar's whole appearance. Editing this file is the way to change how
- * the strip looks; quickbar.js only reads and writes values.
+ * The Quick Bar's layout and sizing. Its colours, type and felt details are
+ * feltQuickbar.css, loaded after this; quickbar.js only reads and writes values.
  *
  * Sized in CSS pixels, which are dp here -- the page is loaded with
  * `width=device-width` and the host leaves textZoom at 100. So the numbers below
