@@ -25,10 +25,17 @@
 # release writes); it is copied in as tsum-stats.txt, and must name at least
 # MIN_STATS, the first version that serves the starter.
 #
+# Bundles update their own scripts from the page. starter-version.txt (bump
+# its version for every release) is copied in with update_url=<release
+# URL>/starter.txt added; a --scripts-only build also writes that starter.txt
+# beside the archives -- the version, and the .tar.gz's URL and sha256 -- and
+# it is uploaded to the release with them. --release-url changes the base
+# (default: this repo's latest GitHub release).
+#
 # Usage:
 #   starter/build-starter.sh [--rev 37.0.1] [--apk-dir DIR] [--out DIR]
 #                          [--archive-name NAME] [--scripts-only]
-#                          [--channel-url URL] [--stats-pin FILE]
+#                          [--channel-url URL] [--stats-pin FILE] [--release-url URL]
 #                          [--no-download] [--record-sums]
 set -euo pipefail
 
@@ -41,6 +48,7 @@ RECORD_SUMS=""
 SCRIPTS_ONLY=""
 CHANNEL_URL=""
 STATS_PIN=""
+RELEASE_URL="https://github.com/TsumTsumScripts/tsum-tsum-script/releases/latest/download"
 MIN_STATS="0.13"
 
 while [[ $# -gt 0 ]]; do
@@ -57,6 +65,7 @@ while [[ $# -gt 0 ]]; do
     --scripts-only) SCRIPTS_ONLY=1; shift ;;
     --channel-url)  CHANNEL_URL="$2"; shift 2 ;;
     --stats-pin)    STATS_PIN="$2"; shift 2 ;;
+    --release-url)  RELEASE_URL="${2%/}"; shift 2 ;;
     --no-download)  NO_DOWNLOAD=1; shift ;;
     --record-sums)  RECORD_SUMS=1; shift ;;
     -h|--help) sed -n '2,34p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
@@ -248,7 +257,7 @@ rm -rf "$BUNDLE/apk"
 # None of these is a template file: the adb the maintainer's own run of the
 # tool downloaded into the tree, what they copied off a device, and which
 # device they picked last. A bundle ships with no memory and no binaries.
-rm -rf "$BUNDLE/adb" "$BUNDLE/collected" "$BUNDLE/last-device.txt" "$BUNDLE/channel.txt" "$BUNDLE/server"
+rm -rf "$BUNDLE/adb" "$BUNDLE/collected" "$BUNDLE/last-device.txt" "$BUNDLE/channel.txt" "$BUNDLE/server" "$BUNDLE/.update"
 # This script lives in starter/ but is the maintainer's, not the user's.
 rm -f "$BUNDLE/build-starter.sh"
 
@@ -260,6 +269,12 @@ STATS_VERSION="$(kv "$STATS_PIN" version)"
   || die "the tsum-stats pin names $STATS_VERSION; the starter website needs $MIN_STATS or newer -- release tsum-stats first"
 cp "$STATS_PIN" "$BUNDLE/tsum-stats.txt"
 echo "website  : tsum-stats $STATS_VERSION (downloaded on first run)"
+
+# The scripts' own version, and where a bundle looks for a newer one.
+STARTER_VERSION="$(kv "$SRC/starter-version.txt" version)"
+[[ -n "$STARTER_VERSION" ]] || die "starter/starter-version.txt names no version"
+printf 'update_url=%s/starter.txt\n' "$RELEASE_URL" >> "$BUNDLE/starter-version.txt"
+echo "starter  : $STARTER_VERSION (updates from $RELEASE_URL/starter.txt)"
 
 if [[ -n "$CHANNEL_URL" ]]; then
   [[ "$CHANNEL_URL" =~ ^https?://[^/?#]+/[^?#]+$ ]] \
@@ -317,7 +332,7 @@ def norm(path, crlf):
         path.write_bytes(out)
         print(f"  normalised {'CRLF' if crlf else 'LF'}: {path.relative_to(bundle)}")
 
-for p in list(bundle.rglob('*.sh')) + [bundle / 'platform-tools.txt', bundle / 'tsum-stats.txt']:
+for p in list(bundle.rglob('*.sh')) + [bundle / 'platform-tools.txt', bundle / 'tsum-stats.txt', bundle / 'starter-version.txt']:
     if p.is_file():
         norm(p, crlf=False)
 for p in list(bundle.rglob('*.ps1')) + [bundle / 'Start-Windows.cmd']:
@@ -369,7 +384,7 @@ missing=""
 for f in README.txt platform-tools.txt Start-Windows.cmd Start-Linux.sh \
          device/gap-service.sh device/PROTOCOL.md \
          bin/posix/gap.sh bin/posix/gap-device.sh bin/posix/gap-actions.sh \
-         bin/posix/gap-menu.sh bin/posix/gap-site.sh tsum-stats.txt \
+         bin/posix/gap-menu.sh bin/posix/gap-site.sh tsum-stats.txt starter-version.txt \
          bin/win/gap.ps1 bin/win/gap-menu.ps1 bin/win/gap-device.ps1 \
          bin/win/gap-actions.ps1 bin/win/gap-site.ps1; do
   [[ -e "$BUNDLE/$f" ]] || missing="$missing $f"
@@ -492,9 +507,25 @@ with tarfile.open(tgz_out, "w:gz") as t:
 print(f"wrote {tgz_out}")
 PY
 
+# What bundles already out there update from: upload it with the archives.
+if [[ -n "$SCRIPTS_ONLY" ]]; then
+  PIN_OUT="$OUT_DIR/starter.txt"
+  {
+    echo "# The newest starter scripts. A bundle whose starter-version.txt is older"
+    echo "# downloads url, checks sha256 and installs it over itself. Written by"
+    echo "# build-starter.sh --scripts-only; upload it to the release with the archives."
+    echo "version=$STARTER_VERSION"
+    echo "url=$RELEASE_URL/$ARCHIVE_NAME.tar.gz"
+    echo "sha256=$(sha256_of "$TGZ")"
+    echo "size=$(wc -c < "$TGZ" | tr -d ' ')"
+  } > "$PIN_OUT"
+  echo "wrote ${PIN_OUT#$root/}"
+fi
+
 echo
 echo "adb        : downloaded on first run -- platform-tools r$ADB_REVISION ($ADB_DARWIN_ARCH on macOS)"
 echo "website    : downloaded on first run -- tsum-stats $STATS_VERSION"
 echo "tar.gz     : ${TGZ#$root/}   <- give this to macOS and Linux users"
 echo "zip        : ${ZIP#$root/}"
+[[ -z "$SCRIPTS_ONLY" ]] || echo "starter.txt: ${PIN_OUT#$root/}   <- upload with the archives, or bundles never see this release"
 du -h "$TGZ" "$ZIP" 2>/dev/null | sed 's/^/             /'

@@ -488,7 +488,12 @@ adb restart, the library source) is `internal/starter` in tsum-stats, which serv
 download the tsum-stats its `tsum-stats.txt` pins. That pin is a floor: the
 launchers run `tsum-stats update` on each start, and start it again when it
 exits 75 (`SITE_RESTART_CODE`, passed as `TSUM_STATS_RESTART_CODE`), which it
-does after the page's **Update now**. The terminal menu and the
+does after the page's **Update tsum-stats**. The bundle's scripts update
+themselves too: `starter/starter-version.txt` is their version (bump it for
+every starter release), `starter/build-starter.sh` adds the `update_url`, and
+`--scripts-only` writes the `starter.txt` to upload with the archives. After
+the page's **Update the starter**, tsum-stats exits 76 (`SITE_RELOAD_CODE`,
+passed as `GAP_STARTER_RELOAD_CODE`) and the launcher starts itself again. The terminal menu and the
 command-line actions (`bin/posix`, `bin/win`) remain, and the device side is
 still only `device/gap-service.sh`, now with three hosts reading it.
 GAP lists no third-party source by itself: after an install, all three hosts

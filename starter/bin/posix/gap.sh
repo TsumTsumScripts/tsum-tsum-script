@@ -11,6 +11,9 @@ set -u
 
 BUNDLE="$(cd "$(dirname "$0")/../.." && pwd)"
 export BUNDLE
+# For run_site to start this script again, with the same arguments, after the
+# page updated the starter.
+GAP_ARGV=("$@")
 
 # --- macOS Gatekeeper, and mode bits ---------------------------------------
 #

@@ -41,7 +41,17 @@ if ($Channel) {
 }
 
 # The website finds its own adb, so it starts before any of that.
-if (-not $Action -and -not $Menu) { exit (Start-Site) }
+if (-not $Action -and -not $Menu) {
+  $rc = Start-Site
+  if ($rc -eq $global:SiteReloadCode) {
+    # The page installed new scripts: run the new gap.ps1 in this same process,
+    # so Start-Windows.cmd is not read again until the very end.
+    $env:GAP_STARTER_RELOADED = '1'
+    & "$Bundle\bin\win\gap.ps1" @PSBoundParameters
+    exit $LASTEXITCODE
+  }
+  exit $rc
+}
 
 if (-not (Resolve-Adb -Bundle $Bundle)) { exit 1 }
 Start-AdbServer

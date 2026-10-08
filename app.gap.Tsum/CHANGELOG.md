@@ -77,7 +77,7 @@ release note; they fold back in here when she ships.
 *Starter tool*
 - The starter tool is now a page in your browser: start the service, install the app, restart adb, and export logs and stats as one zip, with Tsum Tsum Stats built in.
 - After installing GAP, the starter asks GAP to add the Tsum Tsum library to its Sources (tap Add on the device); an "Add the Tsum Tsum library" button asks again.
-- The starter keeps Tsum Tsum Stats up to date: it updates on each start, and the page has Check for updates and Update now, which restarts it in place.
+- The starter keeps itself and Tsum Tsum Stats up to date: Stats updates on each start, and the page's Updates section checks for both and installs either with one click, restarting in place.
 
 *Platform and data*
 - Requires General Automation Platform 3.1 or newer.
@@ -116,6 +116,14 @@ release note; they fold back in here when she ships.
   serving and relaunch on exit 75 (`TSUM_STATS_RESTART_CODE`), which tsum-stats
   leaves with after the page's Update now. `Start-Site` pipes the server to
   `Out-Host`, so its output reaches the console instead of the return value.
+
+- **Starter updates its own scripts**: `starter/starter-version.txt` versions
+  the bundle; `build-starter.sh` adds `update_url` (`--release-url`, default
+  this repo's latest release) and `--scripts-only` writes `starter.txt`
+  (version, `.tar.gz` URL, sha256) to upload with the archives. tsum-stats
+  installs it over the bundle and exits 76 (`GAP_STARTER_RELOAD_CODE`); the
+  posix launcher `exec`s `gap.sh` again, the Windows one runs the new `gap.ps1`
+  in-process. `Start-Windows.cmd` is never replaced in place.
 
 - **GAP Companion notifications**: `gapNotify` (`src/companion.ts`) emits the
   reserved `gap.notify` event (`Emit.Companion.Notify`), which the companion
