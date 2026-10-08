@@ -1,6 +1,6 @@
 {
   "Game": "Tsum Tsum",
-  "Publisher": "Official GAP",
+  "Publisher": "Tsum Tsum Scripts",
   "Catalogue": "../../tsum-tsum-catalogue/LineTsumTsum",
   "DevicePath": "/sdcard/Download/GameAutomationPlatform",
   "DefaultChannel": "Alpha",
