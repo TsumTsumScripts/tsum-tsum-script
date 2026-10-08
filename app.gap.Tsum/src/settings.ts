@@ -4197,6 +4197,10 @@ function renderGroup(group: GroupSpec): HTMLElement | undefined {
     var drawn = 0;
 
     title.textContent = getTitle(group);
+    // An untitled group gets no heading, so the felt dot has nothing to sit on.
+    if (title.textContent.trim() === '') {
+        title.parentNode!.removeChild(title);
+    }
     help.textContent = getHelp(group);
     if (help.textContent === '') {
         help.parentNode!.removeChild(help);

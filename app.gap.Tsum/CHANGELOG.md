@@ -67,7 +67,7 @@ release note; they fold back in here when she ships.
 - Auto Play Game moved to the Round tab; app restart frequency is in minutes, under Device (a saved value in hours is converted).
 
 *Quick Bar and settings*
-- Redesigned in the GAP look, with light and dark themes and a Code button that copies the settings code.
+- Redesigned in the website's playful felt look, with cream and midnight themes, tighter rows that show more at once, and a Code button that copies the settings code.
 - Quick Bar shows average medals per round; tap the readout to copy the run's figures.
 
 *Tsum List*
@@ -222,6 +222,8 @@ release note; they fold back in here when she ships.
   chips there are gone (still on the settings page).
 
 ### Changed
+
+- **Felt skin**: `src/felt.css` and `src/feltQuickbar.css` lay the website's "Midnight felt" (stitching, hard edges, tilts) over the GAP component sheets, and tighten the settings rows. Fonts are now Figtree and Caprasimo; Inter and Inter Display were dropped. An untitled settings group no longer draws an empty heading.
 
 - **Website and starter moved out**: the Docusaurus site left `website/` for the sibling `tsum-tsum-website` repo (it reads this changelog's Summary for its Changelog page); the service starter was copied in as `starter/` (`TsumTsum-Starter` bundle).
 

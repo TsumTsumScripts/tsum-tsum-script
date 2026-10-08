@@ -15,6 +15,9 @@
  *
  * Dark is the default theme; settings.ts sets `data-theme` on <html>.
  *
+ * felt.css re-skins all of this (colours, type, stitching) and tightens the
+ * rows and controls, so check there before changing a colour or size here.
+ *
  * The WebView is Chromium 110: no CSS nesting, no color-mix(), and masks need
  * the -webkit- prefix.
  */

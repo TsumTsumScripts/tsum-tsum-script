@@ -141,7 +141,7 @@ const substitute = (text) => text
 
 /** Stage the page assets so tools/inline/inline.js can resolve them by name. */
 function stageAssets(log) {
-  for (const name of ['index.html', 'index.css', 'quickbar.html', 'quickbar.css', 'gapTokens.css']) {
+  for (const name of ['index.html', 'index.css', 'felt.css', 'quickbar.html', 'quickbar.css', 'feltQuickbar.css', 'gapTokens.css']) {
     fs.copyFileSync(local('src', name), local('build', name));
   }
   // The GAP fonts as data URIs: the pages are opened from file:// on a device
@@ -156,10 +156,13 @@ function stageAssets(log) {
   log('[build] staged index/quickbar html+css, GAP tokens and fonts into build/\n');
 }
 
-/** [sheet, family, file in src/fonts, weight range] -- Latin subsets of the GAP kit's fonts. */
+/**
+ * [sheet, family, file in src/fonts, weight range] -- Latin subsets: the felt
+ * skin's Figtree and Caprasimo (the website's faces), and the kit's Plex Mono.
+ */
 const GAP_FONTS = [
-  ['font-sans.css', 'Inter', 'inter.woff2', '400 800'],
-  ['font-display.css', 'Inter Display', 'inter-display.woff2', '600 800'],
+  ['font-sans.css', 'Figtree', 'figtree.woff2', '500 800'],
+  ['font-display.css', 'Caprasimo', 'caprasimo.woff2', '400'],
   ['font-mono.css', 'IBM Plex Mono', 'ibm-plex-mono.woff2', '400'],
 ];
 

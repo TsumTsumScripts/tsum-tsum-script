@@ -86,11 +86,14 @@
       offline. Pico is deliberately *not* used -- this page is at most 62dp tall
       and wants none of it.
     -->
-    <!-- GAP Design System tokens, and its sans face as a data URI (built from
-         src/fonts/). The strip is always the dark theme: it sits on the game. -->
+    <!-- GAP Design System tokens, the felt fonts as data URIs (built from
+         src/fonts/), then the felt skin over quickbar.css. The strip is always
+         the dark theme: it sits on the game. -->
     <link rel="stylesheet" href="gapTokens.css">
     <link rel="stylesheet" href="font-sans.css">
+    <link rel="stylesheet" href="font-display.css">
     <link rel="stylesheet" href="quickbar.css">
+    <link rel="stylesheet" href="feltQuickbar.css">
     <!--
       The language catalogues, shared with the settings page. English first: it
       is the complete one, so it is what `i18nRegister` keeps as the fallback for

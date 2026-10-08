@@ -1,0 +1,199 @@
+/*
+ * The Quick Bar's felt skin, matching the settings page's (felt.css) and the
+ * website's "Midnight felt". Loaded after quickbar.css, which still owns the
+ * strip's layout and sizing; this owns colour, type and the felt details.
+ *
+ * Chips are felt patches: a fill, a dashed `outline` just inside (the stitch)
+ * and a solid bottom `box-shadow` (the hard edge). Everything is sized in
+ * `--qb-u`, so the felt scales with the strip.
+ *
+ * The signals keep their meaning: periwinkle is on, green (jade) applies now,
+ * amber (marigold) waits for the next round. The now/next marker is the
+ * chip's hard edge taking that colour.
+ */
+
+:root {
+  --font-display: "Caprasimo", Georgia, serif;
+  --font-sans: "Figtree", "Noto Sans JP", system-ui, sans-serif;
+
+  --ground: #1c1b2b;
+  --surface: #2e2d45;
+  --edge: #14131f;
+  --thread: #8e89b0;
+  --rule: #4a4766;
+  --well: #24233a;
+  --mari: #ffb454; --mari-edge: #a5651a; --mari-thread: #7a4a12; --mari-ink: #2e1a03;
+  --jade: #5cc9a7;
+  --peri: #9db4ff; --peri-edge: #4a5fb3; --peri-thread: #34458c; --peri-ink: #141d40;
+  --weave: repeating-linear-gradient(31deg, rgba(255, 255, 255, .055) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(-57deg, rgba(0, 0, 0, .05) 0 1px, transparent 1px 5px);
+
+  --qb-bg: var(--ground);
+  --qb-ink: #f4efe6;
+  --qb-muted: #d8d2e4;
+  --qb-chip: var(--surface);
+  --qb-chip-edge: var(--thread);
+  --qb-on: var(--peri);
+  --qb-on-ink: var(--peri-ink);
+  --qb-static: var(--well);
+  --qb-static-edge: var(--rule);
+  --qb-radius: calc(9 * var(--qb-u));
+  /* The hard edge under every chip. */
+  --qb-lift: calc(2 * var(--qb-u));
+
+  --tap: var(--mari);
+  --divider: var(--rule);
+  --success: var(--jade);
+  --warning: var(--mari);
+  --data-coin: var(--mari);
+  --data-medal: #c9b6ff;
+}
+
+html, body { font-weight: 600; }
+
+.qb {
+  background-color: var(--ground);
+  background-image: var(--weave);
+  border-top: 2px dashed var(--rule);
+}
+
+/* Marigold thread along the top while the strip can be used. */
+body:not([data-state="running"]) .qb { border-top-color: var(--mari); }
+
+/* --- chips ------------------------------------------------------------- */
+
+.qb-stepper,
+.qb-toggle,
+.qb-select,
+.qb-wide,
+.qb-action,
+.qb-page-toggle {
+  border: 0;
+  background: var(--qb-chip);
+  box-shadow: 0 var(--qb-lift) 0 var(--edge);
+  outline: 1px dashed var(--qb-chip-edge);
+  outline-offset: calc(-2.5 * var(--qb-u));
+}
+
+/* The outline is drawn inside the box, so the stepper no longer clips. */
+.qb-stepper { overflow: visible; }
+
+.qb-step {
+  color: var(--peri);
+  font-size: calc(15 * var(--qb-u));
+  font-weight: 800;
+}
+
+.qb-name { font-weight: 700; }
+.qb-value { font-weight: 800; font-size: calc(13 * var(--qb-u)); }
+.qb-select { font-weight: 800; }
+
+/* A word value (preset, bubble, then) is large enough for the display face. */
+.qb-wide-value { font-family: var(--font-display); font-weight: 400; }
+
+/* On: a periwinkle patch; the two bonus chips tilt apart a little. */
+.qb-toggle[aria-checked="true"] {
+  background: var(--qb-on);
+  box-shadow: 0 var(--qb-lift) 0 var(--peri-edge);
+  outline-color: var(--peri-thread);
+  color: var(--qb-on-ink);
+  font-weight: 800;
+}
+
+.qb-cell[data-key="bonusCoin"] .qb-toggle[aria-checked="true"] { transform: rotate(-3deg); }
+.qb-cell[data-key="bonus5to4"] .qb-toggle[aria-checked="true"] { transform: rotate(3deg); }
+
+/* The preset chip: marigold, as the settings page's preset button. */
+.qb-preset {
+  background: var(--mari);
+  box-shadow: 0 var(--qb-lift) 0 var(--mari-edge);
+  outline-color: var(--mari-thread);
+  color: var(--mari-ink);
+  transform: rotate(-1.5deg);
+}
+
+.qb-preset .qb-name { color: var(--mari-ink); }
+.qb-preset .qb-caret { stroke: var(--mari-ink); }
+
+/* Dots: unlit is a rule-coloured stitch, lit is marigold. */
+.qb-dot {
+  background: var(--rule);
+  opacity: 1;
+}
+
+body[data-page="1"] .qb-page-toggle .qb-dot:nth-child(1),
+body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2),
+body[data-readout="coins"] .qb-readout-toggle .qb-dot:nth-child(1),
+body[data-readout="times"] .qb-readout-toggle .qb-dot:nth-child(2) { background: var(--mari); }
+
+/* Now / next round: the chip's hard edge takes the colour. */
+.qb-cell[data-when] .qb-stepper,
+.qb-cell[data-when] .qb-toggle,
+.qb-cell[data-when] .qb-select {
+  box-shadow: 0 var(--qb-lift) 0 var(--qb-when, var(--edge));
+}
+
+body[data-state="running"] .qb-cell[data-when] .qb-stepper,
+body[data-state="running"] .qb-cell[data-when] .qb-toggle,
+body[data-state="running"] .qb-cell[data-when] .qb-select { box-shadow: 0 var(--qb-lift) 0 var(--edge); }
+
+/* Running: the stitches recede with the rest of the affordances. */
+body[data-state="running"] .qb-stepper,
+body[data-state="running"] .qb-select,
+body[data-state="running"] .qb-toggle { outline-color: var(--rule); }
+
+/* --- the readout: a sunken pocket -------------------------------------- */
+
+.qb-readouts {
+  border: 0;
+  border-radius: calc(12 * var(--qb-u));
+  background-color: var(--well);
+  background-image: var(--weave);
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, .3);
+  outline: 1px dashed var(--rule);
+  outline-offset: calc(-2.5 * var(--qb-u));
+}
+
+.qb-readout-toggle { border-right: 1px dashed var(--rule); }
+.qb-stat + .qb-stat > * { border-top: 1px dashed var(--rule); }
+.qb-stat-label { font-weight: 700; }
+.qb-stat-value { font-weight: 800; }
+
+/* --- the picker sheet: a stitched patch of round options --------------- */
+
+.qb-list {
+  gap: 5px;
+  padding: 10px;
+  border: 0;
+  border-radius: 20px;
+  background-color: var(--surface);
+  background-image: var(--weave);
+  box-shadow: 0 5px 0 var(--edge), 0 12px 28px rgba(0, 0, 0, .4);
+  outline: 2px dashed var(--thread);
+  outline-offset: -6px;
+}
+
+.qb-option {
+  padding-left: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--well);
+  font-weight: 600;
+}
+
+.qb-option[aria-selected="true"] {
+  border-color: transparent;
+  background: var(--peri);
+  box-shadow: 0 2px 0 var(--peri-edge);
+  outline: 1px dashed var(--peri-thread);
+  outline-offset: -3px;
+  color: var(--peri-ink);
+}
+
+.qb-group {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--mari);
+}
+
+.qb-group:not(:first-child) { border-top: 2px dashed var(--rule); }

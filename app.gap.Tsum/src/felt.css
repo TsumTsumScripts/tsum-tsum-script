@@ -1,0 +1,488 @@
+/*
+ * The settings page's felt skin: the website's "Midnight felt" look laid over
+ * the GAP components in index.css. Loaded after it, so a rule here wins.
+ * index.css still owns layout and behaviour; this owns colour, type and the
+ * felt details (stitching, hard bottom edges, small tilts).
+ *
+ * A felt patch is a fill, a dashed `outline` drawn just inside the edge (the
+ * stitch) and a solid `box-shadow` under it (the hard edge). Outlines follow
+ * border-radius in the WebView (Chromium 110), so no pseudo-element is needed.
+ *
+ * Colours keep the website's contrast rule (its CONTRAST.md): text 7:1, focus
+ * rings 3:1. On a coloured fill, text uses that fill's `-ink`.
+ */
+
+:root {
+    /* The app bar's height; the tab strip and preset panel stick under it. */
+    --head-h: 42px;
+    --font-display: "Caprasimo", Georgia, serif;
+    --font-sans: "Figtree", "Noto Sans JP", system-ui, sans-serif;
+
+    /* The website's patch colours: fill, edge, thread, ink. */
+    --mari: #ffb454; --mari-edge: #a5651a; --mari-thread: #7a4a12; --mari-ink: #2e1a03;
+    --jade: #5cc9a7; --jade-edge: #23785f; --jade-thread: #1a5c48; --jade-ink: #08261d;
+    --rose: #ff8fab; --rose-edge: #a83d5c; --rose-thread: #80293f; --rose-ink: #33101b;
+    --peri: #9db4ff; --peri-edge: #4a5fb3; --peri-thread: #34458c; --peri-ink: #141d40;
+    --grape: #5b3f9e; --grape-edge: #36246b; --grape-thread: #e3d8ff;
+    --cream: #f4efe6; --cream-edge: #9a9486;
+}
+
+/* Dark: midnight felt. The GAP tokens other rules read are pointed at it too. */
+:root,
+[data-theme="dark"] {
+    --ground: #1c1b2b;
+    --surface: #2e2d45;
+    --edge: #14131f;
+    --thread: #8e89b0;
+    --rule: #4a4766;
+    --well: #24233a;
+    --heading: var(--mari);
+    --ring: var(--mari);
+    --ink: #f4efe6;
+    --ink-muted: #d8d2e4;
+    --weave: repeating-linear-gradient(31deg, rgba(255, 255, 255, .055) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(-57deg, rgba(0, 0, 0, .05) 0 1px, transparent 1px 5px);
+    --weave-soft: repeating-linear-gradient(31deg, rgba(255, 255, 255, .07) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(-57deg, rgba(0, 0, 0, .045) 0 1px, transparent 1px 5px);
+    --card-shadow: 0 4px 0 var(--edge), 0 8px 18px rgba(0, 0, 0, .28);
+    --bg: var(--ground);
+    --divider: var(--rule);
+    --tap: var(--peri);
+    --selected: var(--jade);
+    --on-selected: var(--jade-ink);
+    --scrim: rgba(12, 11, 20, .8);
+}
+
+/* Light: cream felt. Heading and ring are darkened to keep 7:1 and 3:1. */
+[data-theme="light"] {
+    --ground: #f3ead9;
+    --surface: #fffaf0;
+    --edge: #cdbf9f;
+    --thread: #9a8a66;
+    --rule: #e0d4ba;
+    --well: #f1e7d3;
+    --heading: #6b3800;
+    --ring: #6b3800;
+    --ink: #2a2238;
+    --ink-muted: #4f4560;
+    --weave: repeating-linear-gradient(31deg, rgba(120, 90, 40, .06) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(-57deg, rgba(120, 90, 40, .05) 0 1px, transparent 1px 5px);
+    --weave-soft: repeating-linear-gradient(31deg, rgba(120, 90, 40, .06) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(-57deg, rgba(120, 90, 40, .03) 0 1px, transparent 1px 5px);
+    --card-shadow: 0 4px 0 var(--edge), 0 8px 18px rgba(120, 90, 40, .12);
+    --bg: var(--ground);
+    --divider: var(--rule);
+    --scrim: rgba(42, 34, 56, .45);
+}
+
+html {
+    background: var(--ground);
+}
+
+body {
+    background-color: var(--ground);
+    background-image: var(--weave);
+}
+
+:focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 3px;
+}
+
+/* --- App bar and tabs: on the ground, stitched off from the page ---------- */
+
+.app-bar,
+.tab-strip {
+    background-color: var(--ground);
+    background-image: var(--weave);
+    border-bottom: 2px dashed var(--rule);
+}
+
+.tab-strip {
+    padding: 2px var(--space-3) 3px;
+}
+
+/* Every felt pill. A rule sets --pf/--pe/--pt/--pi (fill, edge, thread, ink). */
+.preset-select,
+.copy-code,
+.icon-button,
+.tab-button,
+.row-button,
+.share-actions button,
+.reset-button {
+    position: relative;
+    border: 0;
+    background-color: var(--pf, var(--surface));
+    background-image: var(--weave-soft);
+    box-shadow: 0 3px 0 var(--pe, var(--edge));
+    outline: 1.5px dashed var(--pt, var(--thread));
+    outline-offset: -4px;
+    color: var(--pi, var(--ink));
+    transition: transform .2s cubic-bezier(.34, 1.56, .64, 1);
+}
+
+.preset-select {
+    --pf: var(--mari); --pe: var(--mari-edge); --pt: var(--mari-thread); --pi: var(--mari-ink);
+    height: 30px;
+    padding: 0 9px 0 13px;
+    border-radius: var(--radius-pill);
+    font-weight: 800;
+    transform: rotate(-1.5deg);
+}
+
+.preset-caret {
+    color: var(--mari-ink);
+}
+
+.copy-code {
+    --pf: var(--jade); --pe: var(--jade-edge); --pt: var(--jade-thread); --pi: var(--jade-ink);
+    height: 30px;
+    padding: 0 12px 0 10px;
+    font-weight: 800;
+    transform: rotate(1.5deg);
+}
+
+.icon-button {
+    --pf: var(--peri); --pe: var(--peri-edge); --pt: var(--peri-thread); --pi: var(--peri-ink);
+    width: 30px;
+    height: 30px;
+    outline-offset: -3px;
+}
+
+/* The theme toggle, last in the bar. */
+.icon-button:last-child {
+    --pf: var(--grape); --pe: var(--grape-edge); --pt: var(--grape-thread); --pi: #ffffff;
+    transform: rotate(-6deg);
+}
+
+.tab-bar {
+    gap: var(--space-2);
+    padding: 3px 2px 5px;
+}
+
+/* Tabs wobble left and right; the open one sits straight and lifted. */
+.tab-button {
+    height: 28px;
+    padding: 0 13px;
+    font-weight: 700;
+}
+
+.tab-button:nth-child(odd) {
+    transform: rotate(-1.5deg);
+}
+
+.tab-button:nth-child(even) {
+    transform: rotate(1.5deg);
+}
+
+.tab-button[aria-selected="true"] {
+    --pf: var(--cream); --pe: var(--cream-edge); --pt: #1c1b2b; --pi: #1c1b2b;
+    background-color: var(--pf);
+    box-shadow: 0 3px 0 var(--pe);
+    color: var(--pi);
+    font-weight: 800;
+    transform: translateY(-2px);
+}
+
+[data-theme="light"] .tab-button[aria-selected="true"] {
+    --pf: #2a2238; --pe: #14111c; --pt: #b9aed0; --pi: #fffaf0;
+}
+
+.tab-scroll::before {
+    background: linear-gradient(to left, transparent, var(--ground) 70%);
+}
+
+.tab-scroll::after {
+    background: linear-gradient(to right, transparent, var(--ground) 70%);
+}
+
+.tab-more {
+    height: 26px;
+    border: 0;
+    background: var(--rose);
+    box-shadow: 0 2px 0 var(--rose-edge);
+    outline: 1.5px dashed var(--rose-thread);
+    outline-offset: -3px;
+    color: var(--rose-ink);
+}
+
+.tab-more:hover {
+    color: var(--rose-ink);
+}
+
+/* --- Groups: a display-face heading over a stitched card ------------------- */
+
+.group {
+    padding-top: var(--space-3);
+}
+
+.group-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-family: var(--font-display);
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: 400;
+    color: var(--heading);
+}
+
+/* An untitled group draws no heading, so no stray dot. */
+.group-title:empty {
+    display: none;
+}
+
+/* A felt button sewn on before the title, its colour cycling by group. */
+.group-title::before {
+    content: "";
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--dot, var(--rose));
+    box-shadow: 0 2px 0 var(--dot-edge, var(--rose-edge));
+    outline: 1px dashed var(--dot-thread, var(--rose-thread));
+    outline-offset: -3px;
+}
+
+.group:nth-of-type(4n+2) .group-title { --dot: var(--jade); --dot-edge: var(--jade-edge); --dot-thread: var(--jade-thread); }
+.group:nth-of-type(4n+3) .group-title { --dot: var(--peri); --dot-edge: var(--peri-edge); --dot-thread: var(--peri-thread); }
+.group:nth-of-type(4n) .group-title { --dot: var(--mari); --dot-edge: var(--mari-edge); --dot-thread: var(--mari-thread); }
+
+.group-rows {
+    position: relative;
+    margin-top: var(--space-1);
+    padding: 2px var(--space-1);
+    border: 0;
+    border-radius: 18px;
+    background-color: var(--surface);
+    background-image: var(--weave-soft);
+    box-shadow: var(--card-shadow);
+}
+
+/* The card's stitch; rows sit above it. */
+.group-rows::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 1.5px dashed var(--thread);
+    border-radius: 14px;
+    opacity: .75;
+    pointer-events: none;
+}
+
+.group-rows > * {
+    position: relative;
+}
+
+.group-warn .group-rows {
+    --thread: var(--rose);
+    border: 0;
+}
+
+.setting-row {
+    min-height: 38px;
+    padding: var(--space-1) var(--space-4);
+}
+
+.setting-row:not(:first-child) {
+    border-top: 1.5px dashed var(--rule);
+}
+
+.row-title {
+    font-size: 13.5px;
+    font-weight: 700;
+}
+
+/* --- Switch: a felt track; on is jade with a cream button ------------------ */
+
+.setting-switch {
+    width: 42px;
+    height: 24px;
+    background: var(--well);
+    box-shadow: inset 0 2px 0 rgba(0, 0, 0, .25);
+    outline: 1.5px dashed var(--thread);
+    outline-offset: -4px;
+}
+
+.setting-switch::before {
+    left: 4px;
+    width: 16px;
+    height: 16px;
+    background: var(--thread);
+    box-shadow: 0 2px 0 var(--edge);
+}
+
+.setting-switch:checked {
+    background-color: var(--jade);
+    background-image: var(--weave-soft);
+    box-shadow: 0 3px 0 var(--jade-edge);
+    outline-color: var(--jade-thread);
+}
+
+.setting-switch:checked::before {
+    left: 21px;
+    width: 18px;
+    height: 18px;
+    background: var(--cream);
+    box-shadow: 0 2px 0 var(--cream-edge);
+}
+
+.setting-switch:checked::after {
+    left: 23px;
+    background: var(--jade-edge);
+}
+
+/* --- Stepper: round periwinkle buttons, the number in the display face ----- */
+
+.stepper {
+    gap: var(--space-1);
+}
+
+.stepper .setting-number {
+    width: 40px;
+    height: 28px;
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 400;
+}
+
+.step {
+    min-width: 28px;
+    height: 28px;
+    border-radius: var(--radius-pill);
+    background-color: var(--peri);
+    background-image: var(--weave-soft);
+    box-shadow: 0 3px 0 var(--peri-edge);
+    outline: 1.5px dashed var(--peri-thread);
+    outline-offset: -3.5px;
+    color: var(--peri-ink);
+}
+
+.step-fine {
+    background-color: var(--rose);
+    box-shadow: 0 3px 0 var(--rose-edge);
+    outline-color: var(--rose-thread);
+    color: var(--rose-ink);
+}
+
+.step:disabled {
+    background: transparent;
+    box-shadow: none;
+    outline: 1.5px dashed var(--thread);
+    outline-offset: -2px;
+    color: var(--ink-muted);
+}
+
+/* --- Selects and text fields: a sunken, stitched well ---------------------- */
+
+.setting-select,
+.setting-text,
+.preset-input,
+.share-code {
+    height: 30px;
+    padding: 0 9px 0 14px;
+    border-radius: var(--radius-pill);
+    background: var(--well);
+    box-shadow: inset 0 2px 0 rgba(0, 0, 0, .22);
+    outline: 1.5px dashed var(--thread);
+    outline-offset: -4px;
+    font-weight: 800;
+}
+
+/* The share code is a multi-line box, not a pill. */
+.share-code {
+    height: auto;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+}
+
+.select-caret {
+    color: var(--heading);
+}
+
+/* --- Buttons: periwinkle pills; primary marigold, danger rose -------------- */
+
+.row-button,
+.share-actions button,
+.reset-button {
+    --pf: var(--peri); --pe: var(--peri-edge); --pt: var(--peri-thread); --pi: var(--peri-ink);
+    height: 30px;
+    padding: 0 14px;
+    border-radius: var(--radius-pill);
+}
+
+.preset-primary,
+.share-actions .share-apply {
+    --pf: var(--mari); --pe: var(--mari-edge); --pt: var(--mari-thread); --pi: var(--mari-ink);
+    background-color: var(--pf);
+    box-shadow: 0 3px 0 var(--pe);
+    color: var(--pi);
+}
+
+.preset-danger {
+    --pf: var(--rose); --pe: var(--rose-edge); --pt: var(--rose-thread); --pi: var(--rose-ink);
+    background-color: var(--pf);
+    box-shadow: 0 3px 0 var(--pe);
+    color: var(--pi);
+}
+
+/* --- Bottom sheet: one big felt patch -------------------------------------- */
+
+.select-list {
+    border: 0;
+    border-radius: 28px 28px 0 0;
+    background-color: var(--surface);
+    background-image: var(--weave-soft);
+    box-shadow: 0 -6px 0 var(--edge), 0 -12px 30px rgba(0, 0, 0, .35);
+}
+
+.select-list::before {
+    width: 48px;
+    height: 6px;
+    background: var(--thread);
+}
+
+.select-option {
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+}
+
+.select-option[aria-selected="true"] {
+    background-color: var(--jade);
+    background-image: var(--weave-soft);
+    box-shadow: 0 3px 0 var(--jade-edge);
+    outline: 1.5px dashed var(--jade-thread);
+    outline-offset: -4px;
+    color: var(--jade-ink);
+}
+
+.select-option[aria-selected="true"]::after {
+    background: var(--jade-ink);
+}
+
+.select-group {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--heading);
+}
+
+.select-group:not(:first-child) {
+    border-top: 2px dashed var(--rule);
+}
+
+/* The version line in the foot. */
+.app-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .preset-select,
+    .copy-code,
+    .icon-button,
+    .tab-button {
+        transition: none;
+    }
+}
