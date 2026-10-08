@@ -7,7 +7,7 @@ is the whole design; everything below is detail.
 {"timestamp":"2026-08-22T14:30:00.123Z","level":"info","component":"play","event":"play.gameOver","message":"Game Over","runId":"mt4uenqrug","roundId":7,"data":{"chains":63,"hudLostMs":1840}}
 ```
 
-**A fixed envelope, and one `data` bag.** The top level is the same eight keys
+**A fixed envelope, and one `data` bag.** The top level is the same keys
 whatever the line is about; everything a particular call site had to say lives
 under `data`.
 
@@ -19,6 +19,8 @@ That question is a filter over fields (`event = skill.tiara.unsure`,
 `[Tiara] No present matched confidently, stopping 14 scans scan ~38ms readable for 610ms`.
 
 - **Reading these logs** — [With Logdy](#with-logdy), below.
+- **Watching a run live, debug lines and board snapshots included** —
+  [The trace stream](#the-trace-stream).
 - **Writing a log line** — [Writing a record](#writing-a-record).
 - **The machinery** — [`src/logging.ts`](src/logging.ts); the event names are
   [`src/logEvents.ts`](src/logEvents.ts) and the message catalogue
@@ -86,9 +88,10 @@ line said `roundId` or `round_id` is a viewer you cannot filter.
 
 `run` · `task` · `app` · `screen` · `page` · `nav` · `forecast` · `board` ·
 `bubble` · `play` · `tsums` · `skill` · `fever` · `hearts` · `gifts` ·
-`unlock` · `box` (buying boxes in the store) · `stats` · `dialog` · `stall` ·
+`unlock` · `box` (buying boxes in the store) · `tsumList` · `stats` · `dialog` · `stall` ·
 `corpus` · `report` (the folder a player sends in) · `walk` · `assist` · `log` ·
-`settings` (the settings page) · `host` (the host app's own lines).
+`settings` (the settings page) · `quickBar` · `workflow` (a GAP Companion workflow run,
+`WORKFLOWS.md`) · `host` (the host app's own lines).
 
 One `const enum` per component in [`src/logEvents.ts`](src/logEvents.ts), in
 this order, and the enums are the only place an event name is spelled out:
@@ -196,7 +199,9 @@ One call fans out to four places, and each gets what it can use:
 | **The settings page** `onLog` | The same rendered line |
 | **`gap-cli logs`** | Rendered, or the raw record with `--raw` |
 
-A fifth is not a sink but a buffer, and is [The ring](#the-ring) below.
+A fifth is not a sink but a buffer, and is [The ring](#the-ring) below. A
+sixth, [The trace stream](#the-trace-stream), gets every record — debug
+included — but only while a dev tool is connected.
 
 The heart tally (`heartsReceived` / `heartsSent` / `heartsSendDueMin`) is
 injected into `data` on `hearts.*` records and nowhere else, and the bar renders
@@ -241,6 +246,48 @@ Three consequences worth knowing:
   setting — so nothing expensive is resolved for a record nobody will read. Keep
   it that way when adding one.
 - **It is cleared at every `logBeginRun`**, so a report quotes one run.
+
+## The trace stream
+
+Live debug data for a dev tool on the PC, on the host's trace port (21026, host
+3.1+). Nothing is built or sent unless a consumer is connected; `traceOn()` asks
+the host once a second, so an unwatched run pays almost nothing.
+
+While one is connected:
+
+- **Every log record is traced** as kind `log`, the record itself as `data`:
+  debug ones whatever the Debug logs setting says, and ones the flood guard
+  refused. The log file, the overlay and the ring are unaffected.
+- **`board.scan`**, once per board read: `tsums` as `[cluster, x, y]` centres in
+  the `width` × `height` play frame, `clusters` as `[h, s, v]`, `sizes`,
+  `myTsumIdx`, `bubbles` as `[x, y, r, near]`, `durationMs`.
+- **`board.paths`**, once per link batch: the chains about to be drawn, each as
+  `[x, y]` centres, and each chain's cluster.
+- **`marks`**: points and boxes a chore found, in real screen pixels
+  (`traceMarks`, `src/trace.ts`) — the hearts sweep marks each heart it reads.
+- `forecast.state` is built as it is with Debug logs on.
+- **The host adds frames and taps itself**: `frame.square` / `frame.screen` for
+  every capture and `input.*` for every touch. `board.scan` names the frame it
+  was read from (`frame`). Nothing here asks for them except the board scan, which
+  forces its own frame past the host's rate limit.
+
+The GAP Devkit's **Live debug** tab (host repo, `tools/gap-devkit`) draws all of
+it: the board scan over its frame with a slider back through earlier scans, and
+the screen with its taps and marks. Frames are ~250 KB/s, so its recordings leave
+them out unless asked.
+
+```
+adb forward tcp:21026 tcp:21026
+node ../../game-automation-app/tools/gap-events.js --trace                  # readable
+node ../../game-automation-app/tools/gap-events.js --trace --kind board.scan
+node ../../game-automation-app/tools/gap-events.js --trace --raw --out run.jsonl | logdy
+```
+
+The host caps it at 500 traces a second and 256K characters each, and a
+consumer that stops reading loses its oldest lines (`dropped` on the next
+one). Adding a kind is a member in `Trace.Kind` (`src/trace.ts`) and a
+`traceSend(kind, () => payload)` at the call site; keep payloads to compact
+arrays, since a scan runs several times a second.
 
 ## With Logdy
 

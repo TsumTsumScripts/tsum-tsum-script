@@ -105,6 +105,8 @@ declare const enum UiText {
   SettingPrioritizeMyTsumHelp = 'setting.prioritizeMyTsum.help',
   SettingTrackRoundStats = 'setting.trackRoundStats',
   SettingTrackRoundStatsHelp = 'setting.trackRoundStats.help',
+  SettingShareRoundStats = 'setting.shareRoundStats',
+  SettingShareRoundStatsHelp = 'setting.shareRoundStats.help',
   SettingBubbleStrategy = 'setting.bubbleStrategy',
   SettingBubbleStrategyHelp = 'setting.bubbleStrategy.help',
   SettingHoldBubblesLastFever = 'setting.holdBubblesLastFever',
@@ -173,8 +175,6 @@ declare const enum UiText {
   SettingSendWaitHelp = 'setting.sendWait.help',
   SettingReceiveOneByOne = 'setting.receiveOneByOne',
   SettingReceiveOneByOneHelp = 'setting.receiveOneByOne.help',
-  SettingSkipFirstPerson = 'setting.skipFirstPerson',
-  SettingSkipFirstPersonHelp = 'setting.skipFirstPerson.help',
   SettingSkipRuby = 'setting.skipRuby',
   SettingSkipRubyHelp = 'setting.skipRuby.help',
   SettingSkipMedals = 'setting.skipMedals',
@@ -222,11 +222,15 @@ declare const enum UiText {
   // --- dropdown entries ---------------------------------------------------
   BubbleOneMidChain = 'bubble.oneMidChain',
   BubbleAllMidChain = 'bubble.allMidChain',
+  BubbleSaveOneMidChain = 'bubble.saveOneMidChain',
+  BubbleSaveOne = 'bubble.saveOne',
   BubbleAllAsap = 'bubble.allAsap',
   /* The Quick Bar's names for the same three: its chip is a few characters
      wide, where the full names above are an ellipsis. See `BubbleOption.short`. */
   BubbleOneMidChainShort = 'bubble.oneMidChain.short',
   BubbleAllMidChainShort = 'bubble.allMidChain.short',
+  BubbleSaveOneMidChainShort = 'bubble.saveOneMidChain.short',
+  BubbleSaveOneShort = 'bubble.saveOne.short',
   BubbleAllAsapShort = 'bubble.allAsap.short',
 
   /** The Skill Type dropdown's three headings -- see `src/skillOptions.ts`. */
@@ -259,6 +263,7 @@ declare const enum UiText {
   SkillCptLightyear120 = 'skill.cptLightyear120',
   SkillLightningMcQueenPlus = 'skill.lightningMcQueenPlus',
   SkillNightmareSet = 'skill.nightmareSet',
+  SkillVillainsSet = 'skill.villainsSet',
   SkillFormalBeast = 'skill.formalBeast',
   SkillGaston = 'skill.gaston',
   SkillTiaraMinniePlus = 'skill.tiaraMinniePlus',
@@ -279,11 +284,21 @@ declare const enum UiText {
   ButtonSaveReport = 'button.saveReport',
   ButtonDetect = 'button.detect',
 
+  // --- GAP Companion (the phone app; never drawn by the page) ---------------
+  CompanionConfirmSpend = 'companion.confirmSpend',
+  CompanionConfirmSpendNow = 'companion.confirmSpendNow',
+
   // --- page chrome --------------------------------------------------------
   ChromeReset = 'chrome.reset',
   ChromeRestartNow = 'chrome.restartNow',
   ChromeThemeToLight = 'chrome.themeToLight',
   ChromeThemeToDark = 'chrome.themeToDark',
+  ChromeMoreTabs = 'chrome.moreTabs',
+  /** The app bar's short copy-code button; `ChromeCopyCodeLabel` is its spoken name. */
+  ChromeCopyCode = 'chrome.copyCode',
+  ChromeCopyCodeLabel = 'chrome.copyCodeLabel',
+  ChromeCopied = 'chrome.copied',
+  ChromeCopyFailed = 'chrome.copyFailed',
 
   // --- the share panel ----------------------------------------------------
   ShareCopied = 'share.copied',
@@ -370,6 +385,9 @@ declare const enum UiText {
   /** Which box, at what size: `{box}`, `{boxes}` at a time, up to `{max}`. */
   RunBuyBoxesDetail = 'run.buyBoxes.detail',
   RunPlayRound = 'run.playRound',
+  /** A GAP Companion workflow run's one job; never on the card, which shows a normal run. */
+  RunWorkflow = 'run.workflow',
+  RunWorkflowDetail = 'run.workflow.detail',
   /** Waits `{minutes}` between rounds. Prefixed to the item list, so it ends in a space. */
   RunPlayRoundDelay = 'run.playRound.delay',
   RunPlayRoundCap = 'run.playRound.cap',
@@ -387,6 +405,7 @@ declare const enum UiText {
   // --- one board scan, chip by chip ---------------------------------------
   FlowScan = 'flow.scan',
   FlowPopAll = 'flow.popAll',
+  FlowPopAllButOne = 'flow.popAllButOne',
   /** Chains up to `{max}` long at `{reach}`% reach. */
   FlowPlan = 'flow.plan',
   FlowMyTsumFirst = 'flow.myTsumFirst',
@@ -396,6 +415,7 @@ declare const enum UiText {
   /** Hold every bubble in a fever's last `{sec}` seconds. */
   FlowHoldBubblesFever = 'flow.holdBubblesFever',
   FlowLinkOneBubble = 'flow.linkOneBubble',
+  FlowLinkAllButOne = 'flow.linkAllButOne',
   FlowLinkAllBubbles = 'flow.linkAllBubbles',
   FlowLink = 'flow.link',
   FlowFan = 'flow.fan',
@@ -419,6 +439,8 @@ declare const enum UiText {
   /** Stop after games' stepper and its action chip. */
   QbGames = 'qb.games',
   QbThen = 'qb.then',
+  /** Stop after this round: a run-time toggle, not a setting. */
+  QbStopAfterRound = 'qb.stopAfterRound',
   QbSendHearts = 'qb.sendHearts',
   QbReceiveOneByOne = 'qb.receiveOneByOne',
   QbUnlockNow = 'qb.unlockNow',
@@ -426,6 +448,10 @@ declare const enum UiText {
   /** The banner after Copy code; the panel's own lines point at a box the strip lacks. */
   QbCodeCopied = 'qb.codeCopied',
   QbCodeNotCopied = 'qb.codeNotCopied',
+  /** The readout chip's accessible name, and the banner after tapping it. */
+  QbCopyStats = 'qb.copyStats',
+  QbStatsCopied = 'qb.statsCopied',
+  QbStatsNotCopied = 'qb.statsNotCopied',
   /** Banners after the Lvl chip, when the engine's own banner does not apply. */
   QbLevelsAlreadyQueued = 'qb.levelsAlreadyQueued',
   QbLevelsNotQueued = 'qb.levelsNotQueued',
@@ -437,13 +463,16 @@ declare const enum UiText {
   QbChain = 'qb.chain',
   QbPreset = 'qb.preset',
   QbBubble = 'qb.bubble',
-  QbReport = 'qb.report',
+  QbAutoPlay = 'qb.autoPlay',
   QbBase = 'qb.base',
   QbFinal = 'qb.final',
+  QbMedals = 'qb.medals',
   QbRounds = 'qb.rounds',
   QbAvgRound = 'qb.avgRound',
   QbInRounds = 'qb.inRounds',
   QbRunning = 'qb.running',
+  /** The readout's row for a GAP Companion workflow's progress (`L2 3/5`). */
+  QbStep = 'qb.step',
 }
 
 /**

@@ -11,8 +11,8 @@
 // Two ways one is made, and they are the same folder either way:
 //
 //   reportIssue(reason, note)  a person pressed something -- the settings page's
-//                              Report button, the Quick Bar's chip, or a long
-//                              press on the host's Log chip
+//                              Report button, or a long press on the host's
+//                              Log chip
 //   reportOnLogged(...)        the script noticed its own failure. `ReportTriggers`
 //                              below is the list, and the logger is what checks
 //                              it, so no call site has to remember
@@ -81,7 +81,7 @@ var gReportWriting = false;
 // --- writing one -----------------------------------------------------------
 
 Tsum.prototype.reportsDir = function() {
-  return this.storagePath + '/' + Config.recordDir + '/reports';
+  return this.devicePath + '/reports';
 }
 
 /**
@@ -121,7 +121,7 @@ function reportWrite(tsum: Tsum, reason: string, note: string): string {
   const id = statsFileStamp(now) + '-' + statsRandomHex(4)
     + '-' + reason.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   const dir = tsum.reportsDir() + '/' + id;
-  execute('mkdir -p "' + dir + '"');
+  makeDirs(dir);
 
   tsum._reportCount++;
   tsum._lastReportAt = Date.now();
@@ -231,13 +231,12 @@ function reportCopyTrail(dir: string): void {
   if (frames.length === 0) {
     return;
   }
-  execute('mkdir -p "' + dir + '/trail"');
+  makeDirs(dir + '/trail');
   for (let i = 0; i < frames.length; i++) {
     // Numbered by distance from the moment rather than by the router's own
     // sequence, so `00` is always the screen the report was taken on.
     const seq = (i < 10 ? '0' : '') + i;
-    execute('cp -f "' + frames[i] + '" "' + dir + '/trail/' + seq + '_'
-      + reportBaseName(frames[i]) + '"');
+    copyFile(frames[i], dir + '/trail/' + seq + '_' + reportBaseName(frames[i]));
   }
 }
 
@@ -251,18 +250,14 @@ function reportBaseName(path: string): string {
  * Keeps the newest `ReportsKept` folders and removes the rest.
  *
  * The ids begin with a UTC stamp, so a plain lexical sort is chronological and
- * `ls` has already done it. Only folders directly under the reports directory
- * are touched.
+ * `listDir` has already done it. Only folders directly under the reports
+ * directory are touched.
  */
 function reportPrune(tsum: Tsum): void {
   const dir = tsum.reportsDir();
-  const listing = execute('ls -1 "' + dir + '" 2>/dev/null');
-  const names = (listing || '').split('\n')
-    .map(function(n) { return n.replace(/^\s+|\s+$/g, ''); })
-    .filter(function(n) { return n !== ''; })
-    .sort();
+  const names = listDir(dir);
   for (let i = 0; i < names.length - ReportsKept; i++) {
-    execute('rm -rf "' + dir + '/' + names[i] + '"');
+    removeFile(dir + '/' + names[i], true);
   }
 }
 
@@ -350,18 +345,20 @@ function reportManifest(tsum: Tsum, id: string, at: Date,
  * here as well so the manifest alone answers "what was this run playing on".
  */
 function reportDevice(tsum: Tsum): object {
+  const info = deviceInfo() || {
+    model: '', manufacturer: '', device: '',
+    androidRelease: '', fingerprint: '', emulator: false,
+  };
   return {
-    tag: statsDeviceTag(tsum.storagePath),
-    model: statsShellValue('getprop ro.product.model'),
-    manufacturer: statsShellValue('getprop ro.product.manufacturer'),
-    android: statsShellValue('getprop ro.build.version.release'),
-    fingerprint: statsShellValue('getprop ro.build.fingerprint'),
-    // Emulators are most of the reports and are worth naming outright rather
-    // than leaving to be read out of the fingerprint.
-    emulator: statsShellValue('getprop ro.kernel.qemu') === '1'
-      || /generic|emulator|sdk|mumu|nox|ldplayer/i.test(
-        statsShellValue('getprop ro.product.model')
-        + ' ' + statsShellValue('getprop ro.product.device')),
+    tag: statsDeviceTag(tsum.devicePath),
+    // One host call, which also decides "is this an emulator" -- most reports
+    // come from one, and it is worth naming outright rather than leaving it to
+    // be read out of the fingerprint.
+    model: info.model,
+    manufacturer: info.manufacturer,
+    android: info.androidRelease,
+    fingerprint: info.fingerprint,
+    emulator: info.emulator,
     screen: { width: tsum.originScreenWidth, height: tsum.originScreenHeight },
     geometry: {
       gameOffsetX: tsum.gameOffsetX,
@@ -410,7 +407,7 @@ function reportOnLogged(event: string): void {
  * Writes a report of what is on screen now, and returns its id.
  *
  * A global for the same reason `start`, `stop` and `roundDelaySkip` are: the
- * settings page and the Quick Bar reach it by evaluating its name through
+ * settings page reaches it by evaluating its name through
  * `JavaScriptInterface.runScript`, and the host's own Log-chip long press
  * evaluates it over the IPC socket.
  *
@@ -419,7 +416,7 @@ function reportOnLogged(event: string): void {
  * would deliver the Resume (see `tools/liveSettings/check.js`, the `entry`
  * check). Captures and file writes are deliberately left working while paused,
  * which is the whole reason a report can be taken from a paused panel at all.
- * The Quick Bar's chip and the Log-chip long press reach it mid-run as well,
+ * The Log-chip long press reaches it mid-run as well,
  * between two steps of the play loop, and that is the route that catches the
  * live screen rather than the pause menu.
  *

@@ -1,4 +1,4 @@
-// Ambient declarations for the Game Automation Platform runtime, the shared
+// Ambient declarations for the General Automation Platform runtime, the shared
 // value shapes, and the parts of `Tsum` that are defined outside its
 // constructor.
 //
@@ -698,6 +698,15 @@ interface TsumPoint extends TsumTexture {
    * overlay on one tsum from the tsum beside it (Elsa's ice).
    */
   local: Color;
+  /** A large tsum's size against a normal one; absent on a normal tsum. */
+  grow?: number;
+}
+
+/** A large tsum `findLargeTsums` found: its circle and `BoardPoint.grow`. */
+interface LargeCircle extends HoughCircle {
+  grow: number;
+  /** Scans in a row it has been found at this spot (`scanBoardQuick`). */
+  seen?: number;
 }
 
 /** One colour cluster from `classifyTsums`: a running mean plus its members. */
@@ -726,6 +735,12 @@ interface BoardPoint {
   local?: Color;
   /** `TsumTexture.contrast`, likewise. */
   contrast?: number;
+  /**
+   * Set on a large tsum only: its size against a normal one, `LargeTsum.grow`.
+   * It reaches that much farther to each side, which is what lets it bridge
+   * a gap normal tsums cannot (`buildTsumNeighbors`).
+   */
+  grow?: number;
 }
 
 /**
@@ -758,7 +773,7 @@ interface GameBubble {
   near?: number;
   /**
    * Found by the bottom-band pass rather than the Hough pass proper
-   * (`gastonBubbles`): planned round and tapped like any other, logged apart.
+   * (`findGameBubbles`, `gastonBubbles`): tapped like any other, logged apart.
    */
   band?: boolean;
   /**
@@ -844,6 +859,8 @@ interface TsumListRow {
   skillProgress: number | null;
   /** "YYYY-MM". */
   acquired: string;
+  /** Starred as a favourite; null when the card would not select. */
+  favorite: boolean | null;
 }
 
 /** A portrait rect in logical 1080x1920 coordinates. `MyTsumPortrait` holds two. */
@@ -948,10 +965,10 @@ interface HeartsCount {
 /**
  * The run's coin totals, kept by `finishRoundStats` and read by the Quick Bar.
  *
- * Three counts rather than one because a round can write a row with either coin
- * figure missing -- the level-up panel never showed, or the tally would not read
+ * Per-figure counts because a round can write a row with any figure
+ * missing -- the level-up panel never showed, or the tally would not read
  * -- and an average taken over rounds that had no number is not an average of
- * anything. `rounds` is every row written; the other two are the rounds that
+ * anything. `rounds` is every row written; the others are the rounds that
  * actually contributed to each total.
  */
 interface RunCoinTally {
@@ -960,6 +977,18 @@ interface RunCoinTally {
   baseTotal: number;
   finalRounds: number;
   finalTotal: number;
+  medalRounds: number;
+  /** Medals over the rows that read a medal count (0 when none were earned). */
+  medalTotal: number;
+  /**
+   * The lowest and highest single-round figures, for the clipboard copy the
+   * readout chip offers. Base coins and medals only -- those are the two the
+   * copied lines report. -1 until a round contributed one.
+   */
+  baseMin: number;
+  baseMax: number;
+  medalMin: number;
+  medalMax: number;
 }
 
 /**
@@ -973,10 +1002,13 @@ interface RunClock {
   rounds: number;
   /** Their summed play time, seconds. */
   roundSec: number;
+  /** The shortest and longest of them, seconds; -1 until one has ended. */
+  minSec: number;
+  maxSec: number;
 }
 
 /**
- * `tsum_record/record.txt` as parsed: the account's running heart tally, and
+ * `hearts.json` as parsed: the account's running heart tally, and
  * nothing else. It used to carry one entry per recorded sender beside this,
  * which is why it is a table rather than the counts themselves.
  *
@@ -1148,7 +1180,8 @@ interface Task {
 
 /** Static tuning constants for the player. */
 interface TsumConfig {
-  recordDir: string;
+  /** Round-stats CSVs and the share cursor, under `getDevicePath()`. */
+  statsDir: string;
   tsumWidth: number;
   screenResize: number;
   colors: number[][];
@@ -1326,8 +1359,13 @@ interface Tsum {
   bubblesHeldForFever(): boolean;
   /** Start the hold on the Bubble Strategy's pops from an activation at `activatedAt`. */
   holdBubblesAfterSkill(activatedAt: number): void;
-  /** Is the hold after a skill activation still standing? Asked per pop. */
-  bubblesHeldAfterSkill(): boolean;
+  /**
+   * Is the hold after a skill activation still standing? Asked per pop.
+   * `holdMs` defaults to the strategy's hold (short under All Bubbles ASAP).
+   */
+  bubblesHeldAfterSkill(holdMs?: number): boolean;
+  /** All but All Bubbles ASAP: pop all but the richest few once a pile builds (Save One: all but one). */
+  popBubbleOverflow(): void;
   /** How many bubbles the Bubble Strategy setting allows one pop to spend. */
   bubbleTapBudget(): number;
   /**
@@ -1384,8 +1422,16 @@ interface Tsum {
   watchRoundEnd(hud: HudWatch): RoundLook;
   /** What is left of the between-rounds delay, in ms; 0 when none is running. */
   roundDelayRemainingMs(): number;
-  /** Counts a finished round toward "Stop after games"; true if it fired. */
+  /**
+   * At a round's tail: ends the run if "Stop after this round" is armed, else
+   * counts the round toward "Stop after games". True if either fired.
+   */
   countGameTowardStop(): boolean;
+  /**
+   * Ends the run if "Stop after this round" is armed; true if it did. `at` is
+   * for the log: where the run was when it fired.
+   */
+  wrapUpIfAsked(at: string): boolean;
   /** True once a round has been played, so the next one starts without the job's interval. */
   taskPlayGameQuick(): boolean | void;
 
@@ -1411,24 +1457,22 @@ interface Tsum {
   fetchAllMails(): void;
   /**
    * The mail rows drawn in full on this frame, as offsets to add to the
-   * `outReceive*` probes to reach each one, top to bottom. Negative for a row
-   * above the one "Skip first person" starts at; 0 is that row itself.
+   * `outReceive*` probes to reach each one, top to bottom; 0 is the top row.
    *
    * Found rather than assumed, because a scrolled list does not come to rest on
    * a row boundary -- see `MailList` (`src/data.ts`).
    */
   readMailRows(img: NativeImage): number[];
   /**
-   * Which mail row a Skip Medals / Skip Ruby pass should open, as one of
+   * Which mail row a one-by-one pass should open, as one of
    * `readMailRows`' offsets; `MailNoRow` when nothing on screen can be opened,
-   * `MailAllSkipped` when every row on screen is a medal or ruby being stepped
+   * `MailAllSkipped` when every row on screen is the ad, a medal or a ruby stepped
    * past and the hearts under them are only out of sight. A row whose badge is
    * still under the Claim All bar is never opened: it counts as out of sight.
    */
   mailRowToOpen(img: NativeImage): number;
   /** Drag the mail list on; false when it did not move, so the mail ended. */
   scrollMailList(): boolean;
-  skipAd(): void;
   taskReceiveOneItem(): void;
 
   // --- hearts.ts -------------------------------------------------------
@@ -1513,14 +1557,18 @@ interface Tsum {
   saveCollectionPortrait(path: string): void;
   /** Select card `slot` and read its row; unnamed portraits are saved under `shotDir`. */
   readCollectionCard(slot: number, order: number, date: string, shotDir: string): TsumListRow;
+  /** Whether the detail panel's tsum is starred as a favourite. */
+  readTsumFavorite(): boolean;
   /** The Tsum List export. False only when it stood aside for a round. */
   taskExportTsumList(): boolean;
   /** How many of the eight cards are still loading placeholders. */
   collectionLoadingCards(): number;
   /** Wait for the grid's placeholder cards to load; false when they did not in time. */
   awaitCollectionLoaded(): boolean;
-  /** Tap the left arrow until the collection is back on its first page. */
+  /** Back to the collection's first page: the scrubber's left end, then the left arrow. */
   rewindCollection(): boolean;
+  /** Jump to the collection's last page with the scrubber's right end. */
+  skipCollectionToEnd(): boolean;
   /** Which of the eight cards on this collection page are at their level cap. */
   readCappedCards(): boolean[];
   /** Select card `slot` and raise its tsum's cap; false stops the sweep. */
@@ -1811,7 +1859,7 @@ declare function getScriptPath(): string;
  * folder as their script root, which is what a tag kept in a file cannot be.
  *
  * Newer than the rest of the API, so it may be missing on an older host --
- * reach for it behind `typeof getDeviceId === 'function'`, like `publishStats`.
+ * reach for it behind `typeof getDeviceId === 'function'`.
  */
 declare function getDeviceId(): string;
 /**
@@ -1833,9 +1881,53 @@ declare function getDeviceName(): string;
  * `Tsum.prototype.declareReadTop` is the one caller.
  */
 declare function setReadTop(y: number): void;
+/**
+ * Shell as uid 2000. Prefer the named calls below: the host composes the
+ * command, which is steadier across devices, and GAP may gate this.
+ */
 declare function execute(cmd: string): string;
 declare function readFile(path: string): string;
 declare function writeFile(path: string, content: string): void;
+
+// --- Filesystem (host 3.1+) ---
+/** `mkdir -p`. True once it exists; an existing directory is not a failure. */
+declare function makeDirs(path: string): boolean;
+/** Names only, sorted, no `.`/`..`. A missing directory lists empty. */
+declare function listDir(path: string): string[];
+/** Without `recursive` a directory is left alone, as `rm -f` leaves one. */
+declare function removeFile(path: string, recursive: boolean): boolean;
+/** Creates `to`'s parents; overwrites. */
+declare function copyFile(from: string, to: string): boolean;
+
+/**
+ * This device's own folder under the storage root, created on demand:
+ * `<root>/devices/<name>_<id>`. Emulator instances routinely share one root
+ * (MuMu does by default), where a fixed path means each overwrites the others.
+ * Everything this script writes belongs under here.
+ */
+declare function getDevicePath(): string;
+
+// --- Apps, device facts, UI and touch (host 3.1+) ---
+/** The focused window, or null when it cannot be read. */
+declare function foregroundApp(): { package: string; activity: string } | null;
+declare function isInstalled(pkg: string): boolean;
+/** Without `activity`, the package's launcher entry. Never stacks a second copy. */
+declare function launchApp(pkg: string, activity?: string): boolean;
+declare function stopApp(pkg: string): boolean;
+/** What this device is, in one call rather than a dozen `getprop`s. */
+declare function deviceInfo(): {
+  model: string;
+  manufacturer: string;
+  device: string;
+  androidRelease: string;
+  fingerprint: string;
+  emulator: boolean;
+} | null;
+/** The window hierarchy as XML; '' when uiautomator is unavailable. */
+declare function dumpUi(): string;
+declare function touchDevices(): { path: string; xMax: number; yMax: number }[];
+/** The user's next touch in screen px, or null on timeout. Capped at 120s. */
+declare function readTouch(timeoutMs: number): { x: number; y: number; down: boolean } | null;
 
 // --- Image-processing helpers (OpenCV-backed) ---
 declare function smooth(img: NativeImage, type: number, size: number): void;
@@ -1886,7 +1978,49 @@ declare function findContours(img: NativeImage, minArea: number, maxArea: number
 declare function resizeImage(img: NativeImage, width: number, height: number): NativeImage;
 
 // --- Networking ---
+/**
+ * Blocks for the reply body; "" when refused or failed. `url` is `env:KEY`, a
+ * `url` var from gap-env.json: GAP refuses a literal URL, and any request while
+ * the user has not allowed network access for this script.
+ */
 declare function httpClient(method: string, url: string, body: string, headers: object): string;
+
+/**
+ * Queues a request (`url` is `env:KEY`, as for `httpClient`) and returns its id
+ * at once; the reply comes as network events. Newer than the rest -- reach for
+ * it behind `typeof httpRequest === 'function'`.
+ */
+declare function httpRequest(method: string, url: string, body: string, headers: object): number;
+
+/** One network event. `queued`, `sent`, then `done`, `failed` or `refused`. */
+interface NetworkEvent {
+  id: number;
+  type: 'queued' | 'sent' | 'done' | 'failed' | 'refused';
+  ref: string;
+  method: string;
+  /** True for `httpClient` and `getImageFromURL`. */
+  sync: boolean;
+  at: number;
+  /** `done`: the HTTP status and body, whatever the status. */
+  status?: number;
+  body?: string;
+  /** `failed` / `refused`: why. */
+  error?: string;
+}
+
+/**
+ * Calls `fn` for each of this script's network events, between its own native
+ * calls. Defined per load with `getEnv` -- reach for it behind `typeof`.
+ */
+declare function addNetworkListener(fn: (event: NetworkEvent) => void): void;
+declare function removeNetworkListener(fn: (event: NetworkEvent) => void): void;
+
+/**
+ * A value the user set for this script in GAP (Library card > env), or its
+ * default from gap-env.json. `undefined` while the user has env vars off.
+ * Defined per load -- reach for it behind `typeof getEnv === 'function'`.
+ */
+declare function getEnv(key: string): string | number | boolean | undefined;
 
 // --- The floating window ---
 /**
@@ -1902,24 +2036,6 @@ declare function httpClient(method: string, url: string, body: string, headers: 
  */
 declare function showBanner(message: string, duration?: number, plays?: number): void;
 
-/**
- * Register a file of this script's whose recorded rows the host should send to
- * its stats endpoint.
- *
- * `pattern` is relative to the script's own folder and may use `*` in the file
- * name. The rows must be CSV with a header and a unique, time-sortable `id`
- * column -- which is what `roundStats.ts` already writes.
- *
- * Registration only: this never names a URL and never causes a request. The
- * host remembers the last id it managed to send for each file and sends what is
- * newer, at most once a minute, and only if the user switched it on. So it is
- * safe to call once a run and harmless to call more often.
- *
- * Newer than the rest of the API, so it may be missing on an older host --
- * reach for it behind `typeof publishStats === 'function'`, since a bare
- * reference to a missing global is a ReferenceError.
- */
-declare function publishStats(pattern: string): void;
 
 /**
  * Ask the host to pause this script, as its own Pause button would. Returns at
@@ -1946,6 +2062,26 @@ declare function pauseScript(): void;
  * reach for it through `ts.emit()`, which guards for that.
  */
 declare function emitEvent(name: string, data?: unknown): void;
+
+/**
+ * Live debug data for a dev tool on the host's trace stream (host 3.1+). A
+ * string is taken as JSON already built and passed on unparsed; anything else
+ * is JSON-encoded. Dropped when nobody is attached. Reach for it through
+ * `traceSend` (src/trace.ts), which guards for an older host.
+ */
+declare function emitTrace(kind: string, data?: unknown): void;
+
+/** Whether a trace consumer is connected (host 3.1+). A host call: cache it. */
+declare function traceAttached(): boolean;
+
+/**
+ * The next capture is sent to the trace viewer whatever the rate limit says
+ * (host 3.1+), so findings can be drawn on the frame they were read from.
+ */
+declare function traceWantFrame(): void;
+
+/** Id of the frame sent for the latest capture, or 0 if it was not sent (host 3.1+). */
+declare function traceFrameId(): number;
 
 // The settings WebView reaches `start` and `stop` by name
 // through `JavaScriptInterface.runScript(<source string>)`. They are declared

@@ -9,9 +9,16 @@
 // The two "Now" sweeps keep their real bodies: what they call on the run
 // (`taskAutoUnlockLevel`, `taskBuyBoxes`) is stubbed instead, so a preset can
 // have the sweep stand aside for a round a given number of times before it goes.
+//
+// A preset may also start a GAP Companion workflow run (`workflow`: the nodes,
+// synced and armed the way `startWorkflow` arms them), call page entry points
+// once the run is built (`after`, e.g. `stopAfterThisRound`), and keep a round
+// on screen for its first `inRoundTicks` ticks -- which is what the Stop after
+// this round job stands aside for.
 
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 const { createRuntime } = require('../runtime/load');
 const { installClock, START_AT } = require('./clock');
 
@@ -60,12 +67,21 @@ function runPreset(name, preset, base) {
   const ticks = preset.ticks || base.ticks;
   const standAside = Object.assign({}, preset.standAside || {});
 
+  if (preset.workflow) {
+    const ref = { id: 'wf_' + name, rev: 1 };
+    ctx.gapWorkflowReceive(JSON.stringify({ hash: name, presets: [],
+      workflow: Object.assign({ name: name, nodes: preset.workflow }, ref) }));
+    vm.runInContext('gWorkflowArmed = ' + JSON.stringify(JSON.stringify(ref)), ctx);
+  }
   ctx.buildRun(settings, ctx.logStringsFor(settings.locale));
   const controller = ctx.gTaskController;
   const run = ctx.ts;
   if (controller === undefined || run === undefined) {
     throw new Error(name + ': buildRun built no run');
   }
+  let inRoundTicks = preset.inRoundTicks | 0;
+  if (inRoundTicks > 0) run.roundStartedAt = clock.now;
+  for (const entry of preset.after || []) ctx[entry]();
 
   // What the Now sweeps call. `false` is "a round is on, stand aside".
   let note = '';
@@ -87,6 +103,7 @@ function runPreset(name, preset, base) {
       swapBodies(controller, clock, durations);
       note = '';
       const at = clock.now - START_AT;
+      if (inRoundTicks > 0 && --inRoundTicks === 0) run.roundStartedAt = 0;
       const ran = controller.tick();
       if (ran !== '') {
         const pick = { at, ran };

@@ -55,11 +55,12 @@ Here is a brief description of every setting.
 | When a round runs long             | What happens to the script when the limit above is reached. Either way the script stops *playing* and the round is left to time out on its own — the game's Pause button is never pressed, because pausing the game would stop the very clock the round has to run down. `Stop playing, let the clock run out` (default) waits it out: the round ends within a minute, and the run carries on as normal with the score screen, the stats and the next round. `Stop the script` stops it where it stands, exactly as the Stop button does — the round times out with nothing watching, so it is not recorded. |
 | Stop after games                   | How many rounds to play before the action below (0-999, default 0 — never). Counted as each round finishes, so the last one is always played out. Changing it mid-run starts the count again from there. |
 | When the games are played          | What happens once that many rounds are played. `Turn off Auto Play` (default) stops starting rounds for the rest of the run; mailbox, hearts and other chores carry on. `Pause the script` pauses it as the overlay's Pause button does; Resume plays that many rounds again. `Stop the script` stops it as the Stop button does. |
-| Record round stats                 | Appends one row per played round to `tsum_record/stats_<YYYYMMDD>.csv` in the script's storage folder -- one file per day, next to `record.txt`: a unique `id` for the round, when it was played (UTC), the skill type, how many seconds it ran, the final score, the in-game coin counter as the round ended, the coins and medals shown on the score page, and the gameplay settings it was played under — one column each, so a run can be grouped by what it was set to. The numbers are read off the screen, so a field that could not be read is left empty rather than guessed at (`medals` is 0 rather than empty when the score page shows no medals row at all, which is the game saying none were earned), and the screen is saved beside the CSV as `unread-….png`. Only rounds the script plays itself are recorded. The `id` is unique to that one round on that one device, so a file can be merged with anybody else's, or imported twice, without a round being counted twice.                                                          |
-| Bubble Strategy                    | What the script does with the bubbles the board leaves lying about. A bubble popped while a chain is clearing takes a bigger area with it (this is what Tiara Minnie+ is built around), so a bubble spent off a chain is a bubble wasted — every option here says how much of that to give up.<br>`One Bubble Mid Chain` (default) pops exactly one bubble as a chain lands, and taps none at any other time, so the rest stay on the board for the chains after it.<br>`All Bubbles Mid Chain` pops every bubble the last board scan found, still only as a chain lands.<br>`All Bubbles ASAP` pops them as soon as they are seen with tsums round them again (a bubble is left alone for its first second, and while it sits in the hole a burst just left), without waiting for a chain, and additionally runs the old blind sweep — quick taps over every possible spot — to catch what the scan missed. This is roughly what the former "Clear Bubbles" switch did.<br>Skills that turn tsums *into* bubbles (Marie, Moana, Horn Hat Mickey, Snow White, Cinderella, Cpt. Lightyear, Burst + clear bubbles) clear up after themselves whatever this is set to: they have no chain to save anything for. |
+| Record round stats                 | Appends one row per played round to `stats/stats_<YYYYMMDD>.csv` in the script's storage folder -- one file per day, next to `hearts.json`: a unique `id` for the round, when it was played (UTC), the skill type, how many seconds it ran, the final score, the in-game coin counter as the round ended, the coins and medals shown on the score page, and the gameplay settings it was played under — one column each, so a run can be grouped by what it was set to. The numbers are read off the screen, so a field that could not be read is left empty rather than guessed at (`medals` is 0 rather than empty when the score page shows no medals row at all, which is the game saying none were earned), and the screen is saved beside the CSV as `unread-….png`. Only rounds the script plays itself are recorded. The `id` is unique to that one round on that one device, so a file can be merged with anybody else's, or imported twice, without a round being counted twice.                                                          |
+| Share round stats                  | Beta. Sends the new rows of those CSV files to the stats server, at most once a minute and right after a round's row is written. Off by default, needs Record round stats, and does nothing until a stats server is set, with network access allowed, on this script's Library card in GAP (the `ROUND_STATS_URL` env var). A failed send is retried later; switching it off forgets what was sent. |
+| Bubble Strategy                    | What the script does with the bubbles the board leaves lying about. A bubble popped while a chain is clearing takes a bigger area with it (this is what Tiara Minnie+ is built around), so a bubble spent off a chain is a bubble wasted — every option here says how much of that to give up.<br>`One Bubble Mid Chain` (default) pops exactly one bubble as a chain lands, so the rest stay on the board for the chains after it.<br>`All Bubbles Mid Chain` pops every bubble the last board scan found, still only as a chain lands.<br>`Save One Mid Chain` pops every bubble but the one with the most tsums round it as a chain lands, so one is always left on the board.<br>Those three pop all but the two best bubbles at once when four or more pile up.<br>`Save One` pops every bubble as soon as it is seen except one, the one with the most tsums round it, which is popped as the next long chain lands.<br>`All Bubbles ASAP` pops every bubble as soon as it is seen, without waiting for a chain, and when a pile builds it also taps quickly across the bottom of the board to catch what the scan missed. This is roughly what the former "Clear Bubbles" switch did.<br>Skills that turn tsums *into* bubbles (Marie, Moana, Horn Hat Mickey, Snow White, Cinderella, Cpt. Lightyear, Burst + clear bubbles) clear up after themselves whatever this is set to: they have no chain to save anything for. |
 | Hold bubbles last fever seconds    | Leaves every bubble alone while a fever has at most this many seconds left, whatever the Bubble Strategy says, and lets the strategy carry on the moment the fever ends. A bubble popped into a chain cuts that chain's clear short, and after a fever the gauge starts from empty — so bubbles saved through a fever's last seconds are what get the next one started fastest. Under the default strategy that is one bubble into each of the first chains after the fever. 0 (the default) never holds. Skills that own the bubbles themselves (Gaston, Lorcana Aurora after the card) are unaffected. |
 | Use Fan?                           | After some Tsum removals, the fan is used to shake the remaining Tsums around. Try yourself how that affects the game results as different people have different opinions about this setting.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Maximum Chain Number               | Caps how many Tsums the script links in one chain (3-15, default 3). A low cap plays more, shorter chains instead of fewer long ones, which suits Tsums that score off chain count rather than chain length (Roxas, Maleficent) and gets more out of a high-FPS setup. It also makes each board scan cheaper, because the path search stops as soon as a chain that long is found. Does not affect Click Assist, which always draws the whole chain you point at.                                                                                                                                                                                                                  |
+| Maximum Chain Number               | Caps how many Tsums the script links in one chain (3-15, default 4). A low cap plays more, shorter chains instead of fewer long ones, which suits Tsums that score off chain count rather than chain length (Roxas, Maleficent) and gets more out of a high-FPS setup. It also makes each board scan cheaper, because the path search stops as soon as a chain that long is found. Does not affect Click Assist, which always draws the whole chain you point at.                                                                                                                                                                                                                  |
 | +Score                             | Play the game with active +Score bonus.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | +Coin                              | Play the game with active +Coin bonus.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | +Exp                               | Play the game with active +Exp bonus.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -69,7 +70,7 @@ Here is a brief description of every setting.
 | +Combo                             | Play the game with active +Combo bonus.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Skill Waiting time                 | The most time the script leaves the board alone after activating a skill. It watches the board and plays on as soon as the tsums have stopped falling, so a generous value costs nothing; only a board still moving at the deadline spends the whole of it. Set it to cover the skill effect if the chosen skill clears bubbles after itself.                                                                                                                                                                                                                                                                                                                                                             |
 | Wait for Settle (s)                | The most time the script leaves the board alone once the skill gauge reads full, before it taps the skill (0.0-3.0 seconds in steps of 0.2, default 0.0 — fire at once). The script chains fast enough that the gauge usually fills while much of the board is still empty and refilling, and a skill fired then clears very little. It watches the board and fires as soon as the tsums have stopped falling, so a generous value costs nothing on a board that has already refilled; only a board still moving at the deadline spends the whole of it. A board found still moving has the bubbles from the last scan popped into it, as many as the Bubble Strategy would spend on a chain, so the refill lands as one drop; a board already still keeps them. With it set, burst skills stop being tapped blind between chains and go through the same gauge check as every other skill, so the wait can land before the tap. Changes take effect on the next activation. |
-| Delay Skill ReActivation (sec)     | After the skill fires, a full gauge is held for this long before it is fired again (0-30 in steps of 0.5, default 0 — never hold). For a skill with a duration, set it to that duration so a second activation does not restart the first and waste it. Counts from the activation tap and resets each round. With it set, burst skills stop being tapped blind between chains so the delay runs from a tap known to have fired. Changes take effect on the next activation. Beta builds only for now. |
+| Delay Skill ReActivation (sec)     | After the skill fires, a full gauge is held for this long before it is fired again (0-30 in steps of 0.5, default 0 — never hold). For a skill with a duration, set it to that duration so a second activation does not restart the first and waste it. Counts from the activation tap and resets each round. With it set, burst skills stop being tapped blind between chains so the delay runs from a tap known to have fired. Changes take effect on the next activation. |
 | Skill Level                        | Only read by the skills whose choreography changes with it: "Cinderella", "Cpt. Lightyear" (how many aiming taps land) and both "Coronation Elsa" entries (how long her freeze window stays open — 5s at level 1 up to 10s at level 6). Ignored by every other skill.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Skill Type                         | The skill type which the script will perform. The list is grouped by what the skill leaves behind: **Burst** for the ones that fire and clear, **Bubble** for the ones that turn Tsums into bubbles the script then sweeps, and **Unique** for the ones that change how the script plays the board while they are up. Each group opens with its general-purpose entry.<br>`Burst` is the general purpose skill: it fires, waits for the board to settle (up to "Skill Waiting time") and then continues.<br>`Burst + clear bubbles` is "Burst" plus a blind sweep of the whole play area once that wait is over — for a Tsum whose skill leaves the board covered in bubbles, where there is no chain left to save them for. Only the sweep after the skill is affected: the rest of the round still follows your "Bubble Strategy" setting, which is what makes this different from picking "Burst" and setting that to "All Bubbles ASAP".<br>`Pair Tsum` behaves like "Burst", but activates any skill as soon as one is ready to be activated.<br>`No Skill` never activates a skill (if you want to click it yourself).<br>`Formal Beast` fires like "Burst", and then plays the mode his skill opens: while the twin Beast/Belle gauge is on screen the script chooses chains by colour rather than by length, so that neither half of the gauge tops out while the other is under 60% — which is what turns one burst into the long one.<br>`Coronation Day Elsa` does not burst at all: her activation opens a freeze window, and every chain linked while it is open freezes a band of tsums right across the board, drawn between the chain's first and last tsum. A frozen tsum that a second band runs through counts double when the pile breaks, so the script pops the bubbles first, waits for the activation animation to clear, and then sweeps the board from the bottom up: a short, flat chain on the lowest free row, a moment for its band to form, a fresh look at the ice, and the next row up — bands parallel and close together, every chain kept clear of the ice already there, because one touch on a frozen tsum sets the whole pile off early. It breaks the pile when the window is about to close, or as soon as the board has frozen over with time to spare, so the refill can be frozen again, and pops the bomb each break leaves behind. Your "Max chain" and "Chains per board scan" settings are ignored inside the window. How long the window lasts is "Skill Level".<br>`Lorcana Aurora` is two skills with one gauge between them, and needs **Lorcana Card** (below) on -- picking her switches it on for you. Before she transforms she plays as "Burst + clear bubbles". After the card is tapped, any two bubbles link however far apart they are, so the script draws one chain through every bubble on the board -- and because the burst follows the drag as well as the bubbles, it deliberately picks the *longest* way round them rather than the shortest, to sweep as much board as it can. Her skill only adds to that, so from the transformation on the script stops popping bubbles singly and chains whatever is on the board instead -- starting the moment a few bubbles have held still, re-aiming each link at where its bubble is by then, and drawing the chain again if the game did not take it.<br>The other skills named after Tsums are optimized for these Tsums.                                                                                                                                                                                                                                                              |
 | No skill last fever seconds        | Setting this to a value height than 0, the script won't trigger the Tsum's skill if there is currently fever active which approximately ends within X seconds, while "X" is the value you configured here. Can be useful to max out fever times per game.                                                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -80,11 +81,10 @@ Here is a brief description of every setting.
 | Box to buy                         | Premium Box+, Premium Box, Select Box, Pick-Up Capsule or Happiness Box. Only ever this one — the script never falls back to a different box. Select Box and Pick-Up Capsule share the limited-time slot, so most of the time neither is on sale (and never both), and the sweep says so and buys nothing.                                                                                                                                                                                                                                                                                                                                                                                  |
 | Boxes per purchase                 | **One at a time** never presses 10-Time. **Ten at a time** takes the **10-Time Purchase** button where the box offers one — a box that only sells single ones, Happiness Box always, is bought singly instead — and ends the sweep once the store refuses ten because the box is almost sold out. **Ten, then one until sold out** does the same up to that refusal, then carries on with the 1-Time button until the box sells out, which is how a whole box is emptied in one sweep. None of them ever buys ten on a box drawn with only a 1-Time button.                                                                                                                                  |
 | Purchases per sweep                | The safety limit, 1 to 50, on a chore that spends your Coins. A 10-Time purchase counts as one. Normally the sweep ends before this on Sold Out or on Coins; this is what bounds it when neither of those ever comes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Export Tsum list                   | **Now** walks your collection sorted by *Date acquired* (owned Tsums only), taps every Tsum and writes one row each to `tsum_record/tsum_list_<stamp>.csv`: its position in that order, id, name, level and level cap, skill level and max, how far it is into the next skill level (percent, empty at MAX), the month acquired, the game build (`global` or `jp`) and the device's name (as set in the app's Settings). It takes a few seconds a Tsum. With a run going it goes after the current round and the run carries on; pressed with the script stopped, it exports and stops. Your sort order is put back afterwards. A value that could not be read is left empty. A Tsum that could not be named has its portrait saved as `tsum_record/tsum_list_<stamp>/unnamed_<n>.png`. |
+| Export Tsum list                   | **Now** walks your collection sorted by *Date acquired* (owned Tsums only), taps every Tsum and writes one row each to `stats/tsum_list_<stamp>.csv`: its position in that order, id, name, level and level cap, skill level and max, how far it is into the next skill level (percent, empty at MAX), the month acquired, whether it is a favourite (`1`/`0`), the game build (`global` or `jp`) and the device's name (as set in the app's Settings). It takes a few seconds a Tsum. With a run going it goes after the current round and the run carries on; pressed with the script stopped, it exports and stops. Your sort order is put back afterwards. A value that could not be read is left empty. A Tsum that could not be named has its portrait saved as `stats/tsum_list_<stamp>/unnamed_<n>.png`. |
 | Receive All Hearts                 | Will Receive hearts by clicking the "Claim All" button. This is fast, but not very nice to others because "Unknown" senders won't get hearts back from you. Check the setting "Receive Hearts One By One" if you care about your Unknown friends.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Waiting time (min) before repeat   | The frequency how often the "Claim All" button will be used.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Receive Hearts One By One          | This will process every message in your mailbox one after another. While this might seem waste of time compared to the "Claim All" button, Claiming every heart one by one also sends a heart back to the sender, even if it is an Unknown person you don't have in your friends list. Fetching hearts this may might encourage Unknown players to also send you hearts (and coins) in the future as they als get a heart from you.                                                                                                                                                                                                                                                      |
-| Skip first person                  | Always ignores the first message when claiming hearts one by one. Useful if you live in a country where the first message is an Ad which causes problems for you.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Receive Hearts One By One          | This will process every message in your mailbox one after another. While this might seem waste of time compared to the "Claim All" button, Claiming every heart one by one also sends a heart back to the sender, even if it is an Unknown person you don't have in your friends list. Fetching hearts this may might encourage Unknown players to also send you hearts (and coins) in the future as they als get a heart from you. The ad mail some regions pin at the top is always skipped.                                                                                                                                                                                                                                                      |
 | Skip ruby                          | Won't open messages which contain rubies.<br>Enable if your main playing device is an Apple phone but your sender runs on an Android phone, as rubies are not shared between Apple and Android versions of the game.<br>If you only own Android devices, leave this off.                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Claim All old mails                | Retrieves all heart mails containing coins one by one until heart mails contain no coins anymore. Starts then collecting again until heart mails don't contain hearts within 5 mails. Then clicks "Claim All"                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Max Times to Open Mailbox          | Maximum amount of consecutive mailbox openings until the next task (send hearts / play game) will be started. The task ends before "max times" if on one opening the mailbox is still empty.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -112,17 +112,26 @@ steps aside and the log moves up over it.
 | +Coin | The +Coin bonus item |
 | 5>4 | The 5>4 bonus item |
 | Preset | Not one setting: which saved configuration is loaded. Tap it to switch |
-| Bubble | Bubble strategy, short: **1 mid**, **All mid**, **All now** |
+| Bubble | Bubble strategy, short: **1 mid**, **All mid**, **Save 1 mid**, **Save 1**, **All now** |
 | ●● (page dots) | Not a setting: switches the strip to its second page and back. The lit dot is the page on screen |
 | ♥ Send, ♥ 1-by-1 | *Page two.* Auto Send Hearts and Receive Hearts One By One. These take effect mid-run: the chore is added or dropped straight away |
 | 🔓 Lvl | *Page two.* Not a setting: raises level caps once the current round is over, like the Now button beside Unlock Level. Needs a run. The chip shimmers while it asks, and a banner confirms |
 | Copy code | *Page two.* Not a setting: copies your settings code, as the Copy button on the settings panel does. The chip shimmers while it works, and a banner says when the code is on the clipboard |
+| Last round | *Page two.* Not a setting: stop the script once the round in progress is over, or before the next round starts if none is being played. For this run only — never saved, and off at the next start. Tap again to cancel. Needs a run |
 | Games, Then | *Page two.* Stop after games and what happens then. Take effect at once |
-| ⚠ Report | Not a setting either: saves a report of what is on screen — see [Reporting a problem](#reporting-a-problem). It and the page dots are the only buttons here that work while the script is still playing; everything else needs it paused |
+| ⟳▶ (under the page dots) | Auto Play Game, drawn as a play-on-repeat icon; solid blue when on. Takes effect at once: off lets the round in progress finish and plays no more; on starts playing again |
 
 **Page two's readout** swaps the coin figures for times: **Avg** is the average
 round (m:ss), **Played** the total time spent in rounds, and **Run** how long the
 script has been going, pauses included (both hh:mm).
+
+**Tapping the readout copies the run's figures** to the clipboard, and a banner
+says when they are on it. More than the chip can draw: base coins and medals each
+with their total, average, per-second rate and smallest and largest round, the
+round durations (average, total, shortest, longest), and the round count. Base
+coins rather than final, so two runs compare on the play and not on which items
+were bought; the per-second rates are over time spent *in* rounds, so the rest
+between them does not count against them.
 
 **Preset** shows the name of the preset your settings currently are, or *No
 preset* when they are not any of them, and tapping it lists the ones you have
@@ -145,7 +154,7 @@ nothing to tell apart, so the bars go away.
 
 | Takes effect at once | Waits for the next round | Needs a fresh Play |
 |:--|:--|:--|
-| Chain, Scan, Link reach, Link MyTsum first, Use fan, Bubble strategy, Hold bubbles last fever seconds, Skill waiting time, Skill auto-tap, No-skill fever seconds, Skill level, Delay between rounds, Max round duration, Stop after games | Skill, Lorcana card, 5>4, +Score, +Coin, +Exp, +Time, +Bubble, +Combo, Track round statistics | Auto play game, Click assist |
+| Chain, Scan, Link reach, Link MyTsum first, Use fan, Bubble strategy, Hold bubbles last fever seconds, Skill waiting time, Skill auto-tap, No-skill fever seconds, Skill level, Delay between rounds, Max round duration, Stop after games, Share round stats, Auto play game, Send hearts, Receive hearts one by one, Buy box settings, Auto unlock MyTsum level | Skill, Lorcana card, 5>4, +Score, +Coin, +Exp, +Time, +Bubble, +Combo, Track round statistics | Click assist |
 
 The left column is everything the script re-reads *while it plays* — each of
 those changes what the next board scan does. The middle column is everything the
@@ -178,9 +187,9 @@ script presses the game's own Pause button on its way out, so the timer stops
 while you are changing things. Pressing ▶ closes the game's pause menu and picks
 the round up where it was.
 
-**+Coin and 5>4** are the two that wait: the script sets the bonus items on the
-pre-round screen, so a change to either takes effect from the next round rather
-than the one you are paused in. The other four take effect immediately.
+**Skill, +Coin and 5>4** are the three that wait: the script sets the bonus items on the
+pre-round screen, so a change to any of them takes effect from the next round rather
+than the one you are paused in. The other three take effect immediately.
 
 Everything you change here is applied to the run that is already going — the
 round, the coin averages and the statistics all survive it — *and* saved, so the
@@ -205,7 +214,7 @@ one.
 
 That is the Skills, Round and Gameplay tabs. Everything else stays as you
 have it, whichever preset you load — your language, the run settings on General
-(**Auto Play Game**, the **wait between rounds**, **Track round statistics**),
+(the **wait between rounds**, **Track round statistics**, **Stop after games**),
 the mailbox, the hearts, the chore schedules, the box buying. Those describe your account, and you should not
 have to re-set them to try a different setup.
 
@@ -233,7 +242,7 @@ can take are taken immediately; the rest are saved for the next Play.
 
 **Export presets**, in the *Settings code* card, writes one line per preset — its
 name and its settings code — with **Copy** to the clipboard or **Save file** to
-`presets.txt` beside the round statistics on the device (`tsum_record/`, which
+`presets.txt` beside the round statistics on the device (`stats/`, which
 is why it needs the script to have been started at least once). Since every line
 holds a whole settings code, that is also the way back in and the way to hand one
 to someone else: paste a line into **Share settings ▸ Paste**, or into the box
@@ -259,21 +268,22 @@ what is in the box rather than your current settings, so a code you pasted
 draws the code you pasted.
 
 A code is short enough to read out or put in a message — a whole configuration
-is usually 20 to 40 characters, because everything left at its default is not
+is usually 14 to 50 characters, because everything left at its default is not
 written down at all:
 
 ```
-TSUM4-y2f.YiDACgg.K5.T2.U5.Vo.fu~
+TSUM4-c5.CBQA.C8.D7.M3.N5.OG.Pa.R5k.TA.Uc~
 ```
 
 It carries **how a round is played, and nothing else** — the chain and board
 settings, which items are set, and how the skill is used. Nothing about your
 account or about your run travels with it, and none of it is touched by applying
 one: your language, the mailbox, the hearts, the chores, the box buying and the
-developer options, and the run settings on General: **Auto Play Game**, the
-**wait between rounds**, **Track round statistics** and **Max round duration**
-with the action beside it. Someone else's code cannot stop your script playing,
-keep it waiting, turn your statistics off, or make it stop after a few minutes.
+developer options, and **Auto Play Game** (on Round), and the run settings on General: the
+**wait between rounds**, **Track round statistics**, **Max round duration** and
+**Stop after games**, each with the action beside it. Someone else's code cannot
+stop your script playing, keep it waiting, turn your statistics off, or make it
+stop after a few minutes or a few games.
 
 **Within that, a code is a whole configuration, not a patch.** Applying one
 gives you the setup the sender had: a setting the code carries but does not
@@ -292,8 +302,7 @@ Something went wrong and you would like it fixed. What makes that possible is
 the screen it went wrong on and the log around it, and both are gone by the time
 you have finished typing the message — so the script collects them for you.
 
-**Press Report.** It is on the Debug tab of the settings panel, and there is a
-Report button on the Quick Bar as well. You can add a line saying what happened;
+**Press Report.** It is on the Debug tab of the settings panel. You can add a line saying what happened;
 you do not have to. Either way the script writes a folder holding the screen,
 the screens before it, your settings, and the last few hundred log lines. It also
 writes one by itself whenever it gives up on a screen, a chore throws repeatedly,
@@ -318,11 +327,10 @@ One thing to know about which screen you get. Opening the settings panel pauses
 the run, and pausing presses the game's own Pause button — so a report taken
 from there shows the pause menu rather than the thing you were looking at. The
 screens *before* it are saved too, which is usually where the problem is. To
-catch the live screen, press **Report on the Quick Bar** (the ⚠ button) while the
-script is still playing — it works without pausing —
-or **hold the Log button** on the floating bar. Neither route pauses first.
+catch the live screen, **hold the Log button** on the floating bar while the
+script is still playing — it does not pause first.
 
-Reports live in `tsum_record/reports`. The newest eight are kept and older ones
+Reports live in `reports/`. The newest eight are kept and older ones
 are deleted, so the folder cannot grow without limit.
 
 ### Developer options
@@ -332,12 +340,12 @@ be helpful when troubleshooting.
 
 | Setting    | Description                                                                                                                             |
 |:-----------|:----------------------------------------------------------------------------------------------------------------------------------------|
-| Report a problem | Saves what is on screen, the screens before it, your settings and this run's recent log to `tsum_record/reports`. Share it from Run History in the app. See [Reporting a problem](#reporting-a-problem) above — this is the one thing on this tab meant for everybody. |
+| Report a problem | Saves what is on screen, the screens before it, your settings and this run's recent log to `reports/`. Share it from Run History in the app. See [Reporting a problem](#reporting-a-problem) above — this is the one thing on this tab meant for everybody. |
 | Debug logs | Adds more details to the logging output. A report carries those lines whether or not this is on; what this changes is whether they also reach the log file. |
-| Debug game | Saves screenshots while playing the game with different color transformations used by the script. Also keeps a screenshot of *every* screen the script visits in `tsum_record/pageHistory` rather than only the last few, and logs the last few screens with how long each was up. Really not useful for non-developers. |
-| Walkthrough recorder | Records instead of playing. Nothing else runs: you drive the game by hand, and the script writes down every screen it recognises, where you tapped on it, and which screen followed, into `tsum_record/walkthrough`. It is how the project maps out what the game can actually do — screens it has never seen, and the buttons that reach them. Turn it off again to play. |
-| Collect unknown screens | Saves any screen the script cannot recognise to `tsum_record/corpus`, so it can be sent in and turned into a fix. Rate-limited and capped per run. |
-| Page history depth | How many recent screens the script remembers (default 20). A picture of the last few is kept in `tsum_record/pageHistory` for a report to send; with "Debug game" on, every remembered screen keeps one. Each is deleted as it drops off the end, so the folder never grows past this number. 0 turns the history off. |
+| Debug game | Saves screenshots while playing the game with different color transformations used by the script. Also keeps a screenshot of *every* screen the script visits in `history/` rather than only the last few, and logs the last few screens with how long each was up. Really not useful for non-developers. |
+| Walkthrough recorder | Records instead of playing. Nothing else runs: you drive the game by hand, and the script writes down every screen it recognises, where you tapped on it, and which screen followed, into `walkthrough/`. It is how the project maps out what the game can actually do — screens it has never seen, and the buttons that reach them. Turn it off again to play. |
+| Collect unknown screens | Saves any screen the script cannot recognise to `corpus/`, so it can be sent in and turned into a fix. Rate-limited and capped per run. |
+| Page history depth | How many recent screens the script remembers (default 20). A picture of the last few is kept in `history/` for a report to send; with "Debug game" on, every remembered screen keeps one. Each is deleted as it drops off the end, so the folder never grows past this number. 0 turns the history off. |
 
 ## Getting logs, stats and screenshots off the device
 
@@ -353,14 +361,15 @@ In a file manager that is **Download ▸ GameAutomationPlatform**. Inside it:
 | Where | What |
 |:--|:--|
 | `logs/script-<device id>.log` | The log: one JSON record per line, rotated at 2 MB into `.1.log`, `.2.log` and `.3.log`. The id is the device's own, so one emulator writes one such file — and the same twelve hex digits end every round `id` in the stats. Reading it is [LOGGING.md](LOGGING.md) |
-| `tsum_record/stats_<YYYYMMDD>.csv` | The round statistics, one file per day — *Record round stats* above |
-| `tsum_record/tsum_list_<stamp>.csv` | The Tsum list — *Export Tsum list* above |
-| `tsum_record/unread-<field>-<stamp>.png` | The score screen a stat could not be read from, kept so an empty column can be explained |
-| `tsum_record/pageHistory/` | The last screens the script visited, numbered and named for what it recognised: `01562_GamePlaying.png`, `01563_unknown.png` |
-| `tsum_record/reports/` | The report folders — one per **Report** press or automatic trigger, the newest eight — [Reporting a problem](#reporting-a-problem) |
+| `stats/stats_<YYYYMMDD>.csv` | The round statistics, one file per day — *Record round stats* above |
+| `stats/tsum_list_<stamp>.csv` | The Tsum list — *Export Tsum list* above |
+| `stats/unread-<field>-<stamp>.png` | The score screen a stat could not be read from, kept so an empty column can be explained |
+| `history/` | The last screens the script visited, numbered and named for what it recognised: `01562_GamePlaying.png`, `01563_unknown.png` |
+| `reports/` | The report folders — one per **Report** press or automatic trigger, the newest eight — [Reporting a problem](#reporting-a-problem) |
 | `reports/` | The zips **Save to device** in Run History writes |
-| `tsum_record/record.txt`, `tsum_record/presets.txt` | The heart tally, and your exported presets |
-| `tsum_record/corpus/`, `tsum_record/walkthrough/` | Unknown screens and walkthrough recordings — only with those [developer options](#developer-options) on |
+| `hearts.json`, `stats/presets.txt` | The heart tally, and your exported presets |
+| `corpus/`, `walkthrough/` | Unknown screens and walkthrough recordings — only with those [developer options](#developer-options) on |
+| `scripts/…/<script folder>/last-settings-<device id>.json` | The settings the last run on that device started with, as one JSON object (the `start()` settings, without the one-shot Now flags `unlockLevelsFirst`, `buyBoxesFirst` and `tsumListOnly`). Rewritten at every start; `lastRunSettings()` reads it back. Safe to delete |
 | `tmp/` | Scratch: the *Debug game* frames (`…-boardImg.jpg`, `…-detectedHoughCircles.jpg`, `…-hsvImg.jpg`) and what a dialog check left behind. Safe to empty |
 
 Every file name and timestamp is UTC, so a stats file named for today may still
@@ -384,7 +393,7 @@ screenshot taken with MuMu's own toolbar button lands next door, in
 
 One thing follows from the mount: **every MuMu instance shares that folder.**
 Two instances running at once each write their own log — that is what the
-device id in its name is for — but the stats files, `record.txt` and the
+device id in its name is for — but the stats files, `hearts.json` and the
 reports are one set between them.
 
 ### On another emulator, or a phone
@@ -412,12 +421,12 @@ effort:
 
    ```sh
    adb connect 127.0.0.1:16384
-   adb pull /sdcard/Download/GameAutomationPlatform/tsum_record .
+   adb pull /sdcard/Download/GameAutomationPlatform/devices .
    adb pull /sdcard/Download/GameAutomationPlatform/logs .
    ```
 
    Each `pull` creates the folder inside the target, so those land as
-   `./tsum_record/` and `./logs/`. From Git Bash on Windows, put
+   `./devices/` and `./logs/`. From Git Bash on Windows, put
    `MSYS_NO_PATHCONV=1` in front of the command: the shell otherwise rewrites
    `/sdcard/…` into a path under `C:\Program Files\Git` before adb sees it.
 
@@ -435,7 +444,7 @@ adb pull /sdcard/Download/screen.png .
 
 On MuMu the first line is enough: the file appears in
 `MuMuSharedFolder\Download\screen.png` as it is written. The screens the
-*script* saw are the `pageHistory/` and report folders above, and *Debug game*
+*script* saw are the `history/` and report folders above, and *Debug game*
 on the Debug tab keeps one of every screen it visits there.
 
 ## Roadmap

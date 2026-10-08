@@ -6,3 +6,13 @@
 
 # Device logs pulled over adb for a debugging session. One got committed once.
 target/
+
+# The starter run from this tree: its downloads, copies and memory.
+starter/adb/
+starter/server/
+starter/collected/
+starter/last-device.txt
+starter/channel.txt
+
+# Starter bundle builds and the platform-tools cache.
+/build/

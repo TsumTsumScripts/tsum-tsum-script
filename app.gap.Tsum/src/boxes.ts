@@ -654,6 +654,7 @@ Tsum.prototype.taskBuyBoxes = function() {
 
   const outcome = this.buyBoxes(
     this.buyBoxType, this.buyBoxSize, this.buyBoxMaxPurchases);
+  this.lastChore = outcome;
   if (outcome !== null) {
     logInfo(Log.Box.End, outcome);
   }

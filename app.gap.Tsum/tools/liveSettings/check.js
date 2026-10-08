@@ -148,7 +148,6 @@ function newWorld() {
     ts.isRunning = true;
     ts.settings = {};
     ts.bonus5to4 = false;
-    ts.receiveSecondItem = false;
     ts.tsumAppRestartFrequency = 0;
     gRunActive = true;
     Config.maxChain = 12;
@@ -329,8 +328,8 @@ function main() {
   // 7. A page entry point never parks. The host gates `sleep()` and the touch
   //    injectors while the run is paused, and the pages evaluate these *only*
   //    while it is paused -- so a gated call here is a call that waits on the
-  //    Resume queued behind it. `onPause` is left out: it taps by design, and
-  //    the host lets that one evaluation through the gate. So is `detectMyTsum`:
+  //    Resume queued behind it. `onPause` and `onResume` are left out: they tap
+  //    by design, and the host lets those evaluations through the gate. So is `detectMyTsum`:
   //    it sleeps by design, and only after refusing a live run, so no Resume
   //    can be waiting behind it.
   //
@@ -364,7 +363,7 @@ function main() {
     ['applyLiveSettings(' + preset + ')', (r) => /^applied /.test(r)],
     ['ts.nextRoundAt = Date.now() + 60000; roundDelaySkip(); roundDelaySkip()',
       (r) => r === 'nothing waiting'],
-    // Both pages have a Report button and the host's Log chip reaches the same
+    // The settings page has a Report button and the host's Log chip reaches the same
     // name, so it is a page entry point like the rest. The answer is the report
     // id, which always opens with the UTC stamp report.ts builds it from.
     ['reportIssue("liveCheck", ""); reportIssue("liveCheck", "")',

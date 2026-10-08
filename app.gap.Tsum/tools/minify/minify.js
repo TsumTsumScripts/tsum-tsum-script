@@ -96,7 +96,7 @@ function checkBundle(file) {
   const { createRuntime } = require('../runtime/load');
   const { ctx } = createRuntime({ build: false, bundlePath: file });
   // The names something outside the bundle reaches by name: the page's
-  // `start`/`stop`, the overlay's `onPause` hook, and the two the Quick Bar page
+  // `start`/`stop`, the overlay's `onPause`/`onResume` hooks, and the two the Quick Bar page
   // evaluates. Nothing here is mangled, so a miss means the file lost a
   // declaration rather than that one was renamed.
   const wanted = ['start', 'stop', 'Tsum', 'TsumTaskController', 'PageRouter',
@@ -106,10 +106,17 @@ function checkBundle(file) {
                   // `gLogCatalogues`, which is checked instead, so adding one
                   // needs no edit here.
                   'LogsEn', 'gLogCatalogues', 'logStringsFor',
-                  'onPause', 'quickBarState', 'quickBarApply', 'applyLiveSettings',
-                  // Both pages have a Report button, and the host's Log chip
+                  'onPause', 'onResume', 'quickBarState', 'quickBarApply', 'applyLiveSettings',
+                  // The settings page has a Report button, and the host's Log chip
                   // reaches the same name over the IPC socket on a long press.
-                  'reportIssue'];
+                  'reportIssue',
+                  // GAP Companion's adapter calls these by name (src/companion.ts,
+                  // docs/WORKFLOWS.md § 6); the pages call presetsMirror.
+                  'gapWorkflowCatalog', 'gapWorkflowReceive', 'gapWorkflowState',
+                  'gapWorkflowCheck', 'startWorkflow', 'presetsMirror', 'gapPresetsLocal',
+                  'gapScreens', 'gapSettingsSchema', 'gapSettingsAction', 'gapCompanion',
+                  'gapRemoteState', 'gapRemoteSet', 'gapRemoteAction', 'gapRemoteStartPrepare',
+                  'gapRemoteStartRun'];
   const missing = wanted.filter((name) => ctx[name] === undefined);
   if (missing.length) {
     console.error('[minify] the reprinted bundle lost: ' + missing.join(', '));

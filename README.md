@@ -1,7 +1,7 @@
 # game-automation-scripts
 
 An automation script that plays **Disney Tsum Tsum** on Android through the
-**Game Automation Platform** host app, and the build that packages it. The
+**General Automation Platform** host app, and the build that packages it. The
 script reads the screen, draws the chains, fires the skills, and does the chores
 between rounds — the mailbox, hearts, level caps, boxes.
 
@@ -19,7 +19,10 @@ In the tree:
   and which document answers which question.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — the short form of the site, and the
   gates a change has to pass.
-- [`website/`](website/) — the documentation site's source.
+- [`starter/`](starter/) — the service starter tool: starts GAP's helper service on a
+  phone or emulator, and copies the script's files off it.
+- The website (landing page, features, changelog and the contributor guide) lives in its
+  own repository, `tsum-tsum-website`.
 
 Releases are published to the
 [game-automation-catalogue](https://github.com/game-automation-platform/game-automation-catalogue),

@@ -4,8 +4,13 @@ given name is defined, and what the invariants are. One read of it replaces most
 of a scan, and it is checked against the tree by `npm run map:check`, so it is
 current. Anything it does not cover is worth adding to it once found.
 
-These scripts target **Game Automation Platform** (source at `../game-automation-app`),
+These scripts target **General Automation Platform** (source at `../game-automation-app`),
 and only that. Feel free to perform updates in that folder as needed.
+
+GAP used to stand for *Game* Automation Platform. Only the display name
+changed: the device folder `GameAutomationPlatform`, the `game-automation-*`
+repos, the `game-automation-platform` GitHub org and `com.gameautomation.platform`
+keep the old spelling on purpose (the host's `GENERAL-AUTOMATION-PLAN.md`).
 
 **The development toolkit is a private sibling checkout, not part of this
 tree.** Comments and docs here cite its commands by name — `pages:eval`,
@@ -29,9 +34,9 @@ path:
 
 - The engine is QuickJS-ng, so `tsconfig.json` targets `ES2023`.
 - Every one of the 52 documented raw APIs is present, so guards around optional
-  natives are not needed for new code. `checkFunction()` is gone; the one native
-  newer than the rest, `publishStats`, is reached behind a plain
-  `typeof publishStats === 'function'`.
+  natives are not needed for new code. `checkFunction()` is gone; a native
+  newer than the rest (`pauseScript`, `getDeviceId`) is reached behind a plain
+  `typeof x === 'function'`.
 - `Tsum.screenshot()` captures at quality 100. It was on 80 only because
   Robotmon compressed there, and that compression was moving colour probes by
   far more than their thresholds allowed.
@@ -41,7 +46,7 @@ path:
   abort every time.
 
 Deploy targets **`sdcard/Download/GameAutomationPlatform/scripts/...`**. That is the one
-folder Game Automation Platform reads; it used to cross six parent directories
+folder General Automation Platform reads; it used to cross six parent directories
 with `Robotmon`, `AutoGameAssistance` and `GameAutomationPlatform`, and no longer
 does. A tree somewhere else is reachable only by starting its service with
 `--root=`.
@@ -90,5 +95,7 @@ note: one line per *feature* — not per change — and only what a player sees 
 interacts with. A new skill is "Coronation Day Elsa skill added"; later work on
 it folds into that same line as "Coronation Day Elsa skill improved by making
 clears faster". Implementation detail, refactors, tooling, docs and build
-machinery all go in the sections below it.
+machinery all go in the sections below it. Lay the Summary out as `**Additions**`
+(bullets under an italic `*Area*` line each) then `**Fixes**` (flat bullets):
+the release note and the Discord post render it as written.
 For new skills and settings, a running list of things added should be kept and marked as used or not so that a cleanup step at the end can remove all things that were added that are no longer needed in the final product.

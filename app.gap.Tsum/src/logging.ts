@@ -82,7 +82,7 @@ type LogEvent = `${Log.Run | Log.Task | Log.App | Log.Screen | Log.Page | Log.Na
   | Log.Lorcana
   | Log.Hearts | Log.Gifts | Log.Unlock | Log.Box | Log.TsumList | Log.Stats | Log.Dialog
   | Log.Stall | Log.Corpus | Log.Report | Log.Walk | Log.Assist | Log.Log
-  | Log.Settings | Log.QuickBar}`;
+  | Log.Settings | Log.QuickBar | Log.Workflow}`;
 
 /**
  * The subset with a sentence to show -- the keys of the message table.
@@ -311,12 +311,19 @@ function logAddHeartTally(component: string, data: LogFields): void {
 /** Builds the record and hands it to the host, on the console channel matching its level. */
 function logEmit(level: LogLevel, event: string, message: string | undefined, fields: LogFields | undefined): void {
   const now = Date.now();
+  // A watched run traces every record, so one the flood guard refuses is still
+  // built for the trace stream -- it just is not written out.
+  const traced = traceOn();
+  let writeOut = !gLogRingOnly;
   // A ring-only record spends no allowance: it is not going out, so it cannot
   // flood anything, and taking a line's worth would make the guard drop the
   // `info` lines that *are* going out whenever debug lines were busy.
-  if (!gLogRingOnly && level !== LogLevel.Warn && level !== LogLevel.Error
+  if (writeOut && level !== LogLevel.Warn && level !== LogLevel.Error
       && !logAllow(now)) {
-    return;
+    if (!traced) {
+      return;
+    }
+    writeOut = false;
   }
 
   // Insertion order is the key order JSON.stringify writes, and that order is
@@ -378,7 +385,11 @@ function logEmit(level: LogLevel, event: string, message: string | undefined, fi
   // `script.log` never saw.
   gLogRing[gLogRingCount % LogRingMax] = line;
   gLogRingCount++;
-  if (gLogRingOnly) {
+  // Already JSON, so the host passes it on without a second stringify.
+  if (traced) {
+    emitTrace(Trace.Kind.Log, line);
+  }
+  if (!writeOut) {
     return;
   }
 
@@ -445,7 +456,7 @@ function logError(event: LogEvent, a?: string | LogFields, b?: LogFields): void 
 
 /**
  * Developer detail. Written out only with `debugLogs` on; kept for a report
- * either way.
+ * either way, and traced live whenever a trace consumer is attached.
  *
  * The event is a free string here rather than a catalogue key: debug lines are
  * never shown to a user and so are never translated, which means the event name

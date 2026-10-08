@@ -23,7 +23,7 @@ has its reasoning anywhere near the code that would be changed:
   chain that is drawn too fast. `DRIVING_SCREENS.md` § 5 is the general form of
   the problem.
 - **`taskTsumAppRestart` inlines its restart** rather than calling
-  `forceRestartApp()` (`dialogs.ts`). The two are not the same job: the helper
+  `forceRestartApp()` (`appLifecycle.ts`). The two are not the same job: the helper
   is the stall-recovery path, gated on "Auto launch app" and always
   relaunching, while the task is a scheduled restart that navigates to a known
   screen at both ends.
@@ -67,7 +67,7 @@ interface into the class of the same name. What that buys:
   the whole bundle. Before this, `ts` was `any` and none of that worked.
 - Inside each `Tsum.prototype.NAME = function (...)`, **`this` and the
   parameters are contextually typed from the interface** — which is why those
-  97 assignments carry no annotations of their own and should not grow any.
+  assignments carry no annotations of their own and should not grow any.
 - `Tsum.prototype.typo = ...` is an error, so a method cannot be defined under a
   name that nothing calls.
 
@@ -96,8 +96,8 @@ strings and are what most of the branching actually tests. Each set is a
 | `SkillReadiness` | `globals.d.ts` | `checkSkillReadiness()`'s return and its three callers |
 | `KeyCode` | `globals.d.ts` | the `keycode()` host call |
 | `SettingKey` | `shared.d.ts` (both compilations need it) | every name a setting has: the `key` of a row in `settings.ts`, its slot in `SHARE_SLOTS`, the lookups the Run order card does, its column heading in the round-stats CSV, and the field `start()` reads. `interface Settings` is *keyed by* these members, so the enum and the shape that crosses the bridge are one list, not two |
-| `RowKey`, `Locale` | `settings.d.ts` (settings UI only) | the rows that hold no value — Run order, the share buttons, the build stamp — and the two language tags stored under `LANG_KEY` |
-| `RecordKey` | `shared.d.ts` | the keys of record.txt, read on both sides |
+| `RowKey`, `StorageKey` | `settings.d.ts` (both page compilations) | the rows that hold no value — Run order, the share buttons, the build stamp — and the localStorage keys, the language among them (`StorageKey.Language`). `Locale` is in `shared.d.ts` |
+| `RecordKey` | `shared.d.ts` | the keys of hearts.json, read on both sides |
 | `Log` | `logEvents.ts` (both compilations need it) | every `event` name written by either program: the four loggers' first argument, the keys of the log catalogues (`logsEn.ts` and the translations beside it), and `LOGGING.md` § Components. A namespace of `const enum`s, one per component, so it reads `Log.Play.GameOver` |
 
 **Why `const enum` and not a `const` object.** A const enum is erased at compile
@@ -266,12 +266,18 @@ cannot be read as markup. The contract between the two halves is the class names
 `querySelector` rather than by position, so re-nesting anything inside a template
 is safe.
 
-Styling is [Pico CSS](https://picocss.com), copied out of `node_modules` at build
-time and inlined — **never a CDN**: the page is opened from `file://` on a device
-that is often offline, so an asset it has to fetch is an asset it does not get.
-`tools/inline/inline.js` is what folds `pico.css`, `index.css` and `settings.js`
-into the single `dist/index.html`. The theme is Pico's `data-theme` on the root
-element: the page opens in whatever `prefers-color-scheme` says, keeps following
+Styling is the **GAP Design System**: `src/gapTokens.css` is the kit's token
+sheet copied verbatim, and `index.css` / `quickbar.css` build its components
+from those tokens alone. Both pages may bend the kit's sizing rules to fit
+the overlay: the settings page is deliberately compact (32px controls, one
+bar over a slim tab row, no width cap), and the Quick Bar scales to its
+strip. Colours and signals still follow the kit. The fonts are Latin subsets in `src/fonts/`, which the
+build turns into `font-*.css` sheets of data URIs. Everything is inlined —
+**never a CDN**: the page is opened from `file://` on a device that is often
+offline, so an asset it has to fetch is an asset it does not get.
+`tools/inline/inline.js` is what folds the sheets and `settings.js` into the
+single `dist/index.html`. The theme is `data-theme` on the root element (dark
+when the device has no preference): the page opens in whatever `prefers-color-scheme` says, keeps following
 the device, and stops following it the moment the toggle in the app bar is used.
 
 #### The page runs in an overlay, which costs it two browser habits
@@ -699,9 +705,16 @@ It still uses `gPages.peek` rather than `detect`, because a broadcast would hand
 the frozen play loop a page it never looked at and queue a Continue on the pause
 menu it is about to open.
 
-There is no resume hook and none is wanted: the play loop's next
-`gPages.detect` sees `GamePause` and `dismiss.resumeGame` presses Continue, the
-same as for any other way onto that screen.
+`onResume()` is the counterpart, evaluated through the same gate **before** the
+flag lifts. Leaving Continue to the play loop was not enough: a paused run is
+parked *inside* its next touch, usually mid-chain, and lifting the flag landed
+that touch and the rest of the batch on the pause menu -- Try Again included --
+before the loop looked again. So `onPause` remembers the pause (`ts.pauses`,
+`pausedAt`, `pausedInRound`), `onResume` presses Continue and waits for the
+board while the run is still frozen, and `link` drops the rest of a batch a
+pause landed under. The paused time is credited to `roundStartedAt`, so Max
+Round Duration does not count it. `dismiss.resumeGame` still covers every other
+way onto the pause menu.
 
 `onPause` is the only caller of that button, and the Max Round Duration cap
 (`src/play.ts`) deliberately is not a second one: pausing the game stops its
@@ -716,8 +729,8 @@ a touch) waited on itself: the logger's old spacing sleep did exactly that on
 the second of two lines inside 10ms, and a preset or the skill sheet writes two.
 The logger no longer sleeps, the host now lets an `Eval` through the gate and
 answers it off that thread, and `npm run live:check` fails on any gated call
-from an entry point (`entry`). `onPause` is the one exception, and it is the
-host that makes it one. `detectMyTsum` (the Debug tab's Detect button) is the
+from an entry point (`entry`). `onPause` and `onResume` are the exceptions, and
+it is the host that makes them so. `detectMyTsum` (the Debug tab's Detect button) is the
 other, by construction rather than by exemption: it refuses a live run before
 it sleeps, so the one `sleep()` it makes — waiting for the closed panel to
 leave the frame — runs through the opened gate with no Resume behind it.
@@ -759,20 +772,23 @@ under; the next one says the new value.
 
 Copy and Paste on the **Share settings** row move a whole configuration between
 devices as one line of text, and the format is built around getting that line
-short enough to paste into a chat message — 18 characters for stock settings,
-33 for the twelve-change example below:
+short enough to paste into a chat message — 14 characters for stock settings,
+42 for the twelve-change example below (Gaston, a longer chain, Use Fan and Coin
+on, Prioritize MyTsum off, and seven more):
 
 ```
-TSUM4-y2f.YiDACgg.K5.T2.U5.Vo.fu~
-│     ││  │       └── one field per non-boolean setting that is NOT at its
-│     ││  │           default: a slot character, then the value in base36
-│     ││  └── all 48 slots, one bit each, six bits per character
+TSUM4-c5.CBQA.C8.D7.M3.N5.OG.Pa.R5k.TA.Uc~
+│     ││ │    └── one field per non-boolean setting that is NOT at its
+│     ││ │        default, in slot order: a slot character, then the value
+│     ││ │        (base36 for a number, the one-character `share` id for a
+│     ││ │        dropdown entry: `OG` is slot O, skillType, Gaston)
+│     ││ └── all 23 slots, one bit each, six bits per character (four here)
 │     │└── the script version in base36, for the status line
 │     └── one character of checksum over everything after it
 └── format marker; the digit changes when the payload shape does
 ```
 
-Two decisions do the work. Booleans — 28 of the 42 settings — cost a bit each
+Two decisions do the work. Booleans — 12 of the 23 slots a code carries — cost a bit each
 instead of a name and a value, and anything still at its default is not written
 down at all. The second is why **a code is a whole configuration rather than a
 patch**: what it omits is *defined* as default, so applying a code resets the
@@ -784,10 +800,11 @@ What keeps that honest:
 - **`SHARE_SLOTS` is the set, and it is append-only.** It is not a subset of
   what could travel — it *is* what a code carries, and therefore what a preset
   is: **how a round is played**, and nothing else. That is `SHARE_TABS`
-  (Gameplay and Skills) less the rows on them that shape the *run* rather than
-  the round, which say so with `neverShared` — Auto Play Game, the
-  between-rounds delay, Track round statistics, and the Max Round Duration pair
-  (how long the run will spend on one round). A setting's position in the
+  (Skills, Round and Gameplay) less the rows on them that shape the *run* rather than
+  the round, which say so with `neverShared` — Auto Play Game (on Round), the
+  between-rounds delay, Track round statistics, Share round stats, and the Max
+  Round Duration and Stop after games pairs (how long the run will spend on one
+  round, and when it stops). A setting's position in the
   list is its identity on the wire — the character that names it, and its bit in
   the bitmap — so reordering or reusing one silently turns one setting into
   another in every code in circulation; a setting that goes away leaves `''`
@@ -802,7 +819,7 @@ What keeps that honest:
   in no code until 0.12.
 - **The rows outside the set are not touched.** Applying a code puts the rows it
   does not mention back to their defaults, and leaves the language, the chores,
-  the mailbox, the hearts, the box buying and the three run-shaped rows exactly
+  the mailbox, the hearts, the box buying and the run-shaped rows exactly
   where they are. A code cannot carry those, so resetting them would be an edit
   made on no evidence — and it is what made a paste unusable for someone who had
   their mailbox set up.
@@ -845,7 +862,7 @@ to be pointed at the new key, or every code in circulation loses that setting.
 base, so it is not a secure context: `navigator.clipboard` does not exist, and
 what is left is `document.execCommand('copy')` — which needs the text selected
 and on screen. That is why the share box exists and why the code is always shown
-in it, selected. Game Automation Platform grew
+in it, selected. General Automation Platform grew
 `JavaScriptInterface.setClipboard` / `getClipboard` for this, and
 `writeClipboard` / `readClipboard` feature-detect them, falling back to the box
 without saying anything about it on any host that lacks the bridge.
@@ -884,7 +901,7 @@ that reads neither the budget nor this flag silently undoes the setting.
 
 Every skill file is a **leaf**: nothing outside `src/skills/` references its
 symbols, and it is reached only through `SkillHandlers[skillType]` at runtime.
-An unregistered `skillType` falls back to `skillRandomizeAndWait`; `no_skill`
+An unregistered `skillType` falls back to `skillRandomizeAndWait`; `SkillType.NoSkill`
 short-circuits before dispatch.
 
 **To add a skill:** create `src/skills/<name>.ts` with a `registerSkill` call,
@@ -994,6 +1011,15 @@ the channel's `Archive` and the `version` the package is on, so
 Beta` or `--channel Beta`, and the default channel when none says. A downloaded
 archive therefore says which release it is, and [Releasing](#releasing) below
 cannot publish an entry describing a different build.
+
+**GAP Companion needs a signed folder.** With `GAP_SCRIPT_KEY` set to an
+ECDSA P-256 private key (PEM), the `sign` step writes `dist/gap-signature.json`
+(`tools/build/signScript.js`): the SHA-256 of every `dist/` file, signed. It
+runs after every `dist:` step and before the archive and the adb push, which
+push all of `dist/`, because a listed file missing on the device fails the
+check. Without the key the build is unsigned and the companion skips it;
+`release.js` warns loudly. GAP Devkit sets the key for DEV builds. Format: the
+host's `cloud/adapters/README.md` § Script signatures.
 
 `<archive>.zip.sha256` is written straight after the archive, so the two always
 describe the same bytes, and it says whether a copy that has travelled to a
@@ -1108,9 +1134,9 @@ Each one builds its channel and writes three files into the catalogue repository
 ```
 
 That path is the whole point of the exercise — it is what the catalogue's own
-`build-official.ps1` scans to regenerate `official.json`, the index the app
-fetches. **Run that script in the catalogue and commit there**; nothing on this
-side touches it.
+`build-catalogue.sh` scans to regenerate `catalogue.json`, the index the app
+fetches. **Run that script in the catalogue, then commit and push there**;
+nothing on this side touches it.
 
 `config.json`, beside the build scripts, is the release identity — the one place
 the game name and the channels live. **The version is not there: it is
@@ -1120,10 +1146,10 @@ about what this is, and there is one number to bump rather than two:
 | Field | |
 |:--|:--|
 | `Game` | copied into every entry |
-| `Publisher` | the catalogue this ships under, and the first segment of the on-device folder |
+| `Publisher` | the source name the catalogue publishes under (`Tsum Tsum Scripts`), so the first segment of the installed folder |
 | `Catalogue` | where a release is published, relative to the package |
 | `Channels.<name>` | `Name` (what the app shows), `Archive` (the zip's base name), `Directory` (under `Catalogue`), `Note` (a line appended to every release note on that channel) |
-| `MessageMaxChars` | the note is read on a phone; over this, the release refuses rather than shipping a card that scrolls |
+| `MessageMaxChars` | the note is read on a phone; over this, the release refuses rather than shipping a card that scrolls; `0` turns the check off (currently off) |
 | `HistoryLimit` | how many builds stay installable (default 5); older archives are deleted from the catalogue on the next release |
 | `MinHost`, `MaxHost` | the app versions a build runs on, both optional and inclusive; a channel may set its own. Written into `metadata.json` and each `Versions` row, and the app will not download or run a build outside them. Raise `MinHost` when the script starts using an API a newer app added |
 
@@ -1149,7 +1175,7 @@ Two consequences worth knowing:
   same rule the changelog section follows.
 
 A history row carries no `Message`. Nothing renders an old version's note, and
-one per version would push `official.json` toward the 2 MB the app caps a
+one per version would push `catalogue.json` toward the 2 MB the app caps a
 catalogue at — the changelog below is where per-version notes live.
 
 **The release note comes from the changelog, and only from its `### Summary`
@@ -1157,8 +1183,9 @@ block.** `CHANGELOG.md` has one section per version, named for `package.json`'s
 `version` — there is no `[Unreleased]`, so the section to publish is simply the
 one for the version being built, and a missing section fails the release. Each
 opens with a Summary: one line per change, and only changes a player would
-notice, internals excluded. The release turns those bullets into a numbered
-Markdown list, appends the channel's `Note`, and that string is the `Message`
+notice, internals excluded, grouped as `**Additions**` (under italic `*Area*`
+lines) and `**Fixes**`. The release renders those lines as written (a numbered
+list when there are no headings), appends the channel's `Note`, and that string is the `Message`
 field. The host app renders it with its own small Markdown subset
 (`ui/Markdown.kt`: headings, emphasis, code, lists, links, rules), so a bullet is
 a sentence and not a paragraph. A section with no Summary fails the release
@@ -1413,7 +1440,7 @@ was left, and its kind. `gPages.trail()` renders the tail as
 when *Debug game* is on.
 
 With debug on it also writes the matcher's own frame for each visit to
-`tsum_record/pageHistory/`, and deletes each frame as its visit falls off the
+`history/`, and deletes each frame as its visit falls off the
 stack — so the directory is bounded by the depth, not by uptime.
 
 ### The generated map
@@ -1424,7 +1451,7 @@ npm run pages:docs:check   # fail if it is stale (CI)
 ```
 
 [`PAGE_DISPATCH.md`](PAGE_DISPATCH.md) is every subscription, the order it runs
-in, the queue for each of the 34 pages, and the permanent/transient table. It is
+in, the queue for each of the 46 pages, and the permanent/transient table. It is
 **generated by asking the loaded bundle's own `PageRouter.plan`**, not by
 re-deriving the rule, and the build regenerates it as soon as `tsc` has emitted
 the bundle — so it is never a version behind the code. Do not edit it by hand.

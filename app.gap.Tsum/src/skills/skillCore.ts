@@ -137,6 +137,10 @@ interface SkillHandler {
   // neighbour's colour out of the sample, for a roster whose tsums blur
   // together at the default.
   colorBlur?: number;
+  // Highest saturation a tsum's colour sample counts with (default: no cap).
+  // On a board of dark, vivid tsums the saturation swings more than the hue,
+  // so capping it lets hue decide the clusters.
+  chromaCap?: number;
   // The last activation is still in effect, so a tap now would waste the
   // gauge: Gaston's window is a timed mode, and an activation inside it only
   // restarts the animation over the seconds it had left. While this answers
@@ -234,6 +238,12 @@ function skillWatchScan(ts: Tsum, img: NativeImage): boolean {
 function skillColorBlur(ts: Tsum): number {
   const handler = SkillHandlers[ts.skillType];
   return handler && handler.colorBlur ? handler.colorBlur : TsumColorBlur;
+}
+
+// The colour sample's saturation cap. See `SkillHandler.chromaCap`.
+function skillChromaCap(ts: Tsum): number {
+  const handler = SkillHandlers[ts.skillType];
+  return handler && handler.chromaCap ? handler.chromaCap : Infinity;
 }
 
 // Whether bubbles on the board belong to the skill rather than to the Bubble

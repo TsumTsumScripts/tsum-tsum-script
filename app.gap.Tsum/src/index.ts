@@ -21,6 +21,12 @@
 // The rule now: **a run dismantles its own world.** `stop()` only asks it to
 // end, and waits until it says it has.
 
+/**
+ * This script's fixed id, whatever folder it is installed in. GAP reads it
+ * after loading to pick this script's GAP Companion adapter.
+ */
+const GAP_SCRIPT_ID = 'app.gap.Tsum';
+
 /** True from the moment `start()` owns a world until `endRun()` has cleared it. */
 let gRunActive = false;
 
@@ -83,12 +89,14 @@ function start(settings: Settings) {
     locale: settings.locale,
   });
 
+  gRunErrored = false;
   try {
     buildRun(settings, logs);
     const controller = gTaskController;
     if (controller === undefined) {
       return;
     }
+    saveLastRunSettings(settings);
     // A yield, not a rest: the host hands the interpreter lock over at every
     // `sleep()`, and this is the chance a `stop()` that arrived during the build
     // has to set its flag before the loop below starts tapping. It was 500ms,
@@ -97,6 +105,10 @@ function start(settings: Settings) {
     if (!gStopRequested) {
       controller.start();
     }
+  } catch (e) {
+    // Flagged for endRun, so a workflow reports `failed` rather than a stop.
+    gRunErrored = true;
+    throw e;
   } finally {
     // Reached on the way out of the loop, and on any throw during the build --
     // either way this is the thread that owns the run, and the loop it was
@@ -107,11 +119,375 @@ function start(settings: Settings) {
 }
 
 /**
+ * Keys `start()` takes that are one-shot triggers rather than settings: a Now
+ * button's run (and Box Buying's purchase). Replaying them would redo that action.
+ */
+const LastSettingsOneShot: SettingKey[] = [
+  SettingKey.UnlockLevelsFirst,
+  SettingKey.BuyBoxesFirst,
+  SettingKey.TsumListOnly,
+];
+
+/**
+ * `<script folder>/last-settings-<device id>.json`, or '' on a host without
+ * either native. Per device, because emulator instances can share the folder.
+ */
+function lastSettingsPath(): string {
+  if (typeof getScriptPath !== 'function' || typeof getDeviceId !== 'function') {
+    return '';
+  }
+  return getScriptPath() + '/last-settings-' + getDeviceId() + '.json';
+}
+
+/**
+ * Writes the settings this run started with, minus `LastSettingsOneShot`, so a
+ * later start can replay them (`lastRunSettings`). Never throws: a failed write
+ * is a warning, not a reason to stop the run.
+ */
+function saveLastRunSettings(settings: Settings): void {
+  try {
+    const path = lastSettingsPath();
+    if (path === '') {
+      return;
+    }
+    const copy: { [key: string]: unknown } = {};
+    const source = settings as unknown as { [key: string]: unknown };
+    for (const key in source) {
+      if (LastSettingsOneShot.indexOf(key as SettingKey) === -1) {
+        copy[key] = source[key];
+      }
+    }
+    writeFile(path, JSON.stringify(copy));
+  } catch (e) {
+    logWarn(Log.Run.LastSettingsNotSaved, 'Could not save the last run settings',
+      { errorText: '' + e });
+  }
+}
+
+/**
+ * The settings the last run on this device started with (see
+ * `saveLastRunSettings`), or null when there is no readable file.
+ */
+function lastRunSettings(): Partial<Settings> | null {
+  try {
+    const path = lastSettingsPath();
+    const text = path === '' ? '' : readFile(path);
+    if (text === '') {
+      return null;
+    }
+    const parsed = JSON.parse(text);
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed as Partial<Settings> : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * What a start with no settings page runs with: `SettingDefaults` with the last
+ * run's settings on top, so a device that never ran the script still starts,
+ * and an old file missing newer keys gets their defaults. GAP Companion's
+ * remote start runs it (`gapRemoteStartPrepare`, src/companion.ts).
+ */
+function remoteStartSettings(): Settings {
+  return Object.assign({}, SettingDefaults, lastRunSettings() || {});
+}
+
+// --- Settings changed from GAP Companion -------------------------------------
+//
+// The phone can change any setting the settings page has. One that a run can
+// take (`LiveSettings`, src/quickbar.ts) goes onto the world like a Quick Bar
+// change. Every change is also kept for the next start in two files:
+//   last-settings-<device id>.json    patched, so a remote start replays it
+//   remote-settings-<device id>.json  pending, until the settings page takes
+//                                     it (`remoteSettingsTake`) into its store,
+//                                     so a Play from the page does not undo it
+
+/** How a setting's value is checked; enum values go through `quickBarEnumValid`. */
+const enum RemoteKind {
+  Bool = 'bool',
+  Int = 'int',
+  Enum = 'enum',
+}
+
+/**
+ * Every setting the phone may change. Left out: `locale` (the page's language)
+ * and the one-shot keys (`LastSettingsOneShot`).
+ */
+const RemoteSettingKinds: { [key: string]: RemoteKind } = {
+  [SettingKey.DebugLogs]: RemoteKind.Bool,
+  [SettingKey.DebugGame]: RemoteKind.Bool,
+  [SettingKey.CollectUnknownScreens]: RemoteKind.Bool,
+  [SettingKey.Walkthrough]: RemoteKind.Bool,
+  [SettingKey.SpecialScreenRatio]: RemoteKind.Bool,
+  [SettingKey.DeviceFps]: RemoteKind.Int,
+  [SettingKey.PageHistoryDepth]: RemoteKind.Int,
+  [SettingKey.AutoLaunchApp]: RemoteKind.Bool,
+  [SettingKey.AutoPlayGame]: RemoteKind.Bool,
+  [SettingKey.TrackRoundStats]: RemoteKind.Bool,
+  [SettingKey.ShareRoundStats]: RemoteKind.Bool,
+  [SettingKey.ClickAssist]: RemoteKind.Bool,
+  [SettingKey.RoundDelayMinutes]: RemoteKind.Int,
+  [SettingKey.MaxRoundMinutes]: RemoteKind.Int,
+  [SettingKey.MaxRoundAction]: RemoteKind.Enum,
+  [SettingKey.StopAfterGames]: RemoteKind.Int,
+  [SettingKey.StopAfterAction]: RemoteKind.Enum,
+  [SettingKey.BubbleStrategy]: RemoteKind.Enum,
+  [SettingKey.HoldBubblesLastFeverSec]: RemoteKind.Int,
+  [SettingKey.UseFan]: RemoteKind.Bool,
+  [SettingKey.MaxChainsPerScan]: RemoteKind.Int,
+  [SettingKey.MaxChain]: RemoteKind.Int,
+  [SettingKey.LinkReachPercent]: RemoteKind.Int,
+  [SettingKey.PrioritizeMyTsum]: RemoteKind.Bool,
+  [SettingKey.BonusScore]: RemoteKind.Bool,
+  [SettingKey.BonusCoin]: RemoteKind.Bool,
+  [SettingKey.BonusExp]: RemoteKind.Bool,
+  [SettingKey.BonusTime]: RemoteKind.Bool,
+  [SettingKey.BonusBubble]: RemoteKind.Bool,
+  [SettingKey.Bonus5to4]: RemoteKind.Bool,
+  [SettingKey.BonusCombo]: RemoteKind.Bool,
+  [SettingKey.SkillWaitingTime]: RemoteKind.Int,
+  [SettingKey.SkillSettleMs]: RemoteKind.Int,
+  [SettingKey.SkillReactivationTenths]: RemoteKind.Int,
+  [SettingKey.SkillLevel]: RemoteKind.Int,
+  [SettingKey.SkillType]: RemoteKind.Enum,
+  [SettingKey.SkillAutoTap]: RemoteKind.Bool,
+  [SettingKey.LorcanaCard]: RemoteKind.Bool,
+  [SettingKey.NoSkillLastFeverSec]: RemoteKind.Int,
+  [SettingKey.UnlockLevelHoursWait]: RemoteKind.Int,
+  [SettingKey.AutoUnlockMyTsumLevel]: RemoteKind.Bool,
+  [SettingKey.BuyBoxHoursWait]: RemoteKind.Int,
+  [SettingKey.BuyBoxType]: RemoteKind.Enum,
+  [SettingKey.BuyBoxSize]: RemoteKind.Enum,
+  [SettingKey.BuyBoxMaxPurchases]: RemoteKind.Int,
+  [SettingKey.ReceiveAllHearts]: RemoteKind.Bool,
+  [SettingKey.ReceiveAllHeartsMinWait]: RemoteKind.Int,
+  [SettingKey.ReceiveHeartsOneByOne]: RemoteKind.Bool,
+  [SettingKey.ReceiveHeartsSkipRuby]: RemoteKind.Bool,
+  [SettingKey.ReceiveHeartsSkipMedals]: RemoteKind.Bool,
+  [SettingKey.ClaimAllWithoutCoins]: RemoteKind.Bool,
+  [SettingKey.MailOpenMax]: RemoteKind.Int,
+  [SettingKey.MailMinWait]: RemoteKind.Int,
+  [SettingKey.SendHeartsAuto]: RemoteKind.Bool,
+  [SettingKey.SendHeartsToZeroScore]: RemoteKind.Bool,
+  [SettingKey.SendHeartsMaxRuntime]: RemoteKind.Int,
+  [SettingKey.SendHeartsMinWait]: RemoteKind.Int,
+  [SettingKey.TsumAppRestartFrequency]: RemoteKind.Int,
+} satisfies Record<Exclude<SettingKey, SettingKey.Locale | SettingKey.UnlockLevelsFirst
+  | SettingKey.BuyBoxesFirst | SettingKey.TsumListOnly>, RemoteKind>;
+
+/** `<script folder>/remote-settings-<device id>.json`, or '' without the natives. */
+function remoteSettingsPath(): string {
+  const last = lastSettingsPath();
+  return last === '' ? '' : last.replace(/last-settings-([^/]*)$/, 'remote-settings-$1');
+}
+
+/** A JSON object file as an object; {} when missing or unreadable. */
+function readJsonObject(path: string): { [key: string]: unknown } {
+  try {
+    const text = path === '' ? '' : readFile(path);
+    const parsed = text === '' ? null : JSON.parse(text);
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+/** Writes one remote change into both files (see above). Never throws. */
+function rememberRemoteSetting(key: string, value: string | number | boolean): void {
+  try {
+    const pendingPath = remoteSettingsPath();
+    if (pendingPath === '') {
+      return;
+    }
+    const pending = readJsonObject(pendingPath);
+    pending[key] = value;
+    writeFile(pendingPath, JSON.stringify(pending));
+    // Written in full (defaults filled in), so a device that never ran the
+    // script still starts with this change.
+    const last = remoteStartSettings() as unknown as { [key: string]: unknown };
+    last[key] = value;
+    writeFile(lastSettingsPath(), JSON.stringify(last));
+  } catch (e) {
+    logWarn(Log.Run.RemoteSettingNotSaved, 'Could not save a setting changed from GAP Companion',
+      { setting: key, errorText: '' + e });
+  }
+}
+
+/**
+ * Every remote setting's current value: the running world's when there is a
+ * run, else the next start's (`remoteStartSettings`), with pending remote
+ * changes on top. `gapRemoteState` (src/companion.ts) sends it.
+ */
+function remoteSettingsValues(): { [key: string]: unknown } {
+  const running = quickBarRunning();
+  const values: { [key: string]: unknown } = {};
+  const layers: { [key: string]: unknown }[] = [
+    (running ? ts!.settings : remoteStartSettings()) as unknown as { [key: string]: unknown },
+    readJsonObject(remoteSettingsPath()),
+  ];
+  // Last, because a live key's value on the world (Quick Bar included) is newest.
+  if (running) {
+    layers.push(JSON.parse(quickBarState()));
+  }
+  for (const layer of layers) {
+    for (const key in layer) {
+      if (RemoteSettingKinds.hasOwnProperty(key)) {
+        values[key] = layer[key];
+      }
+    }
+  }
+  return values;
+}
+
+/**
+ * Changes one setting for GAP Companion. Answers JSON `{ok, value, applies}`
+ * (`now`, `nextRound` or `nextStart`) or `{ok: false, why}`; `gapRemoteSet`
+ * (src/companion.ts) turns `why` into the contract's codes.
+ */
+function remoteSettingsApply(key: string, value: string | number | boolean): string {
+  const kind = RemoteSettingKinds.hasOwnProperty(key) ? RemoteSettingKinds[key] : undefined;
+  if (kind === undefined) {
+    return JSON.stringify({ ok: false, why: 'unknown setting' });
+  }
+  const typed = kind === RemoteKind.Bool ? typeof value === 'boolean'
+    : kind === RemoteKind.Int ? typeof value === 'number' && Math.floor(value) === value
+      : typeof value === 'string';
+  if (!typed || !quickBarEnumValid(key as SettingKey, value)) {
+    return JSON.stringify({ ok: false, why: 'invalid value' });
+  }
+  // A running workflow owns it (forced to 0); `gapRemoteSet` answers `workflow-run`.
+  if (quickBarWorkflowOwns(key)) {
+    return JSON.stringify({ ok: false, why: 'workflow' });
+  }
+  let taken = value;
+  let applies = 'nextStart';
+  const when = LiveSettings[key];
+  if (quickBarRunning() && when !== undefined && when !== LiveWhen.Restart) {
+    const res = JSON.parse(quickBarApply(key as SettingKey, value));
+    if (res.ok !== true) {
+      return JSON.stringify(res);
+    }
+    taken = res.value;
+    applies = quickBarHoldsBack(key as SettingKey) ? 'nextRound' : 'now';
+  }
+  rememberRemoteSetting(key, taken);
+  return JSON.stringify({ ok: true, value: taken, applies: applies });
+}
+
+/**
+ * The pending remote changes, as a JSON object, and clears them. Called by the
+ * settings page, which takes them into its store.
+ */
+// noinspection JSUnusedGlobalSymbols
+function remoteSettingsTake(): string {
+  const path = remoteSettingsPath();
+  const pending = readJsonObject(path);
+  if (path !== '' && Object.keys(pending).length > 0) {
+    try {
+      writeFile(path, '{}');
+    } catch (e) {
+      // Taken again next time, which is harmless.
+    }
+  }
+  return JSON.stringify(pending);
+}
+
+// --- GAP Companion's Settings tab, driven by this script ----------------------
+//
+// `companionSettings.json` is the settings page's own schema, written by
+// tools/companion/settings.js at build time. The phone draws its Settings tab
+// from it, so a settings change here needs no phone or adapter release.
+// Contract (UI 2): "Settings from the script" in the companion repo's
+// cloud/adapters/README.md.
+
+/** One `layout` item: a setting, a button, or a note. */
+interface CompanionItem { control?: string; button?: string; note?: string }
+interface CompanionGroup { items: CompanionItem[] }
+interface CompanionPage { groups: CompanionGroup[] }
+
+/** The page's Now buttons the phone may press. Each answers a short status. */
+const CompanionActions: { [name: string]: () => string } = {
+  unlockLevelsNow: () => unlockLevelsNow(),
+  buyBoxesNow: () => buyBoxesNow(),
+  exportTsumListNow: () => exportTsumListNow(),
+  roundDelaySkip: () => roundDelaySkip(),
+};
+
+/** When a change to `key` reaches a run, in the contract's words. */
+function companionApplies(key: string): string {
+  const when = LiveSettings[key];
+  return when === LiveWhen.Now ? 'now' : when === LiveWhen.NextRound ? 'nextRound' : 'nextStart';
+}
+
+let gCompanionSchema: string | undefined;
+
+/**
+ * The phone's settings schema as JSON, or 'null' when the file is missing.
+ * Keeps only settings in `RemoteSettingKinds` and buttons in `CompanionActions`.
+ * A standard global the companion adapter library looks for.
+ */
+// noinspection JSUnusedGlobalSymbols
+function gapSettingsSchema(): string {
+  if (gCompanionSchema !== undefined) {
+    return gCompanionSchema;
+  }
+  const file = typeof getScriptPath === 'function' ? getScriptPath() + '/companionSettings.json' : '';
+  const raw = readJsonObject(file);
+  if (!Array.isArray(raw.controls)) {
+    return 'null';
+  }
+  const controls = (raw.controls as { key: string; applies?: string }[])
+    .filter((c) => RemoteSettingKinds.hasOwnProperty(c.key));
+  for (const c of controls) {
+    c.applies = companionApplies(c.key);
+  }
+  const keys = controls.map((c) => c.key);
+  const buttons = (Array.isArray(raw.buttons) ? raw.buttons as { name: string }[] : [])
+    .filter((b) => CompanionActions.hasOwnProperty(b.name));
+  const names = buttons.map((b) => b.name);
+  // Drop what was filtered out, then any group or page left empty.
+  const layout = (Array.isArray(raw.layout) ? raw.layout as CompanionPage[] : []).filter((page) => {
+    page.groups = page.groups.filter((group) => {
+      group.items = group.items.filter((item) => {
+        if (item.control !== undefined && keys.indexOf(item.control) < 0) delete item.control;
+        if (item.button !== undefined && names.indexOf(item.button) < 0) delete item.button;
+        return item.control !== undefined || item.button !== undefined || item.note !== undefined;
+      });
+      return group.items.length > 0;
+    });
+    return page.groups.length > 0;
+  });
+  const presetFields = (Array.isArray(raw.presetFields) ? raw.presetFields as string[] : [])
+    .filter((k) => keys.indexOf(k) >= 0);
+  gCompanionSchema = JSON.stringify({ ui: raw.ui, controls: controls, layout: layout, buttons: buttons,
+    presetFields: presetFields, translations: raw.translations || {} });
+  return gCompanionSchema;
+}
+
+/**
+ * Presses one of the schema's buttons for the phone. Answers JSON
+ * `{ok: true, status}` or `{ok: false, why}` (`no run`, `unknown action`).
+ */
+// noinspection JSUnusedGlobalSymbols
+function gapSettingsAction(name: string): string {
+  if (!CompanionActions.hasOwnProperty(name)) {
+    return JSON.stringify({ ok: false, why: 'unknown action' });
+  }
+  const status = CompanionActions[name]();
+  return JSON.stringify(status === 'no run' ? { ok: false, why: 'no run' } : { ok: true, status: status });
+}
+
+/**
  * Builds the world one run plays in: the `Tsum`, the tuning `start()` maps onto
  * it, the router binding and the task set. Everything here is undone by
  * `endRun()`.
  */
 function buildRun(settings: Settings, logs: LogCatalogue): void {
+  // A GAP Companion workflow run (`startWorkflow`, src/workflow.ts). Taken and
+  // cleared here, first, so nothing armed outlives this call.
+  const workflowRef = workflowTakeArmed();
+  gWorkflowRun = workflowRef !== null;
   ts = new Tsum(settings.specialScreenRatio, logs);
   // From here on there is a world to dismantle, whether or not the rest of this
   // function gets to finish -- `start()` tears it down in its `finally`.
@@ -125,14 +501,14 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
     ts.uniqueTsumCount = 4;
   }
   ts.prioritizeMyTsum = settings.prioritizeMyTsum;
-  ts.autoLaunch = settings.autoLaunchApp;
+  // A workflow runs unattended, and its Restart app node launches the game.
+  ts.autoLaunch = settings.autoLaunchApp || gWorkflowRun;
   ts.scoreItem = settings.bonusScore;
   ts.coinItem = settings.bonusCoin;
   ts.expItem = settings.bonusExp;
   ts.timeItem = settings.bonusTime;
   ts.bubbleItem = settings.bonusBubble;
   ts.comboItem = settings.bonusCombo;
-  ts.receiveSecondItem = settings.receiveHeartsSkipFirst;
   ts.sentToZero = settings.sendHeartsToZeroScore;
   ts.receiveCheckLimit = settings.mailOpenMax;
   ts.bubbleStrategy = settings.bubbleStrategy;
@@ -149,16 +525,11 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   ts.skillLevel = settings.skillLevel;
   ts.skillType = settings.skillType;
   ts.trackRoundStats = settings.trackRoundStats;
-  // Hand the CSV to the host, which does the sending: it remembers the last id
-  // it managed to send for each file, so nothing here has to track progress or
-  // retry. Guarded on the *host* rather than on the settings: a bare reference
-  // to a missing global is a ReferenceError on a host older than this native.
-  if (ts.trackRoundStats && typeof publishStats === 'function') {
-    const pattern = Config.recordDir + '/stats_*.csv';
-    publishStats(pattern);
-    logInfo(Log.Stats.Publishing, 'Handed the round stats to the host to send', {
-      pattern: pattern,
-    });
+  // `=== true` for a stored form from before the row existed. Off forgets
+  // what was sent, as switching it off mid-run does.
+  ts.sendRoundStats = settings.shareRoundStats === true;
+  if (!ts.sendRoundStats) {
+    roundShareClear(ts.devicePath);
   }
   ts.skillAutoTap = settings.skillAutoTap;
   ts.lorcanaCard = settings.lorcanaCard === true;
@@ -190,9 +561,12 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   // which is the one behaviour the cap exists to replace.
   ts.maxRoundAction = settings.maxRoundAction === MaxRoundAction.Stop
     ? MaxRoundAction.Stop : MaxRoundAction.Coast;
-  ts.stopAfterGames = typeof settings.stopAfterGames === 'number'
+  // Off in a workflow: its Play rounds node counts rounds instead, and the
+  // Auto Play off action removes a PlayRound job this mode never registers.
+  ts.stopAfterGames = !gWorkflowRun && typeof settings.stopAfterGames === 'number'
     && settings.stopAfterGames > 0 ? Math.round(settings.stopAfterGames) : 0;
   ts.stopAfterAction = stopAfterActionOf(settings.stopAfterAction);
+  ts.autoPlayGame = settings.autoPlayGame;
   ts.sendHearts = settings.sendHeartsAuto;
   ts.receiveOneByOne = settings.receiveHeartsOneByOne;
   ts.keepRuby = settings.receiveHeartsSkipRuby;
@@ -202,12 +576,6 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   if (typeof settings.maxChainsPerScan === 'number' && settings.maxChainsPerScan >= 1) {
     ts.maxChainsPerScan = settings.maxChainsPerScan;
   }
-  const yOffset = ts.receiveSecondItem ? MailList.rowPitch : 0;
-  Button.outReceiveOne.y = Button.outReceiveOneBase.y + yOffset;
-  Button.outReceiveOneRuby.y = Button.outReceiveOneRubyBase.y + yOffset;
-  Button.outReceiveOneAd.y = Button.outReceiveOneAdBase.y + yOffset;
-  Button.outReceiveOneMedal.y = Button.outReceiveOneMedalBase.y + yOffset;
-
   ts.readRecord();
   if (ts.record[RecordKey.HeartsCount] === undefined) {
     ts.record[RecordKey.HeartsCount] = {
@@ -266,7 +634,7 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
 
   ts.noSkillLastFeverSec = settings.noSkillLastFeverSec;
   ts.claimAllWithoutCoins = settings.claimAllWithoutCoins;
-  ts.tsumAppRestartFrequency = settings.tsumAppRestartFrequency;
+  ts.tsumAppRestartFrequency = settings[SettingKey.TsumAppRestartFrequency];
 
   // The one assert worth keeping: every file in `tsconfig.json` is concatenated
   // into one script, so a bundle that did not build fully fails here with a
@@ -292,7 +660,7 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   // returns it alone, which is what enforces that -- the recorder itself only
   // ever calls `gPages.sweep`, which scores the table without broadcasting, so
   // not even a dismiss handler fires. See src/walkthrough.ts.
-  gWalkthroughRun = settings.walkthrough === true;
+  gWalkthroughRun = !gWorkflowRun && settings.walkthrough === true;
   if (gWalkthroughRun) {
     if (unlockFirst) {
       logWarn(Log.Unlock.NowRefused, { reason: 'walkthrough' });
@@ -304,7 +672,13 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
       logWarn(Log.TsumList.NowRefused, { reason: 'walkthrough' });
     }
   }
-  const jobs = runTaskTable(settings);
+  // A workflow replaces the chore table: its nodes call the chores in its own
+  // order. Refused (e.g. no Tsum List for Select Tsum): nothing is registered
+  // and the run ends before any node runs.
+  if (gWorkflowRun && !workflowBegin(workflowRef!)) {
+    return;
+  }
+  const jobs = gWorkflowRun ? workflowTaskTable() : runTaskTable(settings);
   for (let i = 0; i < jobs.length; i++) {
     gTaskController.register(jobs[i], taskBody(ts, jobs[i].name));
   }
@@ -319,6 +693,10 @@ function buildRun(settings: Settings, logs: LogCatalogue): void {
   }
   if (tsumListOnly) {
     queueTsumListExport(ts, gTaskController, true);
+  }
+  // A MyTsum the phone picked while nothing ran.
+  if (!gWorkflowRun) {
+    selectTsumNextResume(ts, gTaskController);
   }
 }
 
@@ -342,6 +720,7 @@ function taskBody(run: Tsum, name: TaskName): TaskBody {
     case TaskName.UnlockLevel: return () => { run.taskAutoUnlockLevel(); };
     case TaskName.BuyBoxes: return () => { run.taskBuyBoxes(); };
     case TaskName.PlayRound: return run.taskPlayGameQuick.bind(run);
+    case TaskName.Workflow: return workflowPass;
   }
 }
 
@@ -361,6 +740,9 @@ function endRun(): void {
   gUnlockNowQueued = false;
   gBuyBoxNowQueued = false;
   gTsumListNowQueued = false;
+  gSelectTsumNowQueued = false;
+  // Before `ts` goes, so the workflow's closing banner still has somewhere to go.
+  workflowRunEnded();
   // Read before `ts` is cleared below; the event itself goes out with the rest
   // of the closing lines.
   const rounds = ts === undefined ? 0 : ts.runCoins.rounds;
@@ -462,6 +844,58 @@ function roundDelaySkip(): string {
   return 'skipped ' + Math.round(left / 1000) + 's';
 }
 
+/** Name of the one-shot job `stopAfterThisRound` queues for between rounds. */
+const WrapUpNowTask = 'wrapUpNow';
+
+/**
+ * "Stop after this round": ends the run once the round in progress is over, or
+ * at the loop's next turn when no round is being played (between rounds, Auto
+ * Play off, a chore running). A global the Quick Bar reaches by name.
+ *
+ * A run-time flag on `ts`, not a setting: never saved, never in a preset, and
+ * gone with the run. Returns a short status for the host's log.
+ */
+// noinspection JSUnusedGlobalSymbols
+function stopAfterThisRound(): string {
+  if (!gRunActive || ts === undefined || gTaskController === undefined) {
+    return 'no run';
+  }
+  if (ts.wrapUpAsked) {
+    return 'already armed';
+  }
+  const run = ts;
+  run.wrapUpAsked = true;
+  const inRound = quickBarInRound(run);
+  logInfo(Log.Play.WrapUpArmed, { inRound: inRound });
+  run.banner(inRound ? 'Stopping after this round' : 'Stopping before the next round', 4000);
+  // Covers the runs no round tail will reach: Auto Play off, a rest, chores.
+  // Waits while a round is on; that round's tail fires first.
+  gTaskController.newTask(WrapUpNowTask, function() {
+    if (!quickBarInRound(run)) {
+      run.wrapUpIfAsked('betweenRounds');
+    }
+  }, 1000, 0, false, JobPriority.WrapUpNow);
+  return inRound ? 'armed: after this round' : 'armed: before the next round';
+}
+
+/** Disarms `stopAfterThisRound`. A global the Quick Bar reaches by name. */
+// noinspection JSUnusedGlobalSymbols
+function cancelStopAfterThisRound(): string {
+  if (!gRunActive || ts === undefined) {
+    return 'no run';
+  }
+  if (gTaskController !== undefined) {
+    gTaskController.removeTask(WrapUpNowTask);
+  }
+  if (!ts.wrapUpAsked) {
+    return 'not armed';
+  }
+  ts.wrapUpAsked = false;
+  logInfo(Log.Play.WrapUpCancelled);
+  ts.banner('Stop after this round cancelled', 3000);
+  return 'cancelled';
+}
+
 /**
  * Puts the settings page's saved values onto the run in progress, for the rows
  * a run can take mid-run.
@@ -504,7 +938,7 @@ function applyLiveSettings(values?: Partial<Settings>): string {
   const held: string[] = [];
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
-    if (wanted[key] === current[key]) {
+    if (wanted[key] === current[key] || quickBarWorkflowOwns(key)) {
       continue;
     }
     if (quickBarApplyOne(ts, key as SettingKey, wanted[key]) === undefined) {
@@ -577,6 +1011,7 @@ function queueUnlockSweep(run: Tsum, controller: TsumTaskController): void {
     }
     gUnlockNowQueued = false;
     controller.removeTask(UnlockNowTask);
+    notifyChoreDone('unlock', run.lastChore);
   }, UnlockNowRetryMs, 0, false, JobPriority.UnlockNow);
   logInfo(Log.Unlock.NowQueued);
   run.banner('Raising level caps next', 4000);
@@ -659,6 +1094,7 @@ function queueBuyBoxSweep(run: Tsum, controller: TsumTaskController): void {
     }
     gBuyBoxNowQueued = false;
     controller.removeTask(BuyBoxNowTask);
+    notifyChoreDone('boxes', run.lastChore);
   }, UnlockNowRetryMs, 0, false, JobPriority.BuyBoxesNow);
   logInfo(Log.Box.NowQueued);
   run.banner('Buying boxes next', 4000);
@@ -732,6 +1168,7 @@ function queueTsumListExport(run: Tsum, controller: TsumTaskController, stopAfte
     }
     gTsumListNowQueued = false;
     controller.removeTask(TsumListNowTask);
+    notifyChoreDone('tsumList', run.lastChore);
     if (stopAfter) {
       requestStop();
     }

@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // The Tsum List export: every tsum the player owns, off the collection screen,
-// into <storage>/tsum_record/tsum_list_<YYYYMMDD-HHMMSS>.csv.
+// into <device folder>/stats/tsum_list_<YYYYMMDD-HHMMSS>.csv.
 //
 // The collection shows eight cards a page, each with the month it was acquired
 // under its portrait; tapping one fills the detail panel above with its level
@@ -9,8 +9,9 @@
 //   sort by Date acquired, owned tsums only  (sortCollection, levelCap.ts)
 //   rewind to the first page                 (rewindCollection)
 //   per page: read which slots hold a card and each card's date, then tap each
-//   card and read the panel -- level, skill, and the big portrait, which names
-//   the tsum against its own library (`TsumListPortrait`, data.ts)
+//   card and read the panel -- level, skill, the favourite star, and the big
+//   portrait, which names the tsum against its own library (`TsumListPortrait`,
+//   data.ts)
 //   next page until a slot is empty or there is no next chevron
 //   put the player's order back
 //
@@ -19,6 +20,12 @@
 // what it read. A field that cannot be read is written empty rather than
 // guessed; a portrait that names no tsum is saved beside the CSV so the
 // library can be extended from it.
+//
+// A whole export (reason `end of list`) also writes
+// tsum_list_state.json in the device folder, overwritten each time: the list a
+// GAP Companion workflow's Select Tsum reads (src/workflow.ts). Keyed by the
+// device id rather than the name in the CSV's `device` column, because names
+// need not be unique and the storage folder may be seen by more than one install.
 // ---------------------------------------------------------------------------
 
 /** 797 tsums is 100 pages; a runaway guard. */
@@ -39,7 +46,7 @@ const TsumListPortraitWaitMs = 3000;
 const TsumListPortraitChanged = 0.9;
 /** Two reads in a row this alike are a settled portrait; sparkles cost ~0.01. */
 const TsumListPortraitStill = 0.98;
-const TsumListColumns = ['order', 'tsum', 'name', 'level', 'level_cap', 'skill', 'skill_max', 'skill_progress', 'acquired', 'build', 'device'];
+const TsumListColumns = ['order', 'tsum', 'name', 'level', 'level_cap', 'skill', 'skill_max', 'skill_progress', 'acquired', 'favorite', 'build', 'device'];
 
 /** The collection library, loaded on first use. */
 var gTsumListLibrary: MyTsumEntry[] | null = null;
@@ -417,16 +424,10 @@ Tsum.prototype.saveCollectionPortrait = function(path) {
  * proof the tap took; a tap swallowed by an animation is tried again.
  */
 Tsum.prototype.readCollectionCard = function(slot, order, date, shotDir) {
-  let selected = false;
-  for (let i = 0; i < TsumListAttempts && !selected && this.isRunning; i++) {
-    const before = this.myTsumSignature(TsumListPortrait.icon);
-    this.tap(CollectionGrid.cells[slot]);
-    this.awaitCollectionPortrait(before);
-    selected = this.readCollectionCards()[slot] === 'selected';
-  }
+  const selected = tsumListSelectCard(this, slot);
   const row: TsumListRow = {
     order: order, tsum: '', name: '', level: null, levelCap: null,
-    skill: null, skillMax: null, skillProgress: null, acquired: date
+    skill: null, skillMax: null, skillProgress: null, acquired: date, favorite: null
   };
   if (!selected) {
     logWarn(Log.TsumList.CardMissed, 'A card would not select; its row has only the date',
@@ -434,6 +435,7 @@ Tsum.prototype.readCollectionCard = function(slot, order, date, shotDir) {
     return row;
   }
   const detail = this.readTsumDetail();
+  row.favorite = this.readTsumFavorite();
   if (detail.level !== null) {
     row.level = detail.level[0];
     row.levelCap = detail.level[1];
@@ -499,6 +501,31 @@ Tsum.prototype.awaitCollectionPortrait = function(before) {
   return false;
 }
 
+/** The favourite star by the portrait: gold votes over a 3x3 grid. */
+Tsum.prototype.readTsumFavorite = function() {
+  const f = TsumListRegions.favorite;
+  const points: Coord[] = [];
+  for (let dy = -f.step; dy <= f.step; dy += f.step) {
+    for (let dx = -f.step; dx <= f.step; dx += f.step) {
+      points.push({x: f.x + dx, y: f.y + dy});
+    }
+  }
+  let gold = 0;
+  const img = this.screenshot();
+  try {
+    const read = this.getColors(img, points);
+    for (let i = 0; i < read.length; i++) {
+      const c = read[i];
+      if (c.r >= f.rMin && c.g >= f.gMin && c.b <= f.bMax) {
+        gold++;
+      }
+    }
+  } finally {
+    releaseImage(img);
+  }
+  return gold >= f.votes;
+}
+
 /**
  * Percent through the current skill level: where the bar's yellow fill ends,
  * on the line `TsumListRegions.skillBar` was fitted to. 0 when there is no fill.
@@ -545,7 +572,8 @@ function tsumListCsv(rows: TsumListRow[], build: GameBuild, device: string): str
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
     lines.push([String(r.order), statsCsvField(r.tsum), statsCsvField(r.name), cell(r.level),
-      cell(r.levelCap), cell(r.skill), cell(r.skillMax), cell(r.skillProgress), r.acquired, build, statsCsvField(device)].join(','));
+      cell(r.levelCap), cell(r.skill), cell(r.skillMax), cell(r.skillProgress), r.acquired,
+      r.favorite === null ? '' : r.favorite ? '1' : '0', build, statsCsvField(device)].join(','));
   }
   return lines.join('\n') + '\n';
 }
@@ -559,22 +587,25 @@ Tsum.prototype.taskExportTsumList = function() {
     return false;
   }
   const stamp = statsFileStamp(new Date());
-  const base = this.storagePath + '/' + Config.recordDir + '/tsum_list_' + stamp;
+  const base = this.devicePath + '/' + Config.statsDir + '/tsum_list_' + stamp;
   const csvPath = base + '.csv';
   const build = this.gameBuild();
   // The host's device name, the one its events carry; older hosts have none.
   const device = typeof getDeviceName === 'function' ? getDeviceName() : '';
   logInfo(Log.TsumList.Start, {file: csvPath});
   this.banner('Exporting the Tsum list', 4000);
+  this.lastChore = null;
 
   gPages.navigate(PageName.TsumsPage);
   if (!this.awaitPage(PageName.TsumsPage, UnlockReturnWaitMs, Log.TsumList.PageMissed)) {
     logInfo(Log.TsumList.End, {tsums: 0, reason: 'no collection'});
+    this.lastChore = {tsums: 0, reason: 'no collection'};
     return true;
   }
   const previous = this.sortCollection(CollectionSort.DateAcquired, true);
   if (previous === null) {
     logInfo(Log.TsumList.End, {tsums: 0, reason: 'sort failed'});
+    this.lastChore = {tsums: 0, reason: 'sort failed'};
     return true;
   }
   this.rewindCollection();
@@ -613,17 +644,7 @@ Tsum.prototype.taskExportTsumList = function() {
       reason = 'end of list';
       break;
     }
-    // A page turn is proved by the first card's portrait changing; a tap that
-    // landed mid-animation turns nothing.
-    const before = this.myTsumSignature(tsumListCellRect(0));
-    let turned = false;
-    for (let i = 0; i < TsumListAttempts && !turned && this.isRunning; i++) {
-      this.tap(CollectionGrid.nextPage);
-      this.settleScreen(UnlockPageTurnSettleMs);
-      const after = this.myTsumSignature(tsumListCellRect(0));
-      turned = before === null || after === null || myTsumSimilarity(myTsumPrepare(before), myTsumPrepare(after)) < 0.98;
-    }
-    if (!turned) {
+    if (!tsumListTurnPage(this)) {
       logWarn(Log.TsumList.PageTurnMissed, 'The collection would not turn the page', {page: pages});
       reason = 'page turn failed';
       break;
@@ -633,15 +654,115 @@ Tsum.prototype.taskExportTsumList = function() {
   if (!this.isRunning) {
     reason = 'stopped';
   }
+  // Only a whole list: Select Tsum goes straight to a card by its position in
+  // it, so a partial one would send it to the wrong page.
+  if (reason === 'end of list') {
+    tsumListSaveFile(rows, build);
+  }
   this.restoreCollectionSort(previous, CollectionSort.DateAcquired);
   logInfo(Log.TsumList.End,
     {tsums: rows.length, unnamed: unnamed, pages: pages, reason: reason, file: csvPath});
+  this.lastChore = reason === 'stopped' ? null : {tsums: rows.length, reason: reason};
   this.banner('Tsum list: ' + rows.length + ' saved', 6000);
   return true;
+}
+
+/**
+ * Tap card `slot` and wait out the portrait's animation. True once the card
+ * reads gold (selected); a tap swallowed by an animation is tried again.
+ * Shared with Select My Tsum (src/myTsumSelect.ts).
+ */
+function tsumListSelectCard(run: Tsum, slot: number): boolean {
+  let selected = false;
+  for (let i = 0; i < TsumListAttempts && !selected && run.isRunning; i++) {
+    const before = run.myTsumSignature(TsumListPortrait.icon);
+    run.tap(CollectionGrid.cells[slot]);
+    run.awaitCollectionPortrait(before);
+    selected = run.readCollectionCards()[slot] === 'selected';
+  }
+  return selected;
+}
+
+/**
+ * Turn to the next page, or the previous one with `back`. A turn is proved by
+ * the first card's portrait changing; a tap that landed mid-animation turns
+ * nothing, so it is tried again. Shared with Select My Tsum (src/myTsumSelect.ts).
+ */
+function tsumListTurnPage(run: Tsum, back?: boolean): boolean {
+  const before = run.myTsumSignature(tsumListCellRect(0));
+  let turned = false;
+  for (let i = 0; i < TsumListAttempts && !turned && run.isRunning; i++) {
+    run.tap(back ? CollectionGrid.prevPage : CollectionGrid.nextPage);
+    run.settleScreen(UnlockPageTurnSettleMs);
+    const after = run.myTsumSignature(tsumListCellRect(0));
+    turned = before === null || after === null || myTsumSimilarity(myTsumPrepare(before), myTsumPrepare(after)) < 0.98;
+  }
+  return turned;
 }
 
 /** The tsum art on card `slot`, for telling one page from the next. */
 function tsumListCellRect(slot: number): MyTsumRect {
   const c = CollectionGrid.cells[slot];
   return {from: {x: c.x - 60, y: c.y - 70}, to: {x: c.x + 60, y: c.y + 50}};
+}
+
+/** `tsum_list_<device id>.json`: one row per card, in Date acquired order. */
+interface TsumListFile {
+  at: string;
+  build: GameBuild;
+  tsums: { order: number; tsum: string; name: string; favorite: boolean }[];
+}
+
+/** Where this device's list file is; '' on a host without the natives. */
+function tsumListFilePath(): string {
+  if (typeof getStoragePath !== 'function' || typeof getDeviceId !== 'function') {
+    return '';
+  }
+  return getDevicePath() + '/tsum_list_state.json';
+}
+
+/** Writes this device's list file from a whole export. Never throws. */
+function tsumListSaveFile(rows: TsumListRow[], build: GameBuild): void {
+  const path = tsumListFilePath();
+  if (path === '') {
+    return;
+  }
+  const file: TsumListFile = { at: new Date().toISOString(), build: build, tsums: [] };
+  for (let i = 0; i < rows.length; i++) {
+    file.tsums.push({ order: rows[i].order, tsum: rows[i].tsum, name: rows[i].name, favorite: rows[i].favorite === true });
+  }
+  try {
+    writeFile(path, JSON.stringify(file));
+    logInfo(Log.TsumList.FileWritten, 'Saved the Tsum list for workflows',
+      { file: path, tsums: rows.length });
+  } catch (e) {
+    logWarn(Log.TsumList.WriteFailed, 'Could not write the Tsum list', { file: path, errorText: String(e) });
+  }
+}
+
+/** This device's list file, or null when it is missing or unreadable. */
+function tsumListLoadFile(): TsumListFile | null {
+  const path = tsumListFilePath();
+  try {
+    const text = path === '' ? '' : readFile(path);
+    if (text === '') {
+      return null;
+    }
+    const parsed = JSON.parse(text);
+    if (parsed === null || typeof parsed !== 'object' || !Array.isArray(parsed.tsums)) {
+      return null;
+    }
+    const tsums: TsumListFile['tsums'] = [];
+    for (let i = 0; i < parsed.tsums.length; i++) {
+      const row = parsed.tsums[i];
+      if (row !== null && typeof row === 'object' && typeof row.order === 'number'
+          && typeof row.tsum === 'string') {
+        tsums.push({ order: row.order, tsum: row.tsum, name: typeof row.name === 'string' ? row.name : '',
+          favorite: row.favorite === true });
+      }
+    }
+    return { at: String(parsed.at || ''), build: parsed.build, tsums: tsums };
+  } catch (e) {
+    return null;
+  }
 }

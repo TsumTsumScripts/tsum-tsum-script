@@ -37,7 +37,7 @@ const WalkFlushEvery = 10;
 const WalkTouchPollSec = 1;
 
 Tsum.prototype.walkthroughDir = function() {
-  return this.storagePath + '/' + Config.recordDir + '/walkthrough';
+  return this.devicePath + '/walkthrough';
 }
 
 /**
@@ -213,7 +213,7 @@ Tsum.prototype.taskWalkthrough = function() {
   this._walkFrameCount = 0;
   this._walkStartedAt = Date.now();
   this._walkSession = 'walk_' + this._walkStartedAt;
-  execute('mkdir -p ' + this.walkthroughDir());
+  makeDirs(this.walkthroughDir());
 
   logInfo(Log.Walk.Start);
   // The screen the walk begins on is a visit like any other: whatever is tapped
