@@ -485,7 +485,10 @@ documents from this tree at build time. The service starter is `starter/`, built
 by `starter/build-starter.sh`. Its website (device list, service, APK, export,
 adb restart, the library source) is `internal/starter` in tsum-stats, which serves it at
 `/starter/` when started with `--starter <bundle>`; the bundle's launchers
-download the tsum-stats its `tsum-stats.txt` pins. The terminal menu and the
+download the tsum-stats its `tsum-stats.txt` pins. That pin is a floor: the
+launchers run `tsum-stats update` on each start, and start it again when it
+exits 75 (`SITE_RESTART_CODE`, passed as `TSUM_STATS_RESTART_CODE`), which it
+does after the page's **Update now**. The terminal menu and the
 command-line actions (`bin/posix`, `bin/win`) remain, and the device side is
 still only `device/gap-service.sh`, now with three hosts reading it.
 GAP lists no third-party source by itself: after an install, all three hosts

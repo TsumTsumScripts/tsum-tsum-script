@@ -6,6 +6,9 @@
 # at /. The program is downloaded once, like adb, into server/<os>-<arch>/ and
 # checked against the pin in tsum-stats.txt, which build-starter.sh copies
 # from the tsum-stats release. GAP_STARTER_SERVER names a local build instead.
+#
+# The pin is a floor, not an exact version: tsum-stats updates itself on each
+# launch and from the page's Update button, and must not be rolled back.
 
 SITE_PIN_FILE="$BUNDLE/tsum-stats.txt"
 site_kv() { kv "$(tr -d '\r' 2>/dev/null < "$SITE_PIN_FILE")" "$1"; }
@@ -25,6 +28,21 @@ site_bin() {
     windows) echo "$(site_dir)/tsum-stats.exe" ;;
     *)       echo "$(site_dir)/tsum-stats" ;;
   esac
+}
+
+# The exit status tsum-stats leaves with after the page installed an update,
+# which run_site answers by starting it again.
+SITE_RESTART_CODE=75
+
+# site_ver_ge A B: dotted version A is B or newer.
+site_ver_ge() {
+  [ "$(printf '%s\n%s\n' "$1" "$2" | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)" = "$1" ]
+}
+
+# Records the installed program's own version, after it may have changed.
+site_note_version() {
+  v="$("$(site_bin)" --version 2>/dev/null | awk '{print $NF}')"
+  [ -n "$v" ] && printf '%s\n' "$v" > "$(site_dir)/VERSION"
 }
 
 # Fetches the pinned program when it is missing or older than the pin. Asks
@@ -49,7 +67,8 @@ site_download() {
     log_line "  Run with --menu for the terminal menu."
     return 1
   fi
-  if [ -x "$bin" ] && [ "$(tr -d '\r\n ' < "$dir/VERSION" 2>/dev/null)" = "$version" ]; then
+  have="$(tr -d '\r\n ' < "$dir/VERSION" 2>/dev/null)"
+  if [ -x "$bin" ] && [ -n "$have" ] && site_ver_ge "$have" "$version"; then
     return 0
   fi
 
@@ -91,17 +110,41 @@ site_download() {
   return 0
 }
 
+# Updates the downloaded program when a newer one is published. Quiet unless
+# it did; offline it just keeps the one it has. TSUM_STATS_NO_UPDATE skips it.
+site_update() {
+  [ -n "${TSUM_STATS_NO_UPDATE:-}" ] && return 0
+  before="$(tr -d '\r\n ' < "$(site_dir)/VERSION" 2>/dev/null)"
+  # Shows only its "Updating ..." line; a failed check says nothing.
+  "$(site_bin)" update 2>&1 >/dev/null | sed -n 's/^.*\(Updating Tsum Tsum Stats .*\)$/\1/p'
+  site_note_version
+  after="$(tr -d '\r\n ' < "$(site_dir)/VERSION" 2>/dev/null)"
+  [ "$after" != "$before" ] && log_line "Updated tsum-stats ${before:-?} -> $after."
+  return 0
+}
+
 # Starts the website in this terminal and opens it. Closing the terminal, or
-# Ctrl-C, stops it.
+# Ctrl-C, stops it. Exit status SITE_RESTART_CODE means the page installed a
+# new version: start it again, without opening a second tab.
 run_site() {
   bin="${GAP_STARTER_SERVER:-}"
   if [ -z "$bin" ]; then
     site_download || return 1
+    site_update
     bin="$(site_bin)"
   fi
   log_line ""
   log_line "Opening the starter in your browser: http://127.0.0.1:8090/starter/"
   log_line "Keep this window open while you use it. Ctrl-C here (or closing the window) stops it."
   log_line ""
-  exec "$bin" serve --starter "$(host_path "$BUNDLE")" --open
+  open="--open"
+  while :; do
+    TSUM_STATS_RESTART_CODE=$SITE_RESTART_CODE "$bin" serve --starter "$(host_path "$BUNDLE")" $open
+    rc=$?
+    [ "$rc" = "$SITE_RESTART_CODE" ] || exit "$rc"
+    [ -z "${GAP_STARTER_SERVER:-}" ] && site_note_version
+    log_line ""
+    log_line "Restarting the starter with the new version ..."
+    open=""
+  done
 }

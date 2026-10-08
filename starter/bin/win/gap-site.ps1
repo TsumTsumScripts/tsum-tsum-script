@@ -6,15 +6,47 @@
 # downloaded once into server\windows-amd64\ and checked against the pin in
 # tsum-stats.txt. GAP_STARTER_SERVER names a local build instead. Windows on
 # ARM runs the amd64 build under emulation.
+#
+# The pin is a floor, not an exact version: tsum-stats updates itself on each
+# launch and from the page's Update button, and must not be rolled back.
 
 $global:SitePinFile = Join-Path $Bundle 'tsum-stats.txt'
 $global:SiteDir     = Join-Path $Bundle 'server\windows-amd64'
 $global:SiteBin     = Join-Path $global:SiteDir 'tsum-stats.exe'
+$global:SiteVerFile = Join-Path $global:SiteDir 'VERSION'
+# The exit status tsum-stats leaves with after the page installed an update,
+# which Start-Site answers by starting it again.
+$global:SiteRestartCode = 75
 
 function Get-SitePin {
   param([string]$Key)
   if (-not (Test-Path -LiteralPath $global:SitePinFile)) { return '' }
   return Get-Kv -Text (Get-Content -LiteralPath $global:SitePinFile -Raw) -Key $Key
+}
+
+# Dotted version $A is $B or newer.
+function Test-VersionAtLeast {
+  param([string]$A, [string]$B)
+  $as = $A.Split('.'); $bs = $B.Split('.')
+  for ($i = 0; $i -lt [math]::Max($as.Count, $bs.Count); $i++) {
+    $x = 0; $y = 0
+    if ($i -lt $as.Count) { [void][int]::TryParse($as[$i], [ref]$x) }
+    if ($i -lt $bs.Count) { [void][int]::TryParse($bs[$i], [ref]$y) }
+    if ($x -ne $y) { return $x -gt $y }
+  }
+  return $true
+}
+
+function Get-SiteVersion {
+  if (-not (Test-Path -LiteralPath $global:SiteVerFile)) { return '' }
+  return "$(Get-Content -LiteralPath $global:SiteVerFile -TotalCount 1)".Trim()
+}
+
+# Records the installed program's own version, after it may have changed.
+function Save-SiteVersion {
+  $ErrorActionPreference = 'Continue'  # this scope only: redirected stderr must not throw
+  $v = "$(& $global:SiteBin --version 2>$null)".Trim().Split(' ')[-1]
+  if ($v) { [IO.File]::WriteAllText($global:SiteVerFile, "$v`n") }
 }
 
 # Fetches the pinned program when it is missing or older than the pin. Asks
@@ -30,9 +62,8 @@ function Get-SiteProgram {
     Write-Log "  or run with -Menu for the terminal menu."
     return $false
   }
-  $verFile = Join-Path $global:SiteDir 'VERSION'
-  if ((Test-Path -LiteralPath $global:SiteBin) -and (Test-Path -LiteralPath $verFile) -and
-      ((Get-Content -LiteralPath $verFile -TotalCount 1).Trim() -eq $version)) {
+  $have = Get-SiteVersion
+  if ((Test-Path -LiteralPath $global:SiteBin) -and $have -and (Test-VersionAtLeast $have $version)) {
     return $true
   }
 
@@ -65,21 +96,48 @@ function Get-SiteProgram {
   }
   Write-Log "  sha256 ok"
   Move-Item -LiteralPath $tmp -Destination $global:SiteBin -Force
-  Set-Content -LiteralPath $verFile -Value $version
+  [IO.File]::WriteAllText($global:SiteVerFile, "$version`n")
   return $true
 }
 
+# Updates the downloaded program when a newer one is published. Quiet unless
+# it did; offline it just keeps the one it has. TSUM_STATS_NO_UPDATE skips it.
+function Update-SiteProgram {
+  if ($env:TSUM_STATS_NO_UPDATE) { return }
+  $ErrorActionPreference = 'Continue'  # this scope only: its stderr must not throw
+  $before = Get-SiteVersion
+  # Shows only its "Updating ..." line; a failed check says nothing.
+  & $global:SiteBin update 2>&1 | ForEach-Object {
+    if ("$_" -match '(Updating Tsum Tsum Stats .*)$') { Write-Log $Matches[1] }
+  }
+  Save-SiteVersion
+  $after = Get-SiteVersion
+  if ($after -ne $before) { Write-Log "Updated tsum-stats $(if ($before) { $before } else { '?' }) -> $after." }
+}
+
 # Runs the website in this console and opens it; closing the console stops it.
+# Exit status SiteRestartCode means the page installed a new version: start
+# it again, without opening a second tab.
 function Start-Site {
   $bin = $env:GAP_STARTER_SERVER
   if (-not $bin) {
     if (-not (Get-SiteProgram)) { return 1 }
+    Update-SiteProgram
     $bin = $global:SiteBin
   }
   Write-Log ""
   Write-Log "Opening the starter in your browser: http://127.0.0.1:8090/starter/"
   Write-Log "Keep this window open while you use it. Ctrl+C here (or closing the window) stops it."
   Write-Log ""
-  & $bin serve --starter $Bundle --open
-  return $LASTEXITCODE
+  $env:TSUM_STATS_RESTART_CODE = "$global:SiteRestartCode"
+  $open = @('--open')
+  while ($true) {
+    # Out-Host: its output to the console, not into this function's return value.
+    & $bin serve --starter $Bundle @open | Out-Host
+    if ($LASTEXITCODE -ne $global:SiteRestartCode) { return $LASTEXITCODE }
+    if (-not $env:GAP_STARTER_SERVER) { Save-SiteVersion }
+    Write-Log ""
+    Write-Log "Restarting the starter with the new version ..."
+    $open = @()
+  }
 }

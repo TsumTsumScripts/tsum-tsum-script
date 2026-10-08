@@ -77,6 +77,7 @@ release note; they fold back in here when she ships.
 *Starter tool*
 - The starter tool is now a page in your browser: start the service, install the app, restart adb, and export logs and stats as one zip, with Tsum Tsum Stats built in.
 - After installing GAP, the starter asks GAP to add the Tsum Tsum library to its Sources (tap Add on the device); an "Add the Tsum Tsum library" button asks again.
+- The starter keeps Tsum Tsum Stats up to date: it updates on each start, and the page has Check for updates and Update now, which restarts it in place.
 
 *Platform and data*
 - Requires General Automation Platform 3.1 or newer.
@@ -109,6 +110,12 @@ release note; they fold back in here when she ships.
   `$global:SourceUrl` / tsum-stats' `sourceURL` hold the catalogue URL. An older
   GAP without the link answers "unable to resolve" and is left alone. The page
   half ships with the next tsum-stats release.
+
+- **Starter updates tsum-stats**: the bundle's pin is now a floor, not an
+  exact version. `run_site` / `Start-Site` run `tsum-stats update` before
+  serving and relaunch on exit 75 (`TSUM_STATS_RESTART_CODE`), which tsum-stats
+  leaves with after the page's Update now. `Start-Site` pipes the server to
+  `Out-Host`, so its output reaches the console instead of the return value.
 
 - **GAP Companion notifications**: `gapNotify` (`src/companion.ts`) emits the
   reserved `gap.notify` event (`Emit.Companion.Notify`), which the companion
