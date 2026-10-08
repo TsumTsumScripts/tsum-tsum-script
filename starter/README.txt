@@ -31,6 +31,11 @@ The page is served by Tsum Tsum Stats' program, tsum-stats @STATS_VERSION@.
 The first time it runs, the tool asks to download it (about 25 MB, from the
 Tsum Tsum Stats releases on GitHub) into a "server" folder here, checked
 against a checksum recorded in tsum-stats.txt when this tool was built.
+After that it keeps itself current: each start fetches a newer version if one
+is out, and the page's Updates section checks every few hours, with a "Check
+for updates" button. "Update now" restarts the page on the new version without
+closing the window. Every download is checked against its published checksum.
+Set TSUM_STATS_NO_UPDATE=1 before starting to turn the automatic part off.
 
 The one other thing the tool needs that it does not carry is Google's `adb`.
 The first time the page opens it offers to download it -- platform-tools @ADB_REVISION@,
@@ -192,7 +197,8 @@ emulator can report a phone's model while running on a different processor.
 
 Updating this tool
 ------------------
-The tool does not update itself. Every release page offers it two ways:
+The tool's own scripts do not update themselves (the website's program
+does). Every release page offers them two ways:
 
     gap-starter.zip / .tar.gz            these scripts and the app
     gap-starter-scripts.zip / .tar.gz    just the scripts -- no app
@@ -205,8 +211,8 @@ your adb and apk folders stay as they are. On its own it works too: it fetches
 adb the first time, the same as the full bundle does, and only lacks the
 "Install APK" option.
 
-Neither carries adb or the website's program. If the new scripts pin a newer
-tsum-stats, it is downloaded the next time you run the tool. If they pin a newer adb than the one already
+Neither carries adb or the website's program, which updates itself (see the
+top of this file). If they pin a newer adb than the one already
 in your adb folder, the one you have keeps being used -- delete the adb
 folder to have the newer one fetched.
 
