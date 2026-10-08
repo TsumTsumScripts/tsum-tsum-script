@@ -15,19 +15,25 @@ That is what this bundle is for. Extract it, run the file for your system --
     Windows            Start-Windows
     macOS and Linux    Start-Linux
 
--- then pick your device from the list and choose "Start service". The tool
-remembers the device you picked and opens straight to it next time. (On a Mac
+-- and a page opens in your browser. Pick your device and press "Start
+service". The tool remembers the device you picked and opens straight to it
+next time. (On a Mac
 you really do run Start-Linux: macOS and Linux run the same shell, so one file
 covers both. The two names may show as Start-Windows.cmd and Start-Linux.sh;
 whether the ending is shown is a setting on your computer, and either way the
-name in front of the dot is the one to look for.) It can also install the app,
-and copy or clear the files a script leaves on the phone. It all happens in a
-terminal window -- a numbered menu, the same on every platform. Nothing gets
-installed on your computer, and everything in here is a plain text script you
-can open and read.
+name in front of the dot is the one to look for.) The same page installs the app, exports the
+script log and your round stats as one zip, clears them off the phone, and
+links to Tsum Tsum Stats, which runs alongside it. Keep the terminal window it
+was started from open while you use it; closing it stops the page. Nothing gets
+installed on your computer.
 
-The one thing the tool needs that it does not carry is Google's `adb`. The
-first time it runs it asks to download it -- platform-tools @ADB_REVISION@,
+The page is served by Tsum Tsum Stats' program, tsum-stats @STATS_VERSION@.
+The first time it runs, the tool asks to download it (about 25 MB, from the
+Tsum Tsum Stats releases on GitHub) into a "server" folder here, checked
+against a checksum recorded in tsum-stats.txt when this tool was built.
+
+The one other thing the tool needs that it does not carry is Google's `adb`.
+The first time the page opens it offers to download it -- platform-tools @ADB_REVISION@,
 about 8 to 16 MB depending on your system, straight from dl.google.com --
 into an "adb" folder next to this README. The download is checked against a
 checksum recorded in platform-tools.txt when this tool was built, only adb is
@@ -68,7 +74,8 @@ Windows
 -------
 Double-click            Start-Windows
 
-A console window opens with the menu in it. If Windows SmartScreen asks, choose
+A console window opens, then the page in your browser; keep the console open
+while you use the page. If Windows SmartScreen asks, choose
 "More info" then "Run anyway" -- Start-Windows.cmd is a two-line text file and
 you are welcome to open it in Notepad first.
 
@@ -80,39 +87,64 @@ Linux
 -----
 From a terminal:                         ./Start-Linux.sh
 
-There is no desktop app to install and no dialog boxes: run it from a terminal
-and answer the menu. (Double-clicking it in a file manager works only if your
+There is no desktop app to install: run it from a terminal, and the page opens
+in your browser. Keep the terminal open while you use it. (Double-clicking it in a file manager works only if your
 file manager is set to run scripts in a terminal -- a terminal is simpler.)
 
 
 Using it
 --------
-The tool is two pages, and each one says at the top what it is for and what
-to do next.
-
 1. Start your emulator, or plug the phone in with USB debugging turned on.
      - On a phone: Settings > About phone > tap "Build number" seven times,
        then Settings > Developer options > USB debugging.
      - The first time, the phone shows an "Allow USB debugging?" prompt.
        Tap Allow. Until you do, the tool lists the phone as "unauthorized".
      - Emulators (MuMu, LDPlayer, Nox, MEmu) are found automatically.
-2. The first page is the device list. Type the number of your device and
-   press enter.
-3. The second page is that device. Its "Next:" line says what the device
-   needs; usually that is "1) Start service".
+2. Run Start-Windows or Start-Linux. The page opens in your browser at
+   http://127.0.0.1:8090/starter/ and lists every device adb can see.
+3. Click your device. Its Service card says what it needs; usually that is
+   "Start service".
 
 After a few seconds it should say the service is running. It stays up until the
 device reboots, and it survives reinstalling the app.
 
-The device you picked stays picked: every option runs on it, and the next
-time you run the tool it opens straight to that device's page. Choose "d" on
-that page to go back to the list and pick another. (The choice is one line in
-last-device.txt next to this README -- delete the file to forget it.)
+The device you picked stays picked, the next time you run the tool too.
+(The choice is one line in last-device.txt next to this README -- delete the
+file to forget it.)
 
-Options 1-5 manage the service over ADB, and are only needed when the device
-is NOT rooted -- a rooted emulator or phone grants the app root and the
-service starts from inside the app by itself. The rest of the menu works the
+Start, Restart and Stop manage the service over ADB, and are only needed when
+the device is NOT rooted -- a rooted emulator or phone grants the app root and
+the service starts from inside the app by itself. Everything else works the
 same either way.
+
+A device you expect is missing, or stuck offline? "Restart adb", next to
+Refresh, restarts the adb server (kill-server, then start-server) and looks
+again.
+
+On the page
+-----------
+  Start service           starts it, or leaves it alone if it is already
+                          running from the version of the app now installed
+  Restart / Stop          start it again even if it was running / stop it
+  Show service log        what the service printed when it started
+  Follow live             the same log, live, until you stop it
+  Download & install      fetch the newest published APK and install it
+  Install APK             only when an "apk" folder is in the bundle
+  Reconnect               offered for a device that has gone offline
+  Export logs & stats     zip up the script log, service log, round stats and
+                          Tsum lists, and ask where to save the zip
+  Import round stats      copy stats_*.csv and Tsum lists into "collected" and
+                          into Tsum Tsum Stats
+  Copy script log         copy the script log into a "collected" folder here
+  Delete script log /     delete them from the device, after showing the files
+  Delete round stats      and asking (the script log delete stops the service
+                          over the delete and starts it again if it was running)
+  Restart adb             restart the adb server and look for devices again
+  Stats site              Tsum Tsum Stats, at http://127.0.0.1:8090/
+
+Run with --menu (-Menu on Windows) to get the old numbered menu in the
+terminal instead of the page. It does the service, app and script log options,
+not the export or the stats import.
 
 Testing a pre-release build
 ---------------------------
@@ -121,38 +153,19 @@ A tester is given a folder URL (or the address of its catalogue file). Run
   Start-Linux.sh --channel https://example.com/alpha/alpha.json     (macOS, Linux)
   Start-Windows.cmd -Channel https://example.com/alpha/alpha.json   (Windows)
 
-once. It is kept in channel.txt, and option 8 then downloads that folder's
-latest APK (checked against its checksum) instead of the published release. The
+once, or paste it into "Testing a pre-release" on the page. It is kept in
+channel.txt, and "Download & install" then takes that folder's latest APK (checked against its checksum) instead of the published release. The
 line it prints names the build's channel, alpha or beta. `--channel off`
 (`-Channel off` on Windows) or deleting channel.txt goes back to the published
 releases. A pre-release replaces the installed app; Android will not install an
 older build over a newer one, so leaving it means uninstalling first.
-
-  1) Start service         starts it, or leaves it alone if it is already
-                           running from the version of the app now installed
-  2) Restart               starts it again even if it was already running
-  3) Stop                  stops it
-  4) Show service log      what the service printed when it started
-  5) Follow service log    the same log, live, until you stop it
-  6) Install APK           only when an "apk" folder is in the bundle
-  7) Reconnect             offered for a device that has gone offline
-  8) Download latest APK   fetch the newest published APK and install it
-  9) Copy the script log   copy the script log and its rotated copies into a
-                           "collected" folder here
- 10) Delete script log     delete it from the device, after asking, stopping
-                           the service over the delete and starting it again
-                           if it was running
-
-  r) Refresh               look again: the device list, or the one device
-  d) Change device         back to the device list
-  q) Quit
 
 
 Installing the app
 ------------------
 If a folder named "apk" sits next to this README with .apk files in it, the
 tool will offer to install the right one for your device, and an "Install APK"
-option appears in the menu. Without that folder the tool only starts the
+button appears on the page. Without that folder the tool only starts the
 service, and will tell you if the app is missing.
 
 When the folder holds more than one build, it lists them and preselects the one
@@ -184,41 +197,50 @@ your adb and apk folders stay as they are. On its own it works too: it fetches
 adb the first time, the same as the full bundle does, and only lacks the
 "Install APK" option.
 
-Neither carries adb. If the new scripts pin a newer adb than the one already
+Neither carries adb or the website's program. If the new scripts pin a newer
+tsum-stats, it is downloaded the next time you run the tool. If they pin a newer adb than the one already
 in your adb folder, the one you have keeps being used -- delete the adb
 folder to have the newer one fetched.
 
 
-Getting the script log off the device, and clearing it
-------------------------------------------------------
+Getting logs and stats off the device, and clearing them
+--------------------------------------------------------
+The quickest way: "Export logs & stats" on the page. It zips up the script
+log, the service log, the round stats and the Tsum lists of the device (or of
+every device) and asks where to save the zip -- the one file to send when you
+ask for help. Chrome and Edge show their own save dialog; other browsers get
+your computer's.
+
 A script keeps its log on the device, under
 /sdcard/Download/GameAutomationPlatform:
 
     script-<id>.log what the script logged, plus its rotated copies
 
-Option 9 copies it to your computer, into a "collected" folder next to this
+"Copy script log to folder" copies it to your computer, into a "collected" folder next to this
 README -- one folder per device, and the layout the device had:
 
     collected/127.0.0.1-16384/logs/script-<id>.log
 
 Copying again overwrites what was copied before, and nothing else is touched.
 
-Option 10 deletes the same files from the device. It lists what it found and
+"Delete script log" deletes the same files from the device. It lists what it found and
 asks before deleting anything -- and nothing keeps a second copy, so copy
 first if you want to keep it.
 
 The service keeps its script log open from the moment it starts, and an emulator
 that maps the device's storage onto a folder on your computer will refuse to
-delete a file that is still open. So option 10 stops the service first, deletes,
+delete a file that is still open. So that delete stops the service first, deletes,
 and starts it again if it had been running -- which means a new, empty
 script log is on the device by the time it finishes. Anything the script was
-doing is ended by that stop, exactly as option 3 would.
+doing is ended by that stop, exactly as Stop would.
 
 If you started the service with --root=, set GAP_STORAGE_ROOT to that same
 folder before running, or the tool looks in the wrong place.
 
-Round stats (stats_*.csv) and the Tsum Tsum Stats website are not part of this
-tool; Tsum Tsum Stats is its own program and imports them itself.
+Round stats (stats_*.csv) and Tsum lists: "Import round stats into Stats"
+copies them into collected/ and into Tsum Tsum Stats, whose page is at
+http://127.0.0.1:8090/ while the starter runs. "Delete round stats" clears
+the CSVs off the device; Tsum lists are left alone.
 
 
 When something goes wrong
@@ -236,7 +258,7 @@ When something goes wrong
 
 "unauthorized"
     Look at the phone's screen and tap Allow on the USB debugging prompt,
-    then choose "r" to refresh.
+    then press Refresh.
 
 "wrong ABI" / "The installed APK carries ... only"
     The installed app was built for a different processor than this device
@@ -252,8 +274,8 @@ When something goes wrong
 "the service on this device was started by the app itself"
     A rooted device: the app started the service as root, and nothing this
     tool runs over ADB can stop or replace what root started. It does not
-    need to -- the app looks after that service, and every other option here
-    (install, download, copy, delete) works as usual. After installing a new
+    need to -- the app looks after that service, and everything else here
+    (install, download, export, delete) works as usual. After installing a new
     version, reboot the device; the app starts the new one by itself.
 
 "Could not download it" (adb)
@@ -277,6 +299,16 @@ When something goes wrong
     The tool was run without a terminal to ask in -- from a script, say. Add
     --yes  (-Yes on Windows), which agrees to the download in advance.
 
+"already running ... without the starter"
+    Tsum Tsum Stats is open on its own, on the same address the starter uses.
+    Stop it (Ctrl+C in its window) and run the starter again: the starter
+    brings the stats site with it.
+
+The page does not open
+    Open http://127.0.0.1:8090/starter/ yourself. If the terminal shows an
+    error instead, or the website's program cannot run on this computer, run
+    with --menu (-Menu) for the terminal menu.
+
 The tool replaced my ADB server
     Harmless. Android Studio, scrcpy or your emulator manager will start it
     again by themselves. To avoid it entirely, point the tool at the adb you
@@ -285,7 +317,7 @@ The tool replaced my ADB server
 
 Doing it by hand
 ----------------
-Every menu option is also a command-line option, so nothing needs the menu:
+Every menu option is also a command-line option, so nothing needs the page:
 
     Start-Linux.sh start             (macOS, Linux)
     Start-Windows.cmd -Action start  (Windows)
@@ -310,19 +342,24 @@ What is in here
 ---------------
   Start-Windows.cmd                      the thing you run, on Windows
   Start-Linux.sh                         ... on macOS and Linux
-  bin/win/*.ps1                          Windows menu (PowerShell)
-  bin/posix/*.sh                         macOS and Linux menu (shell)
+  bin/win/*.ps1                          Windows launcher and menu (PowerShell)
+  bin/posix/*.sh                         macOS and Linux launcher and menu (shell)
+  tsum-stats.txt                         where the website's program is
+                                         downloaded from, and its checksum
   device/gap-service.sh                  what actually runs on the device
   device/PROTOCOL.md                     how the two talk to each other
   platform-tools.txt                     where adb is downloaded from, and the
                                          checksum the download must match
   test/check-parity.sh                   self-test, needs no device
+  server/                                appears on the first run: tsum-stats,
+                                         the website's program
   adb/                                   appears on the first run: Google's adb
                                          for this computer
   collected/                             appears when you copy the log off a device
   last-device.txt                        appears once you pick a device: which one
   channel.txt                            appears once you pin a pre-release channel
 
-No program in this bundle was compiled by us, and none is in it as downloaded.
-The only binary that ever lands here is Google's adb, unmodified, fetched from
-the official Android platform-tools release.
+No program is in this bundle as downloaded. Two binaries land here on the
+first run, each checked against a checksum recorded when this tool was built:
+Google's adb, unmodified, from the official Android platform-tools release,
+and tsum-stats, Tsum Tsum Stats' open-source program, from its GitHub release.

@@ -19,10 +19,16 @@
 # --channel-url URL writes channel.txt into the bundle, so it starts pinned to a
 # pre-release folder (see docs/PRERELEASE.md) and the tester passes no flag.
 #
+# The starter's website is served by tsum-stats, which the bundle downloads on
+# first run like adb. --stats-pin FILE is that program's pin (default: the
+# tsum-stats.txt of the tsum-stats checkout beside this repo, which its own
+# release writes); it is copied in as tsum-stats.txt, and must name at least
+# MIN_STATS, the first version that serves the starter.
+#
 # Usage:
 #   starter/build-starter.sh [--rev 37.0.1] [--apk-dir DIR] [--out DIR]
 #                          [--archive-name NAME] [--scripts-only]
-#                          [--channel-url URL]
+#                          [--channel-url URL] [--stats-pin FILE]
 #                          [--no-download] [--record-sums]
 set -euo pipefail
 
@@ -34,6 +40,8 @@ NO_DOWNLOAD=""
 RECORD_SUMS=""
 SCRIPTS_ONLY=""
 CHANNEL_URL=""
+STATS_PIN=""
+MIN_STATS="0.13"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -48,9 +56,10 @@ while [[ $# -gt 0 ]]; do
     # No apk: just the scripts, to extract over a full bundle.
     --scripts-only) SCRIPTS_ONLY=1; shift ;;
     --channel-url)  CHANNEL_URL="$2"; shift 2 ;;
+    --stats-pin)    STATS_PIN="$2"; shift 2 ;;
     --no-download)  NO_DOWNLOAD=1; shift ;;
     --record-sums)  RECORD_SUMS=1; shift ;;
-    -h|--help) sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,34p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -239,7 +248,18 @@ rm -rf "$BUNDLE/apk"
 # None of these is a template file: the adb the maintainer's own run of the
 # tool downloaded into the tree, what they copied off a device, and which
 # device they picked last. A bundle ships with no memory and no binaries.
-rm -rf "$BUNDLE/adb" "$BUNDLE/collected" "$BUNDLE/last-device.txt" "$BUNDLE/channel.txt"
+rm -rf "$BUNDLE/adb" "$BUNDLE/collected" "$BUNDLE/last-device.txt" "$BUNDLE/channel.txt" "$BUNDLE/server"
+# This script lives in starter/ but is the maintainer's, not the user's.
+rm -f "$BUNDLE/build-starter.sh"
+
+# The website's program: its pin, from the tsum-stats release.
+[[ -n "$STATS_PIN" ]] || STATS_PIN="$root/../tsum-stats/tsum-stats.txt"
+[[ -f "$STATS_PIN" ]] || die "no tsum-stats pin at $STATS_PIN (pass --stats-pin)"
+STATS_VERSION="$(kv "$STATS_PIN" version)"
+[[ "$(printf '%s\n%s\n' "$MIN_STATS" "$STATS_VERSION" | sort -t. -k1,1n -k2,2n -k3,3n | head -1)" == "$MIN_STATS" ]] \
+  || die "the tsum-stats pin names $STATS_VERSION; the starter website needs $MIN_STATS or newer -- release tsum-stats first"
+cp "$STATS_PIN" "$BUNDLE/tsum-stats.txt"
+echo "website  : tsum-stats $STATS_VERSION (downloaded on first run)"
 
 if [[ -n "$CHANNEL_URL" ]]; then
   [[ "$CHANNEL_URL" =~ ^https?://[^/?#]+/[^?#]+$ ]] \
@@ -272,7 +292,8 @@ for f in "$BUNDLE/README.txt"; do
   # SOH as the delimiter: no plausible substitution value contains one, whereas
   # / and | both turn up in file descriptions and paths.
   sed -i.bak -e "s$(printf '\001')@ADB_REVISION@$(printf '\001')$ADB_REVISION$(printf '\001')g" \
-             -e "s$(printf '\001')@ARCHIVE_NAME@$(printf '\001')$ARCHIVE_NAME$(printf '\001')g" "$f"
+             -e "s$(printf '\001')@ARCHIVE_NAME@$(printf '\001')$ARCHIVE_NAME$(printf '\001')g" \
+             -e "s$(printf '\001')@STATS_VERSION@$(printf '\001')$STATS_VERSION$(printf '\001')g" "$f"
   rm -f "$f.bak"
 done
 
@@ -296,7 +317,7 @@ def norm(path, crlf):
         path.write_bytes(out)
         print(f"  normalised {'CRLF' if crlf else 'LF'}: {path.relative_to(bundle)}")
 
-for p in list(bundle.rglob('*.sh')) + [bundle / 'platform-tools.txt']:
+for p in list(bundle.rglob('*.sh')) + [bundle / 'platform-tools.txt', bundle / 'tsum-stats.txt']:
     if p.is_file():
         norm(p, crlf=False)
 for p in list(bundle.rglob('*.ps1')) + [bundle / 'Start-Windows.cmd']:
@@ -348,15 +369,15 @@ missing=""
 for f in README.txt platform-tools.txt Start-Windows.cmd Start-Linux.sh \
          device/gap-service.sh device/PROTOCOL.md \
          bin/posix/gap.sh bin/posix/gap-device.sh bin/posix/gap-actions.sh \
-         bin/posix/gap-menu.sh \
+         bin/posix/gap-menu.sh bin/posix/gap-site.sh tsum-stats.txt \
          bin/win/gap.ps1 bin/win/gap-menu.ps1 bin/win/gap-device.ps1 \
-         bin/win/gap-actions.ps1; do
+         bin/win/gap-actions.ps1 bin/win/gap-site.ps1; do
   [[ -e "$BUNDLE/$f" ]] || missing="$missing $f"
 done
 stray=""
 [[ -e "$BUNDLE/adb" ]] && stray="$stray adb/"
 [[ -e "$BUNDLE/stats" ]] && stray="$stray stats/"
-[[ -e "$BUNDLE/tsum-stats.txt" ]] && stray="$stray tsum-stats.txt"
+[[ -e "$BUNDLE/server" ]] && stray="$stray server/"
 [[ -n "$SCRIPTS_ONLY" && -e "$BUNDLE/apk" ]] && stray="$stray apk/"
 gate "manifest complete" "$(
   if [[ -n "$missing" ]]; then echo "missing$missing"
@@ -403,7 +424,7 @@ else
   fi
 fi
 
-if grep -rq '@ADB_REVISION@\|@ARCHIVE_NAME@' "$BUNDLE" 2>/dev/null; then
+if grep -rq '@ADB_REVISION@\|@ARCHIVE_NAME@\|@STATS_VERSION@' "$BUNDLE" 2>/dev/null; then
   gate "README placeholders substituted" "placeholders survived"
 else
   gate "README placeholders substituted" ok
@@ -473,6 +494,7 @@ PY
 
 echo
 echo "adb        : downloaded on first run -- platform-tools r$ADB_REVISION ($ADB_DARWIN_ARCH on macOS)"
+echo "website    : downloaded on first run -- tsum-stats $STATS_VERSION"
 echo "tar.gz     : ${TGZ#$root/}   <- give this to macOS and Linux users"
 echo "zip        : ${ZIP#$root/}"
 du -h "$TGZ" "$ZIP" 2>/dev/null | sed 's/^/             /'

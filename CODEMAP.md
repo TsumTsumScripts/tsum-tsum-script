@@ -27,9 +27,11 @@ game-automation-scripts/
 │                          release zip carries with it
 ├── .gitattributes         LF line endings everywhere, PNGs binary -- see CLAUDE.md
 ├── .editorconfig          stops an editor putting CRLF back
-├── starter/               the service starter tool (menu-driven, adb): starts GAP's
-│                          helper service, installs the app, copies files off the
-│                          device. build-starter.sh assembles the release bundle
+├── starter/               the service starter tool: Start-* opens its website
+│                          (served by tsum-stats --starter, with the stats site
+│                          beside it); --menu keeps the terminal menu. Starts
+│                          GAP's helper service, installs the app, exports logs
+│                          and stats. build-starter.sh assembles the release bundle
 └── app.gap.Tsum/          the only package: the Disney Tsum Tsum script
     ├── src/               the script -- concatenated into one bundle, no imports,
     │                      plus tsums.dat, the one file shipped beside it
@@ -479,7 +481,12 @@ The website is its own repository, `../tsum-tsum-website` (Docusaurus): the felt
 landing, features and changelog pages, the starter page and the contributor docs.
 It reads `app.gap.Tsum/CHANGELOG.md`'s `### Summary` blocks and the generated
 documents from this tree at build time. The service starter is `starter/`, built
-by `starter/build-starter.sh`.
+by `starter/build-starter.sh`. Its website (device list, service, APK, export,
+adb restart) is `internal/starter` in tsum-stats, which serves it at
+`/starter/` when started with `--starter <bundle>`; the bundle's launchers
+download the tsum-stats its `tsum-stats.txt` pins. The terminal menu and the
+command-line actions (`bin/posix`, `bin/win`) remain, and the device side is
+still only `device/gap-service.sh`, now with three hosts reading it.
 
 ## External trees
 
@@ -487,6 +494,7 @@ by `starter/build-starter.sh`.
 |:--|:--|:--|
 | **General Automation Platform** | `../game-automation-app` | The host app these scripts run on, and the only target — it declares the natives, runs the bundle, and installs it. Editing it is allowed (`CLAUDE.md`); see [the host app at a glance](#the-host-app-at-a-glance) below |
 | **tsum-tsum-website** | `../../tsum-tsum-website` | The public site: landing, features, changelog, starter page and the contributor docs. Reads `CHANGELOG.md`'s Summary blocks and the generated documents from here; nothing here reads it |
+| **tsum-stats** | `../../tsum-stats` | Tsum Tsum Stats (Go, PocketBase): the stats site, and the server for the starter's website (`internal/starter`, mounted by `--starter`). `starter/build-starter.sh` copies its release pin into the bundle as `tsum-stats.txt` |
 | **game-automation-catalogue** | `../../game-automation-catalogue` | Where a release is published: the release commands write the archive and its metadata file into `Official/LineTsumTsum/Alpha`, `.../Beta` or `.../Production`, and the catalogue's own build-official script folds them into its index. The last few archives stay there so the app can offer them as older versions. Only the release tool writes here |
 
 ### The host app at a glance

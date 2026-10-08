@@ -74,6 +74,9 @@ release note; they fold back in here when she ships.
 - Export every Tsum you own to a CSV (Chores > Tsum List > Now), favourites marked.
 - It and Unlock Level jump straight to the collection's first page.
 
+*Starter tool*
+- The starter tool is now a page in your browser: start the service, install the app, restart adb, and export logs and stats as one zip, with Tsum Tsum Stats built in.
+
 *Platform and data*
 - Requires General Automation Platform 3.1 or newer.
 - Each device keeps its own folder, so emulators sharing storage stop overwriting each other's files.
@@ -90,6 +93,13 @@ release note; they fold back in here when she ships.
 - Select My Tsum closes the "MyTsum has been changed." dialog.
 
 ### Added
+
+- **Starter website**: `Start-*` now opens a page served by tsum-stats
+  `--starter` (`internal/starter` there), downloaded once against the bundle's
+  `tsum-stats.txt` pin. It adds a zip export (save picker, else a native
+  dialog), round-stats import/delete and an adb restart; `--menu` keeps the
+  terminal menu. `build-starter.sh` needs a tsum-stats pin of 0.13 or newer and
+  no longer ships itself in the bundle.
 
 - **GAP Companion notifications**: `gapNotify` (`src/companion.ts`) emits the
   reserved `gap.notify` event (`Emit.Companion.Notify`), which the companion

@@ -1,9 +1,8 @@
 # Tsum Tsum Script service starter -- Windows entry point.
 #
 # The twin of bin/posix/gap.sh, and deliberately as small: unblock the bundle,
-# load the two shared layers, find adb, then either run one action or show the
-# menu. There is no window any more -- everything this bundle does is a
-# terminal option, on every platform.
+# load the shared layers, then open the starter website (gap-site.ps1). -Menu
+# shows the terminal menu instead, and -Action runs just that one action.
 
 param(
   [string]$Serial,
@@ -14,6 +13,8 @@ param(
   # Answers the questions in advance -- the delete confirmation, and the
   # first run's adb download -- for a caller with no console to answer in.
   [switch]$Yes,
+  # The terminal menu instead of the website.
+  [switch]$Menu,
   # Accepted and ignored: the menu is the only front-end, and older
   # instructions in the wild still pass this.
   [switch]$Console
@@ -31,12 +32,16 @@ Get-ChildItem -LiteralPath $Bundle -Recurse -Include *.ps1, *.cmd -ErrorAction S
 
 . "$Bundle\bin\win\gap-device.ps1"
 . "$Bundle\bin\win\gap-actions.ps1"
+. "$Bundle\bin\win\gap-site.ps1"
 
 if ($Channel) {
   if (-not (Set-Channel -Url $Channel)) { exit 2 }
 } elseif (Test-ChannelActive) {
   Write-Host "release channel: $global:ReleaseBase"
 }
+
+# The website finds its own adb, so it starts before any of that.
+if (-not $Action -and -not $Menu) { exit (Start-Site) }
 
 if (-not (Resolve-Adb -Bundle $Bundle)) { exit 1 }
 Start-AdbServer
