@@ -41,8 +41,9 @@ kept out of it, and it is never downloaded again. If a current adb is already
 on your computer (Android Studio, say), the tool uses that one instead and
 downloads nothing.
 
-It does NOT install the app itself unless an "apk" folder is sitting next to
-this README -- see "Installing the app" below.
+The page also installs the app: the latest release, downloaded from GitHub,
+or one carried in an "apk" folder next to this README -- see "Installing the
+app" below.
 
 
 macOS -- read this first
@@ -163,10 +164,13 @@ older build over a newer one, so leaving it means uninstalling first.
 
 Installing the app
 ------------------
-If a folder named "apk" sits next to this README with .apk files in it, the
-tool will offer to install the right one for your device, and an "Install APK"
-button appears on the page. Without that folder the tool only starts the
-service, and will tell you if the app is missing.
+"Download & install the latest APK" fetches the newest General Automation
+Platform release from GitHub, picks the build for your device, and installs it.
+The download is kept in the "apk" folder next to this README.
+
+If that "apk" folder already holds .apk files (a bundle that ships the app, or
+an earlier download), an "Install APK" button also appears, which installs one
+of them with no internet needed.
 
 When the folder holds more than one build, it lists them and preselects the one
 matching the ABI the device reports:
