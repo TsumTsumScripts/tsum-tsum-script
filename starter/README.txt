@@ -197,8 +197,18 @@ emulator can report a phone's model while running on a different processor.
 
 Updating this tool
 ------------------
-The tool's own scripts do not update themselves (the website's program
-does). Every release page offers them two ways:
+The tool updates itself. The page's Updates section lists the starter (these
+scripts) and tsum-stats (the website's program), checks for newer versions
+every few hours and has a "Check for updates" button. "Update the starter"
+downloads the newest scripts, checks them against their published checksum
+and puts them in place, then restarts the tool in the same window; the page
+reloads by itself. Your adb, apk, server and collected folders, channel.txt
+and the device you picked last are left alone, and so is Start-Windows.cmd,
+which Windows reads while it runs. Set TSUM_STATS_NO_UPDATE=1 before starting
+to stop the automatic checks; the buttons still work.
+
+A copy from before the tool updated itself (it has no starter-version.txt)
+needs one update by hand. Every release page offers the tool two ways:
 
     gap-starter.zip / .tar.gz            these scripts and the app
     gap-starter-scripts.zip / .tar.gz    just the scripts -- no app
@@ -360,6 +370,8 @@ What is in here
   bin/posix/*.sh                         macOS and Linux launcher and menu (shell)
   tsum-stats.txt                         where the website's program is
                                          downloaded from, and its checksum
+  starter-version.txt                    this copy's version, and where it
+                                         looks for a newer one
   device/gap-service.sh                  what actually runs on the device
   device/PROTOCOL.md                     how the two talk to each other
   platform-tools.txt                     where adb is downloaded from, and the

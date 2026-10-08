@@ -30,9 +30,11 @@ site_bin() {
   esac
 }
 
-# The exit status tsum-stats leaves with after the page installed an update,
-# which run_site answers by starting it again.
+# The exit statuses tsum-stats leaves with after the page installed an update:
+# a new tsum-stats, which run_site starts again, or new starter scripts, for
+# which it starts this whole launcher again.
 SITE_RESTART_CODE=75
+SITE_RELOAD_CODE=76
 
 # site_ver_ge A B: dotted version A is B or newer.
 site_ver_ge() {
@@ -124,27 +126,41 @@ site_update() {
 }
 
 # Starts the website in this terminal and opens it. Closing the terminal, or
-# Ctrl-C, stops it. Exit status SITE_RESTART_CODE means the page installed a
-# new version: start it again, without opening a second tab.
+# Ctrl-C, stops it.
 run_site() {
   bin="${GAP_STARTER_SERVER:-}"
   if [ -z "$bin" ]; then
+    # Update first, so a newer floor from a starter update never asks to download.
+    [ -x "$(site_bin)" ] && site_update
     site_download || return 1
-    site_update
     bin="$(site_bin)"
   fi
-  log_line ""
-  log_line "Opening the starter in your browser: http://127.0.0.1:8090/starter/"
-  log_line "Keep this window open while you use it. Ctrl-C here (or closing the window) stops it."
-  log_line ""
   open="--open"
-  while :; do
-    TSUM_STATS_RESTART_CODE=$SITE_RESTART_CODE "$bin" serve --starter "$(host_path "$BUNDLE")" $open
-    rc=$?
-    [ "$rc" = "$SITE_RESTART_CODE" ] || exit "$rc"
-    [ -z "${GAP_STARTER_SERVER:-}" ] && site_note_version
+  if [ -n "${GAP_STARTER_RELOADED:-}" ]; then
+    open=""   # the page is already open, and reloads itself
+  else
     log_line ""
-    log_line "Restarting the starter with the new version ..."
+    log_line "Opening the starter in your browser: http://127.0.0.1:8090/starter/"
+    log_line "Keep this window open while you use it. Ctrl-C here (or closing the window) stops it."
+    log_line ""
+  fi
+  while :; do
+    TSUM_STATS_RESTART_CODE=$SITE_RESTART_CODE GAP_STARTER_RELOAD_CODE=$SITE_RELOAD_CODE \
+      "$bin" serve --starter "$(host_path "$BUNDLE")" $open
+    rc=$?
     open=""
+    case "$rc" in
+      "$SITE_RESTART_CODE")
+        [ -z "${GAP_STARTER_SERVER:-}" ] && site_note_version
+        log_line ""
+        log_line "Restarting the starter with the new tsum-stats ..." ;;
+      "$SITE_RELOAD_CODE")
+        log_line ""
+        log_line "Restarting the starter with its new scripts ..."
+        # The scripts were renamed into place, so this shell still holds the
+        # old files; exec reads the new ones.
+        GAP_STARTER_RELOADED=1 exec "$BUNDLE/bin/posix/gap.sh" ${GAP_ARGV[@]+"${GAP_ARGV[@]}"} ;;
+      *) exit "$rc" ;;
+    esac
   done
 }

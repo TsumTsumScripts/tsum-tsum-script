@@ -14,9 +14,11 @@ $global:SitePinFile = Join-Path $Bundle 'tsum-stats.txt'
 $global:SiteDir     = Join-Path $Bundle 'server\windows-amd64'
 $global:SiteBin     = Join-Path $global:SiteDir 'tsum-stats.exe'
 $global:SiteVerFile = Join-Path $global:SiteDir 'VERSION'
-# The exit status tsum-stats leaves with after the page installed an update,
-# which Start-Site answers by starting it again.
+# The exit statuses tsum-stats leaves with after the page installed an update:
+# a new tsum-stats, which Start-Site starts again, or new starter scripts, for
+# which gap.ps1 runs itself again.
 $global:SiteRestartCode = 75
+$global:SiteReloadCode  = 76
 
 function Get-SitePin {
   param([string]$Key)
@@ -116,28 +118,39 @@ function Update-SiteProgram {
 }
 
 # Runs the website in this console and opens it; closing the console stops it.
-# Exit status SiteRestartCode means the page installed a new version: start
-# it again, without opening a second tab.
+# Returns SiteReloadCode when the page installed new starter scripts.
 function Start-Site {
   $bin = $env:GAP_STARTER_SERVER
   if (-not $bin) {
+    # Update first, so a newer floor from a starter update never asks to download.
+    if (Test-Path -LiteralPath $global:SiteBin) { Update-SiteProgram }
     if (-not (Get-SiteProgram)) { return 1 }
-    Update-SiteProgram
     $bin = $global:SiteBin
   }
-  Write-Log ""
-  Write-Log "Opening the starter in your browser: http://127.0.0.1:8090/starter/"
-  Write-Log "Keep this window open while you use it. Ctrl+C here (or closing the window) stops it."
-  Write-Log ""
-  $env:TSUM_STATS_RESTART_CODE = "$global:SiteRestartCode"
   $open = @('--open')
+  if ($env:GAP_STARTER_RELOADED) {
+    $open = @()  # the page is already open, and reloads itself
+  } else {
+    Write-Log ""
+    Write-Log "Opening the starter in your browser: http://127.0.0.1:8090/starter/"
+    Write-Log "Keep this window open while you use it. Ctrl+C here (or closing the window) stops it."
+    Write-Log ""
+  }
+  $env:TSUM_STATS_RESTART_CODE = "$global:SiteRestartCode"
+  $env:GAP_STARTER_RELOAD_CODE = "$global:SiteReloadCode"
   while ($true) {
     # Out-Host: its output to the console, not into this function's return value.
     & $bin serve --starter $Bundle @open | Out-Host
-    if ($LASTEXITCODE -ne $global:SiteRestartCode) { return $LASTEXITCODE }
+    $rc = $LASTEXITCODE
+    $open = @()
+    if ($rc -eq $global:SiteReloadCode) {
+      Write-Log ""
+      Write-Log "Restarting the starter with its new scripts ..."
+      return $rc
+    }
+    if ($rc -ne $global:SiteRestartCode) { return $rc }
     if (-not $env:GAP_STARTER_SERVER) { Save-SiteVersion }
     Write-Log ""
-    Write-Log "Restarting the starter with the new version ..."
-    $open = @()
+    Write-Log "Restarting the starter with the new tsum-stats ..."
   }
 }
