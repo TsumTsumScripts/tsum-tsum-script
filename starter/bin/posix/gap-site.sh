@@ -8,7 +8,7 @@
 # from the tsum-stats release. GAP_STARTER_SERVER names a local build instead.
 
 SITE_PIN_FILE="$BUNDLE/tsum-stats.txt"
-site_kv() { kv "$(tr -d '\r' < "$SITE_PIN_FILE" 2>/dev/null)" "$1"; }
+site_kv() { kv "$(tr -d '\r' 2>/dev/null < "$SITE_PIN_FILE")" "$1"; }
 
 # arm64 or amd64, the two tsum-stats is built for.
 site_arch() {
