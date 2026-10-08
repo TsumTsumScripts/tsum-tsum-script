@@ -42,7 +42,6 @@
     "receiveAllHearts": true,
     "receiveAllHeartsMinWait": 60,
     "receiveHeartsOneByOne": true,
-    "receiveHeartsSkipFirst": false,
     "receiveHeartsSkipRuby": true,
     "claimAllWithoutCoins": false,
     "mailOpenMax": 30,
@@ -51,7 +50,7 @@
     "sendHeartsToZeroScore": false,
     "sendHeartsMaxRuntime": 0,
     "sendHeartsMinWait": 240,
-    "tsumAppRestartFrequency": 6
+    "tsumAppRestartMinutes": 360
   },
   "durationsMs": {
     "receiveOneItem": 240000,

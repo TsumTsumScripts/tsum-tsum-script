@@ -27,6 +27,14 @@
 var VERSION = '$VERSION';
 
 /**
+ * The host's panel header: name, version and the channel when it is not
+ * Production. Read by the host after load, like `VERSION`.
+ */
+var PANEL_TITLE = 'Tsum Tsum v' + VERSION
+    + (ReleaseStatusMin === ReleaseStatus.Alpha ? ' (Alpha)'
+        : ReleaseStatusMin === ReleaseStatus.Beta ? ' (Beta)' : '');
+
+/**
  * The localStorage key this page owns. THEME_KEY and TAB_KEY are only ever read
  * from a function, so they stay in their sections; the language tag is not here
  * at all -- `src/i18n.ts` owns it, because the Quick Bar reads the same entry.
@@ -61,7 +69,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillType,
                         title: UiText.SettingSkillType,
                         help: UiText.SettingSkillTypeHelp,
-                        default: SkillType.Burst as SkillType,
+                        default: SettingDefaults[SettingKey.SkillType],
                         // One list, in src/skillOptions.ts, because the Quick
                         // Bar offers the same skills from its own compilation.
                         dropdown: SkillOptions
@@ -70,7 +78,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillLevel,
                         title: UiText.SettingSkillLevel,
                         help: UiText.SettingSkillLevelHelp,
-                        default: 6,
+                        default: SettingDefaults[SettingKey.SkillLevel],
                         step: 1,
                         max: 6,
                         min: 1
@@ -83,7 +91,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.LorcanaCard,
                         title: UiText.SettingLorcanaCard,
                         help: UiText.SettingLorcanaCardHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.LorcanaCard]
                     }
                 ]
             },
@@ -95,7 +103,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillAutoTap,
                         title: UiText.SettingSkillAutoTap,
                         help: UiText.SettingSkillAutoTapHelp,
-                        default: true
+                        default: SettingDefaults[SettingKey.SkillAutoTap]
                     },
                     {
                         // Stored in ms (a share code carries whole numbers
@@ -103,7 +111,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillSettleMs,
                         title: UiText.SettingSkillSettle,
                         help: UiText.SettingSkillSettleHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.SkillSettleMs],
                         step: 200,
                         max: 3000,
                         min: 0,
@@ -113,7 +121,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.NoSkillLastFeverSec,
                         title: UiText.SettingNoSkillLastFever,
                         help: UiText.SettingNoSkillLastFeverHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.NoSkillLastFeverSec],
                         step: 1,
                         max: 10,
                         min: 0
@@ -122,7 +130,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillWaitingTime,
                         title: UiText.SettingSkillWaitingTime,
                         help: UiText.SettingSkillWaitingTimeHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.SkillWaitingTime],
                         step: 1,
                         max: 15,
                         min: 0
@@ -132,7 +140,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SkillReactivationTenths,
                         title: UiText.SettingSkillReactivation,
                         help: UiText.SettingSkillReactivationHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.SkillReactivationTenths],
                         step: 5,
                         max: 300,
                         min: 0,
@@ -149,13 +157,26 @@ var tabs: TabSpec[] = [
         title: UiText.TabRound,
         groups: [
             {
+                rows: [
+                    {
+                        key: SettingKey.AutoPlayGame,
+                        title: UiText.SettingAutoPlayGame,
+                        help: UiText.SettingAutoPlayGameHelp,
+                        default: SettingDefaults[SettingKey.AutoPlayGame],
+                        // Whether rounds are played at all, not how one is
+                        // played -- see SHARE_TABS.
+                        neverShared: true
+                    }
+                ]
+            },
+            {
                 title: UiText.GroupChains,
                 rows: [
                     {
                         key: SettingKey.MaxChainsPerScan,
                         title: UiText.SettingMaxChainsPerScan,
                         help: UiText.SettingMaxChainsPerScanHelp,
-                        default: 6,
+                        default: SettingDefaults[SettingKey.MaxChainsPerScan],
                         step: 1,
                         max: 12,
                         min: 1
@@ -164,7 +185,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.MaxChain,
                         title: UiText.SettingMaxChain,
                         help: UiText.SettingMaxChainHelp,
-                        default: 4,
+                        default: SettingDefaults[SettingKey.MaxChain],
                         step: 1,
                         max: 15,
                         min: 3
@@ -179,43 +200,43 @@ var tabs: TabSpec[] = [
                         key: SettingKey.BonusScore,
                         title: UiText.SettingBonusScore,
                         help: UiText.SettingBonusScoreHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusScore]
                     },
                     {
                         key: SettingKey.BonusCoin,
                         title: UiText.SettingBonusCoin,
                         help: UiText.SettingBonusCoinHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusCoin]
                     },
                     {
                         key: SettingKey.BonusExp,
                         title: UiText.SettingBonusExp,
                         help: UiText.SettingBonusExpHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusExp]
                     },
                     {
                         key: SettingKey.BonusTime,
                         title: UiText.SettingBonusTime,
                         help: UiText.SettingBonusTimeHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusTime]
                     },
                     {
                         key: SettingKey.BonusBubble,
                         title: UiText.SettingBonusBubble,
                         help: UiText.SettingBonusBubbleHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusBubble]
                     },
                     {
                         key: SettingKey.Bonus5to4,
                         title: UiText.SettingBonus5to4,
                         help: UiText.SettingBonus5to4Help,
-                        default: false
+                        default: SettingDefaults[SettingKey.Bonus5to4]
                     },
                     {
                         key: SettingKey.BonusCombo,
                         title: UiText.SettingBonusCombo,
                         help: UiText.SettingBonusComboHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.BonusCombo]
                     }
                 ]
             }
@@ -232,7 +253,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.ReceiveAllHearts,
                         title: UiText.SettingReceiveAllHearts,
                         help: UiText.SettingReceiveAllHeartsHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.ReceiveAllHearts]
                     },
                     {
                         // The three "waiting time" rows share a title, so each
@@ -240,7 +261,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.ReceiveAllHeartsMinWait,
                         title: UiText.SettingRepeatWait,
                         help: UiText.SettingReceiveAllWaitHelp,
-                        default: 25,
+                        default: SettingDefaults[SettingKey.ReceiveAllHeartsMinWait],
                         step: 5,
                         max: 60,
                         min: 5
@@ -254,19 +275,19 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SendHeartsAuto,
                         title: UiText.SettingSendHeartsAuto,
                         help: UiText.SettingSendHeartsAutoHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.SendHeartsAuto]
                     },
                     {
                         key: SettingKey.SendHeartsToZeroScore,
                         title: UiText.SettingSendToZeroScore,
                         help: UiText.SettingSendToZeroScoreHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.SendHeartsToZeroScore]
                     },
                     {
                         key: SettingKey.SendHeartsMaxRuntime,
                         title: UiText.SettingSendMaxRuntime,
                         help: UiText.SettingSendMaxRuntimeHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.SendHeartsMaxRuntime],
                         step: 5,
                         max: 80,
                         min: 0
@@ -275,7 +296,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SendHeartsMinWait,
                         title: UiText.SettingRepeatWait,
                         help: UiText.SettingSendWaitHelp,
-                        default: 26,
+                        default: SettingDefaults[SettingKey.SendHeartsMinWait],
                         step: 5,
                         max: 60,
                         min: 1
@@ -289,37 +310,31 @@ var tabs: TabSpec[] = [
                         key: SettingKey.ReceiveHeartsOneByOne,
                         title: UiText.SettingReceiveOneByOne,
                         help: UiText.SettingReceiveOneByOneHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.ReceiveHeartsSkipFirst,
-                        title: UiText.SettingSkipFirstPerson,
-                        help: UiText.SettingSkipFirstPersonHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.ReceiveHeartsOneByOne]
                     },
                     {
                         key: SettingKey.ReceiveHeartsSkipRuby,
                         title: UiText.SettingSkipRuby,
                         help: UiText.SettingSkipRubyHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.ReceiveHeartsSkipRuby]
                     },
                     {
                         key: SettingKey.ReceiveHeartsSkipMedals,
                         title: UiText.SettingSkipMedals,
                         help: UiText.SettingSkipMedalsHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.ReceiveHeartsSkipMedals]
                     },
                     {
                         key: SettingKey.ClaimAllWithoutCoins,
                         title: UiText.SettingClaimAllOldMails,
                         help: UiText.SettingClaimAllOldMailsHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.ClaimAllWithoutCoins]
                     },
                     {
                         key: SettingKey.MailOpenMax,
                         title: UiText.SettingMailOpenMax,
                         help: UiText.SettingMailOpenMaxHelp,
-                        default: 5,
+                        default: SettingDefaults[SettingKey.MailOpenMax],
                         step: 1,
                         max: 20,
                         min: 1
@@ -328,7 +343,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.MailMinWait,
                         title: UiText.SettingRepeatWait,
                         help: UiText.SettingMailWaitHelp,
-                        default: 5,
+                        default: SettingDefaults[SettingKey.MailMinWait],
                         step: 2,
                         max: 60,
                         min: 1
@@ -351,7 +366,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.LinkReachPercent,
                         title: UiText.SettingLinkReach,
                         help: UiText.SettingLinkReachHelp,
-                        default: 190,
+                        default: SettingDefaults[SettingKey.LinkReachPercent],
                         step: 10,
                         max: 350,
                         min: 150
@@ -360,7 +375,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.PrioritizeMyTsum,
                         title: UiText.SettingPrioritizeMyTsum,
                         help: UiText.SettingPrioritizeMyTsumHelp,
-                        default: true
+                        default: SettingDefaults[SettingKey.PrioritizeMyTsum]
                     }
                 ]
             },
@@ -371,7 +386,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.BubbleStrategy,
                         title: UiText.SettingBubbleStrategy,
                         help: UiText.SettingBubbleStrategyHelp,
-                        default: BubbleStrategy.OneMidChain as BubbleStrategy,
+                        default: SettingDefaults[SettingKey.BubbleStrategy],
                         // `src/bubbleOptions.ts`, as the skill row reads
                         // `SkillOptions`: the Quick Bar offers this list too, and
                         // it is a separate compilation, so the entries are shared
@@ -394,7 +409,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.HoldBubblesLastFeverSec,
                         title: UiText.SettingHoldBubblesLastFever,
                         help: UiText.SettingHoldBubblesLastFeverHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.HoldBubblesLastFeverSec],
                         step: 1,
                         max: 10,
                         min: 0,
@@ -403,7 +418,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.UseFan,
                         title: UiText.SettingUseFan,
                         help: UiText.SettingUseFanHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.UseFan]
                     }
                 ]
             }
@@ -433,12 +448,14 @@ var tabs: TabSpec[] = [
                         key: SettingKey.UnlockLevelHoursWait,
                         title: UiText.SettingUnlockLevel,
                         help: UiText.SettingUnlockLevelHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.UnlockLevelHoursWait],
+                        confirm: UiText.CompanionConfirmSpend,
                         min: 0,
                         max: 24,
                         step: 1,
                         buttons: [
-                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askUnlockLevelsNow(); }}
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askUnlockLevelsNow(); },
+                                remote: 'unlockLevelsNow', confirm: UiText.CompanionConfirmSpendNow}
                         ]
                     },
                     {
@@ -449,7 +466,8 @@ var tabs: TabSpec[] = [
                         key: SettingKey.AutoUnlockMyTsumLevel,
                         title: UiText.SettingUnlockMyTsumLevel,
                         help: UiText.SettingUnlockMyTsumLevelHelp,
-                        default: false,
+                        default: SettingDefaults[SettingKey.AutoUnlockMyTsumLevel],
+                        confirm: UiText.CompanionConfirmSpend,
                     }
                 ]
             },
@@ -463,19 +481,22 @@ var tabs: TabSpec[] = [
                         key: SettingKey.BuyBoxHoursWait,
                         title: UiText.SettingBuyBox,
                         help: UiText.SettingBuyBoxHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.BuyBoxHoursWait],
+                        confirm: UiText.CompanionConfirmSpend,
                         min: 0,
                         max: 24,
                         step: 1,
                         buttons: [
-                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askBuyBoxesNow(); }}
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askBuyBoxesNow(); },
+                                remote: 'buyBoxesNow', confirm: UiText.CompanionConfirmSpendNow}
                         ]
                     },
                     {
                         key: SettingKey.BuyBoxType,
                         title: UiText.SettingBuyBoxType,
                         help: UiText.SettingBuyBoxTypeHelp,
-                        default: BoxType.Premium as BoxType,
+                        default: SettingDefaults[SettingKey.BuyBoxType],
+                        confirm: UiText.CompanionConfirmSpend,
                         // `satisfies` for the same reason the skill and bubble
                         // dropdowns have it: a key that is not a BoxType would
                         // compile, match no tab in `BoxStore.order3`/`order4`,
@@ -493,7 +514,8 @@ var tabs: TabSpec[] = [
                         key: SettingKey.BuyBoxSize,
                         title: UiText.SettingBuyBoxSize,
                         help: UiText.SettingBuyBoxSizeHelp,
-                        default: BoxPurchaseSize.One as BoxPurchaseSize,
+                        default: SettingDefaults[SettingKey.BuyBoxSize],
+                        confirm: UiText.CompanionConfirmSpend,
                         // No `share` ids: a Chores row, so no code or preset
                         // carries it. `satisfies` for the reason the box
                         // dropdown above has it -- a key that is not a
@@ -509,7 +531,8 @@ var tabs: TabSpec[] = [
                         key: SettingKey.BuyBoxMaxPurchases,
                         title: UiText.SettingBuyBoxMax,
                         help: UiText.SettingBuyBoxMaxHelp,
-                        default: 10,
+                        default: SettingDefaults[SettingKey.BuyBoxMaxPurchases],
+                        confirm: UiText.CompanionConfirmSpend,
                         min: 1,
                         max: 50,
                         step: 1
@@ -525,9 +548,10 @@ var tabs: TabSpec[] = [
                         key: RowKey.ExportTsumList,
                         title: UiText.SettingExportTsumList,
                         help: UiText.SettingExportTsumListHelp,
-                        status: ReleaseStatus.Alpha,
+                        status: ReleaseStatus.Beta,
                         buttons: [
-                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askExportTsumListNow(); }}
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askExportTsumListNow(); },
+                                remote: 'exportTsumListNow'}
                         ]
                     }
                 ]
@@ -553,7 +577,17 @@ var tabs: TabSpec[] = [
                         key: SettingKey.SpecialScreenRatio,
                         title: UiText.SettingSpecialScreenRatio,
                         help: UiText.SettingSpecialScreenRatioHelp,
-                        default: false
+                        default: SettingDefaults[SettingKey.SpecialScreenRatio]
+                    },
+                    {
+                        // Minutes, in 30-minute steps.
+                        key: SettingKey.TsumAppRestartFrequency,
+                        title: UiText.SettingAppRestartFrequency,
+                        help: UiText.SettingAppRestartFrequencyHelp,
+                        min: 0,
+                        max: 7200,
+                        step: 30,
+                        default: SettingDefaults[SettingKey.TsumAppRestartFrequency]
                     },
                     // {
                     //     // The game runs its self-dismissing screens off a frame
@@ -580,16 +614,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.AutoLaunchApp,
                         title: UiText.SettingAutoLaunchApp,
                         help: UiText.SettingAutoLaunchAppHelp,
-                        default: false
-                    },
-                    {
-                        key: SettingKey.AutoPlayGame,
-                        title: UiText.SettingAutoPlayGame,
-                        help: UiText.SettingAutoPlayGameHelp,
-                        default: true,
-                        // Whether rounds are played at all, not how one is
-                        // played -- see SHARE_TABS.
-                        neverShared: true
+                        default: SettingDefaults[SettingKey.AutoLaunchApp]
                     },
                     // {
                     //     key: SettingKey.ClickAssist,
@@ -606,12 +631,13 @@ var tabs: TabSpec[] = [
                         key: SettingKey.RoundDelayMinutes,
                         title: UiText.SettingRoundDelay,
                         help: UiText.SettingRoundDelayHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.RoundDelayMinutes],
                         step: 1,
                         max: 120,
                         min: 0,
                         buttons: [
-                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { skipRoundDelay(); }}
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { skipRoundDelay(); },
+                                remote: 'roundDelaySkip'}
                         ],
                         // The gap *between* rounds -- see SHARE_TABS.
                         neverShared: true
@@ -623,7 +649,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.MaxRoundMinutes,
                         title: UiText.SettingMaxRound,
                         help: UiText.SettingMaxRoundHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.MaxRoundMinutes],
                         step: 1,
                         max: 60,
                         min: 0,
@@ -637,7 +663,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.MaxRoundAction,
                         title: UiText.SettingMaxRoundAction,
                         help: UiText.SettingMaxRoundActionHelp,
-                        default: MaxRoundAction.Coast as MaxRoundAction,
+                        default: SettingDefaults[SettingKey.MaxRoundAction],
                         // No `share` ids on the entries, unlike every other
                         // dropdown: the row is `neverShared`, so no code and no
                         // preset ever writes one. `satisfies` for the reason the
@@ -659,7 +685,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.StopAfterGames,
                         title: UiText.SettingStopAfterGames,
                         help: UiText.SettingStopAfterGamesHelp,
-                        default: 0,
+                        default: SettingDefaults[SettingKey.StopAfterGames],
                         step: 1,
                         max: 999,
                         min: 0,
@@ -669,7 +695,7 @@ var tabs: TabSpec[] = [
                         key: SettingKey.StopAfterAction,
                         title: UiText.SettingStopAfterAction,
                         help: UiText.SettingStopAfterActionHelp,
-                        default: StopAfterAction.AutoPlayOff as StopAfterAction,
+                        default: SettingDefaults[SettingKey.StopAfterAction],
                         // `src/stopAfterOptions.ts`, shared with the Quick Bar.
                         dropdown: StopAfterOptions,
                         neverShared: true
@@ -678,26 +704,20 @@ var tabs: TabSpec[] = [
                         key: SettingKey.TrackRoundStats,
                         title: UiText.SettingTrackRoundStats,
                         help: UiText.SettingTrackRoundStatsHelp,
-                        default: true,
+                        default: SettingDefaults[SettingKey.TrackRoundStats],
                         // Bookkeeping about rounds, not a rule one is played
                         // under -- see SHARE_TABS.
                         neverShared: true
-                    }
-                ]
-            },
-            {
-                title: UiText.GroupExperimental,
-                help: UiText.GroupExperimentalHelp,
-                warn: true,
-                rows: [
+                    },
                     {
-                        key: SettingKey.TsumAppRestartFrequency,
-                        title: UiText.SettingAppRestartFrequency,
-                        help: UiText.SettingAppRestartFrequencyHelp,
-                        min: 0,
-                        max: 120,
-                        step: 6,
-                        default: 0
+                        key: SettingKey.ShareRoundStats,
+                        title: UiText.SettingShareRoundStats,
+                        help: UiText.SettingShareRoundStatsHelp,
+                        default: SettingDefaults[SettingKey.ShareRoundStats],
+                        // Beta. Inert until the user sets ROUND_STATS_URL
+                        // and allows network access in GAP (gap-env.json).
+                        status: ReleaseStatus.Beta,
+                        neverShared: true
                     }
                 ]
             },
@@ -790,14 +810,14 @@ var tabs: TabSpec[] = [
                         key: SettingKey.DebugLogs,
                         title: UiText.SettingDebugLogs,
                         help: UiText.SettingDebugLogsHelp,
-                        default: false,
+                        default: SettingDefaults[SettingKey.DebugLogs],
                         neverShared: true
                     },
                     {
                         key: SettingKey.DebugGame,
                         title: UiText.SettingDebugGame,
                         help: UiText.SettingDebugGameHelp,
-                        default: false,
+                        default: SettingDefaults[SettingKey.DebugGame],
                         neverShared: true
                     },
                     {
@@ -807,26 +827,26 @@ var tabs: TabSpec[] = [
                         key: SettingKey.Walkthrough,
                         title: UiText.SettingWalkthrough,
                         help: UiText.SettingWalkthroughHelp,
-                        default: false,
+                        default: SettingDefaults[SettingKey.Walkthrough],
                         neverShared: true
                     },
                     {
                         key: SettingKey.CollectUnknownScreens,
                         title: UiText.SettingCollectUnknownScreens,
                         help: UiText.SettingCollectUnknownScreensHelp,
-                        default: false,
+                        default: SettingDefaults[SettingKey.CollectUnknownScreens],
                         neverShared: true
                     },
                     {
                         // How far back the router's page trail goes. With "Debug
                         // game" on it also writes one frame per visit to
-                        // tsum_record/pageHistory, and drops each frame as its visit
+                        // history/, and drops each frame as its visit
                         // falls off the stack -- so the directory is bounded by this
                         // number, not by uptime.
                         key: SettingKey.PageHistoryDepth,
                         title: UiText.SettingPageHistoryDepth,
                         help: UiText.SettingPageHistoryDepthHelp,
-                        default: 20,
+                        default: SettingDefaults[SettingKey.PageHistoryDepth],
                         step: 5,
                         max: 100,
                         min: 0,
@@ -977,6 +997,7 @@ function loadSettings(settings: SettingSpec[][]) {
             }
         })();
         carryBuyBoxTenTimes(recordSettings);
+        carryRestartHours(recordSettings);
     } else {
         logInfo(Log.Settings.NoneFound, i18nText(UiText.LogNoSettings));
         return;
@@ -999,6 +1020,25 @@ function carryBuyBoxTenTimes(stored: { [key: string]: SettingValue }) {
     var row = rowByKey(SettingKey.BuyBoxSize);
     if (row !== undefined) {
         row.default = BoxPurchaseSize.Ten;
+    }
+}
+
+/** The key App restart frequency had up to 4.0, when it held hours. Read here once; nothing writes it. */
+var RETIRED_RESTART_HOURS = 'tsumAppRestartFrequency';
+
+/**
+ * A stored restart frequency in hours becomes minutes, once: only while the
+ * minutes key has no value of its own. 4.0's max (120h) is 5.0's max (7200min).
+ * The next save writes the new key and drops the old one.
+ */
+function carryRestartHours(stored: { [key: string]: SettingValue }) {
+    var hours = stored[RETIRED_RESTART_HOURS];
+    if (stored[SettingKey.TsumAppRestartFrequency] !== undefined || typeof hours !== 'number') {
+        return;
+    }
+    var row = rowByKey(SettingKey.TsumAppRestartFrequency);
+    if (row !== undefined) {
+        row.default = hours * 60;
     }
 }
 
@@ -1233,6 +1273,64 @@ function copySettingsCodeForStrip(): void {
     });
 }
 
+/** How long the app bar's Code button says Copied / Failed. */
+var COPY_FLASH_MS = 1500;
+var copyFlashTimer: number | undefined;
+
+/**
+ * The app bar's Code button: the Copy button's code without opening its
+ * panel. The button says how it went; a failure opens the share panel on its
+ * tab instead, where the code can be copied by hand.
+ */
+function copySettingsCodeFromBar(): void {
+    var text = withShareListing(buildSettingsCode(), collectSettingValues(settings, isUnsharedSetting));
+    writeClipboard(text, function (ok) {
+        flashCopyCode(ok);
+        if (!ok) {
+            var tab = shareTabId();
+            if (tab !== undefined) {
+                selectTab(tab);
+            }
+            copySettingsCode();
+            ensureSharePanel().scrollIntoView({block: 'center'});
+        }
+    });
+}
+
+/** The tab holding the Share settings row. */
+function shareTabId(): string | undefined {
+    for (var t = 0; t < tabs.length; t++) {
+        for (var g = 0; g < tabs[t].groups.length; g++) {
+            var rows = tabs[t].groups[g].rows;
+            for (var r = 0; r < rows.length; r++) {
+                if (rows[r].key === RowKey.ShareSettings) {
+                    return tabs[t].id;
+                }
+            }
+        }
+    }
+    return undefined;
+}
+
+/** Shows Copied / Failed on the Code button for a moment, then its label again. */
+function flashCopyCode(ok: boolean): void {
+    var button = document.getElementById('copyCode');
+    var label = document.getElementById('copyCodeText');
+    if (button === null || label === null) {
+        return;
+    }
+    button.setAttribute('data-state', ok ? 'done' : 'failed');
+    label.textContent = i18nText(ok ? UiText.ChromeCopied : UiText.ChromeCopyFailed);
+    if (copyFlashTimer !== undefined) {
+        clearTimeout(copyFlashTimer);
+    }
+    copyFlashTimer = setTimeout(function () {
+        copyFlashTimer = undefined;
+        button!.removeAttribute('data-state');
+        label!.textContent = i18nText(UiText.ChromeCopyCode);
+    }, COPY_FLASH_MS);
+}
+
 /**
  * Asks the run what it is currently set to; `onLiveSettings` takes the answer.
  *
@@ -1259,8 +1357,40 @@ function pullLiveSettings(force?: boolean): void {
     if (document.hidden && force !== true) {
         return;
     }
+    // First, so a phone change saved for the next start is in the store before
+    // `takeStoredSettings` reads it.
+    iface.runScriptCallback(
+        'typeof remoteSettingsTake === "function" ? remoteSettingsTake() : ""', 'onRemoteSettings');
     iface.runScriptCallback(
         'typeof quickBarState === "function" ? quickBarState() : ""', 'onLiveSettings');
+}
+
+/**
+ * Settings changed from GAP Companion since the last pull (`remoteSettingsTake`,
+ * src/index.ts). Taken even with a save pending: the engine has already let go
+ * of them, so this is their only copy.
+ */
+// noinspection JSUnusedGlobalSymbols
+function onRemoteSettings(json: string): void {
+    var values: { [key: string]: SettingValue } | null;
+    try {
+        values = JSON.parse(json);
+    } catch (e) {
+        return;
+    }
+    if (values === null || typeof values !== 'object') {
+        return;
+    }
+    var moved = takeSettingValues(values);
+    if (moved.length > 0) {
+        logInfo(Log.Settings.RemoteRead, 'Took settings changed from GAP Companion onto the form',
+            {settings: moved.join(' ')});
+        // The strip draws from the store while no run is going.
+        var iface = bridge();
+        if (iface !== undefined && iface.broadcast !== undefined) {
+            iface.broadcast(PageMessage.Presets);
+        }
+    }
 }
 
 /**
@@ -1530,8 +1660,8 @@ var SHARE_SLOTS: (SettingKey | '')[] = [
  *
  * **What travels is how a round is played, and nothing else.** The rows about
  * the *run* rather than the round -- Auto Play Game, the between-rounds delay,
- * Track round statistics and the Max Round Duration pair -- live on the General
- * tab and are marked `neverShared`. Nothing else off these tabs travels either:
+ * Track round statistics, Share round stats, and the Max Round Duration and
+ * Stop after games pairs -- are marked `neverShared`. Nothing else off these tabs travels either:
  * not the language, the device, the chores, the mailbox or the hearts, which
  * are about the account.
  *
@@ -1976,6 +2106,9 @@ function applySettingValue(setting: SettingSpec, value: SettingValue): boolean {
         setting.default = num;
         if (control !== null) {
             control.value = shownNumber(setting, num);
+            if (control.parentNode !== null) {
+                syncStepLimits(control.parentNode as HTMLElement, setting);
+            }
         }
         return true;
     }
@@ -1995,7 +2128,7 @@ function applySettingValue(setting: SettingSpec, value: SettingValue): boolean {
  * into whatever was already here.
  *
  * The rows no slot names are not touched at all -- the language, the chores, the
- * mailbox, the hearts, the box buying, and the three run-shaped rows on the
+ * mailbox, the hearts, the box buying, and the run-shaped rows on the
  * shared tabs (SHARE_TABS). A code cannot carry them, so putting them back to
  * default would be an edit made on no evidence.
  */
@@ -2159,8 +2292,8 @@ function copyFieldSelection(node: HTMLTextAreaElement | undefined): boolean {
  * Puts `text` on the system clipboard, then calls `done` with whether it got
  * there.
  *
- * Three routes, best first: Game Automation Platform's bridge -- the only one
- * that works from a file:// page, and the reason the app grew a clipboard
+ * Three routes, best first: General Automation Platform's bridge -- the only
+ * one that works from a file:// page, and the reason the app grew a clipboard
  * method at all -- then the async clipboard API for when this page is opened in
  * a browser, then `execCommand` on the visible box. A host without the bridge
  * always lands on the last one, and the code stays selected either way.
@@ -3088,9 +3221,9 @@ function copyPresetsExport(): void {
  * This page is a file:// document in a WebView and has no filesystem of its own,
  * so the write goes through the bundle's `writeFile` native -- which means it
  * only works once something has been started, and the reply below is what says
- * so rather than leaving the button looking ignored. The directory is read from
- * `Config.recordDir` inside the engine, so the export lands beside the round
- * stats with nothing here holding a second copy of that name.
+ * so rather than leaving the button looking ignored. The directory is
+ * `getDevicePath()` inside the engine, so the export lands in this device's own
+ * folder with nothing here holding a second copy of that path.
  */
 // noinspection JSUnusedGlobalSymbols
 function savePresetsFile(): void {
@@ -3108,12 +3241,10 @@ function savePresetsFile(): void {
         return;
     }
     iface.runScriptCallback('(function () {'
-        + 'if (typeof writeFile !== "function" || typeof getStoragePath !== "function"'
-        + ' || typeof Config === "undefined") { return "no engine"; }'
+        + 'if (typeof writeFile !== "function" || typeof getDevicePath !== "function") {'
+        + ' return "no engine"; }'
         + 'try {'
-        + 'var dir = getStoragePath() + "/" + Config.recordDir;'
-        + 'execute("mkdir -p " + dir);'
-        + 'var path = dir + "/" + ' + JSON.stringify(PRESET_FILE_NAME) + ';'
+        + 'var path = getDevicePath() + "/" + ' + JSON.stringify(PRESET_FILE_NAME) + ';'
         + 'writeFile(path, ' + JSON.stringify(text) + ');'
         + 'return path;'
         + '} catch (e) { return "error " + e; }'
@@ -3150,6 +3281,10 @@ function bindPresets(): void {
     var save = document.getElementById('presetSave');
     if (save !== null) {
         save.addEventListener('click', openPresetPanel);
+    }
+    var copy = document.getElementById('copyCode');
+    if (copy !== null) {
+        copy.addEventListener('click', copySettingsCodeFromBar);
     }
     var field = presetNameField();
     if (field !== null) {
@@ -3205,13 +3340,13 @@ function genStartCommand(settings: SettingSpec[][]): string {
 /** localStorage key holding an explicit choice, if the user has made one. */
 var THEME_KEY = 'tsumtsumtheme';
 
-/** What the device asks for. Light when it has no opinion, or cannot say. */
+/** What the device asks for. Dark, GAP's default, when it has no opinion. */
 function systemTheme(): string {
     if (typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'dark';
+        window.matchMedia('(prefers-color-scheme: light)').matches) {
+        return 'light';
     }
-    return 'light';
+    return 'dark';
 }
 
 /** The theme the page is showing right now. */
@@ -3224,7 +3359,7 @@ function currentTheme(): string {
  * `remember` says the user is the one who asked.
  *
  * `data-theme` is always set explicitly, even when it only mirrors the device,
- * because Pico's dark rules and the toggle's own icon both key off it.
+ * because the GAP tokens and the toggle's own icon both key off it.
  */
 function setTheme(theme: string, remember: boolean): void {
     document.documentElement.setAttribute('data-theme', theme);
@@ -3377,6 +3512,7 @@ function taskLabel(name: TaskName): string {
         case TaskName.UnlockLevel: return i18nText(UiText.RunUnlockLevel);
         case TaskName.BuyBoxes: return i18nText(UiText.RunBuyBoxes);
         case TaskName.PlayRound: return i18nText(UiText.RunPlayRound);
+        case TaskName.Workflow: return i18nText(UiText.RunWorkflow);
     }
 }
 
@@ -3404,6 +3540,8 @@ function taskDetail(name: TaskName, values: { [key: string]: SettingValue }): st
                 size: optionLabelOf(SettingKey.BuyBoxSize, values[SettingKey.BuyBoxSize]),
                 max: num(SettingKey.BuyBoxMaxPurchases)
             });
+        // Only a GAP Companion start registers it (`workflowTaskTable`).
+        case TaskName.Workflow: return i18nText(UiText.RunWorkflowDetail);
         case TaskName.PlayRound: {
             // The delay is not a second interval: the task still comes round
             // every 3s and returns until the wait is up (`taskPlayGameQuick`),
@@ -3457,6 +3595,8 @@ function roundFlowChips(values: { [key: string]: SettingValue }): string[] {
     chips.push(i18nText(UiText.FlowScan));
     if (strategy === BubbleStrategy.AllAsap) {
         chips.push(i18nText(UiText.FlowPopAll));
+    } else if (strategy === BubbleStrategy.SaveOne) {
+        chips.push(i18nText(UiText.FlowPopAllButOne));
     }
     chips.push(i18nFormat(UiText.FlowPlan, {
         max: num(SettingKey.MaxChain),
@@ -3474,9 +3614,12 @@ function roundFlowChips(values: { [key: string]: SettingValue }): string[] {
             {sec: num(SettingKey.HoldBubblesLastFeverSec)}));
     }
     chips.push(i18nText(strategy === BubbleStrategy.OneMidChain
+            || strategy === BubbleStrategy.SaveOne
         ? UiText.FlowLinkOneBubble
         : strategy === BubbleStrategy.AllMidChain
             ? UiText.FlowLinkAllBubbles
+            : strategy === BubbleStrategy.SaveOneMidChain
+            ? UiText.FlowLinkAllButOne
             : UiText.FlowLink));
     if (on(SettingKey.UseFan)) {
         chips.push(i18nText(UiText.FlowFan));
@@ -3906,6 +4049,7 @@ function buildStepper(setting: SettingSpec): HTMLElement {
         var by = coarse !== null ? +coarse * step : +fineBy! * fine;
         // A real minus sign: the hyphen reads as a dash next to the digits.
         button.textContent = (by > 0 ? '+' : '−') + Math.abs(by) / scale;
+        button.setAttribute('data-by', String(by));
         button.addEventListener('click', (function (by) {
             return function () {
                 setNumberValue(setting, input, (+input.value) * scale + by);
@@ -3916,6 +4060,7 @@ function buildStepper(setting: SettingSpec): HTMLElement {
     input.addEventListener('change', function () {
         setNumberValue(setting, input, (+input.value) * scale);
     });
+    syncStepLimits(stepper, setting);
 
     // A number row may also carry an action -- "Now", beside the between-rounds
     // delay. Inside the stepper rather than beside it, so the row's control
@@ -3946,7 +4091,22 @@ function setNumberValue(setting: SettingSpec, input: HTMLInputElement, value: nu
     }
     input.value = shownNumber(setting, next);
     setting.default = next;
+    if (input.parentNode !== null) {
+        syncStepLimits(input.parentNode as HTMLElement, setting);
+    }
     saveSettings(settings);
+}
+
+/** Disables a stepper's buttons that point past the row's min or max. */
+function syncStepLimits(stepper: HTMLElement, setting: SettingSpec): void {
+    var value = setting.default as number;
+    var steps = stepper.querySelectorAll('.step');
+    for (var i = 0; i < steps.length; i++) {
+        var button = steps[i] as HTMLButtonElement;
+        var by = +button.getAttribute('data-by')!;
+        button.disabled = (by < 0 && setting.min !== undefined && value <= setting.min) ||
+            (by > 0 && setting.max !== undefined && value >= setting.max);
+    }
 }
 
 /** A number row's stored value as its field shows it -- see `SettingSpec.scale`. */
@@ -4037,6 +4197,10 @@ function renderGroup(group: GroupSpec): HTMLElement | undefined {
     var drawn = 0;
 
     title.textContent = getTitle(group);
+    // An untitled group gets no heading, so the felt dot has nothing to sit on.
+    if (title.textContent.trim() === '') {
+        title.parentNode!.removeChild(title);
+    }
     help.textContent = getHelp(group);
     if (help.textContent === '') {
         help.parentNode!.removeChild(help);
@@ -4112,7 +4276,83 @@ function selectTab(id: string): void {
     if (localStorage !== undefined) {
         localStorage.setItem(TAB_KEY, id);
     }
+    scrollTabIntoView(document.getElementById('tab_' + id));
     window.scrollTo(0, 0);
+}
+
+/** Scrolls the tab bar just far enough that `tab` is fully in view. */
+function scrollTabIntoView(tab: HTMLElement | null): void {
+    var bar = document.getElementById('tabBar');
+    if (tab === null || bar === null) {
+        return;
+    }
+    // Room for the "+N" button that would otherwise sit over the tab's edge.
+    var pad = 48;
+    if (tab.offsetLeft - pad < bar.scrollLeft) {
+        bar.scrollLeft = Math.max(0, tab.offsetLeft - pad);
+    } else if (tab.offsetLeft + tab.offsetWidth + pad > bar.scrollLeft + bar.clientWidth) {
+        bar.scrollLeft = tab.offsetLeft + tab.offsetWidth + pad - bar.clientWidth;
+    }
+    updateTabOverflow();
+}
+
+/**
+ * The tab bar's overflow cues: a faded edge and a "+N" button on each side
+ * that has tabs past it, so no tab is hidden without saying so.
+ */
+function updateTabOverflow(): void {
+    var bar = document.getElementById('tabBar');
+    var scroll = document.getElementById('tabScroll');
+    var left = document.getElementById('tabMoreLeft');
+    var right = document.getElementById('tabMoreRight');
+    if (bar === null || scroll === null || left === null || right === null) {
+        return;
+    }
+    var hiddenLeft = 0;
+    var hiddenRight = 0;
+    for (var i = 0; i < bar.children.length; i++) {
+        var tab = bar.children[i] as HTMLElement;
+        // Half out counts as hidden: the half that shows is only the peek.
+        var middle = tab.offsetLeft + tab.offsetWidth / 2;
+        if (middle < bar.scrollLeft) {
+            hiddenLeft++;
+        } else if (middle > bar.scrollLeft + bar.clientWidth) {
+            hiddenRight++;
+        }
+    }
+    scroll.classList.toggle('has-left', hiddenLeft > 0);
+    scroll.classList.toggle('has-right', hiddenRight > 0);
+    left.hidden = hiddenLeft === 0;
+    right.hidden = hiddenRight === 0;
+    left.textContent = '‹ ' + hiddenLeft;
+    right.textContent = '+' + hiddenRight + ' ›';
+    var label = i18nText(UiText.ChromeMoreTabs);
+    left.setAttribute('aria-label', label + ' (' + hiddenLeft + ')');
+    right.setAttribute('aria-label', label + ' (' + hiddenRight + ')');
+}
+
+/** Wires the tab bar's scroll and "+N" buttons; once, as they are chrome. */
+function bindTabOverflow(): void {
+    var bar = document.getElementById('tabBar');
+    var left = document.getElementById('tabMoreLeft');
+    var right = document.getElementById('tabMoreRight');
+    if (bar === null || left === null || right === null) {
+        return;
+    }
+    var page = function (direction: number) {
+        return function () {
+            bar!.scrollLeft += direction * Math.round(bar!.clientWidth * 0.8);
+        };
+    };
+    left.addEventListener('click', page(-1));
+    right.addEventListener('click', page(1));
+    bar.addEventListener('scroll', updateTabOverflow);
+    window.addEventListener('resize', updateTabOverflow);
+    // The fonts land after the first layout and widen the tabs, so bring the
+    // selected one back into view once they have.
+    window.addEventListener('load', function () {
+        scrollTabIntoView(bar!.querySelector('[aria-selected="true"]') as HTMLElement | null);
+    });
 }
 
 /** The remembered tab, or the first one when there is nothing usable stored. */
@@ -4277,6 +4517,8 @@ function localisePresets(): void {
     };
     labelled('presetSelect', UiText.PresetOpen);
     labelled('presetSave', UiText.PresetManage);
+    labelled('copyCode', UiText.ChromeCopyCodeLabel);
+    titled('copyCodeText', UiText.ChromeCopyCode);
     titled('presetSaveNew', UiText.PresetSaveNew);
     titled('presetUpdate', UiText.PresetUpdate);
     titled('presetDelete', UiText.PresetDelete);
@@ -4331,6 +4573,10 @@ function bootstrap(): void {
     // Wired once: the app bar and the panel under it are not re-rendered, and
     // their labels are `localiseChrome`'s, which every render calls.
     bindPresets();
+    // The engine's copy for GAP Companion's Import from device, current even
+    // before the first save on this device.
+    presetsSendMirror(presetsLoad());
+    bindTabOverflow();
 
     checkShareSlots();
     loadSettings(settings);

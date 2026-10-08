@@ -40,6 +40,7 @@ const { spawn, execFileSync } = require('child_process');
 const { projectDir, loadConfig, resolveChannel, archiveName } = require('../release/config');
 const { runSteps, defaultJobs } = require('./schedule');
 const { zipDirectory } = require('./zip');
+const { signScript, SIGNATURE_FILE } = require('./signScript');
 
 const argv = process.argv.slice(2);
 const has = (name) => argv.includes('--' + name);
@@ -53,6 +54,21 @@ const nodeBin = process.execPath;
 const tsc = local('node_modules', 'typescript', 'bin', 'tsc');
 
 const DEPLOY_DIR = '/sdcard/Download/GameAutomationPlatform/scripts/DEV';
+
+/**
+ * The host's install ledger, written beside a DEV push so the app lists the
+ * folder as "Tsum Tsum DEV - <local deploy time>" rather than "DEV".
+ */
+function devLedger() {
+  const at = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  const stamp = `${at.getFullYear()}-${p(at.getMonth() + 1)}-${p(at.getDate())} ${p(at.getHours())}:${p(at.getMinutes())}`;
+  const file = local('build', 'gap-install.json');
+  fs.writeFileSync(file, JSON.stringify({
+    source: 'local', name: `Tsum Tsum DEV - ${stamp}`, version, installedAt: at.getTime(),
+  }, null, 2));
+  return file;
+}
 
 // The page scripts, minified in one process. All ES5, to match what
 // tsconfig.settings.json and tsconfig.quickbar.json emit. `verify` is only
@@ -73,6 +89,7 @@ const PAGE_SCRIPTS = [
   { file: 'build/bubbleOptions.js' },
   { file: 'build/stopAfterOptions.js' },
   { file: 'build/runPlan.js' },
+  { file: 'build/settingDefaults.js' },
   { file: 'build/qrCode.js', verify: 'names:qrMatrix' },
   { file: 'build/presets.js', verify: 'names:presetsLoad,presetMatchName' },
 ].map((job) => ({ in: job.file, out: job.file, ecma: 5, verify: job.verify }));
@@ -124,17 +141,30 @@ const substitute = (text) => text
 
 /** Stage the page assets so tools/inline/inline.js can resolve them by name. */
 function stageAssets(log) {
-  for (const name of ['index.html', 'index.css', 'quickbar.html', 'quickbar.css']) {
+  for (const name of ['index.html', 'index.css', 'felt.css', 'quickbar.html', 'quickbar.css', 'feltQuickbar.css', 'gapTokens.css']) {
     fs.copyFileSync(local('src', name), local('build', name));
   }
-  // Pico CSS from node_modules rather than a CDN: the settings page is opened
-  // from file:// on a device that is often offline, so every asset it names has
-  // to end up inside dist/index.html. `@charset` is dropped because it is only
-  // legal at the top of a stylesheet *file*, and this becomes a <style> element.
-  const pico = fs.readFileSync(local('node_modules', '@picocss', 'pico', 'css', 'pico.min.css'), 'utf8');
-  fs.writeFileSync(local('build', 'pico.css'), pico.replace(/^@charset "UTF-8";/, ''));
-  log('[build] staged index/quickbar html+css and pico.css into build/\n');
+  // The GAP fonts as data URIs: the pages are opened from file:// on a device
+  // that is often offline, so a font they have to fetch is a font they lack.
+  // One sheet per family, so the Quick Bar inlines only the one it uses.
+  for (const [sheet, family, file, weight] of GAP_FONTS) {
+    const data = fs.readFileSync(local('src', 'fonts', file)).toString('base64');
+    fs.writeFileSync(local('build', sheet),
+      `@font-face{font-family:"${family}";src:url(data:font/woff2;base64,${data}) format("woff2");` +
+      `font-weight:${weight};font-style:normal;font-display:block}\n`);
+  }
+  log('[build] staged index/quickbar html+css, GAP tokens and fonts into build/\n');
 }
+
+/**
+ * [sheet, family, file in src/fonts, weight range] -- Latin subsets: the felt
+ * skin's Figtree and Caprasimo (the website's faces), and the kit's Plex Mono.
+ */
+const GAP_FONTS = [
+  ['font-sans.css', 'Figtree', 'figtree.woff2', '500 800'],
+  ['font-display.css', 'Caprasimo', 'caprasimo.woff2', '400'],
+  ['font-mono.css', 'IBM Plex Mono', 'ibm-plex-mono.woff2', '400'],
+];
 
 /**
  * Fold a page's assets into it and substitute the placeholders. The inlined
@@ -181,6 +211,36 @@ function writeArchive(log) {
   fs.writeFileSync(local(archive + '.sha256'), digest);
   log(`[build] ${archive} (${(bytes.length / 1024).toFixed(0)}K): ${names.join(', ')}\n`);
   log(`[build] SHA256 = ${digest}\n`);
+}
+
+/**
+ * Signs dist/ for GAP Companion (`gap-signature.json`, tools/build/signScript.js)
+ * when `GAP_SCRIPT_KEY` names a PEM private key. Unsigned builds still run;
+ * they just get no companion. The id is `GAP_SCRIPT_ID` in src/index.ts.
+ */
+function signDist(log) {
+  const keyFile = process.env.GAP_SCRIPT_KEY || devScriptKey();
+  if (!keyFile) {
+    log('[build] GAP_SCRIPT_KEY unset: dist/ is not signed (no GAP Companion)\n');
+    return;
+  }
+  const id = /const GAP_SCRIPT_ID = '([^']+)'/.exec(fs.readFileSync(local('src', 'index.ts'), 'utf8'));
+  if (!id) throw new Error('GAP_SCRIPT_ID not found in src/index.ts');
+  const pkgVersion = JSON.parse(fs.readFileSync(local('package.json'), 'utf8')).version;
+  const manifest = signScript({ dir: local('dist'), script: id[1], version: pkgVersion,
+    keyPem: fs.readFileSync(keyFile, 'utf8') });
+  log(`[build] dist/${SIGNATURE_FILE}: ${id[1]} ${pkgVersion}, ${Object.keys(manifest.files).length} files\n`);
+}
+
+/**
+ * A DEV push (--adb) signs with the GAP Devkit's dev script key when the
+ * gap-companion checkout sits beside this repo, as the Devkit's own deploy does.
+ * Release builds never fall back to it.
+ */
+function devScriptKey() {
+  if (!has('adb')) return undefined;
+  const pem = path.join(projectDir, '..', '..', 'gap-companion', 'cloud', 'adapters', '.dev-key', 'script-private.pem');
+  return fs.existsSync(pem) ? pem : undefined;
 }
 
 // Declaration order is print order. What actually runs when is decided by
@@ -255,6 +315,12 @@ const steps = [
     run: ({ log }) => inlinePage(log, 'build/quickbar.html', 'dist/quickbar.html'),
   },
   { id: 'dist:bundle', needs: ['tsc:game'], run: ({ log }) => distBundle(log) },
+  // GAP Companion's Settings tab: the settings page's schema as data, read by
+  // `gapSettingsSchema` (src/index.ts). From the page scripts, so after their minify.
+  {
+    id: 'dist:companion', needs: ['minify:pages'],
+    run: ({ log }) => node(log, 'tools/companion/settings.js', '--channel-status', String(channel.Status)),
+  },
   // The tsum portrait libraries: not compiled, but shipped, so they go into
   // dist/ under the same rule as the scripts. Each is read off getScriptPath()
   // on first use rather than out of the bundle. tsumNames.dat and
@@ -267,8 +333,8 @@ const steps = [
       await node(log, 'tools/minify/library.js', 'src/tsumNames.dat', 'dist/tsumNames.dat');
     },
   },
-  // The license and the notices ride in the archive: dist/index.html inlines
-  // Pico CSS, whose MIT notice has to travel with it.
+  // The license and the notices ride in the archive: both pages inline the GAP
+  // fonts, whose OFL notice has to travel with them.
   {
     id: 'dist:notices',
     run: ({ log }) => {
@@ -276,11 +342,35 @@ const steps = [
       log('[build] dist/LICENSE, dist/NOTICE\n');
     },
   },
-
+  // The env vars this script asks GAP for (getEnv, env:KEY requests).
   {
-    id: 'archive', needs: ['dist:index', 'dist:quickbar', 'dist:bundle', 'dist:library', 'dist:notices'],
-    run: ({ log }) => writeArchive(log),
+    id: 'dist:env',
+    run: ({ log }) => {
+      const text = fs.readFileSync(local('gap-env.json'), 'utf8');
+      JSON.parse(text); // a broken manifest fails the build, not the device
+      fs.writeFileSync(local('dist', 'gap-env.json'), text);
+      log('[build] dist/gap-env.json\n');
+    },
   },
+
+  // The page localStorage keys GAP's Library backs up (Back up / Restore settings).
+  {
+    id: 'dist:backup',
+    run: ({ log }) => {
+      const text = fs.readFileSync(local('gap-backup.json'), 'utf8');
+      JSON.parse(text); // a broken manifest fails the build, not the device
+      fs.writeFileSync(local('dist', 'gap-backup.json'), text);
+      log('[build] dist/gap-backup.json\n');
+    },
+  },
+
+  // Last into dist/: it hashes every file there, so the archive and the push carry it.
+  {
+    id: 'sign',
+    needs: ['dist:index', 'dist:quickbar', 'dist:bundle', 'dist:library', 'dist:notices', 'dist:env', 'dist:backup', 'dist:companion'],
+    run: ({ log }) => signDist(log),
+  },
+  { id: 'archive', needs: ['sign'], run: ({ log }) => writeArchive(log) },
 ];
 
 async function main() {
@@ -308,16 +398,21 @@ async function main() {
   if (has('adb')) {
     const devices = valueOf('device') ? [valueOf('device')] : connectedEmulators();
     const failed = [];
+    const ledger = devLedger();
     for (const device of devices) {
       console.log(`[build] pushing to ${device}...`);
       try {
         // A multi-file push fails if the target folder is missing.
         await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'shell', 'mkdir', '-p', `'${DEPLOY_DIR}'`]);
-        await sh((text) => process.stdout.write(text), 'adb', [
-          '-s', device, 'push',
-          'dist/index.js', 'dist/index.html', 'dist/quickbar.html', 'dist/tsums.dat',
-          'dist/tsumsCollection.dat', 'dist/tsumNames.dat', DEPLOY_DIR,
-        ]);
+        // An unsigned build would leave an older push's signature behind, which
+        // no longer matches the files, so GAP silently gives no companion.
+        if (!fs.existsSync(local('dist', SIGNATURE_FILE))) {
+          await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'shell', 'rm', '-f', `'${DEPLOY_DIR}/${SIGNATURE_FILE}'`]);
+        }
+        // Every dist/ file: gap-signature.json lists them all, and a missing one fails it.
+        const files = fs.readdirSync(local('dist')).map((name) => 'dist/' + name);
+        await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'push', ...files, DEPLOY_DIR]);
+        await sh((text) => process.stdout.write(text), 'adb', ['-s', device, 'push', ledger, `${DEPLOY_DIR}/.gap-install.json`]);
       } catch (err) {
         // Keep going so one bad emulator doesn't block the rest.
         console.error(`[build] push to ${device} failed: ${err && err.message ? err.message : err}`);

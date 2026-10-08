@@ -41,6 +41,10 @@ var BubbleOptions: BubbleOption[] = [
      title: UiText.BubbleOneMidChain, short: UiText.BubbleOneMidChainShort},
     {key: BubbleStrategy.AllMidChain, share: 'a',
      title: UiText.BubbleAllMidChain, short: UiText.BubbleAllMidChainShort},
+    {key: BubbleStrategy.SaveOneMidChain, share: 'S',
+     title: UiText.BubbleSaveOneMidChain, short: UiText.BubbleSaveOneMidChainShort},
+    {key: BubbleStrategy.SaveOne, share: 's',
+     title: UiText.BubbleSaveOne, short: UiText.BubbleSaveOneShort},
     {key: BubbleStrategy.AllAsap, share: 'A',
      title: UiText.BubbleAllAsap, short: UiText.BubbleAllAsapShort}
 ];

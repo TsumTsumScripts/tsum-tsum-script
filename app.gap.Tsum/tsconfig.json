@@ -1,8 +1,8 @@
 {
   // The game script has no import/export -- every file shares one global scope.
   // `outFile` concatenates the files listed below (in this order) into a single
-  // build/index.js, which is what Game Automation Platform loads. settings.ts is
-  // intentionally NOT listed here; it compiles separately via
+  // build/index.js, which is what General Automation Platform loads.
+  // settings.ts is intentionally NOT listed here; it compiles separately via
   // tsconfig.settings.json into build/settings.js, which the settings UI
   // (index.html) loads on its own.
   //
@@ -33,6 +33,9 @@
     // so both sides of the start() bridge agree on the Settings shape.
     "src/shared.d.ts",
     "src/globals.d.ts",
+    // Every setting's default, shared with the settings page; a remote start
+    // fills from it (see remoteStartSettings, index.ts).
+    "src/settingDefaults.ts",
     "src/taskController.ts",
     // The run's task table, shared with the settings page (tsconfig.settings.json)
     // so the Run order card and buildRun describe one set of jobs.
@@ -60,6 +63,9 @@
     "src/logsEn.ts",
     "src/logsZhTw.ts",
     "src/logsJa.ts",
+    // The trace stream's vocabulary and gate. Read by the logger below, but only
+    // from inside functions, so its slot is for reading order.
+    "src/trace.ts",
     // The structured logger. Reads `Config.debugLogs` and the message
     // catalogue above, and every other file logs through it -- but only
     // from inside a function, so its slot here is for reading order.
@@ -86,6 +92,8 @@
     "src/boxes.ts",
     // Walks the collection with levelCap.ts's helpers, so it follows it too.
     "src/tsumList.ts",
+    // Select My Tsum, the workflow's Select Tsum node: reads tsumList.ts's file.
+    "src/myTsumSelect.ts",
     // Attaches to Tsum.prototype and constructs its singleton (`gFever`) at
     // load time, so it follows tsum.ts and precedes pageHandlers.ts, whose
     // observe.feverTime feeds it.
@@ -116,6 +124,7 @@
     "src/skills/cptLy.ts",
     "src/skills/lightningMcQueenPlus.ts",
     "src/skills/nbcSet.ts",
+    "src/skills/villainsSet.ts",
     "src/skills/formalBeast.ts",
     "src/skills/tiaraMinniePlus.ts",
     "src/skills/coronationElsa.ts",
@@ -128,6 +137,8 @@
     // and scorePage (tsum.ts), so it is concatenated after both.
     "src/corpus.ts",
     "src/roundStats.ts",
+    // Share round stats: called from writeRoundStats, reads its CSV helpers.
+    "src/roundShare.ts",
     // Issue reports. Writes frames the way corpus.ts does and reads the device
     // tag and the file stamp off roundStats.ts, so it follows both. Nothing
     // here runs at load time -- the logger calls into it, which is why its slot
@@ -143,7 +154,18 @@
     // file whose methods its handlers call -- and before index.ts, which is
     // what starts anything running.
     "src/pageHandlers.ts",
+    // The GAP Companion workflow runner: generic and vendored verbatim by other
+    // scripts, so it references nothing above. Before workflow.ts, which
+    // registers Tsum's nodes into it at load.
+    "src/gapWorkflow.ts",
     "src/index.ts",
+    // GAP Companion's screens (gapScreens): data only, read by the adapter.
+    "src/companionScreens.ts",
+    // GAP Companion's standard globals (gapCompanion, gapRemote*), read by the adapter.
+    "src/companion.ts",
+    // Tsum's workflow nodes and run mode. Registers into gapWorkflow.ts at load;
+    // everything else it touches (index.ts, quickbar.ts) only at run time.
+    "src/workflow.ts",
     // The engine half of the Quick Bar. Reads `gRunActive` (index.ts) and taps
     // through `ts`, so it is last; nothing calls into it from the bundle -- the
     // host's WebView and its pause hook are the only callers.

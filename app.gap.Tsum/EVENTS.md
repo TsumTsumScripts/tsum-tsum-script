@@ -14,17 +14,36 @@ format are the host's document --
 Names are declared once, in `src/scriptEvents.ts`, and reached through
 `ts.emit()`, which is silent on a host too old to have `emitEvent`.
 
-`5` event(s) from `5` call site(s).
+`12` event(s) from `12` call site(s).
 
 | event | emitted from | payload |
 |---|---|---|
-| `round.over` | `src/play.ts:367` | `id`, `seconds` |
-| `round.start` | `src/play.ts:524` | `id`, `round`, `myTsum`, `skill`, `build`, `settings` |
-| `round.end` | `src/play.ts:886` | `id`, `round`, `myTsum`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
-| `run.started` | `src/index.ts:80` | `version`, `skill`, `locale` |
-| `run.stopped` | `src/index.ts:379` | `rounds` |
+| `task.start` | `src/taskController.ts:93` | `task` |
+| `round.over` | `src/play.ts:367` | `id`, `round`, `seconds` |
+| `round.start` | `src/play.ts:547` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `settings` |
+| `round.end` | `src/play.ts:919` | `id`, `round`, `myTsum`, `myTsumName`, `skill`, `build`, `seconds`, `score`, `baseCoins`, `finalCoins`, `medals`, `settings` |
+| `workflow.end` | `src/gapWorkflow.ts:589` | `id`, `rev`, `status`, `reason`, `loop`, `index` |
+| `workflow.start` | `src/gapWorkflow.ts:644` | `id`, `rev`, `name`, `total` |
+| `workflow.node` | `src/gapWorkflow.ts:686` | `id`, `loop`, `index`, `nodeId`, `node` |
+| `workflow.loop` | `src/gapWorkflow.ts:700` | `id`, `loop` |
+| `workflow.nodeFailed` | `src/gapWorkflow.ts:745` | `id`, `loop`, `index`, `nodeId`, `node`, `error`, `tries` |
+| `run.started` | `src/index.ts:86` | `version`, `skill`, `locale` |
+| `run.stopped` | `src/index.ts:761` | `rounds` |
+| `gap.notify` | `src/companion.ts:63` | _none_ |
 
 ## The events
+
+### `task.start`
+
+`Emit.Task.Started` — The loop has switched to another job (`TaskName`, src/runPlan.ts, or a Now sweep's name): sending hearts, the mailbox, playing rounds. Emitted only when the job differs from the last one, so back-to-back rounds say it once. The companion app shows it as what the device is doing.
+
+| field | type |
+|---|---|
+| `task` | `string` |
+
+Emitted from:
+
+- `src/taskController.ts:93` — `emitScriptEvent(Emit.Task.Started, …)`
 
 ### `round.over`
 
@@ -33,6 +52,7 @@ Names are declared once, in `src/scriptEvents.ts`, and reached through
 | field | type |
 |---|---|
 | `id` | `string` |
+| `round` | `number` |
 | `seconds` | `number` |
 
 Emitted from:
@@ -48,13 +68,14 @@ Emitted from:
 | `id` | `string` |
 | `round` | `number` |
 | `myTsum` | `string` |
+| `myTsumName` | `string` |
 | `skill` | `string` |
 | `build` | `GameBuild` |
 | `settings` | `Partial<Settings> \| undefined` |
 
 Emitted from:
 
-- `src/play.ts:524` — `this.emit(Emit.Round.Start, …)`
+- `src/play.ts:547` — `this.emit(Emit.Round.Start, …)`
 
 ### `round.end`
 
@@ -65,6 +86,7 @@ Emitted from:
 | `id` | `string` |
 | `round` | `number` |
 | `myTsum` | `string` |
+| `myTsumName` | `string` |
 | `skill` | `string` |
 | `build` | `GameBuild` |
 | `seconds` | `number` |
@@ -76,7 +98,86 @@ Emitted from:
 
 Emitted from:
 
-- `src/play.ts:886` — `this.emit(Emit.Round.End, …)`
+- `src/play.ts:919` — `this.emit(Emit.Round.End, …)`
+
+### `workflow.end`
+
+`Emit.Workflow.End` — The workflow is over: `status` is ended, failed or terminated, `reason` why.
+
+| field | type |
+|---|---|
+| `id` | `string` |
+| `rev` | `number` |
+| `status` | `string` |
+| `reason` | `string` |
+| `loop` | `number` |
+| `index` | `number` |
+
+Emitted from:
+
+- `src/gapWorkflow.ts:589` — `gapWorkflowHooksOf().emit('workflow.end', …)`
+
+### `workflow.start`
+
+`Emit.Workflow.Start` — A workflow passed its check and its first node is next.
+
+| field | type |
+|---|---|
+| `id` | `string` |
+| `rev` | `number` |
+| `name` | `string` |
+| `total` | `number` |
+
+Emitted from:
+
+- `src/gapWorkflow.ts:644` — `gapWorkflowHooksOf().emit('workflow.start', …)`
+
+### `workflow.node`
+
+`Emit.Workflow.Node` — A node's first call in this pass (not repeated for again, wait or a retry).
+
+| field | type |
+|---|---|
+| `id` | `string` |
+| `loop` | `number` |
+| `index` | `number` |
+| `nodeId` | `string` |
+| `node` | `string` |
+
+Emitted from:
+
+- `src/gapWorkflow.ts:686` — `gapWorkflowHooksOf().emit('workflow.node', …)`
+
+### `workflow.loop`
+
+`Emit.Workflow.Loop` — Pass `loop` (2 or more) begins at the first node.
+
+| field | type |
+|---|---|
+| `id` | `string` |
+| `loop` | `number` |
+
+Emitted from:
+
+- `src/gapWorkflow.ts:700` — `gapWorkflowHooksOf().emit('workflow.loop', …)`
+
+### `workflow.nodeFailed`
+
+`Emit.Workflow.NodeFailed` — A node failed its last try and was skipped.
+
+| field | type |
+|---|---|
+| `id` | `string` |
+| `loop` | `number` |
+| `index` | `number` |
+| `nodeId` | `string` |
+| `node` | `string` |
+| `error` | `string` |
+| `tries` | `number` |
+
+Emitted from:
+
+- `src/gapWorkflow.ts:745` — `gapWorkflowHooksOf().emit('workflow.nodeFailed', …)`
 
 ### `run.started`
 
@@ -90,7 +191,7 @@ Emitted from:
 
 Emitted from:
 
-- `src/index.ts:80` — `emitScriptEvent(Emit.Run.Started, …)`
+- `src/index.ts:86` — `emitScriptEvent(Emit.Run.Started, …)`
 
 ### `run.stopped`
 
@@ -102,4 +203,14 @@ Emitted from:
 
 Emitted from:
 
-- `src/index.ts:379` — `emitScriptEvent(Emit.Run.Stopped, …)`
+- `src/index.ts:761` — `emitScriptEvent(Emit.Run.Stopped, …)`
+
+### `gap.notify`
+
+`Emit.Companion.Notify` — A notification: title, body, category, tag, lines, progress, actions.
+
+Payload built elsewhere: `note`, of type `GapNote`.
+
+Emitted from:
+
+- `src/companion.ts:63` — `emitScriptEvent(Emit.Companion.Notify, …)`

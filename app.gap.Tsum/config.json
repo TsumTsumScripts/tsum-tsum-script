@@ -1,12 +1,12 @@
 {
   "Game": "Tsum Tsum",
-  "Publisher": "Official GAP",
-  "Catalogue": "../../game-automation-catalogue/Official/LineTsumTsum",
+  "Publisher": "Tsum Tsum Scripts",
+  "Catalogue": "../../tsum-tsum-catalogue/LineTsumTsum",
   "DevicePath": "/sdcard/Download/GameAutomationPlatform",
   "DefaultChannel": "Alpha",
-  "MessageMaxChars": 2000,
+  "MessageMaxChars": 0,
   "HistoryLimit": 5,
-  "MinHost": "2.0",
+  "MinHost": "3.1",
   "Channels": {
     "Alpha": {
       "Name": "Tsum Tsum - ALPHA",

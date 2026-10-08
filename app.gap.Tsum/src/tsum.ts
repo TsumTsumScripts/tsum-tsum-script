@@ -40,6 +40,8 @@ class Tsum {
    * already begun is finished, so no finger is left resting on the game.
    */
   gestureOpen: boolean;
+  /** Trace frame id of the latest play-square capture; 0 when it was not sent. */
+  squareFrame: number;
   /**
    * A level-cap sweep asked for from the settings page is waiting for its turn.
    * Raised by `queueUnlockSweep` (src/index.ts), lowered when the sweep takes
@@ -60,6 +62,8 @@ class Tsum {
    * be wiped between the reading and the row it belongs on.
    */
   myTsum: string;
+  /** `myTsum`'s full name as the game build prints it ('' with it). */
+  myTsumName: string;
   myTsumColor: Color | null;
   myTsumIdx: number;
   boardClusters: Color[];
@@ -67,7 +71,7 @@ class Tsum {
   boardScaleReads: number[];
   boardScaleTrend: number;
   edgeWashBackoffUntil: number;
-  storagePath: string;
+  devicePath: string;
   originScreenWidth: number;
   originScreenHeight: number;
   screenHeight: number;
@@ -155,6 +159,12 @@ class Tsum {
   /** Rounds finished toward `stopAfterGames`; reset when it fires or changes. */
   gamesTowardStop: number;
   /**
+   * "Stop after this round" is armed (`stopAfterThisRound`, src/index.ts). A
+   * run-time flag, not a setting, so it never reaches the saved form or a
+   * preset; a new `Tsum` per start() is what resets it.
+   */
+  wrapUpAsked: boolean;
+  /**
    * When the next round may start, epoch ms; 0 when nothing is waiting.
    *
    * An instant rather than a countdown, so nothing has to tick it down: the
@@ -162,6 +172,8 @@ class Tsum {
    * ends the wait by clearing it.
    */
   nextRoundAt: number;
+  /** Auto Play Game. Its round job is added or removed live, like `sendHearts`'s. */
+  autoPlayGame: boolean;
   sendHearts: boolean;
   /** Receive Hearts One By One. Like `sendHearts`, its job is added or removed live. */
   receiveOneByOne: boolean;
@@ -211,7 +223,6 @@ class Tsum {
    */
   pendingSettings: { [key: string]: string | number | boolean };
   bonus5to4!: boolean;
-  receiveSecondItem!: boolean;
   tsumAppRestartFrequency!: number;
 
   // Lazily initialised caches, owned by dialogs.ts and clickAssist.ts.
@@ -233,6 +244,8 @@ class Tsum {
 
   // Per-round metrics; see roundStats.ts.
   trackRoundStats: boolean;
+  /** Share round stats; see roundShare.ts. */
+  sendRoundStats: boolean;
   /**
    * Rounds this run has started, counted here rather than off `runCoins.rounds`:
    * that one only moves when round stats are on, and the emitted events must not
@@ -261,7 +274,21 @@ class Tsum {
    * Written by `finishRoundStats`; see roundStats.ts.
    */
   lastRound: RoundOutcome | null;
+  /**
+   * What the last chore sweep came to (its `Log.*.End` fields), for the Now
+   * queue's notification. Null when the run stopped under it.
+   */
+  lastChore: LogFields | null;
   roundStartedAt: number;
+  /**
+   * The run's pauses, as `onPause` (quickbar.ts) found them. `pauses` counts
+   * them, so a chain batch can tell one happened under it and stop drawing a
+   * plan made before it; `pausedAt` and `pausedInRound` are what `onResume`
+   * puts the round back from.
+   */
+  pauses: number;
+  pausedAt: number;
+  pausedInRound: boolean;
   roundEndedAt: number;
   roundBaseCoins: number;
   /**
@@ -308,15 +335,17 @@ class Tsum {
     this.autoLaunch = false;
     this.isRunning = true;
     this.gestureOpen = false;
+    this.squareFrame = 0;
     this.yieldAsked = false;
     this.isStartupPhase = true;
     this.runTimes = 0;
     this.myTsum = '';
+    this.myTsumName = '';
     this.myTsumColor = null;
     this.myTsumIdx = -1;
     this.boardClusters = [];
     this.boardClusterSizes = [];
-    this.storagePath = getStoragePath();
+    this.devicePath = getDevicePath();
     // screen size config
     /** @type {{width: number, height: number}}  */
     const size = getScreenSize();
@@ -388,9 +417,11 @@ class Tsum {
     this.stopAfterGames = 0;
     this.stopAfterAction = StopAfterAction.AutoPlayOff;
     this.gamesTowardStop = 0;
+    this.wrapUpAsked = false;
     // A new world per start(), so pressing Play always plays now rather than
     // resuming a wait the previous run was in.
     this.nextRoundAt = 0;
+    this.autoPlayGame = false;
     this.sendHearts = false;
     this.receiveOneByOne = false;
     this.keepRuby = false;
@@ -435,11 +466,16 @@ class Tsum {
     this._reportCount = 0;
     // Per-round metrics; see the Round stats section.
     this.trackRoundStats = true;
+    this.sendRoundStats = false;
     this.roundNumber = 0;
     this.openingRound = false;
     this.roundUid = '';
     this.lastRound = null;
+    this.lastChore = null;
     this.roundStartedAt = 0;
+    this.pauses = 0;
+    this.pausedAt = 0;
+    this.pausedInRound = false;
     this.roundEndedAt = 0;
     this.roundBaseCoins = -1;
     this.tallyRow = {buttons: false, medals: false, play: false};
@@ -449,8 +485,9 @@ class Tsum {
     this.baseCoinReads = 0;
     this.baseCoinHits = 0;
     this._statsDebugShots = 0;
-    this.runCoins = {rounds: 0, baseRounds: 0, baseTotal: 0, finalRounds: 0, finalTotal: 0};
-    this.runClock = {startedAt: Date.now(), rounds: 0, roundSec: 0};
+    this.runCoins = {rounds: 0, baseRounds: 0, baseTotal: 0, finalRounds: 0, finalTotal: 0,
+      medalRounds: 0, medalTotal: 0, baseMin: -1, baseMax: -1, medalMin: -1, medalMax: -1};
+    this.runClock = {startedAt: Date.now(), rounds: 0, roundSec: 0, minSec: -1, maxSec: -1};
     this.init(detect);
   }
 }
@@ -503,10 +540,8 @@ Tsum.prototype.init = function(detect) {
     screenWidth: this.screenWidth,
   });
   this.declareReadTop();
-  // No rests around these: `execute` is synchronous, and the 1.4s that used to
-  // sit here waited for nothing.
-  execute("mkdir -p " + this.storagePath + '/tmp');
-  execute("mkdir -p " + this.storagePath + '/' + Config.recordDir);
+  makeDirs(this.devicePath + '/tmp');
+  makeDirs(this.devicePath + '/' + Config.statsDir);
 }
 
 // Quality 100: no JPEG round-trip. This was 80 only because Robotmon captured
@@ -529,7 +564,10 @@ Tsum.prototype.screenshot = function() {
 }
 
 Tsum.prototype.playScreenshotSquare = function() {
-  return getScreenshotModify(
+  // Every square capture goes to a trace viewer, so a scan's findings land on
+  // the frame they were read from (`board.scan`'s `frame`).
+  traceFrameAsk();
+  const img = getScreenshotModify(
     this.playOffsetX,
     this.playOffsetY,
     this.playWidth,
@@ -538,6 +576,8 @@ Tsum.prototype.playScreenshotSquare = function() {
     this.playResizeHeight,
     100
   );
+  this.squareFrame = traceFrameOf();
+  return img;
 }
 
 /**

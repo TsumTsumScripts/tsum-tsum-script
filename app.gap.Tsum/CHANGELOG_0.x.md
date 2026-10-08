@@ -1416,9 +1416,9 @@ this file -- `npm run release:*` reads only `CHANGELOG.md`.
   together, with tsums cleared per scan down from 9.0 to 3.4.
 - Bombs, capsules, large tsums and ice have no art of their own anywhere in
   the game's asset packs, and need none — each is the tsum's own sprite with
-  something drawn over it. The consequence worth knowing is that a large tsum
-  and a bomb are the same size, so `findTsums` (radius 8–14) misses both and
-  `findGameBubbles` (16–30) picks up both.
+  something drawn over it. A large tsum is about 1.85x a normal one, so it is
+  too big for `findTsums` (radius 8–14) and for the bubble pass (stops at 22);
+  see `findLargeTsums` in 5.0.
 
 ### Changed
 

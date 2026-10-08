@@ -23,15 +23,15 @@ declare const JavaScriptInterface: {
   /**
    * Put `text` on the system clipboard.
    *
-   * Provided by the Game Automation Platform bridge, which is why
+   * Provided by the General Automation Platform bridge, which is why
    * this is optional and every caller feature-detects it and falls back.
    */
   setClipboard?(text: string): void;
   /**
    * The system clipboard's text, or the empty string when it holds none.
    *
-   * Game Automation Platform only, as `setClipboard`. Android only lets an app
-   * read the clipboard while it has input focus, so this can come back empty
+   * General Automation Platform only, as `setClipboard`. Android only lets an
+   * app read the clipboard while it has input focus, so this can come back empty
    * even when the clipboard is not.
    */
   getClipboard?(): string;
@@ -39,7 +39,7 @@ declare const JavaScriptInterface: {
    * Ask the host to make the Quick Bar's window taller, or let it shrink back.
    *
    * The strip is only as tall as the strip, so the skill sheet has nowhere to
-   * open until the window grows. Game Automation Platform only, and only the
+   * open until the window grows. General Automation Platform only, and only the
    * Quick Bar's own WebView has anything to grow -- so, as the clipboard pair
    * above, every caller feature-detects it.
    */
@@ -49,13 +49,13 @@ declare const JavaScriptInterface: {
    * is going -- the Report button -- in the page's own CSS px. The strip is
    * untouchable then, so the host covers this rect with a small touchable
    * window of its own and forwards the presses. Zero width or height
-   * withdraws it. Game Automation Platform only; feature-detected.
+   * withdraws it. General Automation Platform only; feature-detected.
    */
   setQuickBarHotspot?(left: number, top: number, width: number, height: number): void;
   /**
    * Tell the host's *other* page that something both hold has moved.
    *
-   * Game Automation Platform only, as the pair above, so every caller
+   * General Automation Platform only, as the pair above, so every caller
    * feature-detects it and falls back on the poll that was there before.
    * A page never receives its own broadcast.
    */
@@ -111,7 +111,8 @@ declare const enum PageMessage {
  * Two pages read and write the same two entries -- the settings page owns them,
  * and the Quick Bar patches the settings one so a value changed mid-run is
  * still there at the next start. Written once here so they cannot drift; a
- * `const enum`, so nothing exists at runtime but the string.
+ * `const enum`, so nothing exists at runtime but the string. `gap-backup.json`
+ * lists them by name too (GAP's Back up / Restore), so a rename goes there as well.
  */
 declare const enum StorageKey {
   Language = 'tsumtsumlanguage',
@@ -261,7 +262,12 @@ interface SettingSpec {
    * opened in, which is exactly what they used to do. It also lets the language
    * picker's own buttons carry endonyms, which are not translated at all.
    */
-  buttons?: { text: () => string; onClick: () => void }[];
+  buttons?: SettingButton[];
+  /**
+   * GAP Companion only: a question the phone asks before changing this row
+   * (Tsum: the rows that spend coins). The page ignores it.
+   */
+  confirm?: UiText;
   /**
    * A row that draws itself and holds no value -- the Run order summary.
    *
@@ -280,6 +286,19 @@ interface SettingSpec {
    */
   scale?: number;
   incrementBy1?: boolean;
+}
+
+/** One button on a settings row. */
+interface SettingButton {
+  text: () => string;
+  onClick: () => void;
+  /**
+   * GAP Companion only: the engine action the phone's copy of this button runs
+   * (`gapSettingsAction`, src/index.ts). A button without one stays page-only.
+   */
+  remote?: string;
+  /** GAP Companion only: a question the phone asks before running `remote`. */
+  confirm?: UiText;
 }
 
 /** One card inside a tab panel: a heading, an optional note, and its rows. */

@@ -1,0 +1,19 @@
+{
+  // Proves src/gapWorkflow.ts compiles on its own: the runner library is
+  // vendored verbatim into other scripts, so it may reference nothing else in
+  // this tree (no host natives, no Tsum). Type check only; the bundle
+  // (tsconfig.json) is what ships it.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "none",
+    "rootDir": "./src",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "ignoreDeprecations": "6.0"
+  },
+  "files": [
+    "src/gapWorkflow.ts"
+  ]
+}

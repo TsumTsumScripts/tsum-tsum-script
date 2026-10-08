@@ -96,6 +96,12 @@ declare const enum SkillType {
    * follows their size -- see `src/skills/nbcSet.ts`.
    */
   NightmareSet = 'nbc_set',
+  /**
+   * Disney Villains (Set). Plays as a burst, but its skill turns the board into
+   * big neon villains, so the colour read is tuned for them -- see
+   * `src/skills/villainsSet.ts`.
+   */
+  VillainsSet = 'villains_set',
   PairTsum = 'pair_tsum',
   /** Offered in the dropdown; short-circuited in useSkill, so it has no handler. */
   NoSkill = 'nokill',
@@ -130,9 +136,19 @@ declare const enum BubbleStrategy {
   /** Every bubble the last scan found, popped as a chain lands. */
   AllMidChain = 'all_mid_chain',
   /**
-   * Every bubble, popped as soon as it is seen -- no waiting for a chain -- plus
-   * the periodic blind sweep, which is what the old "Clear Bubbles" switch did
-   * on its own. For boards where a bubble left sitting is in the way.
+   * Every bubble but the richest, popped as a long chain lands -- Save One's
+   * pop, timed like the Mid Chain strategies. The one kept stays on the board.
+   */
+  SaveOneMidChain = 'save_one_mid_chain',
+  /**
+   * Every bubble but one, popped as soon as it is seen; the one kept (the
+   * richest) is spent on the next long chain, as One Mid Chain spends it.
+   */
+  SaveOne = 'save_one',
+  /**
+   * Every bubble, popped as soon as it is seen -- no waiting for a chain, nor
+   * for it to be worth much -- plus a blind sweep of the bottom band when a
+   * pile builds. For boards where a bubble left sitting is in the way.
    */
   AllAsap = 'all_asap',
 }
@@ -222,7 +238,7 @@ declare const enum BoxPurchaseSize {
   TenThenOne = 'tenThenOne',
 }
 
-/** The keys of record.txt that are not sender-portrait filenames. */
+/** The keys of hearts.json that are not sender-portrait filenames. */
 declare const enum RecordKey {
   HeartsCount = 'hearts_count',
 }
@@ -296,6 +312,7 @@ declare const enum SettingKey {
   AutoLaunchApp = 'autoLaunchApp',
   AutoPlayGame = 'autoPlayGame',
   TrackRoundStats = 'trackRoundStats',
+  ShareRoundStats = 'shareRoundStats',
   ClickAssist = 'clickAssist',
   RoundDelayMinutes = 'roundDelayMinutes',
   MaxRoundMinutes = 'maxRoundMinutes',
@@ -337,7 +354,6 @@ declare const enum SettingKey {
   ReceiveAllHearts = 'receiveAllHearts',
   ReceiveAllHeartsMinWait = 'receiveAllHeartsMinWait',
   ReceiveHeartsOneByOne = 'receiveHeartsOneByOne',
-  ReceiveHeartsSkipFirst = 'receiveHeartsSkipFirst',
   ReceiveHeartsSkipRuby = 'receiveHeartsSkipRuby',
   ReceiveHeartsSkipMedals = 'receiveHeartsSkipMedals',
   ClaimAllWithoutCoins = 'claimAllWithoutCoins',
@@ -347,7 +363,8 @@ declare const enum SettingKey {
   SendHeartsToZeroScore = 'sendHeartsToZeroScore',
   SendHeartsMaxRuntime = 'sendHeartsMaxRuntime',
   SendHeartsMinWait = 'sendHeartsMinWait',
-  TsumAppRestartFrequency = 'tsumAppRestartFrequency',
+  // Minutes. 'tsumAppRestartFrequency' held hours up to 4.0 (carryRestartHours).
+  TsumAppRestartFrequency = 'tsumAppRestartMinutes',
 }
 
 /**
@@ -364,7 +381,7 @@ declare const enum SettingKey {
 interface Settings {
   [SettingKey.DebugLogs]: boolean;
   [SettingKey.DebugGame]: boolean;
-  /** Save unrecognised screens to tsum_record/corpus for offline work. */
+  /** Save unrecognised screens to corpus/ for offline work. */
   [SettingKey.CollectUnknownScreens]: boolean;
   /**
    * Record a hand-driven walk instead of playing: every screen, every tap, and
@@ -392,6 +409,8 @@ interface Settings {
   [SettingKey.AutoLaunchApp]: boolean;
   [SettingKey.AutoPlayGame]: boolean;
   [SettingKey.TrackRoundStats]: boolean;
+  /** Send new round stats rows to the ROUND_STATS_URL env var; needs TrackRoundStats. */
+  [SettingKey.ShareRoundStats]: boolean;
   [SettingKey.ClickAssist]: boolean;
   /**
    * Minutes to wait after a round before starting the next one; 0 plays
@@ -503,7 +522,6 @@ interface Settings {
   [SettingKey.ReceiveAllHearts]: boolean;
   [SettingKey.ReceiveAllHeartsMinWait]: number;
   [SettingKey.ReceiveHeartsOneByOne]: boolean;
-  [SettingKey.ReceiveHeartsSkipFirst]: boolean;
   [SettingKey.ReceiveHeartsSkipRuby]: boolean;
   /**
    * Leave the Mission Clear medal mails where they are and take the first mail

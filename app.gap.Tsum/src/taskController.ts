@@ -45,12 +45,15 @@ class TsumTaskController {
    * through.
    */
   runningTask: string;
+  /** The last job `task.start` named, so a job that runs back to back says it once. */
+  lastAnnounced: string;
 
   constructor() {
     this.tasks = {};
     this.isRunning = false;
     this.interval = TickMs;
     this.runningTask = '';
+    this.lastAnnounced = '';
   }
 
   /**
@@ -85,6 +88,10 @@ class TsumTaskController {
     }
     const task = due[0];
     this.runningTask = task.name;
+    if (task.name !== this.lastAnnounced) {
+      this.lastAnnounced = task.name;
+      emitScriptEvent(Emit.Task.Started, { task: task.name });
+    }
     // Swallow uncaught errors so one bad job cannot kill the whole controller;
     // a run of them from the same job bounces the game app.
     let again = false;

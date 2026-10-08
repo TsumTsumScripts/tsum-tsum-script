@@ -3,8 +3,8 @@
 // A preset is a name and **how a round is played** -- exactly the rows
 // `SHARE_SLOTS` (src/settings.ts) names, which is the Skills, Round and
 // Gameplay tabs. The rows that shape the run rather than the round (Auto Play
-// Game, the between-rounds delay, Track round statistics) are on General and
-// stay out. Not the language, the device, the chores, the mailbox or the
+// Game, the between-rounds delay, Track round statistics, Max Round Duration,
+// Stop after games) are `neverShared` and stay out. Not the language, the device, the chores, the mailbox or the
 // hearts either: those describe the account, and switching between setups
 // should not touch any of it.
 //
@@ -29,7 +29,8 @@
 // other's script -- they are separate compilations in separate WebViews -- so
 // this is compiled into both, the way `src/skillOptions.ts` is.
 //
-// Nothing here touches the DOM or the host bridge. What a page does *with* a
+// Nothing here touches the DOM, and the host bridge only to mirror the list to
+// the engine for GAP Companion (`presetsSendMirror`). What a page does *with* a
 // preset once it has it -- writing rows, pushing the run, nudging the other page
 // -- is that page's own business.
 
@@ -109,10 +110,37 @@ function presetsStore(list: Preset[]): boolean {
     }
     try {
         localStorage.setItem(StorageKey.Presets, JSON.stringify(presetsSorted(list)));
-        return true;
     } catch (e) {
         return false;
     }
+    presetsSendMirror(list);
+    return true;
+}
+
+/**
+ * Hands the list to the engine's `presetsMirror` (src/workflow.ts), which keeps
+ * a per-device copy GAP Companion's Import from device reads. The store is this
+ * WebView's localStorage, out of the engine's reach. Called on every save, and
+ * by each page as it opens. The `typeof` guard is because the bundle may not be
+ * loaded yet; a page with no bridge (a browser preview) skips it.
+ */
+function presetsSendMirror(list: Preset[]): void {
+    if (typeof JavaScriptInterface === 'undefined') {
+        return;
+    }
+    try {
+        // runScriptCallback, not runScript: the host counts a runScript as a run
+        // (status flips, banners clear when it ends). See qbBanner.
+        JavaScriptInterface.runScriptCallback('typeof presetsMirror === "function" && presetsMirror('
+            + JSON.stringify(JSON.stringify(presetsSorted(list))) + ');', 'presetsMirrorIgnore');
+    } catch (e) {
+        // The bridge refused; the next save tries again.
+    }
+}
+
+/** The callback for `presetsSendMirror`; nothing needs its answer. */
+// noinspection JSUnusedGlobalSymbols
+function presetsMirrorIgnore(): void {
 }
 
 /**

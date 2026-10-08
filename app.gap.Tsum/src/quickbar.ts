@@ -12,6 +12,7 @@
 //                            averages, as one JSON string
 //   quickBarApply(key, ...)  one setting, onto the running world
 //   onPause()                the host's pause hook (below)
+//   onResume()               its resume hook, the counterpart
 //
 // The first two are read by the settings page as well, which is why the apply
 // itself is `quickBarApplyOne`, a function of its own. What a live setting
@@ -63,8 +64,15 @@
 // back -- the round carries on with the script frozen beside it. Frozen first,
 // nothing here is racing anything.
 //
-// Resuming needs no counterpart: the play loop's next detect sees `GamePause`
-// and `dismiss.resumeGame` presses Continue, as it does for any other way in.
+// ## onResume
+//
+// The counterpart, evaluated through the same gate **before** the flag lifts.
+// A paused run is parked inside the touch it was about to make -- usually the
+// next step of a chain planned before the pause. Leaving Continue to the play
+// loop meant that touch, and the rest of the batch, landed on the pause menu
+// first, where Try Again and To Home Screen are. So `onPause` remembers the
+// pause, and `onResume` presses Continue and waits for the board while the run
+// is still frozen. The batch then sees `pauses` moved and stops (board.ts).
 
 /** Nothing is applied to a world that is not there; the page shows values only. */
 function quickBarRunning(): boolean {
@@ -130,8 +138,10 @@ function quickBarState(): string {
     state[SettingKey.BuyBoxMaxPurchases] = ts.buyBoxMaxPurchases > 0
       ? ts.buyBoxMaxPurchases : BuyBoxDefaultMax;
     state[SettingKey.AutoUnlockMyTsumLevel] = ts.autoUnlockMyTsumLevel;
+    state[SettingKey.ShareRoundStats] = ts.sendRoundStats;
     state[SettingKey.SendHeartsAuto] = ts.sendHearts;
     state[SettingKey.ReceiveHeartsOneByOne] = ts.receiveOneByOne;
+    state[SettingKey.AutoPlayGame] = ts.autoPlayGame;
     // Reported without being drawn, for the reason above: the strip's own Rest
     // stepper made way for the preset chip, and the settings panel's row is now
     // the only one that moves it -- which means the panel reads this back.
@@ -140,7 +150,10 @@ function quickBarState(): string {
     // settings panel is the only thing that moves them, and it reads this back.
     state[SettingKey.MaxRoundMinutes] = Math.round(ts.maxRoundMs / 60000);
     state[SettingKey.MaxRoundAction] = ts.maxRoundAction;
-    state[SettingKey.StopAfterGames] = ts.stopAfterGames;
+    // In a workflow the world holds 0 (`buildRun`); the page is shown its own
+    // value, so it neither adopts the 0 nor pushes its value back.
+    state[SettingKey.StopAfterGames] = gWorkflowRun
+      ? ts.settings.stopAfterGames : ts.stopAfterGames;
     state[SettingKey.StopAfterAction] = ts.stopAfterAction;
     // A span rather than the instant it ends at, so a page counting it down
     // needs the two clocks to agree about nothing. 0 is "nothing is resting".
@@ -148,6 +161,16 @@ function quickBarState(): string {
     // the rest is the one thing a run does that a reader cannot see coming, and
     // `roundDelaySkip()` -- the panel's Now button -- is still there to end it.
     state.roundDelayRemainingMs = ts.roundDelayRemainingMs();
+    // "Stop after this round" (`stopAfterThisRound`, src/index.ts). A run-time
+    // flag, not a `SettingKey`, so neither page stores it.
+    state.stopAfterThisRound = ts.wrapUpAsked;
+    // A GAP Companion workflow's progress: `workflowStep` is what the strip's
+    // readout fits, `workflow` the whole line. Both absent outside one.
+    const progress = workflowProgress();
+    if (progress !== null) {
+      state.workflowStep = progress.step;
+      state.workflow = progress.line;
+    }
 
     // What the strip marks its cells from: whether a round is on, and which
     // settings that round will not take. Not `SettingKey`s themselves, so the
@@ -160,6 +183,10 @@ function quickBarState(): string {
     // copy of it there would be a list to keep in step.
     state.inRound = quickBarInRound(ts);
     state.nextRound = quickBarHeldKeys().join(' ');
+    // The tsum being played, by its full name, as the pre-round screen
+    // identified it ('' until then, or when the match was unsure). The
+    // companion app shows it.
+    state.myTsum = ts.myTsumName;
 
     const coins = ts.runCoins;
     state.rounds = coins.rounds;
@@ -171,12 +198,29 @@ function quickBarState(): string {
       ? Math.round(coins.baseTotal / coins.baseRounds) : -1;
     state.finalCoinAvg = coins.finalRounds > 0
       ? Math.round(coins.finalTotal / coins.finalRounds) : -1;
+    // The run's medals; the companion app's Stats tab shows it.
+    state.medals = coins.medalTotal;
+    // Nothing on the strip draws these five: they are what the readout chip
+    // copies to the clipboard when it is tapped (`qbCopyStats`). Base coins,
+    // not final: the copy's coin line is the figure the board earned.
+    state.baseCoinTotal = coins.baseTotal;
+    state.baseCoinMin = coins.baseMin;
+    state.baseCoinMax = coins.baseMax;
+    state.medalMin = coins.medalMin;
+    state.medalMax = coins.medalMax;
+    // A dash until a round has actually earned medals, so a run without them
+    // does not show a row of zeros.
+    state.medalAvg = coins.medalTotal > 0
+      ? Math.round(coins.medalTotal / coins.medalRounds) : -1;
 
     // The time readout, in seconds; the page formats them. -1 is "no round yet".
     const clock = ts.runClock;
     state.avgRoundSec = clock.rounds > 0 ? Math.round(clock.roundSec / clock.rounds) : -1;
     state.playedSec = clock.roundSec;
     state.runSec = Math.round((Date.now() - clock.startedAt) / 1000);
+    // The copy's shortest and longest round, drawn nowhere.
+    state.minRoundSec = clock.minSec;
+    state.maxRoundSec = clock.maxSec;
   }
   return JSON.stringify(state);
 }
@@ -192,6 +236,17 @@ function quickBarApply(key: SettingKey, value: string | number | boolean): strin
   if (!quickBarRunning()) {
     return JSON.stringify({ ok: false, why: 'no run' });
   }
+  // Refused rather than coerced: an enum value nothing knows would be written
+  // onto the world as-is (or quietly become the default).
+  if (!quickBarEnumValid(key, value)) {
+    logWarn(Log.QuickBar.InvalidValue, 'The Quick Bar sent a value this setting does not have',
+      { setting: key, value: value });
+    return JSON.stringify({ ok: false, why: 'invalid value' });
+  }
+  if (quickBarWorkflowOwns(key)) {
+    logWarn(Log.Workflow.SettingRefused, 'A running workflow owns this setting', { setting: key });
+    return JSON.stringify({ ok: false, why: 'workflow' });
+  }
   const applied = quickBarApplyOne(ts!, key, value);
   if (applied === undefined) {
     logWarn(Log.QuickBar.UnknownSetting, 'The Quick Bar named a setting it cannot change',
@@ -203,6 +258,66 @@ function quickBarApply(key: SettingKey, value: string | number | boolean): strin
     { setting: key, value: applied, takesEffect: held ? 'nextRound' : 'now' });
   quickBarSayHeldBack(ts!, held ? 1 : 0);
   return JSON.stringify({ ok: true, value: applied });
+}
+
+/**
+ * Whether a running workflow owns `key`, so neither page may change it: Stop
+ * after games, which `buildRun` forces to 0 for one, and Auto Play, since a
+ * workflow's nodes play the rounds.
+ */
+function quickBarWorkflowOwns(key: string): boolean {
+  return gWorkflowRun && quickBarRunning()
+    && (key === SettingKey.StopAfterGames || key === SettingKey.AutoPlayGame);
+}
+
+/**
+ * The values each enum setting may take. `satisfies` makes a member added to
+ * the enum a build error until it is listed here.
+ */
+const QuickBarEnumValues: { [key: string]: { [value: string]: true } } = {
+  [SettingKey.BubbleStrategy]: {
+    [BubbleStrategy.OneMidChain]: true,
+    [BubbleStrategy.AllMidChain]: true,
+    [BubbleStrategy.SaveOneMidChain]: true,
+    [BubbleStrategy.SaveOne]: true,
+    [BubbleStrategy.AllAsap]: true,
+  } satisfies Record<BubbleStrategy, true>,
+  [SettingKey.BuyBoxType]: {
+    [BoxType.PremiumPlus]: true,
+    [BoxType.Premium]: true,
+    [BoxType.Select]: true,
+    [BoxType.Capsule]: true,
+    [BoxType.Happiness]: true,
+  } satisfies Record<BoxType, true>,
+  [SettingKey.BuyBoxSize]: {
+    [BoxPurchaseSize.One]: true,
+    [BoxPurchaseSize.Ten]: true,
+    [BoxPurchaseSize.TenThenOne]: true,
+  } satisfies Record<BoxPurchaseSize, true>,
+  [SettingKey.MaxRoundAction]: {
+    [MaxRoundAction.Coast]: true,
+    [MaxRoundAction.Stop]: true,
+  } satisfies Record<MaxRoundAction, true>,
+  [SettingKey.StopAfterAction]: {
+    [StopAfterAction.AutoPlayOff]: true,
+    [StopAfterAction.Pause]: true,
+    [StopAfterAction.Stop]: true,
+  } satisfies Record<StopAfterAction, true>,
+};
+
+/**
+ * False when `key` is an enum setting and `value` is not one of its members;
+ * true for every other key. A skill is valid when it has a handler, or is No
+ * Skill (which has none).
+ */
+function quickBarEnumValid(key: SettingKey, value: string | number | boolean): boolean {
+  if (key === SettingKey.SkillType) {
+    return typeof value === 'string'
+      && (value === SkillType.NoSkill || SkillHandlers[value] !== undefined);
+  }
+  const allowed = QuickBarEnumValues[key];
+  return allowed === undefined
+    || (typeof value === 'string' && allowed.hasOwnProperty(value));
 }
 
 /**
@@ -314,6 +429,17 @@ function quickBarApplyOne(tsum: Tsum, key: SettingKey,
       tsum.receiveOneByOne = applied;
       quickBarSyncJob(tsum, TaskName.ReceiveOneItem, key, applied);
       break;
+    // Off drops only the round job, as Stop after games does; the sweeps keep
+    // their schedules. On adds back whichever of the three a fresh start would.
+    case SettingKey.AutoPlayGame:
+      applied = !!value;
+      tsum.autoPlayGame = applied;
+      quickBarSyncJob(tsum, TaskName.PlayRound, key, applied);
+      if (applied) {
+        quickBarSyncJob(tsum, TaskName.UnlockLevel, key, true);
+        quickBarSyncJob(tsum, TaskName.BuyBoxes, key, true);
+      }
+      break;
     case SettingKey.HoldBubblesLastFeverSec:
       applied = quickBarClamp(value, 0, 10);
       tsum.holdBubblesLastFeverSec = applied as number;
@@ -340,15 +466,19 @@ function quickBarApplyOne(tsum: Tsum, key: SettingKey,
       applied = quickBarClamp(value, 100, 400);
       Config.linkReach = (applied as number) / 100;
       break;
-    // The CSV is written per round off this flag, so it can move mid-run. The
-    // handoff cannot be undone -- the host keeps sending a pattern once given
-    // one -- so it is made once, the way `buildRun` makes it.
+    // The CSV is written per round off this flag, so it can move mid-run.
     case SettingKey.TrackRoundStats:
       applied = !!value;
-      if (applied && !tsum.trackRoundStats && typeof publishStats === 'function') {
-        publishStats(Config.recordDir + '/stats_*.csv');
-      }
       tsum.trackRoundStats = applied;
+      break;
+    // Read after each row is written (roundShareAfterRow). Off clears the
+    // cursor, so nothing is kept about what was shared.
+    case SettingKey.ShareRoundStats:
+      applied = !!value;
+      if (!applied && tsum.sendRoundStats) {
+        roundShareClear(tsum.devicePath);
+      }
+      tsum.sendRoundStats = applied;
       break;
     // The Box Buying sweep reads these off `ts` when it runs, so a change made
     // between sweeps lands on the next one -- including the one the panel's Now
@@ -547,11 +677,16 @@ const LiveSettings: { [key: string]: LiveWhen } = {
   // Read at the round's end -- by the level-up record handler and then the
   // play task's tail -- so a switch thrown mid-round counts for this round.
   [SettingKey.AutoUnlockMyTsumLevel]: LiveWhen.Now,
+  // Read after each round's row is written, never during play.
+  [SettingKey.ShareRoundStats]: LiveWhen.Now,
   // Each chooses a job in the run's task set, and `quickBarSyncJob` adds or
   // removes that job on the live scheduler. A job runs between rounds, so the
   // round in front of the loop is untouched. Not preset rows.
   [SettingKey.SendHeartsAuto]: LiveWhen.Now,
   [SettingKey.ReceiveHeartsOneByOne]: LiveWhen.Now,
+  // The round job, synced the same way. Off lets the round in progress finish:
+  // the job is only taken off the schedule, never interrupted.
+  [SettingKey.AutoPlayGame]: LiveWhen.Now,
 
   // --- The round in front of the loop was set up under the old value -------
   //
@@ -588,11 +723,8 @@ const LiveSettings: { [key: string]: LiveWhen } = {
 
   // --- Only a fresh start() ------------------------------------------------
   //
-  // These two choose which tasks a run registers (`runTaskTable`), so there is
-  // no field to write: the task set is built once, by `buildRun`. Auto Play Game
-  // is the one of the pair no preset carries -- whether rounds are played at all
-  // is the shape of the run, not of a round.
-  [SettingKey.AutoPlayGame]: LiveWhen.Restart,
+  // Chooses which tasks a run registers (`runTaskTable`), so there is no field
+  // to write: the task set is built once, by `buildRun`.
   [SettingKey.ClickAssist]: LiveWhen.Restart,
 };
 
@@ -737,7 +869,8 @@ function quickBarSetRoundDelay(tsum: Tsum, delayMs: number): void {
  */
 function quickBarSyncJob(tsum: Tsum, name: TaskName, key: SettingKey, on: boolean): void {
   const controller = gTaskController;
-  if (controller === undefined) {
+  // A workflow run has no chore jobs: its nodes call the chores.
+  if (controller === undefined || gWorkflowRun) {
     return;
   }
   if (!on) {
@@ -785,19 +918,100 @@ function onPause(): string {
   if (!quickBarRunning()) {
     return 'no run';
   }
+  const t = ts!;
+  t.pauses++;
+  t.pausedAt = Date.now();
+  // A round with its clock running counts even when the game is not in front
+  // (the front watch pauses then): it comes back on the pause menu.
+  t.pausedInRound = t.roundStartedAt !== 0;
   const def = gPages.peek(1, 0);
   if (def === null) {
     return 'nothing recognised on screen';
   }
   if (def.name === PageName.GamePause) {
+    t.pausedInRound = true;
     return 'the round is already paused';
   }
   if (def.name !== PageName.GamePlaying) {
     return 'not in a round (' + def.name + ')';
   }
+  t.pausedInRound = true;
   // `back` and `next` are both the round's Pause button -- see PageRoutes in
   // data.ts, which declares the GamePlaying -> GamePause edge it presses.
-  ts!.tap(def.back);
+  t.tap(def.back);
   logInfo(Log.QuickBar.PausedRound, 'Paused the round so the Quick Bar can be used');
   return 'paused the round';
+}
+
+/** Longest wait for the pause menu once the overlay is gone. */
+const ResumeMenuWaitMs = 1500;
+/** Longest wait for the board after Continue, re-press included. */
+const ResumeBoardWaitMs = 4000;
+/** Continue still up this long after a press: the press was missed. */
+const ResumeRepressMs = 1500;
+/** The game counts back in after the menu closes; same as `dismiss.resumeGame`. */
+const ResumeCountInMs = 500;
+const ResumePollMs = 100;
+
+/** Peeks until a page in `names` shows or `ms` runs out; the last look either way. */
+function resumePeek(t: Tsum, names: string[], ms: number): PageDef | null {
+  const deadline = Date.now() + ms;
+  for (;;) {
+    const def = gPages.peek(1, 0);
+    if ((def !== null && names.indexOf(def.name) >= 0) || Date.now() >= deadline) {
+      return def;
+    }
+    t.sleep(ResumePollMs);
+  }
+}
+
+/**
+ * Called by the host before the pause lifts, and gated in for it.
+ *
+ * Puts back the round `onPause` paused: presses Continue (twice if the first
+ * press is missed), waits for the board, and credits the paused time to the
+ * round's clock so Max Round Duration does not count it. Anything it cannot
+ * resolve is left to the play loop, as before. The string goes to the host log.
+ */
+function onResume(): string {
+  if (!quickBarRunning()) {
+    return 'no run';
+  }
+  const t = ts!;
+  const pausedMs = t.pausedAt > 0 ? Date.now() - t.pausedAt : 0;
+  t.pausedAt = 0;
+  if (t.roundStartedAt !== 0) {
+    t.roundStartedAt += pausedMs;
+  }
+  // Only a round we know of is worth waiting for: the menu can take a moment
+  // to show once the overlay has gone.
+  const waitMs = t.pausedInRound ? ResumeMenuWaitMs : 0;
+  let def = resumePeek(t, [PageName.GamePause, PageName.GamePlaying], waitMs);
+  if (def === null || def.name !== PageName.GamePause) {
+    return t.pausedInRound
+      ? 'paused in a round, found ' + (def === null ? 'nothing recognised' : def.name)
+      : 'not in a round';
+  }
+  const startedAt = Date.now();
+  let presses = 0;
+  while (def !== null && def.name === PageName.GamePause
+      && Date.now() - startedAt < ResumeBoardWaitMs) {
+    if (presses === 0 || Date.now() - startedAt >= ResumeRepressMs * presses) {
+      // `next` is Continue -- the menu's only exit (PageRoutes, data.ts).
+      t.tap(def.next);
+      presses++;
+    }
+    t.sleep(ResumePollMs);
+    def = gPages.peek(1, 0);
+  }
+  const back = def !== null && def.name === PageName.GamePlaying;
+  const detail = { presses: presses, pausedMs: pausedMs, ms: Date.now() - startedAt,
+    page: def === null ? '' : def.name };
+  if (!back) {
+    logWarn(Log.QuickBar.ResumeFailed, detail);
+    return 'pressed Continue ' + presses + 'x, board not back';
+  }
+  t.sleep(ResumeCountInMs);
+  logInfo(Log.QuickBar.ResumedRound, detail);
+  return 'pressed Continue, round back';
 }

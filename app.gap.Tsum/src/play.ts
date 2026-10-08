@@ -366,6 +366,7 @@ Tsum.prototype.watchRoundEnd = function(hud) {
   // is round.end, once the figures can be read.
   this.emit(Emit.Round.Over, {
     id: this.roundUid,
+    round: this.roundNumber,
     seconds: Math.round((endedAt - this.roundStartedAt) / 1000),
   });
   return RoundLook.Over;
@@ -450,6 +451,10 @@ function stopAfterActionOf(value: unknown): StopAfterAction {
 }
 
 Tsum.prototype.countGameTowardStop = function() {
+  // "Stop after this round" wins over the count: the run ends either way.
+  if (this.wrapUpIfAsked('roundEnd')) {
+    return true;
+  }
   if (this.stopAfterGames <= 0 || !this.isRunning) {
     return false;
   }
@@ -481,6 +486,24 @@ Tsum.prototype.countGameTowardStop = function() {
         gTaskController.removeTask(TaskName.PlayRound);
       }
   }
+  return true;
+}
+
+// --- Stop after this round ----------------------------------------------------
+//
+// A run-time flag (`wrapUpAsked`), armed by `stopAfterThisRound` (src/index.ts)
+// and never saved. Checked at a round's tail, before a round starts, and by a
+// one-shot job between rounds -- so a run with Auto Play off still stops.
+
+Tsum.prototype.wrapUpIfAsked = function(at: string) {
+  if (!this.wrapUpAsked || !this.isRunning) {
+    return false;
+  }
+  this.wrapUpAsked = false;
+  logInfo(Log.Play.WrapUpFired, { at: at });
+  this.banner(at === 'roundEnd' ? 'Round over: stopping as asked' : 'Stopping as asked', 5000);
+  notifyWrapUp(this, at === 'roundEnd');
+  requestStop();
   return true;
 }
 
@@ -527,6 +550,8 @@ Tsum.prototype.openRound = function() {
     id: this.roundUid,
     round: this.roundNumber,
     myTsum: this.myTsum,
+    // The full name, as the build's (INTL/JP) library spells it; `myTsum` is the CSV's short one.
+    myTsumName: this.myTsumName,
     skill: statsSkillName(this.roundSettings ? this.roundSettings.skillType : this.skillType),
     // The CSV's `build` column: INTL and JP rounds only compare with their own.
     build: this.gameBuild(),
@@ -538,6 +563,10 @@ Tsum.prototype.openRound = function() {
 }
 
 Tsum.prototype.taskPlayGameQuick = function() {
+  // Armed between rounds: no new round, whatever the delay says.
+  if (this.wrapUpIfAsked('beforeRound')) {
+    return;
+  }
   // The between-rounds delay, if one is running. Held here rather than by
   // lengthening this task's interval, because an interval is a schedule nothing
   // else can see or cut short: `nextRoundAt` is what the Quick Bar's countdown
@@ -614,10 +643,9 @@ Tsum.prototype.taskPlayGameQuick = function() {
   // Same reasoning as `gFever.reset()` in buildRun: the transformation belongs
   // to a round, and the round that just ended has nothing to say about this one.
   lorcanaReset();
-  // Bubble-spawning events seen since the last blind sweep: a chain long enough
-  // to leave bubbles behind, or a skill activation that does. Only
-  // `BubbleStrategy.AllAsap` ever spends them -- see the sweep below.
-  let bubbleEvents = 0;
+  // Bubbles the last scan saw, before any were popped: a pile this big is what
+  // sets off All Bubbles ASAP's blind sweep below.
+  let bubblesSeen = 0;
   let zeroPath = 0;
   // The liveness check's debounce, carried across the turns that share it.
   const hud: HudWatch = { misses: 0, firstMissAt: 0 };
@@ -712,9 +740,13 @@ Tsum.prototype.taskPlayGameQuick = function() {
     }
     // All Bubbles ASAP: spend them where they are, before a chain can earn
     // them. The other two strategies leave the list for `link` to spend on the
-    // first long chain of this batch.
+    // first long chain of this batch -- less any overflow, popped now (Save
+    // One: all but one).
+    bubblesSeen = this.gameBubbles.length;
     if (this.bubbleStrategy === BubbleStrategy.AllAsap) {
       this.popGameBubbles();
+    } else {
+      this.popBubbleOverflow();
     }
     logDebug(Log.Board.PathStart);
     // The cap is the "Maximum Chain Number" setting unless the selected skill
@@ -747,7 +779,6 @@ Tsum.prototype.taskPlayGameQuick = function() {
     drawnChain = paths.length > 0 ? paths[0] : null;
     if (isBubble) {
       logDebug(Log.Bubble.Generated);
-      bubbleEvents++;
     }
     if (foundPaths < 3) {
       zeroPath++;
@@ -777,7 +808,7 @@ Tsum.prototype.taskPlayGameQuick = function() {
       // on a board that never needed shuffling.
       zeroPath = 0;
     }
-    // Before the periodic sweep and the fan below: both are busywork a full
+    // Before the pile-up sweep and the fan below: both are busywork a full
     // gauge should not wait behind. A ready skill used to sit through a blind
     // sweep (and then, for a skill whose beforeActivate swept too, a second
     // one) before its activation tap went out.
@@ -785,17 +816,10 @@ Tsum.prototype.taskPlayGameQuick = function() {
       // An activation clears most of what it touches, so the chain drawn above
       // is not evidence about the game refusing it either way.
       drawnChain = null;
-      // A skill that ends its own choreography with a bubble sweep has already
-      // cleared the board it just filled, so counting towards another sweep
-      // here only sweeps an empty one. `sweepsBubbles` is that declaration --
-      // it used to be a hardcoded pair of Lightyear ids, which left the eight
-      // other skill ids that sweep counting towards a redundant one. Better:
-      // its closing sweep just did the periodic sweep's job, so the pending
-      // events are spent, not merely unincremented.
-      if (!skillSweepsBubbles(this.skillType)) {
-        bubbleEvents++;
-      } else {
-        bubbleEvents = 0;
+      // A skill that ends its own choreography with a bubble sweep
+      // (`sweepsBubbles`) has just cleared the pile the scan saw.
+      if (skillSweepsBubbles(this.skillType)) {
+        bubblesSeen = 0;
       }
       // Every Lorcana activation leaves one bubble with an ink stone inside it,
       // and tapping that bubble is what clears the stones already on the board.
@@ -814,9 +838,10 @@ Tsum.prototype.taskPlayGameQuick = function() {
     // transformation. Rate-limited inside, so most turns round this loop cost
     // nothing.
     this.lorcanaMaybeTapCard();
-    // The periodic blind sweep. Only All Bubbles ASAP wants it: it is the one
+    // The pile-up sweep. Only All Bubbles ASAP wants it: it is the one
     // strategy that would rather have a bubble gone than saved, and the sweep
-    // catches what the Hough pass in `scanBoardQuick` missed. Under either
+    // catches what the Hough pass in `scanBoardQuick` missed -- about half of
+    // a packed row, which is why a pile is what sets it off. Under either
     // mid-chain strategy this is exactly the tapping that throws bubbles away,
     // so it does not run -- a skill that needs it asks for it itself
     // (`clearAllBubbles`, declared with `sweepsBubbles`).
@@ -828,18 +853,19 @@ Tsum.prototype.taskPlayGameQuick = function() {
     // skill's next activation is counting on -- Gaston's cancel bubble, or
     // Aurora's chain. So does the fever hold, for the same reason: it has
     // just refused the aimed pops so the bubbles are there after the fever.
-    // And the hold after an activation: the events stand, so the sweep runs
-    // on the first turn after it lifts, onto a board that has refilled.
-    if (this.bubbleStrategy === BubbleStrategy.AllAsap && bubbleEvents >= 2
+    // And the (short) hold after an activation: the next scan that still sees
+    // the pile sweeps it.
+    if (this.bubbleStrategy === BubbleStrategy.AllAsap
+        && bubblesSeen >= GameBubbleConfig.pileUpSweepAt
         && !skillClaimsBubbles(this) && !this.bubblesHeldForFever()
         && !this.bubblesHeldAfterSkill()) {
-      logDebug(Log.Bubble.Cleared);
-      bubbleEvents = 0;
+      logDebug(Log.Bubble.Cleared, { seen: bubblesSeen });
+      bubblesSeen = 0;
       // A popped bubble clears the area around it, which can take the chain
       // above with it whether or not the game ever linked it.
       drawnChain = null;
-      // only clearing lower area in order to speed up the cleaning process
-      this.clearAllBubbles(0, 0, (Button.gameBubblesFrom.y + Button.gameBubblesTo.y) / 2);
+      // The bottom band only: that is where piles form.
+      this.clearAllBubbles(0, 0, bubbleBandTopY());
     }
     if (this.useFan && this.runTimes % 4 === 3) {
       // Skip the fan when the skill is nearly ready — the next clear will fill
@@ -876,6 +902,13 @@ Tsum.prototype.taskPlayGameQuick = function() {
   if (roundSeconds > 0) {
     this.runClock.rounds++;
     this.runClock.roundSec += roundSeconds;
+    // -1 is "no round yet", so the first one sets both ends.
+    if (this.runClock.minSec < 0 || roundSeconds < this.runClock.minSec) {
+      this.runClock.minSec = roundSeconds;
+    }
+    if (roundSeconds > this.runClock.maxSec) {
+      this.runClock.maxSec = roundSeconds;
+    }
   }
   this.finishRoundStats();
   // The stop signal, and emitted from here rather than from inside
@@ -891,6 +924,8 @@ Tsum.prototype.taskPlayGameQuick = function() {
     id: this.roundUid,
     round: this.roundNumber,
     myTsum: this.myTsum,
+    // The full name, as the build's (INTL/JP) library spells it; `myTsum` is the CSV's short one.
+    myTsumName: this.myTsumName,
     skill: statsSkillName(this.roundSettings ? this.roundSettings.skillType : this.skillType),
     build: this.gameBuild(),
     seconds: outcome === null ? roundSeconds : outcome.seconds,

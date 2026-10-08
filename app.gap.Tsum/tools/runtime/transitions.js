@@ -11,7 +11,7 @@
 // ## Where the data comes from
 //
 // `PageRouter.saveHistoryShot` (src/pages.ts) writes one matcher-space frame per
-// page change to `<storage>/tsum_record/pageHistory/<seq>_<PageName>.png`. The
+// page change to `<device folder>/history/<seq>_<PageName>.png`. The
 // *filenames* are the record: ordered, page-labelled visits. So a harvest is one
 // `adb shell ls` and no image transfer at all.
 //
@@ -50,7 +50,7 @@ const ledgerFile = path.resolve(__dirname, '..', '..', 'docs', 'transitions.json
 const FrameName = /^(\d+)_(.+)\.png$/;
 
 const LedgerNote =
-  'Observed page-to-page transitions, harvested from tsum_record/pageHistory by ' +
+  'Observed page-to-page transitions, harvested from history/ by ' +
   'the development tools. Generated data, not hand-authored: see ' +
   'tools/runtime/transitions.js. `count` is how many times the pair has been ' +
   'observed across all harvests, which is a confidence signal rather than a ' +

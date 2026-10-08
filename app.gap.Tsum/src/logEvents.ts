@@ -20,6 +20,10 @@ namespace Log {
   /** One start()..stop(). */
   export const enum Run {
     BundleIncomplete = 'run.bundleIncomplete',
+    /** `saveLastRunSettings` could not write its file; the run goes on. */
+    LastSettingsNotSaved = 'run.lastSettingsNotSaved',
+    /** `rememberRemoteSetting` could not write a GAP Companion change. */
+    RemoteSettingNotSaved = 'run.remoteSettingNotSaved',
     Start            = 'run.start',
     StartBusy        = 'run.startBusy',
     Stop             = 'run.stop',
@@ -107,10 +111,14 @@ namespace Log {
   export const enum Board {
     /** A play-loop chain drawn, with what the game's counter said it linked (`readsChainCounter` skills only). */
     ChainDrawn       = 'board.chainDrawn',
+    /** A pause landed mid-batch; the rest of the batch was dropped. */
+    BatchPaused      = 'board.batchPaused',
     Clusters         = 'board.clusters',
     DeadScan         = 'board.deadScan',
     /** The scan waited out the last seconds' edge wash (`waitOutEdgeWash`). */
     EdgeWash         = 'board.edgeWash',
+    /** Large tsums found on the board (`findLargeTsums`). */
+    LargeTsums       = 'board.largeTsums',
     LinkReach        = 'board.linkReach',
     MyTsumColor      = 'board.myTsumColor',
     PathDone         = 'board.pathDone',
@@ -128,6 +136,8 @@ namespace Log {
     Cleared        = 'bubble.cleared',
     Found          = 'bubble.found',
     Generated      = 'bubble.generated',
+    /** A Mid Chain strategy popped the bubbles past `overflowKeep` -- the overflow pop. */
+    Overflow       = 'bubble.overflow',
     /** A pop refused because a fever is about to end -- the fever hold. */
     Held           = 'bubble.held',
     /** A pop refused because a skill fired inside `holdAfterSkillMs` -- the burst hold. */
@@ -158,6 +168,10 @@ namespace Log {
     RoundDelayWaiting     = 'play.roundDelayWaiting',
     RoundCoasting         = 'play.roundCoasting',
     RoundTimeUp           = 'play.roundTimeUp',
+    /** "Stop after this round": armed, cancelled, and the stop it made. */
+    WrapUpArmed           = 'play.wrapUpArmed',
+    WrapUpCancelled       = 'play.wrapUpCancelled',
+    WrapUpFired           = 'play.wrapUpFired',
   }
 
   /** Which tsum is selected, off the pre-round icon. */
@@ -259,7 +273,6 @@ namespace Log {
 
   /** The gift box. */
   export const enum Gifts {
-    AdIgnored                 = 'gifts.adIgnored',
     AllReceived               = 'gifts.allReceived',
     CheckUnreceived           = 'gifts.checkUnreceived',
     Completed                 = 'gifts.completed',
@@ -270,12 +283,12 @@ namespace Log {
     ReceiveOneByOne           = 'gifts.receiveOneByOne',
     ReceiveOneClosing         = 'gifts.receiveOne.closing',
     ReceiveOneFetchedAllSoFar = 'gifts.receiveOne.fetchedAllSoFar',
-    ReceiveOneHandleAd        = 'gifts.receiveOne.handleAd',
     ReceiveOneIdle            = 'gifts.receiveOne.idle',
     ReceiveOneOk              = 'gifts.receiveOne.ok',
     ReceiveOneProbe           = 'gifts.receiveOne.probe',
     ReceiveOneReceiveAll      = 'gifts.receiveOne.receiveAll',
     ReceiveOneRowUnderBar     = 'gifts.receiveOne.rowUnderBar',
+    ReceiveOneSkipAd          = 'gifts.receiveOne.skipAd',
     ReceiveOneSkipMedal       = 'gifts.receiveOne.skipMedal',
     ReceiveOneSkipRuby        = 'gifts.receiveOne.skipRuby',
     ReceiveOneSkippedOnly     = 'gifts.receiveOne.skippedOnly',
@@ -283,7 +296,6 @@ namespace Log {
     ReceiveOneStuckRetry      = 'gifts.receiveOne.stuckRetry',
     ReceiveOneTimeout         = 'gifts.receiveOne.timeout',
     ReceiveOneWaiting         = 'gifts.receiveOne.waiting',
-    TicketReceived            = 'gifts.ticketReceived',
   }
 
   /** Raising tsum level caps -- the collection sweep. */
@@ -370,6 +382,35 @@ namespace Log {
     Start           = 'tsumList.start',
     Unnamed         = 'tsumList.unnamed',
     WriteFailed     = 'tsumList.writeFailed',
+    /** `tsum_list_<device id>.json`, the list Select Tsum reads, was written. */
+    FileWritten     = 'tsumList.fileWritten',
+  }
+
+  /** A GAP Companion workflow run (src/workflow.ts). */
+  export const enum Workflow {
+    End             = 'workflow.end',
+    Loop            = 'workflow.loop',
+    Node            = 'workflow.node',
+    NodeFailed      = 'workflow.nodeFailed',
+    /** Select Tsum (src/myTsumSelect.ts): the target was already the MyTsum. */
+    SelectTsumAlready = 'workflow.selectTsum.already',
+    /** Select Tsum: MyTsum Set took (the button greyed out). */
+    SelectTsumDone    = 'workflow.selectTsum.done',
+    /** Select Tsum: a step failed; `reason` says which. The node is retried. */
+    SelectTsumFailed  = 'workflow.selectTsum.failed',
+    /** Select Tsum: the card at the listed position is another tsum. */
+    SelectTsumStale   = 'workflow.selectTsum.stale',
+    /** Select Tsum: the last page no longer ends on the list's last tsum; walking from page 1. */
+    SelectTsumEndChanged = 'workflow.selectTsum.endChanged',
+    /** Select Tsum: going to the listed page and slot. */
+    SelectTsumStart   = 'workflow.selectTsum.start',
+    /** Change My Tsum from GAP Companion: queued for the next turn between rounds. */
+    SelectTsumNowQueued = 'workflow.selectTsum.nowQueued',
+    /** `presetsMirror` could not write the presets file. */
+    PresetsNotSaved = 'workflow.presetsNotSaved',
+    /** A setting the workflow owns (`stopAfterGames`) was refused. */
+    SettingRefused  = 'workflow.settingRefused',
+    Start           = 'workflow.start',
   }
 
   /** The per-round CSV. */
@@ -380,10 +421,13 @@ namespace Log {
     JoinedGlyphsCut = 'stats.joinedGlyphsCut',
     NeverRead       = 'stats.neverRead',
     NeverSettled    = 'stats.neverSettled',
-    Publishing      = 'stats.publishing',
     ReadFailed      = 'stats.readFailed',
     RoundWritten    = 'stats.roundWritten',
     ScorePageGaveUp = 'stats.scorePageGaveUp',
+    /** Share round stats: the server accepted a batch. */
+    Shared          = 'stats.shared',
+    /** Share round stats: a batch was refused or failed; backing off. */
+    ShareFailed     = 'stats.shareFailed',
     ShotSaveFailed  = 'stats.shotSaveFailed',
     TallyCovered    = 'stats.tallyCovered',
     TallySkipped    = 'stats.tallySkipped',
@@ -450,6 +494,8 @@ namespace Log {
   /** The logger itself. */
   export const enum Log {
     Unserializable = 'log.unserializable',
+    /** A `traceSend` builder threw; the trace was skipped. */
+    TraceFailed = 'log.traceFailed',
   }
 
   /**
@@ -493,6 +539,8 @@ namespace Log {
     ShareSlotsOverflow         = 'settings.shareSlotsOverflow',
     StartCommand               = 'settings.startCommand',
     StoreRead                  = 'settings.storeRead',
+    /** Took settings changed from GAP Companion (`remoteSettingsTake`). */
+    RemoteRead                 = 'settings.remoteRead',
     Unserializable             = 'settings.unserializable',
   }
 
@@ -507,13 +555,20 @@ namespace Log {
     Applied        = 'quickBar.applied',
     ApplyFailed    = 'quickBar.applyFailed',
     PausedRound    = 'quickBar.pausedRound',
+    /** `onResume` pressed Continue and the board came back. */
+    ResumedRound   = 'quickBar.resumedRound',
+    /** `onResume` could not get the board back; the play loop takes over. */
+    ResumeFailed   = 'quickBar.resumeFailed',
     /** The whistle: what a round in progress could not take is on now. */
     PendingApplied = 'quickBar.pendingApplied',
     PresetApplied  = 'quickBar.presetApplied',
-    ReportAsked    = 'quickBar.reportAsked',
-    ReportFailed   = 'quickBar.reportFailed',
     UnlockNowAsked = 'quickBar.unlockNowAsked',
+    WrapUpAsked    = 'quickBar.wrapUpAsked',
     CopyShareAsked = 'quickBar.copyShareAsked',
+    /** The readout chip was tapped: the run's figures went to the clipboard. */
+    StatsCopied    = 'quickBar.statsCopied',
     UnknownSetting = 'quickBar.unknownSetting',
+    /** An enum setting sent a value it does not have; refused. */
+    InvalidValue   = 'quickBar.invalidValue',
   }
 }

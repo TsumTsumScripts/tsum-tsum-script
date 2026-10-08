@@ -1,4 +1,4 @@
-// A Node stand-in for the Game Automation Platform host API, faithful to
+// A Node stand-in for the General Automation Platform host API, faithful to
 // the semantics in `../../../../game-automation-app/app/src/main/cpp`.
 //
 // The point of shimming the *host* rather than reimplementing the matcher is
@@ -272,6 +272,13 @@ function createHost(options) {
     // round id minted in the harness has the device half every real one has.
     getDeviceId: () => '0badc0ffee00',
     getDeviceName: () => 'harness-0bad',
+    // `<root>/devices/<name>_<id>`, the shape DeviceHost.devicePath builds, so
+    // a path the harness writes to sits where it would on a device.
+    getDevicePath: () => {
+      const dir = path.join(storagePath, 'devices', 'harness-0bad_0badc0ffee00');
+      fs.mkdirSync(dir, { recursive: true });
+      return dir;
+    },
     sleep: () => {},                        // the harness has no real time to pass
     execute: (cmd) => { noted('execute:' + String(cmd).split(' ')[0]); return ''; },
     readFile: (p) => { try { return fs.readFileSync(p, 'utf8'); } catch (e) { return ''; } },
@@ -279,7 +286,46 @@ function createHost(options) {
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, String(content));
     },
+    makeDirs: (p) => {
+      try { fs.mkdirSync(p, { recursive: true }); return true; } catch (e) { return false; }
+    },
+    // Sorted, no dots, and empty for a missing directory -- the host's contract.
+    listDir: (p) => {
+      try { return fs.readdirSync(p).sort(); } catch (e) { return []; }
+    },
+    removeFile: (p, recursive) => {
+      try {
+        const st = fs.lstatSync(p);
+        if (st.isDirectory() && !recursive) return false;
+        fs.rmSync(p, { recursive: !!recursive, force: true });
+        return true;
+      } catch (e) {
+        return true;                        // already gone counts as removed
+      }
+    },
+    copyFile: (from, to) => {
+      try {
+        fs.mkdirSync(path.dirname(to), { recursive: true });
+        fs.copyFileSync(from, to);
+        return true;
+      } catch (e) { return false; }
+    },
+    // --- apps, device facts, UI, touch ---
+    // The harness drives no real device, so these answer "nothing here" rather
+    // than pretending. A script must cope with that on a real device too.
+    foregroundApp: () => null,
+    isInstalled: () => false,
+    launchApp: () => { noted('launchApp'); return true; },
+    stopApp: () => { noted('stopApp'); return true; },
+    deviceInfo: () => ({
+      model: 'harness', manufacturer: 'gap', device: 'harness',
+      androidRelease: '12', fingerprint: 'gap/harness', emulator: true,
+    }),
+    dumpUi: () => '',
+    touchDevices: () => [],
+    readTouch: () => null,
     httpClient: () => '',
+    httpRequest: () => 0,
     getUserPlan: () => -1,
     sendNormalMessage: () => '',
     // The floating banner has no screen out here; a script may still call it.

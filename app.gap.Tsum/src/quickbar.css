@@ -1,6 +1,6 @@
 /*
- * The Quick Bar's whole appearance. Editing this file is the way to change how
- * the strip looks; quickbar.js only reads and writes values.
+ * The Quick Bar's layout and sizing. Its colours, type and felt details are
+ * feltQuickbar.css, loaded after this; quickbar.js only reads and writes values.
  *
  * Sized in CSS pixels, which are dp here -- the page is loaded with
  * `width=device-width` and the host leaves textZoom at 100. So the numbers below
@@ -16,6 +16,11 @@
  *
  * Pico is deliberately absent. This page is one strip, and every rule it needs
  * is here.
+ *
+ * Colours and type are the GAP Design System's (gapTokens.css), always in the
+ * dark theme. Its control sizes cannot fit a 62dp band, so the strip keeps its
+ * own scale and takes v2's palette and signals: a blue edge is tappable, solid
+ * blue is on, green applies now, amber waits for the next round.
  */
 
 :root {
@@ -51,9 +56,9 @@
    * The strip's design pixel, and what the window's size changes.
    * Every width, gap, glyph and type size below is written as a count of these
    * rather than in px, so the whole block scales with the window it is drawn
-   * in: full size at 440dp -- the width the two control rows, the Report
-   * button and the coin readout need at their drawn size -- and shrinking with
-   * anything narrower,
+   * in: full size at 460dp -- the width the two control rows, the side column
+   * and the coin readout need at their drawn size in Inter, which runs
+   * wider than the Plex it replaced -- and shrinking with anything narrower,
    * down to 72%, which still fits them all on a 320dp screen and is as small as
    * they go. So nothing runs off the edge of a phone, and nothing is blown up
    * on a tablet.
@@ -65,21 +70,29 @@
    * comes from the dense rules at the foot of this file -- which drop a whole
    * line out of the chips -- rather than from shrinking the type twice over.
    */
-  --qb-u: calc(clamp(0.72px, 0.2273vw, 1px) * clamp(0.82, var(--qb-vs), 1));
+  --qb-u: calc(clamp(0.72px, 0.2174vw, 1px) * clamp(0.82, var(--qb-vs), 1));
 
-  /* The host's panel palette, so the strip and the log above it read as one. */
-  --qb-bg: rgba(102, 102, 102, 0.678);
-  --qb-ink: #dadee5;
-  --qb-muted: #b9c8db;
-  --qb-chip: #24271b;
-  --qb-chip-edge: #333b45;
-  --qb-on: #21bfa0;
-  --qb-accent: #e0af3b;
+  /* GAP tokens by role. The host fades the window while a run goes. */
+  --qb-bg: var(--bg);
+  --qb-ink: var(--ink);
+  --qb-muted: var(--ink-muted);
+  --qb-chip: var(--tap-soft);
+  --qb-chip-press: var(--disc);
+  --qb-chip-edge: var(--tap);
+  --qb-on: var(--selected);
+  --qb-on-ink: var(--on-selected);
+
+  /* Read-only chips (the readout) are flat, with a hairline. */
+  --qb-static: var(--card-static);
+  --qb-static-edge: var(--card-static-edge);
 
   /* Running: the affordances go quiet, never the values. */
-  --qb-off: #7b8797;
-  --qb-chip-edge-off: #2b323b;
-  --qb-radius: 7px;
+  --qb-off: var(--ink-muted);
+  --qb-chip-edge-off: var(--card-static-edge);
+  --qb-radius: var(--radius-sm);
+
+  /* The GAP check icon, as a mask. */
+  --qb-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   /*
    * Line height for any text drawn inside `overflow: hidden` -- the skill name
@@ -106,7 +119,7 @@ html, body {
   padding: 0;
   background: transparent;
   overflow: hidden;
-  font: 500 11px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 500 11px/1 var(--font-sans);
   /* Separate from the shorthand so the px above stays the fallback size. */
   font-size: calc(11 * var(--qb-u));
   color: var(--qb-ink);
@@ -142,7 +155,7 @@ body {
   height: min(var(--qb-height), 100%);
   padding: var(--qb-vpad) var(--qb-colgap);
   background: var(--qb-bg);
-  border-top: 1px solid #66414853;
+  border-top: 1px solid var(--divider);
 }
 
 /* --- the controls ------------------------------------------------------- */
@@ -198,7 +211,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
  *
  * No `min-width: 0` on the grid itself: its minimum is what its columns need,
  * so when the strip cannot fit it the controls scroll rather than the grid
- * being drawn over the Report button.
+ * being drawn over the side column.
  */
 .qb-grid {
   display: grid;
@@ -227,7 +240,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 
 /* The skill name adds no width to its column, so the cluster under it sets the
    width and a long name ellipsises at the 5>4 chip's edge instead of pushing
-   the Report button. `width: 0` drops its contribution; `min-width: 100%`
+   the side column. `width: 0` drops its contribution; `min-width: 100%`
    stretches it back over the column. */
 .qb-cell-fit { width: 0; min-width: 100%; }
 
@@ -248,7 +261,6 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   flex: 0 0 auto;
   color: var(--qb-muted);
   font-size: calc(10 * var(--qb-u));
-  letter-spacing: 0.02em;
 }
 
 /* --- stepper ------------------------------------------------------------ */
@@ -288,7 +300,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   line-height: 1;
 }
 
-.qb-step:active { background: #2b323b; }
+.qb-step:active { background: var(--qb-chip-press); }
 
 /* The name over its number, between the two buttons. */
 .qb-readout {
@@ -305,7 +317,6 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   font-size: calc(8 * var(--qb-u));
   line-height: 1;
   color: var(--qb-muted);
-  letter-spacing: 0.02em;
 }
 
 .qb-value {
@@ -337,30 +348,45 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 
 /*
  * A chip that says its own name, rather than a label and a switch beside it:
- * lit teal is on, dark and muted is off. Same shape as the steppers and the
- * select, so the row reads as one kind of thing. As wide as its word.
+ * on is solid blue with a check in its corner, off is plain and muted. Same shape
+ * as the steppers and the select, so the row reads as one kind of thing. As
+ * wide as its word: the check is drawn over the corner, so it costs no width.
  */
 .qb-toggle {
+  position: relative;
   flex: 0 0 auto;
   height: 100%;
-  padding: 0 calc(7 * var(--qb-u));
+  padding: 0 calc(6 * var(--qb-u));
   border: 1px solid var(--qb-chip-edge);
   border-radius: var(--qb-radius);
   background: var(--qb-chip);
   color: var(--qb-muted);
   font: inherit;
   font-size: calc(11 * var(--qb-u));
-  letter-spacing: 0.02em;
   white-space: nowrap;
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-.qb-toggle:active { background: #2b323b; }
+.qb-toggle:active { background: var(--qb-chip-press); }
 
 .qb-toggle[aria-checked="true"] {
-  background: #12362f;
+  background: var(--qb-on);
   border-color: var(--qb-on);
-  color: var(--qb-on);
+  color: var(--qb-on-ink);
+  font-weight: 700;
+}
+
+/* On also shows the GAP check, so state is not colour alone. */
+.qb-toggle[aria-checked="true"]::before {
+  content: "";
+  position: absolute;
+  top: calc(2 * var(--qb-u));
+  right: calc(2 * var(--qb-u));
+  width: calc(7 * var(--qb-u));
+  height: calc(7 * var(--qb-u));
+  background: currentColor;
+  -webkit-mask: var(--qb-check) center / contain no-repeat;
+  mask: var(--qb-check) center / contain no-repeat;
 }
 
 /* --- action chips: Lvl, Copy code -------------------------------------- */
@@ -382,15 +408,14 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   color: var(--qb-ink);
   font: inherit;
   font-size: calc(11 * var(--qb-u));
-  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
-.qb-action:active { background: #2b323b; }
+.qb-action:active { background: var(--qb-chip-press); }
 
 /* Working: a highlight sweeps across the chip until the answer comes back. */
 .qb-action[data-busy] {
-  background-image: linear-gradient(90deg, transparent 20%, rgba(218, 222, 229, 0.18) 50%, transparent 80%);
+  background-image: linear-gradient(90deg, transparent 20%, var(--qb-chip-press) 50%, transparent 80%);
   background-size: 250% 100%;
   animation: qb-sweep 0.9s linear infinite;
 }
@@ -401,7 +426,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .qb-action[data-busy] { animation: none; background-image: none; background-color: #2b323b; }
+  .qb-action[data-busy] { animation: none; background-image: none; background-color: var(--qb-chip-press); }
 }
 /* The open padlock on Lvl; `currentColor` so it greys out with the word. */
 .qb-action-glyph {
@@ -415,7 +440,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   stroke-linejoin: round;
 }
 /* Unlike a toggle, an action has no value to keep showing when it cannot act. */
-.qb-action:disabled { border-color: var(--qb-chip-edge-off); color: var(--qb-off); }
+.qb-action:disabled { border-color: var(--qb-chip-edge-off); color: var(--qb-off); opacity: .6; }
 
 /* --- the wide chips: the preset and the bubble strategy ------------------ */
 
@@ -435,7 +460,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   padding: 0 calc(4 * var(--qb-u)) 0 calc(8 * var(--qb-u));
 }
 
-.qb-wide:active { background: #2b323b; }
+.qb-wide:active { background: var(--qb-chip-press); }
 
 /*
  * Left-aligned, unlike the steppers': it is a label and a name, not a number.
@@ -447,6 +472,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 .qb-wide-readout {
   flex: 1 1 auto;
   min-width: 0;
+  text-align: left;
   overflow: hidden;
   align-items: stretch;
   gap: calc(2 * var(--qb-u));
@@ -465,14 +491,9 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
 /* Nothing loaded is a dash, and a dash is not a reading -- keep it quiet. */
 .qb-preset-value[data-empty="true"] { color: var(--qb-muted); }
 
-/* --- the side column: page toggle and report ---------------------------- */
+/* --- the side column: page toggle and auto play ------------------------- */
 
-/*
- * The page toggle over Report, one row each, both as wide as the wider. It never
- * shrinks: Report is the one control pressed when something has already gone
- * wrong, and a screen narrow enough to squeeze it is exactly the kind of device
- * the report would be about.
- */
+/* The page toggle over Auto Play, one row each, both as wide as the wider. */
 .qb-side {
   flex: 0 0 auto;
   display: grid;
@@ -480,8 +501,7 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   row-gap: var(--qb-vpad);
 }
 
-.qb-page-toggle,
-.qb-report {
+.qb-page-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -493,8 +513,30 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   font: inherit;
 }
 
-.qb-page-toggle:active,
-.qb-report:active { background: #2b323b; }
+.qb-page-toggle:active { background: var(--qb-chip-press); }
+
+/* Stretched to the column so it lines up with the page toggle above. */
+.qb-side .qb-toggle { width: 100%; }
+
+/* A toggle drawn as a glyph, as narrow as the page toggle over it. */
+.qb-icon-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 calc(5 * var(--qb-u));
+}
+
+.qb-icon {
+  width: min(calc(14 * var(--qb-u)), calc(var(--qb-row) - 6px));
+  height: min(calc(14 * var(--qb-u)), calc(var(--qb-row) - 6px));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.qb-icon .qb-icon-fill { fill: currentColor; stroke-width: 1.5; }
 
 /* Text for screen readers only: the chip draws a glyph instead. */
 .qb-sr {
@@ -514,44 +556,11 @@ body[data-page="2"] [data-page="1"] { visibility: hidden; }
   height: calc(6 * var(--qb-u));
   border-radius: 50%;
   background: var(--qb-off);
+  opacity: .5;
 }
 
 body[data-page="1"] .qb-page-toggle .qb-dot:nth-child(1),
-body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-on); }
-
-/*
- * Report is deliberately quiet -- the same chip fill as the rest, with the
- * glyph in the warning colour rather than the whole button. It is not an alert
- * and not an action anyone should feel steered towards.
- */
-.qb-report-glyph {
-  flex: 0 0 auto;
-  /* Capped by the row so a short band cannot push it out of its chip. */
-  width: min(calc(15 * var(--qb-u)), calc(var(--qb-row) - 6px));
-  height: min(calc(15 * var(--qb-u)), calc(var(--qb-row) - 6px));
-  fill: none;
-  stroke: var(--qb-accent);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* Saved: the chip says so for a few seconds rather than a toast over the game. */
-.qb-report[data-said="saved"] {
-  border-color: var(--qb-on);
-  color: var(--qb-on);
-}
-
-.qb-report[data-said="saved"] .qb-report-glyph { stroke: var(--qb-on); }
-
-/*
- * Live by the run, not by the pause: the host keeps this one chip touchable
- * while the script plays (quickbarPage.ts, `qbNameHotspot`), so it keeps its
- * full edge and glyph where the chips around it recede. Only with no run at
- * all does it go quiet with them.
- */
-.qb-report:disabled { border-color: var(--qb-chip-edge-off); }
-.qb-report:disabled .qb-report-glyph { stroke: var(--qb-off); }
+body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-on); opacity: 1; }
 
 /* --- skill select ------------------------------------------------------- */
 
@@ -589,7 +598,7 @@ body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-
   width: calc(13 * var(--qb-u));
   height: calc(13 * var(--qb-u));
   fill: none;
-  stroke: var(--qb-muted);
+  stroke: var(--tap);
   stroke-width: 2.2;
   stroke-linecap: round;
 }
@@ -597,18 +606,19 @@ body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-
 /* --- the readout: coins, or times --------------------------------------- */
 
 /*
- * A chip of its own on the strip's right edge: the toggle down its left side,
- * then a two-column table -- names down the left, figures down the right on one
- * edge, three rows ruled apart. Base against final is the comparison worth
+ * A chip on the strip's right edge, so flat with a hairline rather than the
+ * blue edge (its dots flip the table; the table itself copies the figures):
+ * the toggle down its left side, then a two-column table -- names down the left, figures down the right on one
+ * edge, rows ruled apart. Base against final is the comparison worth
  * making, and that wants the two figures in a column with their digits aligned.
  */
 .qb-readouts {
   flex: 0 0 auto;
   display: flex;
   align-items: stretch;
-  background: var(--qb-chip);
-  border: 1px solid var(--qb-chip-edge);
-  border-radius: 10px;
+  background: var(--qb-static);
+  border: 1px solid var(--qb-static-edge);
+  border-radius: var(--radius-md);
 }
 
 /* Two dots stacked, the lit one being the table on screen. The chip's full
@@ -619,22 +629,25 @@ body[data-page="2"] .qb-page-toggle .qb-dot:nth-child(2) { background: var(--qb-
   align-items: center;
   justify-content: center;
   gap: calc(4 * var(--qb-u));
-  padding: 0 calc(4 * var(--qb-u));
+  padding: 0 calc(3 * var(--qb-u));
   border: 0;
-  border-right: 1px solid var(--qb-chip-edge);
-  border-radius: 9px 0 0 9px;
+  border-right: 1px solid var(--qb-static-edge);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
   background: transparent;
   font: inherit;
 }
 
-.qb-readout-toggle:active { background: #2b323b; }
+.qb-readout-toggle:active { background: var(--qb-chip-press); }
 
 body[data-readout="coins"] .qb-readout-toggle .qb-dot:nth-child(1),
-body[data-readout="times"] .qb-readout-toggle .qb-dot:nth-child(2) { background: var(--qb-accent); }
+body[data-readout="times"] .qb-readout-toggle .qb-dot:nth-child(2) { background: var(--qb-on); opacity: 1; }
 
 /* Both tables in one grid area, so the chip is as wide as the wider and does
    not jump when it flips. Hidden rather than removed for the same reason. */
 .qb-readout-tables { display: grid; }
+
+/* It is a tap target too: the whole run's figures to the clipboard. */
+.qb-readout-tables:active { background: var(--qb-chip-press); }
 
 .qb-readout-tables > .qb-stats { grid-area: 1 / 1; }
 
@@ -649,45 +662,54 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
   border-collapse: separate;
   border-spacing: 0;
   /*
-   * Half the strip's padding above and below: three ruled rows and a border are
-   * ~52 of the 54px the band leaves at full size, and the slack that buys is
-   * what keeps a descender off the hairline under it.
+   * Half the strip's padding above and below. Four ruled rows have to fit the
+   * ~54px band, hence the small type and a line height of 1.
    */
-  padding: calc(var(--qb-vpad) / 2) calc(7 * var(--qb-u)) calc(var(--qb-vpad) / 2) calc(6 * var(--qb-u));
+  line-height: 1;
+  padding: calc(var(--qb-vpad) / 2) calc(5 * var(--qb-u)) calc(var(--qb-vpad) / 2) calc(4 * var(--qb-u));
 }
 
 /* The hairline between two readings, on the cells for the reason above. */
-.qb-stat + .qb-stat > * { border-top: 1px solid var(--qb-chip-edge); }
+.qb-stat + .qb-stat > * { border-top: 1px solid var(--qb-static-edge); }
 
 /*
  * A `<th>` is centred and bold by default and this is neither: it is the quiet
  * half of the row, and the figure beside it is what the eye is going to.
  */
 .qb-stat-label {
-  padding: calc(1px * var(--qb-vs)) calc(8 * var(--qb-u)) calc(1px * var(--qb-vs)) 0;
+  padding: calc(1px * var(--qb-vs)) calc(5 * var(--qb-u)) calc(1px * var(--qb-vs)) 0;
   color: var(--qb-muted);
-  font-size: calc(9 * var(--qb-u));
+  font-size: calc(8 * var(--qb-u));
   font-weight: inherit;
-  letter-spacing: 0.02em;
   text-align: left;
   white-space: nowrap;
 }
 
-/* Wide enough for the longest coin figure, at whatever size the strip is. */
+/* Wide enough for a five-figure coin average (`99,999`); a longer one grows the chip. */
 .qb-stat-value {
-  min-width: calc(44 * var(--qb-u));
+  min-width: calc(34 * var(--qb-u));
   padding: calc(1px * var(--qb-vs)) 0;
   text-align: right;
   font-variant-numeric: tabular-nums;
-  font-size: calc(12 * var(--qb-u));
-  color: var(--qb-accent);
+  font-size: calc(10 * var(--qb-u));
+  color: var(--data-coin);
 }
 
+/* The game-data colours: coin for coins, violet for medals, cyan for times. */
+.qb-stats .qb-stat-medals .qb-stat-value { color: var(--data-medal); }
+.qb-stats[data-readout="times"] .qb-stat-value { color: var(--data-time); }
+
 /* A count of rounds, not coins: same column, but not one of the two figures. */
-.qb-stat-rounds .qb-stat-value {
+.qb-stats .qb-stat-rounds .qb-stat-value {
   color: var(--qb-muted);
-  font-size: calc(10 * var(--qb-u));
+  font-size: calc(9 * var(--qb-u));
 }
+
+/* A GAP Companion workflow's step takes the Rounds row's place, so the chip
+   keeps its three rows and its height. */
+.qb-stat-workflow { display: none; }
+body[data-workflow="on"] .qb-stat-workflow { display: table-row; }
+body[data-workflow="on"] .qb-stats[data-readout="coins"] .qb-stat-rounds:not(.qb-stat-workflow) { display: none; }
 
 /* --- now, or at the next round ------------------------------------------ */
 
@@ -704,9 +726,8 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
  * width back from somewhere, and a colour change on the border itself collides
  * with the toggle's own lit edge.
  *
- * Teal is the strip's "live" colour already -- the top edge wears it while the
- * script is paused -- and amber is its "worth noting" one, off the coin
- * readout. So the two bars say the same thing the rest of the palette does.
+ * Green is GAP's "running / synced" colour, so it marks what takes effect at
+ * once; amber is "paused / needs a look", so it marks what waits.
  *
  * Only while a round is on: between rounds the whistle is seconds away and
  * everything effectively lands now, so quickbarPage.ts takes the attribute off
@@ -718,8 +739,8 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
   box-shadow: inset 0 calc(-2 * var(--qb-u)) 0 var(--qb-when, transparent);
 }
 
-.qb-cell[data-when="now"] { --qb-when: var(--qb-on); }
-.qb-cell[data-when="nextRound"] { --qb-when: var(--qb-accent); }
+.qb-cell[data-when="now"] { --qb-when: var(--success); }
+.qb-cell[data-when="nextRound"] { --qb-when: var(--warning); }
 
 /*
  * The preset chip is not one setting: picking one moves settings of both kinds
@@ -730,7 +751,7 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
  * layers over the chip's own `background` colour, which stays where it is.
  */
 .qb-cell[data-when="both"] .qb-select {
-  background-image: linear-gradient(90deg, var(--qb-on) 50%, var(--qb-accent) 50%);
+  background-image: linear-gradient(90deg, var(--success) 50%, var(--warning) 50%);
   background-repeat: no-repeat;
   background-position: bottom;
   background-size: 100% calc(2 * var(--qb-u));
@@ -743,7 +764,7 @@ body[data-readout="times"] .qb-stats[data-readout="coins"] { visibility: hidden;
  * chips it applies to (+Coin, 5>4) are both round-setup settings that always
  * wear the same one.
  */
-.qb-cell[data-when="nextRound"] .qb-name { color: var(--qb-accent); }
+.qb-cell[data-when="nextRound"] .qb-name { color: var(--warning); }
 
 /* Running is not the moment to be asking about it: the whole strip is dead,
    and two colours of affordance on a dead strip is noise. */
@@ -793,14 +814,14 @@ body[data-dense="true"] .qb-wide-readout {
 }
 
 /*
- * The coin block is three rows in the same band, so it is the other place the
+ * The coin block is four rows in the same band, so it is the other place the
  * height actually binds: its type comes down with `--qb-vs` itself rather than
  * with the floored unit the chips use, because a readout that overflows its
  * track is clipped by the strip rather than merely tight.
  */
-body[data-dense="true"] .qb-stat-label { font-size: calc(9 * var(--qb-u) * var(--qb-vs)); }
-body[data-dense="true"] .qb-stat-value { font-size: calc(12 * var(--qb-u) * var(--qb-vs)); }
-body[data-dense="true"] .qb-stat-rounds .qb-stat-value { font-size: calc(10 * var(--qb-u) * var(--qb-vs)); }
+body[data-dense="true"] .qb-stat-label { font-size: calc(8 * var(--qb-u) * var(--qb-vs)); }
+body[data-dense="true"] .qb-stat-value { font-size: calc(10 * var(--qb-u) * var(--qb-vs)); }
+body[data-dense="true"] .qb-stat-rounds .qb-stat-value { font-size: calc(9 * var(--qb-u) * var(--qb-vs)); }
 
 /* --- running: readable, but not live --------------------------------- */
 
@@ -822,17 +843,17 @@ body[data-state="running"] .qb-stepper,
 body[data-state="running"] .qb-select,
 body[data-state="running"] .qb-toggle { border-color: var(--qb-chip-edge-off); }
 
-body[data-state="running"] .qb-step { color: var(--qb-off); }
-body[data-state="running"] .qb-caret { stroke: var(--qb-off); }
+body[data-state="running"] .qb-step { color: var(--qb-off); opacity: .6; }
+body[data-state="running"] .qb-caret { stroke: var(--qb-off); opacity: .6; }
 
 /*
  * The toggle keeps its ON tint -- checked or not is a reading, not an
  * affordance -- and only its edge recedes with the rest.
  */
-body[data-state="running"] .qb-toggle[aria-checked="true"] { border-color: #1a6b5c; }
+body[data-state="running"] .qb-toggle[aria-checked="true"] { border-color: var(--qb-chip-edge-off); }
 
-/* The strip's top edge is the one thing that changes colour: teal means live. */
-body:not([data-state="running"]) .qb { border-top-color: var(--qb-on); }
+/* The strip's top edge is the one thing that changes colour: blue means you can act. */
+body:not([data-state="running"]) .qb { border-top-color: var(--tap); }
 
 /* --- the skill sheet ---------------------------------------------------- */
 
@@ -847,7 +868,7 @@ body:not([data-state="running"]) .qb { border-top-color: var(--qb-on); }
 .qb-scrim {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--scrim);
 }
 
 .qb-list {
@@ -856,9 +877,10 @@ body:not([data-state="running"]) .qb { border-top-color: var(--qb-on); }
   margin: 0 8px calc(var(--qb-height) + 4px);
   padding: 4px;
   overflow-y: auto;
-  border: 1px solid var(--qb-chip-edge);
-  border-radius: 10px;
-  background: #0b0f14;
+  border: 1.5px solid var(--edge-strong);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(160deg, var(--card-top), var(--card-bottom));
+  box-shadow: var(--shadow-float);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 3px;
@@ -872,12 +894,12 @@ body:not([data-state="running"]) .qb { border-top-color: var(--qb-on); }
 .qb-option {
   padding: 6px;
   padding-bottom: 14px;
-  border: 0;
-  border-radius: 6px;
-  background: var(--qb-chip);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--inset);
   color: var(--qb-ink);
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   /* line-height: var(--qb-lh); */
   text-align: left;
   overflow: hidden;
@@ -885,34 +907,37 @@ body:not([data-state="running"]) .qb { border-top-color: var(--qb-on); }
   white-space: nowrap;
 }
 
-.qb-option[aria-selected="true"] { background: #12362f; color: var(--qb-on); }
+.qb-option[aria-selected="true"] {
+  background: var(--tap-soft);
+  border-color: var(--tap);
+  font-weight: 800;
+}
 
 /* An unfinished skill's colour and pill -- see `SkillStatus` in
-   src/skillOptions.ts. After the selected rule for the reason index.css gives:
-   equal specificity, and the status is the more useful of the two colours.
+   src/skillOptions.ts. Alpha is amber ("needs a look").
    `.qb-select-value` is the chip on the strip, which has room for the colour
    but not the pill, so quickbarPage.ts sets the attribute there and nothing
-   else. */
-.qb-option[data-status],
+   else -- the colour is all it gets. Beta is v2's neutral `idle` (no info
+   colour in v2). */
 .qb-select-value[data-status] { color: var(--qb-status); }
 
 [data-status="alpha"] {
-  --qb-status: #f5a04a;
-  --qb-status-soft: #4a2a06;
+  --qb-status: var(--warning);
+  --qb-status-soft: var(--warning-band);
 }
 
 [data-status="beta"] {
-  --qb-status: #5aa9f0;
-  --qb-status-soft: #10304d;
+  --qb-status: var(--idle);
+  --qb-status-soft: var(--idle-band);
 }
 
 .qb-flag {
   margin-left: 4px;
-  padding: 0 3px;
-  border-radius: 999px;
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
   background: var(--qb-status-soft);
   color: var(--qb-status);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
@@ -922,14 +947,13 @@ body:not([data-state="running"]) .qb { border-top-color: var(--qb-on); }
 .qb-group {
   grid-column: 1 / -1;
   padding: 5px 4px 1px;
-  color: var(--qb-accent);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--qb-muted);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .qb-group:not(:first-child) {
   margin-top: 3px;
-  border-top: 1px solid var(--qb-chip-edge);
+  border-top: 1px solid var(--divider);
   padding-top: 6px;
 }

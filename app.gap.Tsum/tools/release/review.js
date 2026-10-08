@@ -16,12 +16,42 @@ const path = require('path');
 const readline = require('node:readline/promises');
 const { execFileSync } = require('child_process');
 
-/** The `- `/`* ` lines of `text`. The Summary's bullet rule, in one place. */
-function bulletsFrom(text) {
-  return text.split('\n')
-    .map((line) => line.match(/^[-*]\s+(.*\S)\s*$/))
-    .filter(Boolean)
-    .map((m) => m[1]);
+/**
+ * The note's lines: `- ` bullets and the labels that group them.
+ *
+ * `**Additions**` is a heading (`level` 1), `*Skills*` a sub-heading (`level` 2).
+ * An old flat Summary has no labels and parses to bullets alone. Anything else
+ * (prose, blank lines) is ignored, so the Summary stays one bullet per line.
+ */
+function parseNote(text) {
+  const items = [];
+  for (const line of text.split('\n')) {
+    let m;
+    if ((m = line.match(/^[-*]\s+(.*\S)\s*$/))) items.push({ text: m[1] });
+    else if ((m = line.match(/^\*\*([^*].*?)\*\*\s*$/))) items.push({ label: m[1], level: 1 });
+    else if ((m = line.match(/^\*([^*\s].*?)\*\s*$/))) items.push({ label: m[1], level: 2 });
+  }
+  return items;
+}
+
+/** The bullets of `items`, labels dropped. */
+function bulletsOf(items) {
+  return items.filter((i) => i.text !== undefined);
+}
+
+/** `items` as Summary lines: labels on their own, each bullet after `- `. */
+function noteLines(items) {
+  return items.map((i) => (i.text !== undefined ? `- ${i.text}` : i.level === 1 ? `**${i.label}**` : `*${i.label}*`));
+}
+
+/** The note as Markdown: a blank line before each heading, so the groups read apart. */
+function renderNote(items) {
+  const out = [];
+  for (const line of noteLines(items)) {
+    if (out.length && line.startsWith('**')) out.push('');
+    out.push(line);
+  }
+  return out.join('\n');
 }
 
 /**
@@ -30,11 +60,11 @@ function bulletsFrom(text) {
  * The same check guards an approval and a `--yes` run, so an edited note is held
  * to exactly what the changelog's own bullets are held to.
  */
-function noteProblem(bullets, message, limit) {
-  if (!bullets.length) {
+function noteProblem(items, message, limit) {
+  if (!bulletsOf(items).length) {
     return 'The note has no bullets. One line per change, written for a player on a phone.';
   }
-  if (message.length > limit) {
+  if (limit > 0 && message.length > limit) {
     return `The note is ${message.length} characters, over the ${limit} in config.json. ` +
       'Shorten it -- it is read on a phone.';
   }
@@ -54,26 +84,27 @@ function editorCommand() {
 }
 
 /**
- * Open the bullets in an editor and read back what was saved.
+ * Open the note in an editor and read back what was saved.
  *
- * Returns the new bullets, or undefined if the editor could not be run -- the
+ * Returns the new items, or undefined if the editor could not be run -- the
  * caller keeps what it had rather than losing it.
  */
-function editBullets(bullets, channel) {
+function editNote(items, channel) {
   const [cmd, args] = editorCommand();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gap-release-'));
   const file = path.join(dir, 'release-note.md');
   const header = [
     `# The release note for ${channel.Name} ${channel.Version}.`,
-    '# One bullet per line, starting with "- ". Lines starting with # are ignored.',
+    '# One bullet per line, starting with "- ". **Heading** and *Sub-heading* lines group them.',
+    '# Lines starting with # are ignored.',
     '# One line per change, and only what a player sees. Save and close to continue.',
     '',
   ].join('\n');
 
   try {
-    fs.writeFileSync(file, header + bullets.map((b) => `- ${b}`).join('\n') + '\n');
+    fs.writeFileSync(file, header + noteLines(items).join('\n') + '\n');
     execFileSync(cmd, [...args, file], { stdio: 'inherit' });
-    return bulletsFrom(fs.readFileSync(file, 'utf8'));
+    return parseNote(fs.readFileSync(file, 'utf8'));
   } catch (err) {
     console.log(`\n  Could not run the editor (${cmd}): ${err.message}`);
     console.log('  Set $EDITOR to something that blocks until you close it, e.g. "code --wait".');
@@ -91,7 +122,7 @@ function editBullets(bullets, channel) {
  * Only that block's lines are touched: the section's other headings, and every
  * other section, come back byte for byte.
  */
-function replaceSummary(changelog, version, bullets) {
+function replaceSummary(changelog, version, items) {
   const lines = changelog.split('\n');
   const start = lines.findIndex((l) => l.trim() === `## [${version}]`);
   if (start < 0) throw new Error(`CHANGELOG.md has no "## [${version}]" section to write into.`);
@@ -107,14 +138,16 @@ function replaceSummary(changelog, version, bullets) {
 
   return [
     ...lines.slice(0, head + 1),
-    ...bullets.map((b) => `- ${b}`),
+    '',
+    ...renderNote(items).split('\n'),
     ...lines.slice(stop),
   ].join('\n');
 }
 
 // --- the prompt ------------------------------------------------------------
 
-function printNote(channel, message, bullets, limit, problem) {
+function printNote(channel, message, items, limit, problem) {
+  const bullets = bulletsOf(items);
   const rule = '─'.repeat(64);
   console.log(`\n${rule}`);
   console.log(`Release note -- ${channel.Name} ${channel.Version}`);
@@ -122,7 +155,7 @@ function printNote(channel, message, bullets, limit, problem) {
   console.log(message.split('\n').map((l) => (l ? `  ${l}` : '')).join('\n'));
   console.log(`\n${rule}`);
   console.log(`${bullets.length} bullet${bullets.length === 1 ? '' : 's'}, ` +
-    `${message.length} of ${limit} characters`);
+    (limit > 0 ? `${message.length} of ${limit} characters` : `${message.length} characters, no limit`));
   if (problem) console.log(`\nCannot ship as it stands: ${problem}`);
 }
 
@@ -131,11 +164,11 @@ function printNote(channel, message, bullets, limit, problem) {
  *
  * `render` is the caller's own note renderer, so what is reviewed is what ships
  * -- an edit is re-rendered through it rather than approximated here. Returns
- * `{approved, bullets, message}`; `approved` false is a deny, and the caller
+ * `{approved, items, message}`; `approved` false is a deny, and the caller
  * publishes nothing.
  */
-async function reviewNote({ bullets, channel, limit, render, changelogFile, allowSave }) {
-  let current = bullets.slice();
+async function reviewNote({ items, channel, limit, render, changelogFile, allowSave }) {
+  let current = items.slice();
   let edited = false;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
@@ -157,7 +190,7 @@ async function reviewNote({ bullets, channel, limit, render, changelogFile, allo
       const answer = await ask('\n[a]pprove  [e]dit  [d]eny  > ');
       if (answer === undefined) {
         console.log('\nInput ended -- taking that as a deny.');
-        return { approved: false, bullets: current, message };
+        return { approved: false, items: current, message };
       }
 
       if (/^(a|approve|y|yes)$/.test(answer)) {
@@ -166,16 +199,16 @@ async function reviewNote({ bullets, channel, limit, render, changelogFile, allo
           continue;
         }
         if (edited) await saveEdit(ask, current, channel, changelogFile, allowSave);
-        return { approved: true, bullets: current, message };
+        return { approved: true, items: current, message };
       }
 
       if (/^(e|edit)$/.test(answer)) {
         // The editor inherits this terminal, so stop reading it first or a
         // full-screen editor and this prompt fight over the same keystrokes.
         rl.pause();
-        const next = editBullets(current, channel);
+        const next = editNote(current, channel);
         rl.resume();
-        if (next && next.join('\n') !== current.join('\n')) {
+        if (next && noteLines(next).join('\n') !== noteLines(current).join('\n')) {
           current = next;
           edited = true;
         }
@@ -183,7 +216,7 @@ async function reviewNote({ bullets, channel, limit, render, changelogFile, allo
       }
 
       if (/^(d|deny|n|no|q|quit)$/.test(answer)) {
-        return { approved: false, bullets: current, message };
+        return { approved: false, items: current, message };
       }
 
       console.log('\nAnswer a, e or d.');
@@ -194,20 +227,20 @@ async function reviewNote({ bullets, channel, limit, render, changelogFile, allo
 }
 
 /** Offer to put an approved edit back in CHANGELOG.md, so the two cannot drift. */
-async function saveEdit(ask, bullets, channel, changelogFile, allowSave) {
+async function saveEdit(ask, items, channel, changelogFile, allowSave) {
   if (!allowSave) {
     console.log('\nDry run -- the edit was not written to CHANGELOG.md.');
     return;
   }
   const answer = await ask(
-    `\nWrite these bullets back into CHANGELOG.md's [${channel.Version}] Summary? [Y/n] `);
+    `\nWrite this note back into CHANGELOG.md's [${channel.Version}] Summary? [Y/n] `);
   if (answer === undefined || /^(n|no)$/.test(answer)) {
     console.log('Left CHANGELOG.md alone -- the release note and the section now differ.');
     return;
   }
   const changelog = fs.readFileSync(changelogFile, 'utf8');
-  fs.writeFileSync(changelogFile, replaceSummary(changelog, channel.Version, bullets));
+  fs.writeFileSync(changelogFile, replaceSummary(changelog, channel.Version, items));
   console.log(`Wrote the [${channel.Version}] Summary in CHANGELOG.md.`);
 }
 
-module.exports = { bulletsFrom, noteProblem, replaceSummary, reviewNote };
+module.exports = { parseNote, bulletsOf, noteLines, renderNote, noteProblem, replaceSummary, reviewNote };

@@ -30,7 +30,7 @@ const CorpusMinIntervalMs = 20 * 1000;
 const CorpusMaxPerSession = 40;
 
 Tsum.prototype.corpusDir = function() {
-  return this.storagePath + '/' + Config.recordDir + '/corpus';
+  return this.devicePath + '/corpus';
 }
 
 /**
@@ -58,7 +58,7 @@ Tsum.prototype.saveCorpusFrame = function(tag) {
 
   // Created here rather than in init() so that leaving the setting off does not
   // scatter empty folders across devices that will never collect anything.
-  execute("mkdir -p " + dir);
+  makeDirs(dir);
 
   // Full resolution first: quality 100, no resize. This is the frame a human
   // reads and a template gets cut from.

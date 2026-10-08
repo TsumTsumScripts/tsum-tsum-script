@@ -8,7 +8,7 @@
 var ScriptVersion = '$VERSION';
 
 var Config: TsumConfig = {
-  recordDir: 'tsum_record',
+  statsDir: 'stats',
   // Centre-to-centre distance of two touching tsums, in the screenResize
   // (200px) play square -- about 8 tsums across a board.
   //
@@ -22,7 +22,7 @@ var Config: TsumConfig = {
   //
   // 25 is measured, not guessed: nearest-neighbour distances between detected
   // circles on corpus/GamePlaying sit in a tight band at 24-26px. The rest of
-  // the detector already agreed -- findTsums looks for radius 8-14 circles
+  // the detector already agreed -- findTsumCircles looks for radius 8-14 circles
   // (diameter 16-28) no closer than minDist 22, which is a ~25px tsum.
   tsumWidth: 25,
   screenResize: 200,
@@ -88,6 +88,19 @@ var GameBubbleConfig = {
   param1: 20,
   param2: 26,
 
+  // A second, looser pass over the bottom of the square (below `bandFrom` of
+  // its height), where bubbles settle in a packed row that `param2` mostly
+  // misses -- 3 of 6 found on a Villains Set pile-up, 6 of 6 with this pass.
+  // It also takes a tsum now and then; a tap on one is ignored by the game.
+  bandFrom: 0.68,
+  bandParam2: 14,
+  bandMaxRadius: 20,
+  // A band circle is kept only if it looks like a bubble inside: under
+  // `darkMax` of the disc (at 0.7 radius) darker than value 64, and under
+  // `whiteMax` near-white. See `bubbleLooks`.
+  darkMax: 0.03,
+  whiteMax: 0.4,
+
   // How long after a skill activation the Bubble Strategy pops nothing, ms.
   //
   // A skill's burst is what *makes* most bubbles, and it empties the board
@@ -106,6 +119,23 @@ var GameBubbleConfig = {
   // is lost by waiting -- every scan re-finds the bubbles, so this only ever
   // moves which chain spends them.
   holdAfterSkillMs: 2000,
+  // The same hold for pops that want board space rather than a good blast:
+  // All Bubbles ASAP and the overflow pop. Just long enough for the skill
+  // animation to stop eating taps. At 2s, a skill firing every few seconds
+  // (Villains Set) held every pop for ~30% of the round.
+  shortHoldAfterSkillMs: 600,
+
+  // The overflow pop, for the two Mid Chain strategies: once a scan sees
+  // `overflowAt` bubbles, all but the `overflowKeep` richest are popped at
+  // once, ripe or not. Hoarding one or two for a chain pays; a pile of them
+  // just takes board space the tsums need.
+  overflowAt: 4,
+  overflowKeep: 2,
+
+  // All Bubbles ASAP's blind sweep runs when a scan sees this many bubbles: a
+  // pile that size is a packed row the Hough pass only half finds. It covers
+  // the bottom band only (`bandFrom`), where piles form.
+  pileUpSweepAt: 4,
 
   // What a pop is worth: the tsums within `blastReach` tsum widths past the
   // bubble's edge, counted off the same scan (`GameBubble.near`). The
@@ -331,8 +361,7 @@ type GameItemStates = [
   bubble: boolean, fiveToFour: boolean, combo: boolean
 ];
 
-type PatchedYColor = { x: number; y: number; color: Color };
-type PatchedYColorPair = { x: number; y: number; color: Color; color2: Color };
+type ColorProbe = { x: number; y: number; color: Color };
 
 var Button = {
   gameBubblesFrom: {x: 100, y: 632},
@@ -369,18 +398,16 @@ var Button = {
   outReceiveAllOkJP: {x: 835, y: 1258, color: {"a":0,"b":6,"g":175,"r":236}},
   outReceiveItemSetOk: {x: 830, y: 1260, color: {"a":0,"b":8,"g":176,"r":238}},
   outReceiveClose: {x: 530, y: 1372},
-  outReceiveOneBase: {y: 569},
-  outReceiveOne: {x: 840, color: {"a":0,"b":30,"g":181,"r":235}, color2: {"a":0,"b":119,"g":74,"r":40}} as PatchedYColorPair,
-  outReceiveOneRubyBase: {y: 651}, // ruby
-  outReceiveOneRuby: {x: 295, color: {r: 224, g: 93, b: 101}} as PatchedYColor, // ruby
-  outReceiveOneAdBase: { y: 672 }, // ad
-  outReceiveOneAd: { x: 290, color: { r: 90, g: 57, b: 25 } } as PatchedYColor, // ad
-  outReceiveOneMedalBase: { y: 645 }, // mission medal
+  outReceiveOne: {x: 840, y: 569, color: {"a":0,"b":30,"g":181,"r":235}, color2: {"a":0,"b":119,"g":74,"r":40}},
+  outReceiveOneRuby: {x: 295, y: 651, color: {r: 224, g: 93, b: 101}} as ColorProbe, // ruby
+  // The pinned ad mail (some regions). Skill and premium ticket mail reads the
+  // same here, so a one-by-one pass leaves those in the mailbox too.
+  outReceiveOneAd: { x: 290, y: 672, color: { r: 90, g: 57, b: 25 } } as ColorProbe,
   // The item badge over the thumbnail's bottom-right corner, and the pale
   // blue-white of the mission medal there. Past the photo itself, so a row
   // carrying no medal reads as its badge or as the frame, never as a bright
   // corner of someone's profile picture.
-  outReceiveOneMedal: { x: 287, color: { r: 231, g: 247, b: 255 } } as PatchedYColor,
+  outReceiveOneMedal: { x: 287, y: 645, color: { r: 231, g: 247, b: 255 } } as ColorProbe, // mission medal
   outReceiveTimeout: {x: 600, y: 1092, color: {"a":0,"b":11,"g":171,"r":235}},
   // The heart column, the list viewport and the scroll gesture are the three
   // heart tables further down; the four `outSendHeart*` row positions,
@@ -2614,6 +2641,13 @@ var CollectionGrid = {
     {dx: 0, dy: -27}, {dx: 9, dy: -9}, {dx: 0, dy: 0}, {dx: 0, dy: 9}, {dx: 0, dy: 27}
   ],
   /**
+   * The page scrubber: the thin track under the grid (y ~1478), whose touch
+   * zone spans the screen. A tap at its far left jumps to the first page, at
+   * its far right to the last; between, it lands proportionally.
+   */
+  scrubFirst: {x: 20, y: 1500},
+  scrubLast: {x: 1060, y: 1500},
+  /**
    * Four points on each card's body, low and to the sides where no tsum art
    * reaches (the top corners take the card's border colour, which varies). A
    * card reads blue, the selected one gold, an empty slot the darker panel.
@@ -2649,7 +2683,20 @@ var CollectionGrid = {
     {x: 410, y: 1600}, {x: 440, y: 1720}, {x: 540, y: 1720}, {x: 640, y: 1720}
   ],
   setButtonGreyColor: {r: 33, g: 140, b: 190},
-  setButtonGreyDiff: 60
+  setButtonGreyDiff: 60,
+  /**
+   * Where Select My Tsum (src/myTsumSelect.ts) taps the "MyTsum Set" button:
+   * its centre, between the samples above. Checked on INTL and JP screenshots
+   * (button body about x 340-744, y 1550-1760; same place on both builds),
+   * and confirmed on a device. The tap raises a "MyTsum has been changed."
+   * dialog over the grid and the button greys out behind it.
+   */
+  setButton: {x: 540, y: 1655},
+  /**
+   * The dialog is permanent and has no button: a tap on its body closes it.
+   * Its middle (frame x 84-994, y 650-1110), clear of the Set button samples.
+   */
+  setDoneDialog: {x: 540, y: 880}
 };
 
 // ---------------------------------------------------------------------------
@@ -2838,6 +2885,11 @@ var TsumListRegions = {
    */
   skillBar: {fromX: 570, toX: 946, stepX: 2, fromY: 732, toY: 788, stepY: 4, zeroX: 583, fullX: 946.6},
   skillFill: {rMin: 200, gMin: 110, bMax: 130},
+  /**
+   * The star at the portrait's lower left: gold for a favourite, blue
+   * otherwise. A 3x3 vote over its body; measured 9 of 9 either way.
+   */
+  favorite: {x: 88, y: 608, step: 12, rMin: 180, gMin: 130, bMax: 100, votes: 6},
   dateReads: [
     {scale: 4, lo: 170}, {scale: 3, lo: 180}, {scale: 2, lo: 180},
     {scale: 3, lo: 130}, {scale: 3, lo: 190}

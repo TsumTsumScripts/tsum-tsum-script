@@ -29,7 +29,7 @@
       be iterated on directly, and quickbar.css is the other half of it.
 
       The strip is two pages of controls drawn in the same place, a side
-      column with the page toggle over the Report button, and a readout with
+      column with the page toggle over the Auto Play toggle, and a readout with
       its own toggle between coins and times. Page one is a grid of three columns and two rows: column one is
       the skill name over its level and the two bonus chips; column two is the
       scan stepper over the chain stepper; column three is the preset over the
@@ -57,24 +57,23 @@
           `.qb-preset-value` and opens the list of them when tapped;
         * `.qb-unlock-now` and `.qb-copy-share` are actions on page two, not
           settings, and have no `data-key` either;
-        * `.qb-report` changes nothing at all: it asks the
-          engine to write an issue report of what is on screen;
+        * `.qb-wrap-up` (Stop after this round) is a `.qb-toggle` with no
+          `data-key`: a run-time flag the engine reports, never stored;
         * `.qb-page-toggle` flips `<body data-page>` between `1` and `2`, which
-          is what the CSS shows a `.qb-page[data-page]` from. It and Report
-          share `.qb-side`, which with `.qb-readout-toggle` is the one patch
+          is what the CSS shows a `.qb-page[data-page]` from. It sits in
+          `.qb-side`, which with `.qb-readout-toggle` is the one patch
           live while the run is *going*, not only paused -- the script names
           its rect to the host, which keeps it touchable;
         * a cell with a `data-key` is given `data-when` -- `now` or `nextRound`
           -- while a round is being played, and the CSS colours it from that;
-        * the readouts are `#baseCoinAvg`, `#finalCoinAvg` and `#roundCount`,
+        * the readouts are `#baseCoinAvg`, `#finalCoinAvg`, `#medalAvg` and `#roundCount`,
           and on the times table `#avgRoundTime`, `#playedTime` and `#runTime`;
         * `.qb-readout-toggle` flips `<body data-readout>` between `coins` and
           `times`; it sits outside `.qb-controls`, so it is never disabled;
         * `<body>` carries `data-state`, which is what the CSS reads;
         * every control is a `<button>` inside `.qb-controls` -- that is what
-          quickbarPage.ts disables while the script is running, `.qb-side`
-          excepted: the page toggle is never disabled, and Report only while
-          there is no run;
+          quickbarPage.ts disables while the script is running, the page
+          toggle excepted: it is never disabled;
         * a label carries `data-i18n` naming a `UiText` key (src/strings.d.ts),
           and quickbarPage.ts fills its text in from the chosen language once the
           markup is up. The key is spelt out here because HTML cannot name a
@@ -87,7 +86,14 @@
       offline. Pico is deliberately *not* used -- this page is at most 62dp tall
       and wants none of it.
     -->
+    <!-- GAP Design System tokens, the felt fonts as data URIs (built from
+         src/fonts/), then the felt skin over quickbar.css. The strip is always
+         the dark theme: it sits on the game. -->
+    <link rel="stylesheet" href="gapTokens.css">
+    <link rel="stylesheet" href="font-sans.css">
+    <link rel="stylesheet" href="font-display.css">
     <link rel="stylesheet" href="quickbar.css">
+    <link rel="stylesheet" href="feltQuickbar.css">
     <!--
       The language catalogues, shared with the settings page. English first: it
       is the complete one, so it is what `i18nRegister` keeps as the fallback for
@@ -115,7 +121,7 @@
   <!--
     `data-state` is one of `paused`, `running` or `idle`, set by the host through
     onGapState(). `paused` and `idle` are interactive -- see quickbar.css -- and
-    the Report chip is live in `running` too. Nothing is ever covered up: the
+    the page toggle is live in `running` too. Nothing is ever covered up: the
     strip is up for a whole run and its job is to be read, so the controls grey
     out rather than disappearing behind a veil.
 
@@ -146,7 +152,7 @@
             <button class="qb-select" type="button" aria-haspopup="listbox" aria-expanded="false">
               <span class="qb-select-value">&mdash;</span>
               <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 9.5l6 6 6-6"/>
+                <path d="M6 9l6 6 6-6"/>
               </svg>
             </button>
           </div>
@@ -176,7 +182,7 @@
                 <span class="qb-wide-value qb-preset-value">&mdash;</span>
               </span>
               <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 9.5l6 6 6-6"/>
+                <path d="M6 9l6 6 6-6"/>
               </svg>
             </button>
           </div>
@@ -241,7 +247,7 @@
                 <span class="qb-wide-value qb-select-value">&mdash;</span>
               </span>
               <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 9.5l6 6 6-6"/>
+                <path d="M6 9l6 6 6-6"/>
               </svg>
             </button>
           </div>
@@ -282,8 +288,12 @@
           <!--
             Stop after games: how many rounds (0 = off), then what happens.
             The action chip draws its option's short name, as Bubble does.
+            `.qb-wrap-up` before them is Stop after this round, for this run only.
           -->
           <div class="qb-cluster">
+            <div class="qb-cell">
+              <button class="qb-toggle qb-wrap-up" type="button" role="switch" aria-checked="false" data-i18n="qb.stopAfterRound">Last round</button>
+            </div>
             <div class="qb-cell" data-key="stopAfterGames" data-min="0" data-max="999">
               <div class="qb-stepper">
                 <button class="qb-step" type="button" data-step="-1">&minus;</button>
@@ -302,7 +312,7 @@
                   <span class="qb-wide-value qb-select-value">&mdash;</span>
                 </span>
                 <svg class="qb-caret" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6 9.5l6 6 6-6"/>
+                  <path d="M6 9l6 6 6-6"/>
                 </svg>
               </button>
             </div>
@@ -311,10 +321,10 @@
         </div>
 
         <!--
-          The side column: the page toggle over Report, one row each. Stacked
+          The side column: the page toggle over Auto Play, one row each. Stacked
           rather than side by side so the page toggle costs the strip no width,
-          and together so the one rect named to the host keeps both pressable
-          mid-run (`qbNameHotspot`).
+          and together so the one rect named to the host keeps the page toggle
+          pressable mid-run (`qbNameHotspot`).
 
           The page toggle is two dots, the lit one being the page on screen.
           Its word is for screen readers only.
@@ -326,28 +336,17 @@
             <span class="qb-sr" data-i18n="qb.page">Page</span>
           </button>
 
-        <!--
-          Report what is on screen: the warning triangle alone, its word kept
-          for screen readers, because this is the only control here that is not
-          a setting and must not be mistaken for one.
-
-          Like the preset chip it carries no `data-key` -- it changes nothing --
-          and quickbarPage.ts finds it by class. What it writes is the engine's
-          `reportIssue`; see src/report.ts.
-
-          The strip is untouchable while the run is going -- except here.
-          Pausing presses the game's own Pause button, so a report taken from a
-          paused strip shows the pause menu; this chip is instead named to the
-          host as a hotspot it keeps touchable while the run is going, so a
-          press mid-round catches the live screen. The screens *before* it are
-          copied from the router's trail either way.
-        -->
-          <button class="qb-report" type="button">
-            <svg class="qb-report-glyph" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 3.4L1.6 20.6h20.8zM12 10v4.4M12 17.4v.6"/>
-            </svg>
-            <span class="qb-sr" data-i18n="qb.report">Report</span>
-          </button>
+          <!-- Auto Play Game: a setting toggle drawn as a play-on-repeat glyph,
+               its word kept for screen readers. Live when paused, like the rest. -->
+          <div class="qb-cell" data-key="autoPlayGame">
+            <button class="qb-toggle qb-icon-toggle" type="button" role="switch" aria-checked="false">
+              <svg class="qb-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/>
+                <path class="qb-icon-fill" d="M10 8.5v7l5.5-3.5z"/>
+              </svg>
+              <span class="qb-sr" data-i18n="qb.autoPlay">Auto Play</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -361,8 +360,8 @@
         `<body data-readout>` between `coins` and `times`. It is named to the
         host with the side column, so it works mid-run too.
 
-        A table because that is what the three are: a name against a figure,
-        three times over. The figures share one right edge so their digits line
+        A table because that is what the rows are: a name against a figure,
+        over and over (four for coins, three for times). The figures share one right edge so their digits line
         up down the block, and each name is its row's `<th>`. Rows are
         `.qb-stat`; the last is also `.qb-stat-rounds`, drawn quieter.
       -->
@@ -372,7 +371,12 @@
         <span class="qb-dot" aria-hidden="true"></span>
         <span class="qb-sr" data-i18n="qb.readout">Coins or times</span>
       </button>
-      <div class="qb-readout-tables">
+      <!--
+        A tap anywhere on the tables copies the whole run's figures to the
+        clipboard -- more than the three rows on screen; see `qbCopyStats`.
+      -->
+      <div class="qb-readout-tables" role="button">
+      <span class="qb-sr" data-i18n="qb.copyStats">Copy statistics</span>
       <table class="qb-stats" data-readout="coins">
         <tbody>
           <tr class="qb-stat">
@@ -383,9 +387,21 @@
             <th class="qb-stat-label" scope="row" data-i18n="qb.final">Final</th>
             <td class="qb-stat-value" id="finalCoinAvg">&mdash;</td>
           </tr>
+          <tr class="qb-stat qb-stat-medals">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.medals">Medals</th>
+            <td class="qb-stat-value" id="medalAvg">&mdash;</td>
+          </tr>
           <tr class="qb-stat qb-stat-rounds">
             <th class="qb-stat-label" scope="row" data-i18n="qb.rounds">Rounds</th>
             <td class="qb-stat-value" id="roundCount">0</td>
+          </tr>
+          <!--
+            Takes the Rounds row's place while a GAP Companion workflow runs
+            (`<body data-workflow="on">`): loop and step, e.g. `L2 3/5`.
+          -->
+          <tr class="qb-stat qb-stat-rounds qb-stat-workflow">
+            <th class="qb-stat-label" scope="row" data-i18n="qb.step">Step</th>
+            <td class="qb-stat-value" id="workflowStep">&mdash;</td>
           </tr>
         </tbody>
       </table>

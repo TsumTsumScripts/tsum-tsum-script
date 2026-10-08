@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Round stats
 //
-// One row per played round, appended to <storage>/tsum_record/stats_<YYYYMMDD>.csv
+// One row per played round, appended to <device folder>/stats/stats_<YYYYMMDD>.csv
 // -- one file per day, named for the day the round was played. A row carries
 // when it was played, which build of the script played it, how long it ran, the
 // final score, coin and medal totals off the score page, and the in-game coin
@@ -511,7 +511,7 @@ const StatsIdColumn = 'id';
 // read.
 const StatsBaseColumns = [StatsIdColumn, 'datetime', 'script_version', 'skill_type', 'tsum', 'build', 'duration_seconds', 'score', 'base_coins', 'final_coins', 'medals'];
 
-// One file per UTC day in tsum_record/, named for the day the round was played:
+// One file per UTC day in stats/, named for the day the round was played:
 // stats_20260825.csv. The engine cannot append, so writing a row rewrites the
 // whole file -- a day bounds how big that gets, where one file collecting
 // months did not.
@@ -1685,6 +1685,7 @@ Tsum.prototype.identifyMyTsum = function() {
   // thresholds: an empty cell is honest, a coin flip between two lookalikes is
   // not. selectedTsum() has already said why on the null path.
   this.myTsum = selected !== null && selected.confident ? selected.short : '';
+  this.myTsumName = this.myTsum !== '' && selected !== null ? selected.full : '';
   if (selected === null) {
     return;
   }
@@ -1820,7 +1821,7 @@ Tsum.prototype.beginRoundStats = function() {
   // Unconditional, like the events it is for: `trackRoundStats` decides whether
   // a row is written, never whether a round can be followed. The one cost is
   // `statsDeviceTag`'s probes on the first round of a run, and they are cached.
-  this.roundUid = statsRowId(new Date(this.roundStartedAt), statsDeviceTag(this.storagePath));
+  this.roundUid = statsRowId(new Date(this.roundStartedAt), statsDeviceTag(this.devicePath));
   this.roundSettings = statsSettingsSnapshot(this.settings);
   this.roundBaseCoins = -1;
   this.tallySkipTaps = 0;
@@ -2123,10 +2124,28 @@ Tsum.prototype.finishRoundStats = function() {
     if (baseCoins !== null) {
       this.runCoins.baseRounds++;
       this.runCoins.baseTotal += baseCoins;
+      // -1 is "nothing yet", so the first round sets both ends rather than
+      // being compared against a sentinel that would win every minimum.
+      if (this.runCoins.baseMin < 0 || baseCoins < this.runCoins.baseMin) {
+        this.runCoins.baseMin = baseCoins;
+      }
+      if (baseCoins > this.runCoins.baseMax) {
+        this.runCoins.baseMax = baseCoins;
+      }
     }
     if (finalCoins !== null) {
       this.runCoins.finalRounds++;
       this.runCoins.finalTotal += finalCoins;
+    }
+    if (medals !== null) {
+      this.runCoins.medalRounds++;
+      this.runCoins.medalTotal += medals;
+      if (this.runCoins.medalMin < 0 || medals < this.runCoins.medalMin) {
+        this.runCoins.medalMin = medals;
+      }
+      if (medals > this.runCoins.medalMax) {
+        this.runCoins.medalMax = medals;
+      }
     }
   } finally {
     // Closes the round for `sampleBaseCoins`, so nothing on the way back out to
@@ -2146,7 +2165,7 @@ function statsFileStamp(date: Date): string {
 }
 
 /**
- * Drops the whole screen into tsum_record/ whenever a round's numbers could not
+ * Drops the whole screen into stats/ whenever a round's numbers could not
  * be read, named for the fields that failed, so an empty cell can be looked at
  * instead of guessed about. Full resolution and PNG rather than JPEG: the point
  * is to be able to re-measure a region or re-cut a digit template from it.
@@ -2156,7 +2175,7 @@ Tsum.prototype.saveStatsDebugShot = function(tag) {
     return;
   }
   this._statsDebugShots++;
-  const path = this.storagePath + '/' + Config.recordDir
+  const path = this.devicePath + '/' + Config.statsDir
     + '/unread-' + tag + '-' + statsFileStamp(new Date()) + '.png';
   let img: NativeImage | null = null;
   try {
@@ -2265,47 +2284,30 @@ function statsHash48(text: string): string {
     + statsHash32('gap.tsum.stats/' + text, 0x9e3779b1).substring(2);
 }
 
-/** One line of shell output, trimmed; '' when the command said nothing useful. */
-function statsShellValue(cmd: string): string {
-  let out: string;
-  try {
-    out = execute(cmd) || '';
-  } catch (e) {
-    return '';
-  }
-  out = out.split('\n')[0].replace(/[^\x20-\x7e]/g, '').replace(/^\s+|\s+$/g, '');
-  return out === 'null' ? '' : out;
-}
-
 /**
  * A stable 12-hex tag for this device.
  *
- * The host's `getDeviceId()` where there is one: it is the id that names the
- * host's log file (`logs/script-<id>.log`) and the device in the event stream,
- * so a row, the log it came from and the events it fired agree on which device
- * that was. It is also the only derivation that tells two emulator instances
- * apart when they share one host folder as their script root -- which MuMu does
- * by default -- because nothing kept under that root is one device's own.
+ * The host's `getDeviceId()`: it is the id that names the host's log file
+ * (`logs/script-<id>.log`) and the device in the event stream, so a row, the
+ * log it came from and the events it fired agree on which device that was. It
+ * is also the only derivation that tells two emulator instances apart when
+ * they share one host folder as their script root -- which MuMu does by
+ * default.
  *
- * On an older host, derived here from the device's own identifiers and cached
- * in `tsum_record/device.id`, so a cleared record folder comes back with the
- * same tag. Hashed rather than sent as found, because `android_id` is a
- * hardware identifier and this file is headed off the phone. The random
- * fallback covers a device that answers none of the probes; it is written to
- * the file straight away, so it is invented once and then kept.
+ * The cached file is the fallback for a host that somehow answers nothing, and
+ * the random tag for the first run of one: invented once, then kept, so the
+ * rows a device has already sent keep agreeing with the ones it sends next.
  */
-function statsDeviceTag(storagePath: string): string {
+function statsDeviceTag(devicePath: string): string {
   if (gStatsDeviceTag !== '') {
     return gStatsDeviceTag;
   }
-  if (typeof getDeviceId === 'function') {
-    const hostId = (getDeviceId() || '').replace(/[^0-9a-f]/g, '');
-    if (hostId.length === 12) {
-      gStatsDeviceTag = hostId;
-      return gStatsDeviceTag;
-    }
+  const hostId = (getDeviceId() || '').replace(/[^0-9a-f]/g, '');
+  if (hostId.length === 12) {
+    gStatsDeviceTag = hostId;
+    return gStatsDeviceTag;
   }
-  const path = storagePath + '/' + Config.recordDir + '/' + StatsDeviceIdFile;
+  const path = devicePath + '/' + Config.statsDir + '/' + StatsDeviceIdFile;
   let saved = '';
   try {
     saved = (readFile(path) || '').replace(/[^0-9a-f]/g, '');
@@ -2316,15 +2318,7 @@ function statsDeviceTag(storagePath: string): string {
     gStatsDeviceTag = saved;
     return gStatsDeviceTag;
   }
-  const probes = [
-    statsShellValue('settings get secure android_id'),
-    statsShellValue('getprop ro.serialno'),
-    statsShellValue('getprop ro.boot.serialno'),
-    statsShellValue('getprop ro.product.model'),
-    statsShellValue('getprop ro.build.fingerprint')
-  ];
-  const seed = probes.join('|');
-  gStatsDeviceTag = seed.split('|').join('') === '' ? statsRandomHex(12) : statsHash48(seed);
+  gStatsDeviceTag = statsRandomHex(12);
   try {
     writeFile(path, gStatsDeviceTag + '\n');
   } catch (e) {
@@ -2550,9 +2544,9 @@ Tsum.prototype.writeRoundStats = function(date, seconds, score, baseCoins, final
   const skill = statsSkillName(settings ? settings.skillType : this.skillType);
   // Split by day, never by skill: the comparisons the file exists for cut
   // across skills, and `skill_type` is a column to group by.
-  const path = this.storagePath + '/' + Config.recordDir + '/' + statsFileName(date);
+  const path = this.devicePath + '/' + Config.statsDir + '/' + statsFileName(date);
   const columns: string[] = (StatsBaseColumns as string[]).concat(StatsSettingColumns);
-  const deviceTag = statsDeviceTag(this.storagePath);
+  const deviceTag = statsDeviceTag(this.devicePath);
   const values: StatsRow = {
     // The id the round opened with, so this row and the `round.*` events that
     // announced it carry one identity. Minted here only for a call made outside
@@ -2594,6 +2588,8 @@ Tsum.prototype.writeRoundStats = function(date, seconds, score, baseCoins, final
       path: path,
     });
     this.banner('Round stats saved!', 2000);
+    // Share round stats, if on and due. Never throws.
+    roundShareAfterRow(this);
   } catch (e) {
     logError(Log.Stats.WriteFailed, 'Could not write the stats CSV',
       { path: path, errorText: '' + e });

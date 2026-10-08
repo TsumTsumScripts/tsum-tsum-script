@@ -460,10 +460,10 @@ function forecastNow(event: PageEvent): Forecast {
  * log rather than in a viewer nobody cross-references.
  */
 function forecastEmit(event: PageEvent): void {
-  // The same gate `logDebug` applies, hoisted so nothing below is built either.
-  // The signature is cheap but `plan()` is not free, and the play loop asks what
-  // is on screen several times a second.
-  if (!Config.debugLogs) {
+  // Built only when the record goes somewhere: the log file, or a trace
+  // consumer. `plan()` is not free, and the play loop asks what is on screen
+  // several times a second.
+  if (!Config.debugLogs && !traceOn()) {
     return;
   }
   const forecast = forecastNow(event);

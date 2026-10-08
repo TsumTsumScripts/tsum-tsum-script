@@ -7,11 +7,7 @@ All potential changes which would improve the script will be documented in this 
 - Harden auto start. Clicking the daily banners too fast or while loading can make the game stuck.
 - The board stops fingerprinting under a burst skill's full-screen animation and under the mid-round level-up banner, so the play loop plays blind through them. Needs captures of those moments before it can be fixed; the development tools' `OBSCURED_BOARD.md` is the handover. The cost when it happens is not a wrong page but a stopped one: once the debounce runs out the loop hands over to `confirmGameOver`, which neither scans nor taps, so an overlay lasting to time-up costs every second after it. `play.gameOver`'s `hudLostMs` is how long that was. The fever and closing-seconds cases are closed.
 - The detection suite misses all four `TsumTsumStorePage` frames: probe 4 of `TsumTsum2025StorePage` (570,910) reads diff 31 against threshold 30 on every one -- a hair past the line, so either the threshold was cut too tight or the panel colour drifted. One re-measure in the studio settles which.
-- Coronation Day Elsa's row sweep is unverified as a whole (2026-09-13): its pieces are -- chains planned over three rows link (`coronation_elsa_6.mp4`), the ice reads through the frozen box and the whitelist, the break and the bomb pop land -- but no recording yet shows the sweep running chain after chain for a full window. Read `skill.elsa.done` first: `chains` should be six or more a window and `icedLast` a pile, and `starvedLooks` high means the rows ran out or the ice read is off. Also unmeasured: whether many small bands beat one late chain (a first chain 10-12s in with nothing frozen before it took most of the board), and the exact close of the window past the 1.5s lead-in.
-- Coronation Day Elsa's round-over gate is unverified on a device (2026-09-15): `elsaRoundOver` was written off `option_menu.mp4` and a cv2 replay of the scan, not a log. On the next run read `skill.elsa.roundOver` -- it should appear only on a window the round's timer cuts short, and `skill.elsa.done` on such a window should carry `roundOver: true` and no closing break -- and check no healthy window pays for it: `looks` and `chains` per window should be unchanged, since the check runs only on a starved look.
 - Coronation Day Elsa's frozen tsums take colour slots among the `uniqueTsumCount - 1` `scanBoardQuick` keeps -- one per ice shade -- so a pass that starts on an iced board is read short of real colours. It costs chains, not correctness. Fixing it means teaching the scan about clusters it should not count, which is a change every skill shares.
-- Coronation Day Elsa's ice-alike ranges and kind-read verdict are unverified on a device (2026-09-26). On a pale-blue lineup, breaks between windows (`skill.elsa.burst` outside a window) should be near zero, and `skill.elsa.iceAlike` shows each learned range. `kindChains` + `kindLifts` per window should fall from 9-15 (`mui0gs7xco`) while dead chains do not rise; a clean read (every `drops` under 25) now clears its colour. `kind.dropMax` 25 held on device: same kind <= ~20, other kinds 30-200.
-- Coronation Day Elsa's mid-window bubble pops are unverified on a device (2026-09-25). If bubbles still stand, `skill.elsa.pass` says which cause: `bubbles` > 0 after `popped` means ones on ice (`bubbleIceGap` 0.6, reasoned) or past `bubblePopRounds`; bubbles on video but never in the log mean the scan misses them -- Gaston's second Hough pass over the bottom band (`gastonBubbles`) is the known fix for rim bubbles.
 - Coronation Day Elsa's window timings are only partly measured: `iceFormMs` and the frozen colour box come off recordings, but `leadInMs`, `burstTailMs`, `postBurstSettleMs` and `settledFraction`/`settleRetryMs` (the mid-fall gate) are reasoned. `skill.elsa.done`'s `icedLast` near zero with several chains drawn is the premature-pop signature.
 - `base_coins` can still go empty on a round whose only readable-looking frames came mid-payout: of the six `unread-base` shots pulled off MuMu on 2026-08-28, five were the '5' digit misreading (fixed in 0.4 by recutting the template) and the sixth was a "LAST BONUS" frame with the level-up panel still fading in, where failing safe is right. Worth revisiting only if the column keeps gapping now that the '5' reads.
 
@@ -19,8 +15,8 @@ All potential changes which would improve the script will be documented in this 
 
 Every screen interaction should be anchored to an explicit page, so that no tap
 is aimed at a screen nobody confirmed was there. These are the places that are
-not, worst first. The root cause is shared: `NavPlans` (`src/data.ts`) has four
-destinations, so `gPages.navigate()` can only be asked for those four -- any task
+not, worst first. The root cause is shared: `NavPlans` (`src/data.ts`) has six
+destinations, so `gPages.navigate()` can only be asked for those six -- any task
 that needs to get somewhere deeper has to hand-drive, and the hand-driven part is
 where the blind taps are.
 
@@ -31,7 +27,7 @@ gating cost, not the code.
 the page-to-page edges the navigate band already implements one subscription at a
 time -- plus the anchors (`mail`, `tsums`, `home`) which are edges in the `Page`
 table already -- and let `navigate()` find a path over them instead of accepting
-only the five names in `NavPlans`. Used *forward* like this, a missing edge means
+only the six names in `NavPlans`. Used *forward* like this, a missing edge means
 "no route", which is a loud failure; the same graph used backwards, to constrain
 what the next page can be, produces a spurious `Unknown` instead and was turned
 down for good (`PAGE_DISPATCH.md` § The sitemap says why a map, not a filter).
@@ -50,14 +46,12 @@ consumer: `navigate()` does not walk the graph, it takes the `NavPlans` `via`
 hop, and most exit rows name no destination. The remaining work is to give the
 rows a `to` somebody can justify, then have `navigate()` walk them.
 
-- **`skipAd`** (`src/mail.ts`) -- three bare coordinates with 4s/4s/2s sleeps and
-  no probe of any kind, crossing three screens that have no names.
 - **`taskReceiveOneItem`** (`src/mail.ts`) -- a parallel recognition system. It
   is screen-driven, but through per-button `isSameColor` probes rather than
   `gPages`, so none of it is visible to the detection suite:
-  six `Button.*.color` points decide what screen it is on and `gPages` is called
-  once, while `MailBox`, `Received`, `ReceiveHeart`, `ReceiveSkillTicket` and
-  `ReceivePremiumTicket` sit unused. The heart sender was the other half of this
+  six `Button.*.color` points decide what screen it is on and `gPages` is only
+  asked about `MailBox` and `ReceiveHeartWithoutCoins`, while `Received`,
+  `ReceiveHeart`, `ReceiveSkillTicket` and `ReceivePremiumTicket` sit unused. The heart sender was the other half of this
   and is now `gPages`-driven throughout.
 - **The rest of `taskReceiveAllItems`** (`src/mail.ts`) -- the hop into the
   mailbox is a real navigation now (`nav.move.toMail` + the `MailBox` plan), but
@@ -78,5 +72,4 @@ anchored to `PageName.Unknown`), and app start/restart.
 
 ### Features
 - Add "Spam skill" option to check for skill after every finished chain instead of every chain batch.
-- Skill: Jedi Luke (13 swipes technique)
 - Rewrite of Settings UI (became too large as single-page, not dynamic regarding settings like "skill level" of Cinderella)
