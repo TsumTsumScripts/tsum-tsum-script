@@ -1134,9 +1134,9 @@ Each one builds its channel and writes three files into the catalogue repository
 ```
 
 That path is the whole point of the exercise — it is what the catalogue's own
-`build-official.ps1` scans to regenerate `official.json`, the index the app
-fetches. **Run that script in the catalogue and commit there**; nothing on this
-side touches it.
+`build-catalogue.sh` scans to regenerate `catalogue.json`, the index the app
+fetches. **Run that script in the catalogue, then commit and push there**;
+nothing on this side touches it.
 
 `config.json`, beside the build scripts, is the release identity — the one place
 the game name and the channels live. **The version is not there: it is
@@ -1146,7 +1146,7 @@ about what this is, and there is one number to bump rather than two:
 | Field | |
 |:--|:--|
 | `Game` | copied into every entry |
-| `Publisher` | the catalogue this ships under, and the first segment of the on-device folder |
+| `Publisher` | the source name the catalogue publishes under (`Tsum Tsum Scripts`), so the first segment of the installed folder |
 | `Catalogue` | where a release is published, relative to the package |
 | `Channels.<name>` | `Name` (what the app shows), `Archive` (the zip's base name), `Directory` (under `Catalogue`), `Note` (a line appended to every release note on that channel) |
 | `MessageMaxChars` | the note is read on a phone; over this, the release refuses rather than shipping a card that scrolls; `0` turns the check off (currently off) |
@@ -1175,7 +1175,7 @@ Two consequences worth knowing:
   same rule the changelog section follows.
 
 A history row carries no `Message`. Nothing renders an old version's note, and
-one per version would push `official.json` toward the 2 MB the app caps a
+one per version would push `catalogue.json` toward the 2 MB the app caps a
 catalogue at — the changelog below is where per-version notes live.
 
 **The release note comes from the changelog, and only from its `### Summary`

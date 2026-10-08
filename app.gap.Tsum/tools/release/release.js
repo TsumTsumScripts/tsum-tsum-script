@@ -274,7 +274,7 @@ async function main() {
   console.log(`\nInstallable versions (${metadata.Versions.length} of ${historyLimit} kept):`);
   metadata.Versions.forEach((v, i) => console.log(`  ${v.Version}${i === 0 ? '  (latest)' : ''}  ${v.File}`));
   pruned.forEach((file) => console.log(`\nPruned ${file} -- past the ${historyLimit} kept. Stage the deletion when you commit.`));
-  console.log('\nRun build-official.ps1 in the catalogue to fold this into official.json, then commit there.');
+  console.log('\nRun build-catalogue.sh (or .ps1) in the catalogue to check catalogue.json, then commit and push there.');
 }
 
 main().catch((err) => {

@@ -356,6 +356,10 @@ release note; they fold back in here when she ships.
 - `LevelUpMyTsumCard`: lone-card padlock read at top + 104 (was 119, below the
   lock) and column x 511 (515 was the lock's edge). A capped single-tsum party was
   never seen, so Auto Unlock MyTsum Level never raised it.
+- **`npm run adb` and `debug_deploy.ps1` pushed to a folder nothing installs.**
+  The catalogue publishes as `Tsum Tsum Scripts`, so `Publisher` is that now and
+  `adb` pushes to `scripts/Tsum Tsum Scripts/Tsum Tsum/Tsum-Tsum/`. The release's
+  closing hint names `build-catalogue` instead of `build-official`.
 
 ## [5.0a1]
 
