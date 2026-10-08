@@ -2,7 +2,7 @@
 
 The contributor guide is part of the Tsum Tsum website, which lives in its own
 repository (`tsum-tsum-website`, checked out beside this one) and is published at
-https://tsumtsum.gapapp.app/docs/. It explains the script to someone who has never
+https://tsumtsum.gapscripts.app/docs/. It explains the script to someone who has never
 seen the code — what it is, how it is put together, how to add a skill, a
 setting, a page or a task, and how to ship a build or a script library of your
 own. Start there; `CODEMAP.md` is the index into the tree itself.
