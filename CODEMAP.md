@@ -482,11 +482,16 @@ landing, features and changelog pages, the starter page and the contributor docs
 It reads `app.gap.Tsum/CHANGELOG.md`'s `### Summary` blocks and the generated
 documents from this tree at build time. The service starter is `starter/`, built
 by `starter/build-starter.sh`. Its website (device list, service, APK, export,
-adb restart) is `internal/starter` in tsum-stats, which serves it at
+adb restart, the library source) is `internal/starter` in tsum-stats, which serves it at
 `/starter/` when started with `--starter <bundle>`; the bundle's launchers
 download the tsum-stats its `tsum-stats.txt` pins. The terminal menu and the
 command-line actions (`bin/posix`, `bin/win`) remain, and the device side is
 still only `device/gap-service.sh`, now with three hosts reading it.
+GAP lists no third-party source by itself: after an install, all three hosts
+offer the Tsum Tsum catalogue through GAP's `gap://add-source?url=...` link
+(`SOURCE_URL` in `starter/bin/posix/gap-device.sh`, `$global:SourceUrl` in
+`starter/bin/win/gap-device.ps1`, tsum-stats' `sourceURL`),
+and the player confirms it on the device.
 
 ## External trees
 

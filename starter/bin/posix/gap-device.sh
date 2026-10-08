@@ -564,6 +564,24 @@ installed_version() {
     | tr -d '\r' | sed -n 's/^[[:space:]]*versionName=//p' | head -1
 }
 
+# ------------------------------------------------------ the Tsum Tsum library
+
+# The catalogue GAP lists Tsum Tsum releases from. GAP ships with no
+# third-party source, so the starter offers this one after an install.
+SOURCE_URL="https://tsumtsumscripts.github.io/tsum-tsum-catalogue/catalogue.json"
+
+# Opens GAP's gap://add-source link on the device; the player taps Add there.
+# 0: the dialog is up. 1: am failed. 2: this GAP has no such link (an older
+# one, which lists the library by itself).
+offer_source() {
+  os_out="$("$ADB" -s "$1" shell "am start -a android.intent.action.VIEW -d 'gap://add-source?url=$SOURCE_URL' -p $PACKAGE" 2>&1 | tr -d '\r')"
+  case "$os_out" in
+    *"unable to resolve"*) return 2 ;;
+    *Error*|*Exception*) printf '%s\n' "$os_out"; return 1 ;;
+  esac
+  return 0
+}
+
 # --------------------------------------------------------- the published APK
 
 # sha256sum is a GNU tool and macOS does not ship it; shasum comes with the

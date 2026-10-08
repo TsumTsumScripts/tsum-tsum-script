@@ -172,6 +172,10 @@ If that "apk" folder already holds .apk files (a bundle that ships the app, or
 an earlier download), an "Install APK" button also appears, which installs one
 of them with no internet needed.
 
+After either install, GAP opens on the device and asks to add the Tsum Tsum
+library to its Sources: tap Add. That is where the script is installed from.
+If you skipped it, "Add the Tsum Tsum library" asks again.
+
 When the folder holds more than one build, it lists them and preselects the one
 matching the ABI the device reports:
 
@@ -326,8 +330,8 @@ Every menu option is also a command-line option, so nothing needs the page:
     Start-Linux.sh start             (macOS, Linux)
     Start-Windows.cmd -Action start  (Windows)
 
-In place of "start": restart, stop, log, follow, install, update, reconnect,
-copy-script, delete-script. Add  --serial <device>
+In place of "start": restart, stop, log, follow, install, update, add-source,
+reconnect, copy-script, delete-script. Add  --serial <device>
 (or  -Serial <device>  on Windows) to name the device; with more than one
 connected and none named, the device picked last in the menu is used. Add
 --yes  (-Yes on Windows) to answer the questions in advance: the first

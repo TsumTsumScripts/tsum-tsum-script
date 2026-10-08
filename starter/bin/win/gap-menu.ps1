@@ -72,7 +72,7 @@ function Show-DevicePage {
   $serial = $Row.Serial
   $map = @{ '1' = 'start'; '2' = 'restart'; '3' = 'stop'; '4' = 'log'
             '5' = 'follow'; '6' = 'install'; '7' = 'reconnect'; '8' = 'update'
-            '9' = 'copy-script'; '10' = 'delete-script' }
+            '9' = 'copy-script'; '10' = 'delete-script'; '11' = 'add-source' }
   while ($true) {
     $hasApk = Test-Path -LiteralPath (Join-Path $Bundle 'apk')
 
@@ -100,6 +100,7 @@ function Show-DevicePage {
       else { Write-Host '  8) Download and install the latest APK' }
       Write-Host '  9) Copy the script log  (script*.log)'
       Write-Host ' 10) Delete the script log from the device'
+      Write-Host ' 11) Add the Tsum Tsum library to GAP   (tap Add on the device)'
     } else {
       Write-Host "  This device is '$($Row.State)' and cannot be used yet."
       if ($Row.State -eq 'offline') { Write-Host '  7) Reconnect' }
