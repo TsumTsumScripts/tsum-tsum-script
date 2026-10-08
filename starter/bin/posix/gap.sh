@@ -2,8 +2,8 @@
 # Entry point for macOS and Linux. Start-Linux.sh lands here; both platforms
 # run the same shell, so there is only the one launcher.
 #
-# Everything is a terminal option: one action from the command line, or the
-# same set as a menu. Order matters below -- the quarantine strip has to happen
+# With no action it opens the starter's website (gap-site.sh); --menu gives
+# the terminal menu instead, and an action runs just that. Order matters below -- the quarantine strip has to happen
 # before anything executes adb, because on macOS a quarantined binary is
 # killed rather than refused, and the symptom looks nothing like the cause.
 
@@ -25,7 +25,7 @@ xattr -d -r com.apple.quarantine "$BUNDLE" 2>/dev/null || true
 
 # A zip written by tooling that does not record Unix modes extracts everything
 # 0644. Repair it here rather than asking the user to chmod.
-chmod +x "$BUNDLE"/adb/darwin/adb "$BUNDLE"/adb/linux/adb \
+chmod +x "$BUNDLE"/adb/darwin/adb "$BUNDLE"/adb/linux/adb "$BUNDLE"/server/*/tsum-stats \
          "$BUNDLE"/bin/posix/*.sh "$BUNDLE"/device/*.sh \
          "$BUNDLE"/Start-Linux.sh 2>/dev/null || true
 
@@ -33,17 +33,21 @@ chmod +x "$BUNDLE"/adb/darwin/adb "$BUNDLE"/adb/linux/adb \
 . "$BUNDLE/bin/posix/gap-device.sh"
 # shellcheck source=gap-actions.sh
 . "$BUNDLE/bin/posix/gap-actions.sh"
+# shellcheck source=gap-site.sh
+. "$BUNDLE/bin/posix/gap-site.sh"
 
 CLI_ACTION=""
 CLI_SERIAL=""
 CLI_TCP=""
 CLI_CHANNEL=""
+CLI_MENU=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     # Accepted and ignored: the terminal menu is now the only front-end, and
     # older instructions in the wild still pass these.
     --tty|--console) shift ;;
+    --menu) CLI_MENU=1; shift ;;
     --serial) CLI_SERIAL="$2"; shift 2 ;;
     # Answers the questions in advance -- the delete confirmation, and the
     # first run's adb download -- for a caller with no terminal to answer in.
@@ -54,7 +58,7 @@ while [ $# -gt 0 ]; do
     -h|--help)
       printf 'Tsum Tsum Script -- service starter\n'
       printf 'Starts the helper service General Automation Platform needs to run the Tsum Tsum script on a phone or emulator.\n'
-      printf '\nUsage: %s [ACTION] [--serial S] [--tcp PORT] [--channel URL|off] [--yes]\n' \
+      printf '\nUsage: %s [ACTION | --menu] [--serial S] [--tcp PORT] [--channel URL|off] [--yes]\n' \
              "${GAP_LAUNCHER:-Start-Linux.sh}"
       printf '\nACTION is one of:\n'
       printf '  start         start the service, or leave a matching one alone\n'
@@ -74,7 +78,8 @@ while [ $# -gt 0 ]; do
       printf 'remembers it in channel.txt. --channel off goes back to the published releases.\n'
       printf '\nWith several devices and no --serial, the device chosen last in the\n'
       printf 'menu is used (it is kept in last-device.txt beside the README).\n'
-      printf '\nWith no ACTION you get the same options as a menu.\n'
+      printf '\nWith no ACTION it opens the starter website in your browser. --menu\n'
+      printf 'gives the same options as a menu in this terminal instead.\n'
       exit 0 ;;
     *) printf 'unknown option: %s\n' "$1" >&2; exit 2 ;;
   esac
@@ -84,6 +89,12 @@ if [ -n "$CLI_CHANNEL" ]; then
   set_channel "$CLI_CHANNEL" || exit 2
 elif channel_active; then
   printf 'release channel: %s\n' "$RELEASE_BASE"
+fi
+
+# The website finds its own adb, so it starts before any of that.
+if [ -z "$CLI_ACTION" ] && [ "$CLI_MENU" = 0 ]; then
+  run_site
+  exit 1
 fi
 
 resolve_adb || exit 1
