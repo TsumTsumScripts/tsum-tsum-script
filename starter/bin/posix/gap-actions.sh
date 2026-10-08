@@ -188,8 +188,24 @@ pick_apk() {  # pick_apk <abi> <choices> <default>
   return 0
 }
 
+# Offers the Tsum Tsum library to GAP and says what happened. Sets SOURCE_MSG;
+# returns 1 only when the offer itself failed.
+source_offer() {
+  SOURCE_MSG=""
+  log_line "offering the Tsum Tsum library to GAP on $1 ..."
+  # Captured, not piped: a pipe would report the `while`'s status.
+  so_out="$(offer_source "$1")"; rc=$?
+  [ -z "$so_out" ] || printf '%s\n' "$so_out" | while IFS= read -r l; do log_line "  $l"; done
+  case "$rc" in
+    0) SOURCE_MSG="On the device, tap Add to put the Tsum Tsum library in GAP's Sources." ;;
+    2) SOURCE_MSG="This GAP lists the Tsum Tsum library by itself. Nothing to add." ;;
+    *) SOURCE_MSG="Could not open GAP to add the Tsum Tsum library. See the log."; return 1 ;;
+  esac
+  return 0
+}
+
 # run_action <serial> <start|restart|stop|log|follow|install|update|reconnect|
-#                      copy-script|delete-script>
+#                      add-source|copy-script|delete-script>
 # Streams commentary through log_line; leaves a verdict in ACTION_OK/ACTION_MSG.
 run_action() {
   serial="$1"; action="$2"
@@ -259,6 +275,9 @@ The device may have gone offline -- Refresh and try again."
       if [ "$rc" -eq 0 ]; then
         ACTION_OK=1
         ACTION_MSG="Installed $(basename "$apk")."
+        source_offer "$serial"
+        ACTION_MSG="$ACTION_MSG
+$SOURCE_MSG"
       else
         ACTION_MSG="Install failed. See the log."
       fi
@@ -349,9 +368,22 @@ Nothing was installed."
       if [ "$rc" -eq 0 ]; then
         ACTION_OK=1
         ACTION_MSG="Updated to $ver${chan:+ ($chan)}${have:+ (was $have)}."
+        source_offer "$serial"
+        ACTION_MSG="$ACTION_MSG
+$SOURCE_MSG"
       else
         ACTION_MSG="Install failed. See the log."
       fi
+      return 0
+      ;;
+    add-source)
+      if [ -z "$(installed_version "$serial")" ]; then
+        ACTION_MSG="GAP is not installed on $serial. Install it first; that adds the library too."
+        log_line "$ACTION_MSG"
+        return 1
+      fi
+      source_offer "$serial" && ACTION_OK=1
+      ACTION_MSG="$SOURCE_MSG"
       return 0
       ;;
     follow)

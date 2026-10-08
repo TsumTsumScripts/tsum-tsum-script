@@ -138,6 +138,7 @@ menu_device() {  # menu_device <row>
       fi
       printf '  9) Copy the script log  (script*.log)\n'
       printf ' 10) Delete the script log from the device\n'
+      printf ' 11) Add the Tsum Tsum library to GAP   (tap Add on the device)\n'
     else
       printf '  This device is "%s" and cannot be used yet.\n' "$state"
       [ "$state" = offline ] && printf '  7) Reconnect\n'
@@ -156,7 +157,7 @@ menu_device() {  # menu_device <row>
     # Guards are their own statement: `cond && run_action || continue` would
     # also swallow the verdict whenever the action itself failed.
     case "$pick" in
-      1|2|3|4|5|6|8|9|10) [ "$state" = device ] || continue ;;
+      1|2|3|4|5|6|8|9|10|11) [ "$state" = device ] || continue ;;
     esac
     case "$pick" in
       1) run_action "$serial" start   ;;
@@ -171,6 +172,7 @@ menu_device() {  # menu_device <row>
       8) run_action "$serial" update  ;;
       9)  run_action "$serial" copy-script   ;;
       10) run_action "$serial" delete-script ;;
+      11) run_action "$serial" add-source    ;;
       *) continue ;;
     esac
 

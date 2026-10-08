@@ -149,6 +149,18 @@ function Select-Apk {
   return @{ Ok = $true; Apk = $Choices[$n - 1] }
 }
 
+# Offers the Tsum Tsum library to GAP and says what happened. Ok is false only
+# when the offer itself failed.
+function Get-SourceOffer {
+  param([string]$Serial)
+  Write-Log "offering the Tsum Tsum library to GAP on $Serial ..."
+  $r = Invoke-SourceOffer -Serial $Serial
+  foreach ($l in ($r.Text -split "`n")) { if ($l.Trim()) { Write-Log "  $($l.Trim())" } }
+  if ($r.Code -eq 0) { return @{ Ok = $true; Msg = "On the device, tap Add to put the Tsum Tsum library in GAP's Sources." } }
+  if ($r.Code -eq 2) { return @{ Ok = $true; Msg = 'This GAP lists the Tsum Tsum library by itself. Nothing to add.' } }
+  return @{ Ok = $false; Msg = 'Could not open GAP to add the Tsum Tsum library. See the log.' }
+}
+
 function Invoke-Action {
   param([string]$Serial, [string]$Action, [string]$Bundle)
 
@@ -196,7 +208,10 @@ function Invoke-Action {
       Write-Log "installing $(Split-Path -Leaf $apk) on $Serial ..."
       $res = Install-Apk -Serial $Serial -Apk $apk
       foreach ($l in ($res.Text -split "`n")) { if ($l.Trim()) { Write-Log "  $($l.Trim())" } }
-      if ($res.Ok) { return @{ Ok = $true; Msg = "Installed $(Split-Path -Leaf $apk)." } }
+      if ($res.Ok) {
+        $src = Get-SourceOffer -Serial $Serial
+        return @{ Ok = $true; Msg = "Installed $(Split-Path -Leaf $apk).`n$($src.Msg)" }
+      }
       return @{ Ok = $false; Msg = 'Install failed. See the log.' }
     }
 
@@ -282,9 +297,17 @@ function Invoke-Action {
       if ($res.Ok) {
         $was = if ($have) { " (was $have)" } else { '' }
         $chanTag = if ($chan) { " ($chan)" } else { '' }
-        return @{ Ok = $true; Msg = "Updated to $ver$chanTag$was." }
+        $src = Get-SourceOffer -Serial $Serial
+        return @{ Ok = $true; Msg = "Updated to $ver$chanTag$was.`n$($src.Msg)" }
       }
       return @{ Ok = $false; Msg = 'Install failed. See the log.' }
+    }
+
+    'add-source' {
+      if (-not (Get-InstalledVersion -Serial $Serial)) {
+        return @{ Ok = $false; Msg = "GAP is not installed on $Serial. Install it first; that adds the library too." }
+      }
+      return Get-SourceOffer -Serial $Serial
     }
 
     'follow' {

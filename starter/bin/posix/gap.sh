@@ -54,7 +54,7 @@ while [ $# -gt 0 ]; do
     --yes|-y) GAP_ASSUME_YES=1; export GAP_ASSUME_YES; shift ;;
     --tcp)    CLI_TCP="$2"; shift 2 ;;
     --channel) CLI_CHANNEL="$2"; shift 2 ;;
-    start|restart|stop|log|follow|install|update|reconnect|copy-script|delete-script) CLI_ACTION="$1"; shift ;;
+    start|restart|stop|log|follow|install|update|add-source|reconnect|copy-script|delete-script) CLI_ACTION="$1"; shift ;;
     -h|--help)
       printf 'Tsum Tsum Script -- service starter\n'
       printf 'Starts the helper service General Automation Platform needs to run the Tsum Tsum script on a phone or emulator.\n'
@@ -68,6 +68,7 @@ while [ $# -gt 0 ]; do
       printf '  follow        stream the service log until Ctrl-C\n'
       printf '  install       install the bundled APK for this device ABI\n'
       printf '  update        download the latest published APK and install it\n'
+      printf '  add-source    ask GAP on the device to add the Tsum Tsum library\n'
       printf '  reconnect     disconnect and reconnect an offline device\n'
       printf '  copy-script   copy the script log off the device into collected/\n'
       printf '  delete-script delete the script log from the device\n'

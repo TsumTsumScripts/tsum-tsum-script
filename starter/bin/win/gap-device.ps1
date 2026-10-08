@@ -597,6 +597,24 @@ function Get-InstalledVersion {
   return ''
 }
 
+# ------------------------------------------------------ the Tsum Tsum library
+
+# The catalogue GAP lists Tsum Tsum releases from. GAP ships with no
+# third-party source, so the starter offers this one after an install.
+$global:SourceUrl = 'https://tsumtsumscripts.github.io/tsum-tsum-catalogue/catalogue.json'
+
+# Opens GAP's gap://add-source link on the device; the player taps Add there.
+# Code 0: the dialog is up. 1: am failed. 2: this GAP has no such link (an
+# older one, which lists the library by itself).
+function Invoke-SourceOffer {
+  param([string]$Serial)
+  $r = Invoke-Adb @('-s', $Serial, 'shell', "am start -a android.intent.action.VIEW -d 'gap://add-source?url=$global:SourceUrl' -p $global:Package") -TimeoutMs 30000
+  $text = ($r.Out + $r.Err).Trim()
+  if ($text -match 'unable to resolve') { return @{ Code = 2; Text = '' } }
+  if ($text -match 'Error|Exception') { return @{ Code = 1; Text = $text } }
+  return @{ Code = 0; Text = '' }
+}
+
 # --------------------------------------------------------- the published APK
 
 # .NET rather than Get-FileHash: in Windows PowerShell 5.1 that cmdlet lives
