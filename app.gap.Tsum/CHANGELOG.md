@@ -92,6 +92,7 @@ release note; they fold back in here when she ships.
 - Auto Unlock MyTsum Level raises a capped single-tsum party.
 - Disney Villains (Set) no longer re-fires its skill with no chains.
 - Receiving hearts one by one no longer spins on the ad row.
+- The starter website no longer fails with "unknown flag: --starter".
 
 ### Added
 
@@ -328,6 +329,9 @@ release note; they fold back in here when she ships.
 
 ### Fixed
 
+- **Starter: unknown flag --starter.** tsum-stats 0.15 was cut without the
+  starter; the floor is now 0.16, and a first download updates straight to the
+  newest release instead of stopping at the pin.
 - **Base coins unread on a '6'.** The dimmed level-up counter draws a '6' with a
   filled lower loop that led '8' by under the margin; it now has a second '6'
   shape (`6b`), and the margin is measured to another digit.
