@@ -226,7 +226,7 @@ that runs against this one's build: `DEVELOPMENT.md` § The development toolkit.
 | `tools/i18n/` | What each language is missing, which `UiText` keys nothing names any more, and — the one thing it fails on — a `data-i18n` in the markup naming no key. The rest the compiler already catches | `npm run i18n:check` |
 | `tools/liveSettings/` | **When each setting reaches a run in progress**, checked by running the built bundle in a vm rather than by reading it: that every `SHARE_SLOTS` row has an answer, that the switch and the reported state match it, and that the value survives the round trip. It cannot decide *which* kind a setting is — that judgement is what the table records | `npm run live:check` |
 | `tools/release/` | Cuts a release: builds the channel, names the archive from `config.json` and `package.json`, writes it and a running per-channel `CHANGELOG.md` into the catalogue, and prunes past `HistoryLimit`. The release note is not taken on trust — `review.js` shows it as the app will render it and waits to be told. | `npm run release:alpha`, `release:beta`, `release:production` |
-| `tools/build/` | **The build, as a dependency graph.** Each step declares what it `needs` and anything whose needs are met runs, up to one job per core — ~16s of sequential steps down to ~4s, the length of the longest chain. The doc and check steps are `optional`: they print findings and never block a build. `build.sh` and `build.ps1` translate flags into this and do nothing else. With `GAP_SCRIPT_KEY` set (a PEM path) it signs `dist/` for GAP Companion (`signScript.js`, generic) | `npm run build`, `buildAndAdb`, `buildAndAdb:beta`; `--channel`, `--adb`, `--device`, `--jobs` |
+| `tools/build/` | **The build, as a dependency graph.** Each step declares what it `needs` and anything whose needs are met runs, up to one job per core — ~16s of sequential steps down to ~4s, the length of the longest chain. The doc and check steps are `optional`: they print findings and never block a build. `build.sh` and `build.ps1` translate flags into this and do nothing else. With `GAP_SCRIPT_KEY` set (a PEM path) it signs `dist/` for GAP Companion (`signScript.js`, generic) | `npm run build`, `buildAndAdb`, `buildAndAdb:beta`; `--channel`, `--adb`, `--device`, `--jobs`; `GAP_REMOTE_HOSTS` |
 | `tools/inline/` | Folds the token, font and page sheets and `settings.js` into one `dist/index.html`, so the page needs no network | run by `tools/build/` |
 | `tools/minify/` | terser over both built scripts, **whitespace only** — `compress` and `mangle` are off, so nothing is renamed or rewritten, and it evaluates what it produced. Also copies `src/tsums.dat` into `dist/` without its `#` header | run by `tools/build/` |
 
@@ -498,6 +498,9 @@ the page's **Update the starter**, tsum-stats exits 76 (`SITE_RELOAD_CODE`,
 passed as `GAP_STARTER_RELOAD_CODE`) and the launcher starts itself again. The terminal menu and the
 command-line actions (`bin/posix`, `bin/win`) remain, and the device side is
 still only `device/gap-service.sh`, now with three hosts reading it.
+Emulator discovery probes the same port list (`EMU_PORTS` / `$global:EmuPorts` /
+`emuPorts`, plus `GAP_EXTRA_PORTS`) on 127.0.0.1 and every `GAP_REMOTE_HOSTS`
+host, in all three hosts and in `build.js --adb`; keep the four lists in step.
 GAP lists no third-party source by itself: after an install, all three hosts
 offer the Tsum Tsum catalogue through GAP's `gap://add-source?url=...` link
 (`SOURCE_URL` in `starter/bin/posix/gap-device.sh`, `$global:SourceUrl` in

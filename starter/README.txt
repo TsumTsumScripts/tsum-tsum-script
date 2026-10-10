@@ -280,6 +280,26 @@ When something goes wrong
     MuMu prints the port under Settings > Other, or run
     MuMuManager.exe adb -v <instance number>.
 
+"Emulators on another computer"
+    Set GAP_REMOTE_HOSTS to that computer's address before starting, e.g.
+    GAP_REMOTE_HOSTS="192.168.1.50" (several: separate with spaces). Its
+    emulators are probed on the same ports as this computer's.
+    Most emulators only accept connections from their own computer, so on a
+    Windows emulator computer, forward each port onto the network once, in
+    an administrator PowerShell (192.168.1.50 is that computer's address):
+
+        foreach ($p in 16384,16416,5555,5557) {
+          netsh interface portproxy add v4tov4 listenaddress=192.168.1.50 `
+            listenport=$p connectaddress=127.0.0.1 connectport=$p
+        }
+        New-NetFirewallRule -DisplayName "GAP emulators" -Direction Inbound `
+          -Protocol TCP -LocalPort 16384,16416,5555,5557 `
+          -RemoteAddress LocalSubnet -Action Allow
+
+    List the ports your emulators actually use (see above). Anyone on the
+    network can then control those emulators, so only do this on a network
+    you trust. Undo with netsh interface portproxy reset.
+
 "unauthorized"
     Look at the phone's screen and tap Allow on the USB debugging prompt,
     then press Refresh.

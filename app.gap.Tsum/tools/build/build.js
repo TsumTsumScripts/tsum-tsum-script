@@ -398,6 +398,7 @@ async function main() {
   console.log(`[build] done in ${elapsed}s`);
 
   if (has('adb')) {
+    if (!valueOf('device')) await connectRemoteEmulators();
     const devices = valueOf('device') ? [valueOf('device')] : connectedEmulators();
     const failed = [];
     const ledger = devLedger();
@@ -425,23 +426,67 @@ async function main() {
   }
 }
 
-// Every emulator in `adb devices`: `emulator-NNNN`, or a local TCP serial such
-// as BlueStacks' `127.0.0.1:5555`. Physical devices and offline entries are skipped.
+// Emulators on other computers: GAP_REMOTE_HOSTS="192.168.1.50 pc2", as in the
+// starter (starter/README.txt). Each host's emulator ports must be forwarded onto the LAN.
+const remoteHosts = () => (process.env.GAP_REMOTE_HOSTS || '').split(/[\s,]+/).filter(Boolean);
+
+// The starter's emulator ports (starter/bin/posix/gap-device.sh EMU_PORTS) plus GAP_EXTRA_PORTS.
+const EMU_PORTS = [16384, 16416, 16448, 16480, 7555, 5555, 5557, 5559, 5561,
+  62001, 62025, 62026, 62027, 21503, 21513, 21523];
+
+// `adb connect` every open emulator port on GAP_REMOTE_HOSTS. A TCP knock
+// first, because a firewalled port can hang `adb connect` for a minute.
+async function connectRemoteEmulators() {
+  const hosts = remoteHosts();
+  if (!hosts.length) return;
+  const net = require('net');
+  const extra = (process.env.GAP_EXTRA_PORTS || '').split(/[\s,]+/).filter(Boolean).map(Number);
+  const open = (host, port) => new Promise((resolve) => {
+    const socket = net.connect({ host, port, timeout: 500 });
+    const done = (ok) => { socket.destroy(); resolve(ok); };
+    socket.once('connect', () => done(true));
+    socket.once('timeout', () => done(false));
+    socket.once('error', () => done(false));
+  });
+  await Promise.all(hosts.flatMap((host) => [...EMU_PORTS, ...extra].map(async (port) => {
+    if (await open(host, port)) await sh(() => {}, 'adb', ['connect', `${host}:${port}`]).catch(() => {});
+  })));
+}
+
+// Every emulator in `adb devices`: `emulator-NNNN`, a local TCP serial such as
+// BlueStacks' `127.0.0.1:5555`, or one on GAP_REMOTE_HOSTS. Physical devices and
+// offline entries are skipped.
 function connectedEmulators() {
   const out = execFileSync('adb', ['devices'], { encoding: 'utf8' });
+  const loopback = ['127.0.0.1', 'localhost'];
+  const remote = remoteHosts();
   const serials = [];
   for (const line of out.split('\n').slice(1)) {
     const [serial, state] = line.trim().split(/\s+/);
     if (state !== 'device') continue;
-    if (/^emulator-\d+$/.test(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) serials.push(serial);
+    const host = /^(.+):\d+$/.exec(serial)?.[1];
+    if (/^emulator-\d+$/.test(serial) || loopback.includes(host) || remote.includes(host)) serials.push(serial);
   }
   // An emulator reached over `adb connect` also shows as 127.0.0.1:<console port + 1>; push once.
   const unique = serials.filter((serial) => {
-    const port = /:(\d+)$/.exec(serial);
+    const port = /^(?:127\.0\.0\.1|localhost):(\d+)$/.exec(serial);
     return !port || !serials.includes(`emulator-${Number(port[1]) - 1}`);
   });
-  if (!unique.length) throw new Error('no emulator listed in `adb devices`; pass --device SERIAL');
-  return unique;
+  // A remote emulator forwarded on two ports (MuMu's 16384 and 5555) is one device:
+  // boot_id is the same on both. Same merge as the starter's.
+  const seen = new Set();
+  const merged = unique.filter((serial) => {
+    let id = serial;
+    try {
+      id = execFileSync('adb', ['-s', serial, 'shell', 'cat', '/proc/sys/kernel/random/boot_id'],
+        { encoding: 'utf8', timeout: 10000 }).trim() || serial;
+    } catch { /* unreadable: keep it under its serial */ }
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+  if (!merged.length) throw new Error('no emulator listed in `adb devices`; pass --device SERIAL or set GAP_REMOTE_HOSTS');
+  return merged;
 }
 
 main().catch((err) => {

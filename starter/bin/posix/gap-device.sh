@@ -429,8 +429,28 @@ probe_emulators() {
   for p in $EMU_PORTS ${GAP_EXTRA_PORTS:-}; do
     ( "$ADB" connect "127.0.0.1:$p" >/dev/null 2>&1 ) &
     pids="$pids $!"
+    for h in $(remote_hosts); do
+      connect_bounded "$h:$p" &
+      pids="$pids $!"
+    done
   done
   for pid in $pids; do wait "$pid"; done
+}
+
+# Emulators on other computers: GAP_REMOTE_HOSTS="192.168.1.50 pc2" probes
+# each host on the same ports as 127.0.0.1. The other computer must forward
+# its emulator ports onto the LAN (README.txt, "Emulators on another computer").
+remote_hosts() { printf '%s\n' "${GAP_REMOTE_HOSTS:-}" | tr ',' ' '; }
+
+# A firewalled LAN port can hang `adb connect` for over a minute, so give up
+# after 3 s.
+connect_bounded() {
+  "$ADB" connect "$1" >/dev/null 2>&1 &
+  cpid=$!
+  ( sleep 3; kill "$cpid" 2>/dev/null ) &
+  kpid=$!
+  wait "$cpid" 2>/dev/null
+  kill "$kpid" 2>/dev/null
 }
 
 # serial<TAB>state<TAB>model -- every state kept, so the menu can explain an

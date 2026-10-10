@@ -385,10 +385,10 @@ $global:EmuPorts = @(
 # belonging to something that is not adb can stall the handshake for seconds,
 # and that is exactly what makes a Refresh feel broken.
 function Test-TcpPort {
-  param([int]$Port, [int]$TimeoutMs = 200)
+  param([int]$Port, [string]$HostName = '127.0.0.1', [int]$TimeoutMs = 200)
   $c = New-Object System.Net.Sockets.TcpClient
   try {
-    $iar = $c.BeginConnect('127.0.0.1', $Port, $null, $null)
+    $iar = $c.BeginConnect($HostName, $Port, $null, $null)
     if (-not $iar.AsyncWaitHandle.WaitOne($TimeoutMs, $false)) { return $false }
     $c.EndConnect($iar)
     return $true
@@ -420,9 +420,19 @@ function Connect-Emulators {
   if ($env:GAP_EXTRA_PORTS) {
     $ports += ($env:GAP_EXTRA_PORTS -split '[,\s]+' | Where-Object { $_ } | ForEach-Object { [int]$_ })
   }
-  foreach ($p in $ports) {
-    if (Test-TcpPort -Port $p) { [void](Invoke-Adb @('connect', "127.0.0.1:$p") -TimeoutMs 8000) }
+  foreach ($h in @('127.0.0.1') + @(Get-RemoteHosts)) {
+    foreach ($p in $ports) {
+      if (Test-TcpPort -Port $p -HostName $h) { [void](Invoke-Adb @('connect', "${h}:$p") -TimeoutMs 8000) }
+    }
   }
+}
+
+# Emulators on other computers: GAP_REMOTE_HOSTS="192.168.1.50 pc2" probes
+# each host on the same ports as 127.0.0.1. The other computer must forward
+# its emulator ports onto the LAN (README.txt, "Emulators on another computer").
+function Get-RemoteHosts {
+  if (-not $env:GAP_REMOTE_HOSTS) { return @() }
+  return @($env:GAP_REMOTE_HOSTS -split '[,\s]+' | Where-Object { $_ })
 }
 
 # Every state is kept -- unauthorized and offline devices are listed with the

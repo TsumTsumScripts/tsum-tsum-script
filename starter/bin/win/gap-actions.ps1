@@ -59,12 +59,20 @@ function Get-DeviceRow {
 
 function Get-NoDeviceHint {
   $ports = ($global:EmuPorts -join ' ')
+  $remote = @(Get-RemoteHosts)
+  $tail = if ($remote.Count) {
+    "  - Also probed the same ports on GAP_REMOTE_HOSTS: $($remote -join ' ')`n" +
+    "    Is each emulator's port forwarded onto the LAN and open in the firewall?"
+  } else {
+    '    Emulators on another computer: set GAP_REMOTE_HOSTS="192.168.1.50".'
+  }
   return @"
 No device found.
 
   - Start your emulator, or plug the phone in with USB debugging enabled.
   - Probed for emulators on 127.0.0.1: $ports
     A different port can be added with GAP_EXTRA_PORTS="12345".
+$tail
 "@
 }
 
