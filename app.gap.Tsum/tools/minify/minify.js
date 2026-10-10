@@ -110,6 +110,8 @@ function checkBundle(file) {
                   // The settings page has a Report button, and the host's Log chip
                   // reaches the same name over the IPC socket on a long press.
                   'reportIssue',
+                  // The Debug tab's Copy debug info button.
+                  'debugDeviceInfo',
                   // GAP Companion's adapter calls these by name (src/companion.ts,
                   // docs/WORKFLOWS.md § 6); the pages call presetsMirror.
                   'gapWorkflowCatalog', 'gapWorkflowReceive', 'gapWorkflowState',

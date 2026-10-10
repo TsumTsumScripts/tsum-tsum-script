@@ -368,6 +368,8 @@ function main() {
     // id, which always opens with the UTC stamp report.ts builds it from.
     ['reportIssue("liveCheck", ""); reportIssue("liveCheck", "")',
       (r) => /^\d{8}-\d{6}-/.test(r)],
+    // The Debug tab's Copy debug info button.
+    ['debugDeviceInfo(); debugDeviceInfo()', (r) => typeof JSON.parse(r).width === 'number'],
     // The Quick Bar's Unlock now chip, pressed while the run is paused.
     ['gTaskController = new TsumTaskController(); unlockLevelsNow(); unlockLevelsNow()',
       (r) => r === 'already queued'],

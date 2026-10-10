@@ -57,12 +57,16 @@ release note; they fold back in here when she ships.
 *Settings code*
 - Copy with settings list is now on by default.
 
+*Debug*
+- Copy debug info button: copies your device details and every setting, to paste when asking for help.
+
 **Fixes**
 - Box Buying no longer stalls on the JP build when a maxed-out Pick-Up Capsule pays out a Premium Ticket.
 
 ### Added
 
 - **Preset import**: the Code box's Apply saves each `Name: code` line as a preset (`presetsFromText`, `importPresets`), replacing same-named ones; more than one line saves without applying.
+- **Copy debug info** (Debug tab, top row): `copyDebugInfo` copies version, device (engine global `debugDeviceInfo`) and every setting by tab, in English, `*` on changed ones. DPI and rooted need the host's newer `deviceInfo()` (`density`, `rooted`); an older host shows "unknown".
 
 ### Changed
 

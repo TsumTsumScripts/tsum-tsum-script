@@ -193,6 +193,8 @@ declare const enum UiText {
   SettingAppRestartFrequencyHelp = 'setting.appRestartFrequency.help',
   /** Carries the `$BUILD_DATE` placeholder the build substitutes into the page. */
   SettingBuildDate = 'setting.buildDate',
+  SettingCopyDebugInfo = 'setting.copyDebugInfo',
+  SettingCopyDebugInfoHelp = 'setting.copyDebugInfo.help',
   SettingDebugLogs = 'setting.debugLogs',
   SettingDebugLogsHelp = 'setting.debugLogs.help',
   SettingDebugGame = 'setting.debugGame',

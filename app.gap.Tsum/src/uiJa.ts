@@ -163,6 +163,8 @@ i18nRegister(Locale.Japanese, '日本語', {
     [UiText.SettingAppRestartFrequency]: 'ツムツムの再起動間隔（分）',
     [UiText.SettingAppRestartFrequencyHelp]: '長時間の実行中、この間隔でゲームを再起動します。0 = オフ。自動起動が必要です。',
     [UiText.SettingBuildDate]: 'ビルド日: $BUILD_DATE',
+    [UiText.SettingCopyDebugInfo]: 'デバッグ情報をコピー',
+    [UiText.SettingCopyDebugInfoHelp]: '端末の情報とすべての設定をコピーします。質問するときに貼り付けてください。',
     [UiText.SettingDebugLogs]: 'デバッグログ',
     [UiText.SettingDebugLogsHelp]: 'ログをより詳しく出力します。',
     [UiText.SettingDebugGame]: 'ゲームのデバッグ',

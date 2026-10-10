@@ -320,6 +320,7 @@ function createHost(options) {
     deviceInfo: () => ({
       model: 'harness', manufacturer: 'gap', device: 'harness',
       androidRelease: '12', fingerprint: 'gap/harness', emulator: true,
+      density: 320, rooted: false,
     }),
     dumpUi: () => '',
     touchDevices: () => [],

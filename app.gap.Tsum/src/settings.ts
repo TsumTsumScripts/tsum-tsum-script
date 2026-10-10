@@ -780,6 +780,16 @@ var tabs: TabSpec[] = [
                 title: UiText.GroupDiagnostics,
                 rows: [
                     {
+                        // Device facts and every setting, as text a player can
+                        // paste into a help request -- see `copyDebugInfo`.
+                        key: RowKey.CopyDebugInfo,
+                        title: UiText.SettingCopyDebugInfo,
+                        help: UiText.SettingCopyDebugInfoHelp,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonCopy), onClick: function () { copyDebugInfo(); }}
+                        ]
+                    },
+                    {
                         key: RowKey.BuildDate,
                         title: UiText.SettingBuildDate
                     },
@@ -2571,6 +2581,116 @@ function onMyTsumDetected(answer: string): void {
             score: Number(read.score).toFixed(3),
             margin: Number(read.margin).toFixed(3),
         }), !confident);
+}
+
+// --- copying debug info ----------------------------------------------------
+//
+// The Debug tab's Copy button: the device (from the engine's `debugDeviceInfo`,
+// src/report.ts) and every setting, as plain text a player pastes into a help
+// request. In English whatever the page's language, since the developer reads it.
+
+/** The Copy button: asks the engine for the device half; the copy happens in `onDebugDeviceInfo`. */
+function copyDebugInfo(): void {
+    var iface = bridge();
+    if (iface === undefined || typeof iface.runScriptCallback !== 'function') {
+        onDebugDeviceInfo('');
+        return;
+    }
+    iface.runScriptCallback('typeof debugDeviceInfo === "function" ? debugDeviceInfo() : ""',
+        'onDebugDeviceInfo');
+}
+
+/** The engine's answer (JSON, or '' without one): builds the text and copies it. */
+// noinspection JSUnusedGlobalSymbols
+function onDebugDeviceInfo(answer: string): void {
+    var device: any = null;
+    try {
+        device = JSON.parse(String(answer));
+    } catch (e) {
+        device = null;
+    }
+    writeClipboard(buildDebugInfo(device), flashCopyDebugInfo);
+}
+
+/** Yes/No, or "unknown" for a fact the host did not report. */
+function debugYesNo(value: any): string {
+    return value === true ? 'Yes' : value === false ? 'No' : 'unknown';
+}
+
+/** The whole text: version, device, then every setting by tab and group. `*` marks a changed one. */
+function buildDebugInfo(device: any): string {
+    var lines: string[] = [PANEL_TITLE, i18nEnglish(UiText.SettingBuildDate)];
+    var locales = i18nLocales();
+    for (var l = 0; l < locales.length; l++) {
+        if (locales[l].tag === i18nLocale()) {
+            lines.push('Language: ' + locales[l].endonym);
+        }
+    }
+    lines.push('', '[Device]');
+    if (device === null || typeof device !== 'object') {
+        lines.push('unavailable (script not loaded)');
+    } else {
+        lines.push('Name: ' + (device.name || 'unknown'));
+        lines.push('Model: ' + ((device.manufacturer + ' ' + device.model).trim() || 'unknown'));
+        lines.push('Android: ' + (device.android || 'unknown'));
+        lines.push('Emulator: ' + debugYesNo(device.emulator));
+        lines.push('Resolution: ' + device.width + ' x ' + device.height);
+        lines.push('DPI: ' + (device.density === null ? 'unknown' : device.density));
+        lines.push('Rooted: ' + debugYesNo(device.rooted));
+    }
+    lines.push('', '* = changed from default');
+    var values = collectSettingValues(settings);
+    for (var t = 0; t < tabs.length; t++) {
+        lines.push('', '[' + i18nEnglish(tabs[t].title) + ']');
+        for (var g = 0; g < tabs[t].groups.length; g++) {
+            var group = tabs[t].groups[g];
+            var rows = group.rows;
+            var heading = false;
+            for (var r = 0; r < rows.length; r++) {
+                var row = rows[r];
+                var value = values[row.key as string];
+                if (value === undefined || row.title === undefined || !offeredHere(row.status)) {
+                    continue;
+                }
+                if (!heading && group.title !== undefined) {
+                    lines.push('-- ' + i18nEnglish(group.title) + ' --');
+                }
+                heading = true;
+                var changed = value !== SettingDefaults[row.key as SettingKey];
+                lines.push(i18nEnglish(row.title) + ': ' + debugInfoValue(row, value) + (changed ? ' *' : ''));
+            }
+        }
+    }
+    return lines.join('\n');
+}
+
+/** One row's value: On/Off, the option's English name, or the number as the page shows it. */
+function debugInfoValue(setting: SettingSpec, value: SettingValue): string {
+    if (typeof value === 'boolean') {
+        return value ? 'On' : 'Off';
+    }
+    if (setting.dropdown !== undefined) {
+        for (var i = 0; i < setting.dropdown.length; i++) {
+            var option = setting.dropdown[i];
+            if (option.key === value && option.title !== undefined) {
+                return i18nEnglish(option.title);
+            }
+        }
+    }
+    return typeof value === 'number' ? shownNumber(setting, value) : String(value);
+}
+
+/** The Copy button says Copied / Failed for a moment. */
+function flashCopyDebugInfo(ok: boolean): void {
+    var row = document.getElementById(rowElementId(RowKey.CopyDebugInfo));
+    var button = row !== null ? row.querySelector('button') : null;
+    if (button === null) {
+        return;
+    }
+    button.textContent = i18nText(ok ? UiText.ChromeCopied : UiText.ChromeCopyFailed);
+    setTimeout(function () {
+        button!.textContent = i18nText(UiText.ButtonCopy);
+    }, COPY_FLASH_MS);
 }
 
 /**

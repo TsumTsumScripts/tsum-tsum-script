@@ -1922,6 +1922,10 @@ declare function deviceInfo(): {
   androidRelease: string;
   fingerprint: string;
   emulator: boolean;
+  /** Screen dpi, 0 if unreadable. Newer than the rest: absent on an older host. */
+  density?: number;
+  /** An `su` is on the device, or the service runs as root. Newer, like `density`. */
+  rooted?: boolean;
 } | null;
 /** The window hierarchy as XML; '' when uiautomator is unavailable. */
 declare function dumpUi(): string;

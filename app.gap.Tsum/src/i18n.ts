@@ -105,6 +105,12 @@ function i18nText(key: UiText): string {
     return typeof english === 'string' ? english : key;
 }
 
+/** The text for `key` in English whatever the page's language -- for text sent to the developer. */
+function i18nEnglish(key: UiText): string {
+    var english = gLocaleFallback !== undefined ? gLocaleFallback[key] : undefined;
+    return typeof english === 'string' ? english : key;
+}
+
 /**
  * As `i18nText`, with `{named}` placeholders filled from `values`.
  *

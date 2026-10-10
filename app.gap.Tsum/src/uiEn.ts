@@ -171,6 +171,8 @@ i18nRegister(Locale.English, 'English', {
     [UiText.SettingAppRestartFrequency]: 'Tsum app restart frequency (min)',
     [UiText.SettingAppRestartFrequencyHelp]: 'Restarts the game this often on long runs. 0 = off; needs Auto Launch.',
     [UiText.SettingBuildDate]: 'Build date: $BUILD_DATE',
+    [UiText.SettingCopyDebugInfo]: 'Copy debug info',
+    [UiText.SettingCopyDebugInfoHelp]: 'Copies your device details and every setting, to paste when asking for help.',
     [UiText.SettingDebugLogs]: 'Debug logs',
     [UiText.SettingDebugLogsHelp]: 'More detail in the log.',
     [UiText.SettingDebugGame]: 'Debug game',

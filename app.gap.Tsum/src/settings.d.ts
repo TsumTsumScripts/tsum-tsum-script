@@ -178,6 +178,8 @@ declare const enum RowKey {
   ShareListing = 'shareListing',
   /** The preset export buttons; their status line is inserted under this row. */
   ExportPresets = 'exportPresets',
+  /** The Copy debug info button: device facts and every setting, for a bug report. */
+  CopyDebugInfo = 'copyDebugInfo',
   /** The build stamp on the Debug tab. */
   BuildDate = 'buildDate',
   /** The Report button; its note box and status are inserted under this row. */

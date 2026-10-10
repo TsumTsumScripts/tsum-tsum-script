@@ -277,6 +277,7 @@ enforces every row below, so these are true rather than approximate.
 | `dialog*`, `Dialog*`, `Stall*` | `src/dialogs.ts`, `src/globals.d.ts` |
 | `corpus*`, `Corpus*` | `src/corpus.ts` |
 | `report*`, `Report*` — the issue-report folder and what triggers one | `src/report.ts`, `src/settings.ts` (the Debug tab's Report row and its note panel), the host's Log-chip long press. `Config.reportTrailFrames` is the exception and lives in `src/data.ts`, because the router reads it when its singleton is built |
+| `copyDebugInfo`, `debugDeviceInfo`, `buildDebugInfo` — the Debug tab's Copy debug info: device facts and every setting as text | `src/settings.ts` (the row and the text), `src/report.ts` (`debugDeviceInfo`, the engine half: `deviceInfo()`, screen size, device name) |
 | `logRing*`, `gLogRing*`, `LogRingMax` — the records a report carries | `src/logging.ts` |
 | `Trace`, `trace*`, `gTrace*`, `emitTrace`, `traceAttached` — the trace stream | `src/trace.ts`, `src/globals.d.ts` (the two natives) |
 | `walk*`, `Walk*` | `src/walkthrough.ts`, `src/globals.d.ts` |
