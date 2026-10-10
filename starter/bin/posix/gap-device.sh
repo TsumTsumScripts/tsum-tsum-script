@@ -480,9 +480,11 @@ list_devices() {
 # One emulator can listen on several ports and shows up once per port. boot_id
 # is per running device and identical across its ports, so it collapses those
 # without hiding a genuine second device. (tools/deploy.sh lines 87-100.)
+# The 5xxx port is the one kept (easier to read than 16xxx), and a remote
+# emulator's other connections are dropped so adb holds just that one.
 merge_duplicates() {
   seen="|"
-  while IFS="$(printf '\t')" read -r serial state model; do
+  prefer_5xxx | while IFS="$(printf '\t')" read -r serial state model; do
     [ -n "$serial" ] || continue
     if [ "$state" != device ]; then
       printf '%s\t%s\t%s\n' "$serial" "$state" "$model"
@@ -490,10 +492,26 @@ merge_duplicates() {
     fi
     id="$("$ADB" -s "$serial" shell cat /proc/sys/kernel/random/boot_id </dev/null 2>/dev/null | tr -d '\r\n')"
     [ -n "$id" ] || id="$serial"
-    case "$seen" in *"|$id|"*) continue ;; esac
+    case "$seen" in *"|$id|"*)
+      is_remote "$serial" && "$ADB" disconnect "$serial" >/dev/null 2>&1
+      continue ;;
+    esac
     seen="$seen$id|"
     printf '%s\t%s\t%s\n' "$serial" "$state" "$model"
   done
+}
+
+# Rows on a 5xxx port first; the rest keep their order.
+prefer_5xxx() {
+  t="$(printf '\t')"
+  awk -F"$t" '{ print ($1 ~ /:5[0-9][0-9][0-9]$/ ? 0 : 1) "\t" $0 }' | sort -s -t "$t" -k1,1n | cut -f2-
+}
+
+is_remote() {
+  for h in $(remote_hosts); do
+    case "$1" in "$h":*) return 0 ;; esac
+  done
+  return 1
 }
 
 # ------------------------------------------------------- the device protocol

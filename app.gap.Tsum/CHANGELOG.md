@@ -65,7 +65,7 @@ release note; they fold back in here when she ships.
 
 ### Added
 
-- **Emulators on another computer**: `GAP_REMOTE_HOSTS="192.168.1.50"` makes the starter (all three hosts) and `build.js --adb` probe those hosts' emulator ports too, cutting off hung connects and dropping the offline rows a forwarded port with no emulator leaves; the remote PC forwards them with `netsh portproxy` (starter README). `--adb` now merges one emulator seen on two ports by `boot_id`.
+- **Emulators on another computer**: `GAP_REMOTE_HOSTS="192.168.1.50"` makes the starter (all three hosts) and `build.js --adb` probe those hosts' emulator ports too, cutting off hung connects and dropping the offline rows a forwarded port with no emulator leaves; the remote PC forwards them with `netsh portproxy` (starter README). `--adb` now merges one emulator seen on two ports by `boot_id`, keeping its 5xxx port (the starter too) and disconnecting a remote emulator's other ports.
 - **Preset import**: the Code box's Apply saves each `Name: code` line as a preset (`presetsFromText`, `importPresets`), replacing same-named ones; more than one line saves without applying.
 - **Copy debug info** (Debug tab, top row): `copyDebugInfo` copies version, device (engine global `debugDeviceInfo`) and every setting by tab, in English, `*` on changed ones. DPI and rooted need the host's newer `deviceInfo()` (`density`, `rooted`); an older host shows "unknown".
 

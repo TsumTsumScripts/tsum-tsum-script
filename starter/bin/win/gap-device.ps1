@@ -488,8 +488,13 @@ function Get-Devices {
 # One emulator can listen on several ports and shows up once per port. boot_id
 # is per running device and identical across its ports, so it collapses those
 # without hiding a genuine second device. (tools/deploy.sh lines 87-100.)
+# The 5xxx port is the one kept (easier to read than 16xxx), and a remote
+# emulator's other connections are dropped so adb holds just that one.
 function Merge-Duplicates {
   param($Rows)
+  $five = { $_.Serial -match ':5\d{3}$' }
+  $Rows = @($Rows | Where-Object $five) + @($Rows | Where-Object { -not (& $five) })
+  $remote = @(Get-RemoteHosts)
   $seen = @{}
   $out = @()
   foreach ($row in $Rows) {
@@ -497,7 +502,12 @@ function Merge-Duplicates {
     $r = Invoke-Adb @('-s', $row.Serial, 'shell', 'cat', '/proc/sys/kernel/random/boot_id') -TimeoutMs 10000
     $id = $r.Out.Trim()
     if (-not $id) { $id = $row.Serial }
-    if ($seen.ContainsKey($id)) { continue }
+    if ($seen.ContainsKey($id)) {
+      if ($remote -contains ($row.Serial -replace ':\d+$', '')) {
+        [void](Invoke-Adb @('disconnect', $row.Serial) -TimeoutMs 5000)
+      }
+      continue
+    }
     $seen[$id] = $true
     $out += $row
   }

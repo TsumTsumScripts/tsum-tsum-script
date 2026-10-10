@@ -482,7 +482,10 @@ function connectedEmulators() {
     return !port || !serials.includes(`emulator-${Number(port[1]) - 1}`);
   });
   // A remote emulator forwarded on two ports (MuMu's 16384 and 5555) is one device:
-  // boot_id is the same on both. Same merge as the starter's.
+  // boot_id is the same on both. Same merge as the starter's: the 5xxx port is
+  // kept, and a remote emulator's other connections are dropped.
+  const is5xxx = (serial) => /:5\d{3}$/.test(serial);
+  unique.sort((a, b) => is5xxx(b) - is5xxx(a));
   const seen = new Set();
   const merged = unique.filter((serial) => {
     let id = serial;
@@ -490,7 +493,12 @@ function connectedEmulators() {
       id = execFileSync('adb', ['-s', serial, 'shell', 'cat', '/proc/sys/kernel/random/boot_id'],
         { encoding: 'utf8', timeout: 10000 }).trim() || serial;
     } catch { /* unreadable: keep it under its serial */ }
-    if (seen.has(id)) return false;
+    if (seen.has(id)) {
+      if (remote.includes(/^(.+):\d+$/.exec(serial)?.[1])) {
+        try { execFileSync('adb', ['disconnect', serial], { timeout: 5000 }); } catch { /* already gone */ }
+      }
+      return false;
+    }
     seen.add(id);
     return true;
   });
