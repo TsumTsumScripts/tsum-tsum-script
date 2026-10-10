@@ -2633,7 +2633,6 @@ function buildDebugInfo(device: any): string {
         lines.push('Name: ' + (device.name || 'unknown'));
         lines.push('Model: ' + ((device.manufacturer + ' ' + device.model).trim() || 'unknown'));
         lines.push('Android: ' + (device.android || 'unknown'));
-        lines.push('Emulator: ' + debugYesNo(device.emulator));
         lines.push('Resolution: ' + device.width + ' x ' + device.height);
         lines.push('DPI: ' + (device.density === null ? 'unknown' : device.density));
         lines.push('Rooted: ' + debugYesNo(device.rooted));

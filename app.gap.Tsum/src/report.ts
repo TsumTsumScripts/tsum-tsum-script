@@ -450,7 +450,6 @@ function debugDeviceInfo(): string {
     android: info ? info.androidRelease : '',
     model: info ? info.model : '',
     manufacturer: info ? info.manufacturer : '',
-    emulator: info ? info.emulator : null,
     name: typeof getDeviceName === 'function' ? getDeviceName() : '',
     width: screen.width,
     height: screen.height,
