@@ -435,7 +435,10 @@ const EMU_PORTS = [16384, 16416, 16448, 16480, 7555, 5555, 5557, 5559, 5561,
   62001, 62025, 62026, 62027, 21503, 21513, 21523];
 
 // `adb connect` every open emulator port on GAP_REMOTE_HOSTS. A TCP knock
-// first, because a firewalled port can hang `adb connect` for a minute.
+// first, because a firewalled port can hang `adb connect` for a minute. A
+// port-forwarded port with no emulator behind it accepts the knock and hangs
+// `adb connect` instead, so each connect is cut off after 3 s and the offline
+// rows they leave are disconnected.
 async function connectRemoteEmulators() {
   const hosts = remoteHosts();
   if (!hosts.length) return;
@@ -448,9 +451,15 @@ async function connectRemoteEmulators() {
     socket.once('timeout', () => done(false));
     socket.once('error', () => done(false));
   });
+  const { execFile } = require('child_process');
+  const adb = (args, timeout) => new Promise((resolve) => execFile('adb', args, { timeout }, () => resolve()));
   await Promise.all(hosts.flatMap((host) => [...EMU_PORTS, ...extra].map(async (port) => {
-    if (await open(host, port)) await sh(() => {}, 'adb', ['connect', `${host}:${port}`]).catch(() => {});
+    if (await open(host, port)) await adb(['connect', `${host}:${port}`], 3000);
   })));
+  for (const line of execFileSync('adb', ['devices'], { encoding: 'utf8' }).split('\n').slice(1)) {
+    const [serial, state] = line.trim().split(/\s+/);
+    if (state === 'offline' && hosts.includes(/^(.+):\d+$/.exec(serial)?.[1])) await adb(['disconnect', serial], 5000);
+  }
 }
 
 // Every emulator in `adb devices`: `emulator-NNNN`, a local TCP serial such as

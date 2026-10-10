@@ -435,6 +435,17 @@ probe_emulators() {
     done
   done
   for pid in $pids; do wait "$pid"; done
+  drop_remote_offline
+}
+
+# A port-forwarded LAN port accepts the connection even with no emulator
+# behind it, which leaves an offline row that never comes up. Drop those.
+drop_remote_offline() {
+  for s in $(offline_serials); do
+    for h in $(remote_hosts); do
+      case "$s" in "$h":*) "$ADB" disconnect "$s" >/dev/null 2>&1 ;; esac
+    done
+  done
 }
 
 # Emulators on other computers: GAP_REMOTE_HOSTS="192.168.1.50 pc2" probes

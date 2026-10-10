@@ -420,9 +420,41 @@ function Connect-Emulators {
   if ($env:GAP_EXTRA_PORTS) {
     $ports += ($env:GAP_EXTRA_PORTS -split '[,\s]+' | Where-Object { $_ } | ForEach-Object { [int]$_ })
   }
-  foreach ($h in @('127.0.0.1') + @(Get-RemoteHosts)) {
-    foreach ($p in $ports) {
-      if (Test-TcpPort -Port $p -HostName $h) { [void](Invoke-Adb @('connect', "${h}:$p") -TimeoutMs 8000) }
+  foreach ($p in $ports) {
+    if (Test-TcpPort -Port $p) { [void](Invoke-Adb @('connect', "127.0.0.1:$p") -TimeoutMs 8000) }
+  }
+  Connect-RemoteEmulators $ports
+}
+
+# A port-forwarded LAN port accepts the connection even with no emulator
+# behind it, and `adb connect` then hangs. So remote connects run in parallel,
+# are cut off after 3 s, and the offline rows they leave are disconnected.
+function Connect-RemoteEmulators {
+  param([int[]]$Ports)
+  $remote = @(Get-RemoteHosts)
+  if ($remote.Count -eq 0) { return }
+  $procs = @()
+  foreach ($h in $remote) {
+    foreach ($p in $Ports) {
+      if (-not (Test-TcpPort -Port $p -HostName $h)) { continue }
+      $psi = New-Object System.Diagnostics.ProcessStartInfo
+      $psi.FileName               = $global:Adb
+      $psi.Arguments              = "connect ${h}:$p"
+      $psi.UseShellExecute        = $false
+      $psi.RedirectStandardOutput = $true
+      $psi.RedirectStandardError  = $true
+      $psi.CreateNoWindow         = $true
+      try { $procs += [System.Diagnostics.Process]::Start($psi) } catch { }
+    }
+  }
+  $deadline = (Get-Date).AddSeconds(3)
+  foreach ($proc in $procs) {
+    $left = [int][Math]::Max(0, ($deadline - (Get-Date)).TotalMilliseconds)
+    if (-not $proc.WaitForExit($left)) { try { $proc.Kill() } catch { } }
+  }
+  foreach ($d in @(Get-Devices | Where-Object { $_.State -eq 'offline' })) {
+    if ($remote -contains ($d.Serial -replace ':\d+$', '')) {
+      [void](Invoke-Adb @('disconnect', $d.Serial) -TimeoutMs 5000)
     }
   }
 }
