@@ -49,9 +49,23 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
+**Additions**
+
+*Debug*
+- Copy debug info button: copies your device details and every setting, to paste when asking for help.
+
+**Fixes**
+- Receiving mail one by one no longer crashes the game after a couple of minutes on low-memory emulators.
+
 ### Added
 
+- **Copy debug info** (Debug tab, top row): `copyDebugInfo` copies version, device (engine global `debugDeviceInfo`) and every setting by tab, in English, `*` on changed ones. DPI and rooted need the host's newer `deviceInfo()` (`density`, `rooted`); an older host shows "unknown".
+- **Emulators on another computer**: `GAP_REMOTE_HOSTS="192.168.1.50"` makes the starter (all three hosts) and `build.js --adb` probe those hosts' emulator ports too, cutting off hung connects and dropping the offline rows a forwarded port with no emulator leaves; the remote PC forwards them with `netsh portproxy` (starter README). `--adb` now merges one emulator seen on two ports by `boot_id`, keeping its 5xxx port (the starter too) and disconnecting a remote emulator's other ports.
 - **Private alpha to testers**: `npm run prerelease:alpha` (`tools/release/prerelease.js`) builds Alpha and publishes it to the R2 folder in `config.json`'s `Prerelease`, served only through the tester gate, instead of the public catalogue. It keeps the folder's `Versions` history, uploads the zip before the catalogue and checks both served copies hash right. `release.js` now exports its note and build helpers for it.
+
+### Fixed
+
+- **Mail one by one**: each poll took three full captures (its own plus one per `gPages.matches`), suspected of exhausting 4 GB MuMu instances. `matches(page, frame?)` now reads a frame the caller holds; the mail loop passes its own.
 
 ## [5.0b3]
 
@@ -65,18 +79,12 @@ release note; they fold back in here when she ships.
 *Settings code*
 - Copy with settings list is now on by default.
 
-*Debug*
-- Copy debug info button: copies your device details and every setting, to paste when asking for help.
-
 **Fixes**
 - Box Buying no longer stalls on the JP build when a maxed-out Pick-Up Capsule pays out a Premium Ticket.
-- Receiving mail one by one no longer crashes the game after a couple of minutes on low-memory emulators.
 
 ### Added
 
-- **Emulators on another computer**: `GAP_REMOTE_HOSTS="192.168.1.50"` makes the starter (all three hosts) and `build.js --adb` probe those hosts' emulator ports too, cutting off hung connects and dropping the offline rows a forwarded port with no emulator leaves; the remote PC forwards them with `netsh portproxy` (starter README). `--adb` now merges one emulator seen on two ports by `boot_id`, keeping its 5xxx port (the starter too) and disconnecting a remote emulator's other ports.
 - **Preset import**: the Code box's Apply saves each `Name: code` line as a preset (`presetsFromText`, `importPresets`), replacing same-named ones; more than one line saves without applying.
-- **Copy debug info** (Debug tab, top row): `copyDebugInfo` copies version, device (engine global `debugDeviceInfo`) and every setting by tab, in English, `*` on changed ones. DPI and rooted need the host's newer `deviceInfo()` (`density`, `rooted`); an older host shows "unknown".
 
 ### Changed
 
@@ -85,7 +93,6 @@ release note; they fold back in here when she ships.
 ### Fixed
 
 - **JP GET! dialog** (`EventGiftJp`, variant `jp`): とじる covered two of `EventGift`'s Close probes, so the capsule's Premium Ticket prize read as `FriendInfo` and the reveal loop never closed it. Probes the button's flat gold beside and above the text instead.
-- **Mail one by one**: each poll took three full captures (its own plus one per `gPages.matches`), suspected of exhausting 4 GB MuMu instances. `matches(page, frame?)` now reads a frame the caller holds; the mail loop passes its own.
 
 ## [5.0b2]
 
