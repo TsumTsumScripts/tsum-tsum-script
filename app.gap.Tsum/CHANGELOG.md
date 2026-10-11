@@ -62,6 +62,7 @@ release note; they fold back in here when she ships.
 
 **Fixes**
 - Box Buying no longer stalls on the JP build when a maxed-out Pick-Up Capsule pays out a Premium Ticket.
+- Receiving mail one by one no longer crashes the game after a couple of minutes on low-memory emulators.
 
 ### Added
 
@@ -76,6 +77,7 @@ release note; they fold back in here when she ships.
 ### Fixed
 
 - **JP GET! dialog** (`EventGiftJp`, variant `jp`): とじる covered two of `EventGift`'s Close probes, so the capsule's Premium Ticket prize read as `FriendInfo` and the reveal loop never closed it. Probes the button's flat gold beside and above the text instead.
+- **Mail one by one**: each poll took three full captures (its own plus one per `gPages.matches`), suspected of exhausting 4 GB MuMu instances. `matches(page, frame?)` now reads a frame the caller holds; the mail loop passes its own.
 
 ## [5.0b2]
 

@@ -1339,11 +1339,15 @@ class PageRouter {
    *
    * This is also the only reader of an entry marked `targeted` (see
    * `PageDef`): `sweep` skips those, this does not.
+   *
+   * `frame`, when given, is read instead of a fresh capture and left for the
+   * caller to release -- a polling loop that already holds a screenshot should
+   * pass it, since each capture costs a full-frame allocation.
    */
-  matches(pageName: PageName): boolean {
+  matches(pageName: PageName, frame?: NativeImage): boolean {
     const tsum = this.owner();
     let found = false;
-    let img: NativeImage | null = null;
+    let img: NativeImage | null = frame ?? null;
     try {
       for (const pageId in Page) {
         const page = (Page as PageMap)[pageId];
@@ -1366,7 +1370,7 @@ class PageRouter {
         }
       }
     } finally {
-      if (img != null) {
+      if (img != null && img !== frame) {
         releaseImage(img);
       }
     }

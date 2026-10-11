@@ -228,13 +228,15 @@ Tsum.prototype.taskReceiveOneItem = function() {
       isOk = isSameColor(Button.outReceiveOk.color, p[1], 35);
       isOk2 = isSameColor(Button.outReceiveItemSetOk.color, p[2], 35);
       isTimeout = isSameColor(Button.outReceiveTimeout.color, p[3], 35);
-      isHeartWithoutCoins = gPages.matches(PageName.ReceiveHeartWithoutCoins);
+      // Both page checks read `img`: a capture each on top of it, every 200ms,
+      // is the suspected cause of the game crashing after ~2 min on 4 GB emulators.
+      isHeartWithoutCoins = gPages.matches(PageName.ReceiveHeartWithoutCoins, img);
       // The scan may only run with the mail list in front of it: a gift dialog
       // has gold buttons of its own, and a row found on one would aim the tap
       // at it. `isItem` is that proof -- a dialog never shows gold there --
       // and otherwise it is asked for: a scrolled list, or the ad's top row,
       // whose film icon sits where `outReceiveOne` reads gold.
-      if (isItem || gPages.matches(PageName.MailBox)) {
+      if (isItem || gPages.matches(PageName.MailBox, img)) {
         rowOffset = this.mailRowToOpen(img);
         if (rowOffset === MailNoRow) {
           // Whatever the fixed probe read, there is no row under it to open.
