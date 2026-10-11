@@ -55,7 +55,7 @@ release note; they fold back in here when she ships.
 - Copy debug info button: copies your device details and every setting, to paste when asking for help.
 
 **Fixes**
-- Receiving mail one by one relaunches the game and carries on if it crashes, and paces its taps so the crash comes less often (seen on MuMu Player).
+- Receiving mail one by one no longer crashes the game after a few minutes on low-memory emulators such as MuMu Player: it restarts the game when memory runs low, and relaunches it if it crashes anyway.
 
 ### Added
 
@@ -66,6 +66,7 @@ release note; they fold back in here when she ships.
 ### Fixed
 
 - **Mail one by one**: MuMu crashes the game (SIGSEGV in cocos2d `ZipFile` → `inflate`, called from `nativeGetLocalizedMessage` on the UI thread, under ARM translation). The loop now relaunches a game that left the foreground (up to 3 times, `ReceiveOneMaxRelaunches`) instead of tapping the home screen, and settles after Check and OK rather than polling through the animations. Each poll also reads one frame instead of three: `matches(page, frame?)` takes the caller's.
+- **Mail one by one, low memory**: the crash follows memory growth (2 min at 4 GB, 3 at 6 GB). Every 10 gifts the loop reads `MemAvailable` from `/proc/meminfo` and logs it (`gifts.receiveOne.freeMemory`); under 600 MB (provisional) it runs `taskTsumAppRestart` and reopens the mail. Needs Auto launch.
 
 ## [5.0b3]
 
