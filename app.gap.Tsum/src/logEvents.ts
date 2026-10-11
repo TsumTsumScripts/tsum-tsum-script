@@ -287,6 +287,8 @@ namespace Log {
     ReceiveOneOk              = 'gifts.receiveOne.ok',
     ReceiveOneProbe           = 'gifts.receiveOne.probe',
     ReceiveOneReceiveAll      = 'gifts.receiveOne.receiveAll',
+    ReceiveOneRelaunch        = 'gifts.receiveOne.relaunch',
+    ReceiveOneRelaunchLimit   = 'gifts.receiveOne.relaunchLimit',
     ReceiveOneRowUnderBar     = 'gifts.receiveOne.rowUnderBar',
     ReceiveOneSkipAd          = 'gifts.receiveOne.skipAd',
     ReceiveOneSkipMedal       = 'gifts.receiveOne.skipMedal',
