@@ -9,9 +9,9 @@ and only that. Feel free to perform updates in that folder as needed.
 
 GAP used to stand for *Game* Automation Platform. The app id is now
 `com.generalautomation.platform` and the device folder `GeneralAutomationPlatform`
-(the app moves the old `GameAutomationPlatform` folder once). The `game-automation-*`
-repos and the `game-automation-platform` GitHub org keep the old spelling on
-purpose (the host's `GENERAL-AUTOMATION-PLAN.md`).
+(the app moves the old `GameAutomationPlatform` folder once). The GitHub org is
+`general-automation-platform`; the `game-automation-*` repos keep the old spelling
+on purpose (the host's `GENERAL-AUTOMATION-PLAN.md`).
 
 **The development toolkit is a private sibling checkout, not part of this
 tree.** Comments and docs here cite its commands by name — `pages:eval`,
