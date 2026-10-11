@@ -1123,6 +1123,27 @@ npm run release:alpha -- --dry-run # show the entry, write nothing
 npm run release:alpha -- --yes     # skip the note review, publish the Summary as it stands
 ```
 
+### Private alpha to testers
+
+```bash
+npm run prerelease:alpha             # build Alpha and publish it to the private R2 testers' folder
+npm run prerelease:alpha -- --dry-run  # build, write build/prerelease/alpha/alpha.json, upload nothing
+npm run prerelease:alpha -- --keep-old # don't delete zips past HistoryLimit from R2
+```
+
+`release:alpha` publishes into the catalogue, which every player has as a
+source. `tools/release/prerelease.js` publishes to `<Prerelease.BaseUrl>/alpha/`
+(config.json) instead. That folder is listed in `Prerelease.Private`, so it is
+served only through the tester gate, at `<BaseUrl>/t/<token>/alpha/`, one token
+per tester (`GAP/tools/tester-gate`; the deploy dashboard's Testers panel hands
+them out). It reviews the note and builds like `release:*`, then reads the
+folder's catalogue from R2 to keep its `Versions` history, uploads the zip,
+checks the served zip hashes to `Hash`, uploads the catalogue last and checks it
+too. The checks read through the gate with your own token (`GAP_TESTER_TOKEN`, or
+`~/.gap/tester-token`). Needs `rclone` with the `r2:` remote. Beta stays a public
+opt-in: `release:beta`. The app side of the folder (APKs, starter) is in
+`game-automation-app/docs/PRERELEASE.md`.
+
 Each one builds its channel and writes three files into the catalogue repository:
 
 ```
@@ -1150,6 +1171,7 @@ about what this is, and there is one number to bump rather than two:
 | `Catalogue` | where a release is published, relative to the package |
 | `Channels.<name>` | `Name` (what the app shows), `Archive` (the zip's base name), `Directory` (under `Catalogue`), `Note` (a line appended to every release note on that channel) |
 | `MessageMaxChars` | the note is read on a phone; over this, the release refuses rather than shipping a card that scrolls; `0` turns the check off (currently off) |
+| `Prerelease` | `Remote` (rclone path) and `BaseUrl` (its public address) of the testers' folders; `prerelease:alpha` writes to `<folder>/alpha/`. `Private` lists the folders served only through the tester gate |
 | `HistoryLimit` | how many builds stay installable (default 5); older archives are deleted from the catalogue on the next release |
 | `MinHost`, `MaxHost` | the app versions a build runs on, both optional and inclusive; a channel may set its own. Written into `metadata.json` and each `Versions` row, and the app will not download or run a build outside them. Raise `MinHost` when the script starts using an API a newer app added |
 

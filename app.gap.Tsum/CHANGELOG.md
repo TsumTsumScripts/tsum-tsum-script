@@ -45,6 +45,14 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
+## [5.0b4]
+
+### Summary
+
+### Added
+
+- **Private alpha to testers**: `npm run prerelease:alpha` (`tools/release/prerelease.js`) builds Alpha and publishes it to the R2 folder in `config.json`'s `Prerelease`, served only through the tester gate, instead of the public catalogue. It keeps the folder's `Versions` history, uploads the zip before the catalogue and checks both served copies hash right. `release.js` now exports its note and build helpers for it.
+
 ## [5.0b3]
 
 ### Summary
