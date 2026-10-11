@@ -4,14 +4,14 @@ given name is defined, and what the invariants are. One read of it replaces most
 of a scan, and it is checked against the tree by `npm run map:check`, so it is
 current. Anything it does not cover is worth adding to it once found.
 
-These scripts target **General Automation Platform** (source at `../game-automation-app`),
+These scripts target **General Automation Platform** (source at `../general-automation-app`),
 and only that. Feel free to perform updates in that folder as needed.
 
 GAP used to stand for *Game* Automation Platform. The app id is now
 `com.generalautomation.platform` and the device folder `GeneralAutomationPlatform`
 (the app moves the old `GameAutomationPlatform` folder once). The GitHub org is
-`general-automation-platform`; the `game-automation-*` repos keep the old spelling
-on purpose (the host's `GENERAL-AUTOMATION-PLAN.md`).
+`general-automation-platform` and its repos are `general-automation-*` (renamed
+2026-10-11; GitHub redirects the old URLs).
 
 **The development toolkit is a private sibling checkout, not part of this
 tree.** Comments and docs here cite its commands by name — `pages:eval`,

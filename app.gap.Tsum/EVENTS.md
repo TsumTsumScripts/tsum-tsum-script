@@ -9,7 +9,7 @@ carries. The host defines none of it: `emitEvent(name, data)` hands a line to
 whichever consumers are attached, adding only a sequence number, a UTC
 timestamp and the script id. The transport, the two sockets and the wire
 format are the host's document --
-`../game-automation-app/docs/EVENTS.md`.
+`../general-automation-app/docs/EVENTS.md`.
 
 Names are declared once, in `src/scriptEvents.ts`, and reached through
 `ts.emit()`, which is silent on a host too old to have `emitEvent`.

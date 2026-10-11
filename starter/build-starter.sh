@@ -76,7 +76,7 @@ done
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 # The GAP app checkout the gates compare against (Config.kt). Override with GAP_APP_DIR.
-GAP_APP_DIR="${GAP_APP_DIR:-$root/../game-automation-app}"
+GAP_APP_DIR="${GAP_APP_DIR:-$root/../general-automation-app}"
 
 SRC="$root/starter"
 STAGE="$root/build/starter"
