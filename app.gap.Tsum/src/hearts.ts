@@ -64,11 +64,17 @@ const HeartStepSettleMs = 1500;
  */
 const HeartOkPresses = 3;
 /**
+ * Least time from the gift dialog fingerprinting to pressing OK. The dialog
+ * reads still ~70ms after it appears but ignores OK for a while longer: at
+ * ~80ms 8 of 21 presses were lost, at ~650ms from the heart tap none of 103.
+ */
+const HeartDialogReadyMs = 230;
+/**
  * Time from OK the gift dialog is given to close before the press counts as
- * lost. A press that landed closes it in ~0.45s, so the rest is slack for a
+ * lost. A press that landed closes it in ~0.3s, so the rest is slack for a
  * slow device.
  */
-const HeartOkLostMs = 1200;
+const HeartOkLostMs = 800;
 /**
  * Time from OK before a blue row with no toast counts as sent. The row turns
  * blue just before the toast arrives (~1.3s after OK), so trusting it sooner
@@ -222,7 +228,9 @@ Tsum.prototype.sendOneHeart = function(heart) {
     logDebug(Log.Hearts.SendStep, {step: 'noGiftDialog', y: heart.y});
     return false;
   }
+  const shownAt = Date.now();
   this.settleScreen(HeartStepSettleMs, 0, HeartPollMs);
+  this.sleepUntil(shownAt + HeartDialogReadyMs);
 
   let page = PageName.Unknown;
   for (let press = 1; press <= HeartOkPresses; press++) {
