@@ -1746,7 +1746,7 @@ interface Tsum {
   taskClickAssist(): void;
 
   // --- skills/cinderella.ts, skills/cptLy.ts ---------------------------
-  useCinderellaSkill(): void;
+  useCinderellaSkill(activatedAt?: number): void;
   /** `timing` defaults to the 60fps table; see CptLyTiming in skills/cptLy.ts. */
   useCptLySkill(activatedAt?: number, timing?: CptLyTiming): void;
 

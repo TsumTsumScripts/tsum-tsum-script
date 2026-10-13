@@ -51,10 +51,13 @@ release note; they fold back in here when she ships.
 
 **Fixes**
 - Bonus items no longer get scrambled when an event (JP) gives a free item that cannot be turned off.
+- Cinderella's skill clears far more: its strokes are drawn slowly enough for the game to follow, stay on the board, and fill her skill time at every level.
 
 ### Fixed
 
 - **Event-forced bonus item** (JP "流れ星に願いをかけよう!"): `checkGameItem` tapped it to turn it off, the popup that raised dimmed the screen, and the next pass read every toggle as on and tapped the lot. A toggle whose cost pill is the pink "1回無料" badge (`Button.outGameItemBadges`) is now left on, and each pass reads only a frame that fingerprints as `StartPage` (`awaitBonusItems`, which taps a popup away after 1.5s).
+- **Cinderella's right stroke** mirrored about `screenResize` rather than the square's centre (`screenResize - tsumWidth`), so it sat a tsum width right and its first column landed off the board.
+- **Cinderella's strokes** went through `linkTsums` at 10ms a point, under one frame, so the game skipped points and the chain broke mid-stroke. Now `cinderellaDraw` holds each point 18ms, strokes alternate until the level's window (`CinderellaConfig.windowMs`, 3–4s, player-observed) would close, instead of a fixed 10, and `beforeActivate` pops the hoarded bubbles so a stroke does not cross one.
 
 ## [5.0b4]
 
