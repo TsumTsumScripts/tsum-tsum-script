@@ -52,6 +52,11 @@ release note; they fold back in here when she ships.
 **Fixes**
 - Bonus items no longer get scrambled when an event (JP) gives a free item that cannot be turned off.
 - Cinderella's skill clears far more: its strokes are drawn slowly enough for the game to follow, stay on the board, and fill her skill time at every level.
+- Sending hearts through the ranking is about 20% faster.
+
+### Changed
+
+- **Heart send waits** (`sendOneHeart`): a debug run beside a screen recording put each heart at 2.5 s, ~0.6 s of it three `settleScreen` calls watching a screen already still. Each step now polls its next page every 60 ms (`HeartPollMs`, one capture a look) with time budgets in place of poll counts; the dialog and the toast get a lead-free 60 ms settle for their fade-in; the toast's dismissal waits for `FriendPage` and taps again only while the toast still shows (`dismissHeartToast`). The end-of-screenful toast check is one look unless a no-toast send may still raise one. `settleScreen` takes optional `leadMs` and `spacingMs`.
 
 ### Fixed
 
