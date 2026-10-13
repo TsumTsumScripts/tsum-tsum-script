@@ -204,16 +204,12 @@ Tsum.prototype.waitForHeartPage = function(want, maxMs, abortOn, sentRow) {
     if (elapsed >= maxMs) {
       return page;
     }
-    // Acted on only when two looks agree: the toast's first fade-in frame reads
-    // as `Received`, and tapping it away cost 38% of sends ~0.6s.
-    const held = page === previous;
-    if (held && page === PageName.FriendInfo) {
-      // The tap opened the friend's card instead of the gift dialog. Settled,
-      // so the next look does not tap the closing card again.
+    // The tap opened the friend's card instead of the gift dialog. Acted on
+    // only when two looks agree, since a fading toast or dialog can read as
+    // another page for a frame; settled, so the next look does not tap the
+    // closing card again.
+    if (page === PageName.FriendInfo && previous === PageName.FriendInfo) {
       this.tap(Page.FriendInfo.back);
-      this.settleScreen(HeartStepSettleMs);
-    } else if (held && page === PageName.Received) {
-      this.tap(Page.Received.back);
       this.settleScreen(HeartStepSettleMs);
     }
     this.sleep(HeartPollMs);
