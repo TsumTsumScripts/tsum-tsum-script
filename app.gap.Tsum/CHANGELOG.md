@@ -56,7 +56,7 @@ release note; they fold back in here when she ships.
 
 ### Changed
 
-- **Heart send waits** (`sendOneHeart`): a debug run beside a screen recording put each heart at 2.5 s, ~0.6 s of it three `settleScreen` calls watching a screen already still. Each step now polls its next page every 60 ms (`HeartPollMs`, one capture a look) with time budgets in place of poll counts; the dialog and the toast get a lead-free 60 ms settle for their fade-in; the toast's dismissal waits for `FriendPage` and taps again only while the toast still shows (`dismissHeartToast`). The end-of-screenful toast check is one look unless a no-toast send may still raise one. `settleScreen` takes optional `leadMs` and `spacingMs`.
+- **Heart send waits** (`sendOneHeart`): a debug run beside a screen recording put each heart at 2.5 s, ~0.6 s of it three `settleScreen` calls watching a screen already still. Each step now polls its next page every 60 ms (`HeartPollMs`, one capture a look) with time budgets in place of poll counts; the dialog and the toast get a lead-free 60 ms settle for their fade-in; the toast's dismissal waits for `FriendPage` and taps again only while the toast still shows (`dismissHeartToast`). OK still waits until the dialog has been up 230 ms (`HeartDialogReadyMs`; earlier presses are ignored), and `FriendInfo`/`Received` are tapped away only when two looks agree, since the toast's first frame reads as `Received`. The end-of-screenful toast check is one look unless a no-toast send may still raise one. `settleScreen` takes optional `leadMs` and `spacingMs`.
 
 ### Fixed
 
