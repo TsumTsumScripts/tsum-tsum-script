@@ -186,7 +186,9 @@ Tsum.prototype.heartRowSent = function(heart) {
 Tsum.prototype.waitForHeartPage = function(want, maxMs, abortOn, sentRow) {
   const startedAt = Date.now();
   let page = PageName.Unknown;
+  let previous = PageName.Unknown;
   while (this.isRunning) {
+    previous = page;
     page = gPages.detect(1, 0, heartSweepPages());
     const elapsed = Date.now() - startedAt;
     if (page === want) {
@@ -202,12 +204,15 @@ Tsum.prototype.waitForHeartPage = function(want, maxMs, abortOn, sentRow) {
     if (elapsed >= maxMs) {
       return page;
     }
-    if (page === PageName.FriendInfo) {
+    // Acted on only when two looks agree: the toast's first fade-in frame reads
+    // as `Received`, and tapping it away cost 38% of sends ~0.6s.
+    const held = page === previous;
+    if (held && page === PageName.FriendInfo) {
       // The tap opened the friend's card instead of the gift dialog. Settled,
       // so the next look does not tap the closing card again.
       this.tap(Page.FriendInfo.back);
       this.settleScreen(HeartStepSettleMs);
-    } else if (page === PageName.Received) {
+    } else if (held && page === PageName.Received) {
       this.tap(Page.Received.back);
       this.settleScreen(HeartStepSettleMs);
     }
