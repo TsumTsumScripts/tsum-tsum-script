@@ -52,7 +52,7 @@ release note; they fold back in here when she ships.
 **Fixes**
 - Bonus items no longer get scrambled when an event (JP) gives a free item that cannot be turned off.
 - Cinderella's skill clears far more: its strokes are drawn slowly enough for the game to follow, stay on the board, and fill her skill time at every level.
-- Sending hearts through the ranking is about 20% faster.
+- Sending hearts through the ranking is about 15% faster.
 
 ### Changed
 
