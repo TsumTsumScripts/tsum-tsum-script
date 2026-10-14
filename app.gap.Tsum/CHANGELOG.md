@@ -45,7 +45,7 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
-## [5.0b6]
+## [5.0b7]
 
 ### Summary
 
@@ -56,19 +56,28 @@ release note; they fold back in here when she ships.
 - The starter page has a Stop button, so the tool no longer has to be closed with Ctrl+C or by closing its window.
 
 **Fixes**
-- Sending hearts through the ranking is about 15% faster.
 - Sending hearts on the Japanese game no longer stalls about 5 seconds after every heart.
 
 ### Changed
 
 - **Windows starter log** (starter 1.4): `gap.ps1` transcribes each run to `starter-log.txt` (previous run kept as `.prev.txt`), tsum-stats' stderr included, with a trap for the stack trace and the exit code at the end. `Start-Windows.cmd` now pauses on any non-zero exit (negative ones used to close the window) and writes the log itself when PowerShell never reached `gap.ps1`; only new bundles get it, since updates never replace that file.
 - **Starter Stop button**: the page's Stop (tsum-stats `POST /api/starter/quit`) shuts the server down for exit 0, so the launcher ends and its window closes. Needs the tsum-stats that adds it; the console hint now points to it.
-- **Build warns on a dev-signed `dist/`**: with `GAP_SCRIPT_KEY` unset, `dist/` is signed with the dev key, which only a GAP started with `--cloud-script-key` trusts; the build now says so.
-- **Heart send waits** (`sendOneHeart`): a debug run beside a screen recording put each heart at 2.5 s, ~0.6 s of it three `settleScreen` calls watching a screen already still. Each step now polls its next page every 60 ms (`HeartPollMs`, one capture a look) with time budgets in place of poll counts; the dialog and the toast get a lead-free 60 ms settle for their fade-in; the toast's dismissal waits for `FriendPage` and taps again only while the toast still shows (`dismissHeartToast`). OK still waits until the dialog has been up 230 ms (`HeartDialogReadyMs`; earlier presses are ignored), and `Received` (the mailbox panel) is out of `heartSweepPages()`: the toast's first frame fingerprinted as it and was tapped away, ~0.6 s on 38% of sends. `FriendInfo` is tapped away only when two looks agree. The end-of-screenful toast check is one look unless a no-toast send may still raise one. `settleScreen` takes optional `leadMs` and `spacingMs`.
 
 ### Fixed
 
 - **JP heart toast never matched**: `HeartSent`'s panel probe sat at (540, 890), under the JP wording ("ハートをプレゼントしました!", near full width), so every send waited out `HeartToastMs` (5 s), logged `Hearts.NoToast` and went uncounted. Moved to (540, 820), above the text; within 14 per channel on every toast frame of a JP and an EN recording.
+
+## [5.0b6]
+
+### Summary
+
+**Fixes**
+- Sending hearts through the ranking is about 15% faster.
+
+### Changed
+
+- **Build warns on a dev-signed `dist/`**: with `GAP_SCRIPT_KEY` unset, `dist/` is signed with the dev key, which only a GAP started with `--cloud-script-key` trusts; the build now says so.
+- **Heart send waits** (`sendOneHeart`): a debug run beside a screen recording put each heart at 2.5 s, ~0.6 s of it three `settleScreen` calls watching a screen already still. Each step now polls its next page every 60 ms (`HeartPollMs`, one capture a look) with time budgets in place of poll counts; the dialog and the toast get a lead-free 60 ms settle for their fade-in; the toast's dismissal waits for `FriendPage` and taps again only while the toast still shows (`dismissHeartToast`). OK still waits until the dialog has been up 230 ms (`HeartDialogReadyMs`; earlier presses are ignored), and `Received` (the mailbox panel) is out of `heartSweepPages()`: the toast's first frame fingerprinted as it and was tapped away, ~0.6 s on 38% of sends. `FriendInfo` is tapped away only when two looks agree. The end-of-screenful toast check is one look unless a no-toast send may still raise one. `settleScreen` takes optional `leadMs` and `spacingMs`.
 
 ## [5.0b5]
 
