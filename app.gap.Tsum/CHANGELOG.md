@@ -45,6 +45,17 @@ long reasoning belong in the design docs (`OBSCURED_BOARD.md`, `LOGGING.md`,
 while she stays off the production build, so her work does not reach the
 release note; they fold back in here when she ships.
 
+## [5.0b10]
+
+### Summary
+
+**Fixes**
+- Auto launch no longer waits 30 seconds for a game that is already open on MuMu (Android 15).
+
+### Fixed
+
+- **Focus read on multi-display dumps** (`src/appLifecycle.ts`, `focusedPackage`): GAP hosts before 3.3 (alpha: 4.0) parse only the first `mCurrentFocus` line, which MuMu on Android 15 prints as `null` for another display, so `isAppOn` never saw the game and every `startApp` waited out `AppUpWaitMs` (`app.upTimeout`, `looks:0`). A host answer that is not a package name now falls back to reading every `mCurrentFocus`, then `mFocusedApp`, line of `dumpsys window`. The host has the same fix from 3.3 (production) and 4.0 (alpha).
+
 ## [5.0b9]
 
 ### Summary
@@ -53,13 +64,6 @@ release note; they fold back in here when she ships.
 
 *Boxes*
 - Buy open capsule box until sold out: open a capsule in the store yourself (such as the JP one on the store's second page), press Now, and it is bought one at a time until it is gone.
-
-**Fixes**
-- Auto launch no longer waits 30 seconds for a game that is already open on MuMu (Android 15).
-
-### Fixed
-
-- **Focus read on multi-display dumps** (`src/appLifecycle.ts`, `focusedPackage`): GAP hosts before 3.3 (alpha: 4.0) parse only the first `mCurrentFocus` line, which MuMu on Android 15 prints as `null` for another display, so `isAppOn` never saw the game and every `startApp` waited out `AppUpWaitMs` (`app.upTimeout`, `looks:0`). A host answer that is not a package name now falls back to reading every `mCurrentFocus`, then `mFocusedApp`, line of `dumpsys window`. The host has the same fix from 3.3 (production) and 4.0 (alpha).
 
 ### Added
 
