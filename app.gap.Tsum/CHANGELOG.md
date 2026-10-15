@@ -52,6 +52,10 @@ release note; they fold back in here when she ships.
 **Fixes**
 - Auto launch no longer waits 30 seconds for a game that is already open on MuMu (Android 15).
 
+### Changed
+
+- **`MinHost` raised to 3.3** (`config.json`): the first production host with the multi-display focus fix.
+
 ### Fixed
 
 - **Focus read on multi-display dumps** (`src/appLifecycle.ts`, `focusedPackage`): GAP hosts before 3.3 (alpha: 4.0) parse only the first `mCurrentFocus` line, which MuMu on Android 15 prints as `null` for another display, so `isAppOn` never saw the game and every `startApp` waited out `AppUpWaitMs` (`app.upTimeout`, `looks:0`). A host answer that is not a package name now falls back to reading every `mCurrentFocus`, then `mFocusedApp`, line of `dumpsys window`. The host has the same fix from 3.3 (production) and 4.0 (alpha).
