@@ -53,7 +53,7 @@ const local = (...parts) => path.join(projectDir, ...parts);
 const nodeBin = process.execPath;
 const tsc = local('node_modules', 'typescript', 'bin', 'tsc');
 
-const DEPLOY_DIR = '/sdcard/Download/GameAutomationPlatform/scripts/DEV';
+const DEPLOY_DIR = '/sdcard/Download/GeneralAutomationPlatform/scripts/DEV';
 
 /**
  * The host's install ledger, written beside a DEV push so the app lists the
@@ -92,6 +92,7 @@ const PAGE_SCRIPTS = [
   { file: 'build/settingDefaults.js' },
   { file: 'build/qrCode.js', verify: 'names:qrMatrix' },
   { file: 'build/presets.js', verify: 'names:presetsLoad,presetMatchName' },
+  { file: 'build/pageStyle.js', verify: 'names:pageStyle,applyPageStyle' },
 ].map((job) => ({ in: job.file, out: job.file, ecma: 5, verify: job.verify }));
 
 // config.json is the release identity: the game and one entry per channel. The
@@ -141,7 +142,8 @@ const substitute = (text) => text
 
 /** Stage the page assets so tools/inline/inline.js can resolve them by name. */
 function stageAssets(log) {
-  for (const name of ['index.html', 'index.css', 'felt.css', 'quickbar.html', 'quickbar.css', 'feltQuickbar.css', 'gapTokens.css']) {
+  for (const name of ['index.html', 'index.css', 'felt.css', 'a11y.css', 'quickbar.html', 'quickbar.css',
+    'feltQuickbar.css', 'a11yQuickbar.css', 'gapTokens.css']) {
     fs.copyFileSync(local('src', name), local('build', name));
   }
   // The GAP fonts as data URIs: the pages are opened from file:// on a device
@@ -230,6 +232,12 @@ function signDist(log) {
   const manifest = signScript({ dir: local('dist'), script: id[1], version: pkgVersion,
     keyPem: fs.readFileSync(keyFile, 'utf8') });
   log(`[build] dist/${SIGNATURE_FILE}: ${id[1]} ${pkgVersion}, ${Object.keys(manifest.files).length} files\n`);
+  // The dev key is only trusted by a GAP started with --cloud-script-key (the Devkit
+  // does); an app on its built-in key logs "signature does not verify".
+  if (!process.env.GAP_SCRIPT_KEY) {
+    log('[build] signed with the DEV script key: only a GAP started with --cloud-script-key trusts it.'
+      + ' Set GAP_SCRIPT_KEY to the release key to test with the built-in key.\n');
+  }
 }
 
 /**
@@ -396,6 +404,7 @@ async function main() {
   console.log(`[build] done in ${elapsed}s`);
 
   if (has('adb')) {
+    if (!valueOf('device')) await connectRemoteEmulators();
     const devices = valueOf('device') ? [valueOf('device')] : connectedEmulators();
     const failed = [];
     const ledger = devLedger();
@@ -423,23 +432,84 @@ async function main() {
   }
 }
 
-// Every emulator in `adb devices`: `emulator-NNNN`, or a local TCP serial such
-// as BlueStacks' `127.0.0.1:5555`. Physical devices and offline entries are skipped.
+// Emulators on other computers: GAP_REMOTE_HOSTS="192.168.1.50 pc2", as in the
+// starter (starter/README.txt). Each host's emulator ports must be forwarded onto the LAN.
+const remoteHosts = () => (process.env.GAP_REMOTE_HOSTS || '').split(/[\s,]+/).filter(Boolean);
+
+// The starter's emulator ports (starter/bin/posix/gap-device.sh EMU_PORTS) plus GAP_EXTRA_PORTS.
+const EMU_PORTS = [16384, 16416, 16448, 16480, 7555, 5555, 5557, 5559, 5561,
+  62001, 62025, 62026, 62027, 21503, 21513, 21523];
+
+// `adb connect` every open emulator port on GAP_REMOTE_HOSTS. A TCP knock
+// first, because a firewalled port can hang `adb connect` for a minute. A
+// port-forwarded port with no emulator behind it accepts the knock and hangs
+// `adb connect` instead, so each connect is cut off after 3 s and the offline
+// rows they leave are disconnected.
+async function connectRemoteEmulators() {
+  const hosts = remoteHosts();
+  if (!hosts.length) return;
+  const net = require('net');
+  const extra = (process.env.GAP_EXTRA_PORTS || '').split(/[\s,]+/).filter(Boolean).map(Number);
+  const open = (host, port) => new Promise((resolve) => {
+    const socket = net.connect({ host, port, timeout: 500 });
+    const done = (ok) => { socket.destroy(); resolve(ok); };
+    socket.once('connect', () => done(true));
+    socket.once('timeout', () => done(false));
+    socket.once('error', () => done(false));
+  });
+  const { execFile } = require('child_process');
+  const adb = (args, timeout) => new Promise((resolve) => execFile('adb', args, { timeout }, () => resolve()));
+  await Promise.all(hosts.flatMap((host) => [...EMU_PORTS, ...extra].map(async (port) => {
+    if (await open(host, port)) await adb(['connect', `${host}:${port}`], 3000);
+  })));
+  for (const line of execFileSync('adb', ['devices'], { encoding: 'utf8' }).split('\n').slice(1)) {
+    const [serial, state] = line.trim().split(/\s+/);
+    if (state === 'offline' && hosts.includes(/^(.+):\d+$/.exec(serial)?.[1])) await adb(['disconnect', serial], 5000);
+  }
+}
+
+// Every emulator in `adb devices`: `emulator-NNNN`, a local TCP serial such as
+// BlueStacks' `127.0.0.1:5555`, or one on GAP_REMOTE_HOSTS. Physical devices and
+// offline entries are skipped.
 function connectedEmulators() {
   const out = execFileSync('adb', ['devices'], { encoding: 'utf8' });
+  const loopback = ['127.0.0.1', 'localhost'];
+  const remote = remoteHosts();
   const serials = [];
   for (const line of out.split('\n').slice(1)) {
     const [serial, state] = line.trim().split(/\s+/);
     if (state !== 'device') continue;
-    if (/^emulator-\d+$/.test(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) serials.push(serial);
+    const host = /^(.+):\d+$/.exec(serial)?.[1];
+    if (/^emulator-\d+$/.test(serial) || loopback.includes(host) || remote.includes(host)) serials.push(serial);
   }
   // An emulator reached over `adb connect` also shows as 127.0.0.1:<console port + 1>; push once.
   const unique = serials.filter((serial) => {
-    const port = /:(\d+)$/.exec(serial);
+    const port = /^(?:127\.0\.0\.1|localhost):(\d+)$/.exec(serial);
     return !port || !serials.includes(`emulator-${Number(port[1]) - 1}`);
   });
-  if (!unique.length) throw new Error('no emulator listed in `adb devices`; pass --device SERIAL');
-  return unique;
+  // A remote emulator forwarded on two ports (MuMu's 16384 and 5555) is one device:
+  // boot_id is the same on both. Same merge as the starter's: the 5xxx port is
+  // kept, and a remote emulator's other connections are dropped.
+  const is5xxx = (serial) => /:5\d{3}$/.test(serial);
+  unique.sort((a, b) => is5xxx(b) - is5xxx(a));
+  const seen = new Set();
+  const merged = unique.filter((serial) => {
+    let id = serial;
+    try {
+      id = execFileSync('adb', ['-s', serial, 'shell', 'cat', '/proc/sys/kernel/random/boot_id'],
+        { encoding: 'utf8', timeout: 10000 }).trim() || serial;
+    } catch { /* unreadable: keep it under its serial */ }
+    if (seen.has(id)) {
+      if (remote.includes(/^(.+):\d+$/.exec(serial)?.[1])) {
+        try { execFileSync('adb', ['disconnect', serial], { timeout: 5000 }); } catch { /* already gone */ }
+      }
+      return false;
+    }
+    seen.add(id);
+    return true;
+  });
+  if (!merged.length) throw new Error('no emulator listed in `adb devices`; pass --device SERIAL or set GAP_REMOTE_HOSTS');
+  return merged;
 }
 
 main().catch((err) => {

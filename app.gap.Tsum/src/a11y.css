@@ -1,0 +1,466 @@
+/*
+ * The settings page's Accessible style, the default (src/pageStyle.ts switches
+ * between it and felt.css). The felt colours, flat: no weave, stitching, tilts,
+ * display face or motion. Larger type and targets, solid 2px edges. Colours
+ * keep text at 7:1 and control edges at 3:1 against what they sit on.
+ *
+ * Every size is a `--a-*` variable: Small by default, the others by the root's
+ * `data-size` (the Appearance panel). index.css still owns layout.
+ */
+
+/* --- Size: Small, then the other three ------------------------------------ */
+
+:root {
+    /* Control height: buttons, tabs, steppers, selects. */
+    --a-ctl: 36px;
+    /* Button and tab text. */
+    --a-font: 14px;
+    --a-title: 15px;
+    --a-help: 13.5px;
+    --a-group: 16px;
+    --a-switch-w: 46px;
+    --a-switch-h: 27px;
+}
+
+[data-size="xs"] {
+    --a-ctl: 32px;
+    --a-font: 13px;
+    --a-title: 14px;
+    --a-help: 13px;
+    --a-group: 15px;
+    --a-switch-w: 42px;
+    --a-switch-h: 24px;
+}
+
+[data-size="m"] {
+    --a-ctl: 40px;
+    --a-font: 15px;
+    --a-title: 16px;
+    --a-help: 14px;
+    --a-group: 17px;
+    --a-switch-w: 50px;
+    --a-switch-h: 29px;
+}
+
+[data-size="l"] {
+    --a-ctl: 44px;
+    --a-font: 16px;
+    --a-title: 17px;
+    --a-help: 15px;
+    --a-group: 19px;
+    --a-switch-w: 56px;
+    --a-switch-h: 32px;
+}
+
+/* --- Colour ---------------------------------------------------------------- */
+
+:root,
+[data-theme="dark"] {
+    --ctl: var(--a-ctl);
+    --head-h: calc(var(--a-ctl) + 12px);
+    /* The device's own font: Roboto on Android. */
+    --font-sans: system-ui, "Roboto", "Noto Sans JP", sans-serif;
+
+    --bg: #1c1b2b;
+    --surface: #2e2d45;
+    --well: #1c1b2b;
+    /* Control edges. */
+    --line: #a9a4c8;
+    /* Card edges and dividers: structure, not controls. */
+    --rule: #55527a;
+    --ink: #ffffff;
+    --ink-muted: #e2ddef;
+    /* Marigold: headings and the focus ring. */
+    --accent: #ffb454;
+    /* Jade: on and selected. */
+    --on: #5cc9a7;
+    --on-ink: #08261d;
+    /* Periwinkle: buttons. */
+    --btn: #9db4ff;
+    --btn-ink: #141d40;
+    --danger: #ff8fab;
+    --danger-ink: #33101b;
+    --divider: var(--rule);
+}
+
+[data-theme="light"] {
+    --bg: #f3ead9;
+    --surface: #fffaf0;
+    --well: #ffffff;
+    --line: #5c5140;
+    --rule: #c9bb9c;
+    --ink: #1a1424;
+    --ink-muted: #3d3450;
+    --accent: #6b3800;
+    --on: #1a6b52;
+    --on-ink: #ffffff;
+    --btn: #2f4aa8;
+    --btn-ink: #ffffff;
+    --danger: #a3213f;
+    --danger-ink: #ffffff;
+}
+
+html,
+body {
+    background: var(--bg);
+}
+
+body {
+    color: var(--ink);
+    font-size: var(--a-font);
+    line-height: 1.5;
+}
+
+:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+}
+
+*,
+*::before,
+*::after {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* --- App bar and tabs ------------------------------------------------------ */
+
+.app-bar,
+.tab-strip {
+    background: var(--bg);
+    border-bottom: 2px solid var(--rule);
+}
+
+.preset-select,
+.copy-code,
+.icon-button,
+.tab-button,
+.tab-more,
+.row-button,
+.share-actions button,
+.reset-button {
+    min-height: var(--a-ctl);
+    height: auto;
+    border: 2px solid var(--line);
+    outline: 0;
+    background: var(--surface);
+    box-shadow: none;
+    color: var(--ink);
+    font-size: var(--a-font);
+    font-weight: 700;
+}
+
+.preset-select {
+    padding: 0 12px 0 16px;
+    border-radius: 12px;
+}
+
+/* Disabled: a solid structure-coloured edge and muted text, not index.css's dashes. */
+.preset-select:disabled,
+.setting-select:disabled {
+    border-color: var(--rule);
+    background: transparent;
+    outline: 0;
+    color: var(--ink-muted);
+}
+
+.setting-select:disabled {
+    box-shadow: inset 0 0 0 2px var(--rule);
+}
+
+.preset-caret,
+.select-caret {
+    color: var(--ink);
+}
+
+.icon-button {
+    width: var(--a-ctl);
+    border-radius: 12px;
+}
+
+.style-toggle {
+    font-size: var(--a-font);
+}
+
+.copy-code {
+    padding: 0 14px;
+    border-radius: 12px;
+}
+
+.tab-bar {
+    gap: 8px;
+    padding: 6px 2px;
+}
+
+.tab-button {
+    padding: 0 16px;
+    border-radius: 12px;
+}
+
+/* Filled and underlined, so the open tab is not told by colour alone. */
+.tab-button[aria-selected="true"] {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 5px;
+}
+
+.tab-scroll::before {
+    background: linear-gradient(to left, transparent, var(--bg) 70%);
+}
+
+.tab-scroll::after {
+    background: linear-gradient(to right, transparent, var(--bg) 70%);
+}
+
+/* index.css centres it with translateY; keep that. */
+.tab-more {
+    min-height: calc(var(--a-ctl) - 8px);
+    height: calc(var(--a-ctl) - 8px);
+    padding: 0 10px;
+    font-size: calc(var(--a-font) - 1px);
+}
+
+/* --- Save and Appearance panels -------------------------------------------- */
+
+.preset-panel {
+    background: var(--surface);
+    border-bottom: 2px solid var(--rule);
+    box-shadow: none;
+}
+
+.choice-legend {
+    color: var(--accent);
+    font-size: var(--a-font);
+    font-weight: 800;
+}
+
+.choice span {
+    min-height: var(--a-ctl);
+    border-radius: 12px;
+    background: var(--well);
+    box-shadow: inset 0 0 0 2px var(--line);
+    color: var(--ink);
+    font-size: var(--a-font);
+}
+
+/* Filled and underlined, as the open tab. */
+.choice input:checked + span {
+    background: var(--on);
+    box-shadow: inset 0 0 0 2px var(--on);
+    color: var(--on-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+}
+
+.choice input:focus-visible + span {
+    outline-color: var(--accent);
+}
+
+.choice-note {
+    color: var(--ink-muted);
+    font-size: var(--a-help);
+}
+
+/* --- Groups and rows ------------------------------------------------------- */
+
+.group {
+    padding-top: 16px;
+}
+
+.group-title {
+    color: var(--accent);
+    font-size: var(--a-group);
+    line-height: 1.35;
+    font-weight: 800;
+}
+
+.group-rows {
+    border: 2px solid var(--rule);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: none;
+}
+
+.setting-row {
+    min-height: calc(var(--a-ctl) + 16px);
+    padding: calc(var(--a-ctl) / 4 - 1px) 16px;
+}
+
+.setting-row:not(:first-child) {
+    border-top: 2px solid var(--rule);
+}
+
+.row-title {
+    color: var(--ink);
+    font-size: var(--a-title);
+    line-height: 1.4;
+    font-weight: 700;
+}
+
+.row-help {
+    color: var(--ink-muted);
+    font-size: var(--a-help);
+    line-height: 1.45;
+}
+
+/* --- Switch: on is jade with a tick ---------------------------------------- */
+
+.setting-switch {
+    width: var(--a-switch-w);
+    height: var(--a-switch-h);
+    background: var(--well);
+    box-shadow: inset 0 0 0 2px var(--line);
+}
+
+.setting-switch::before {
+    left: 6px;
+    width: calc(var(--a-switch-h) - 12px);
+    height: calc(var(--a-switch-h) - 12px);
+    background: var(--line);
+}
+
+.setting-switch:checked {
+    background: var(--on);
+    box-shadow: inset 0 0 0 2px var(--on);
+}
+
+/* The knob sits 4px in from the right; the tick is centred on it at 2/3 its size. */
+.setting-switch:checked::before {
+    left: calc(var(--a-switch-w) - var(--a-switch-h) + 4px);
+    width: calc(var(--a-switch-h) - 8px);
+    height: calc(var(--a-switch-h) - 8px);
+    background: var(--on-ink);
+}
+
+.setting-switch:checked::after {
+    left: calc(var(--a-switch-w) - var(--a-switch-h) + 4px + (var(--a-switch-h) - 8px) / 6);
+    width: calc((var(--a-switch-h) - 8px) * 2 / 3);
+    height: calc((var(--a-switch-h) - 8px) * 2 / 3);
+    background: var(--on);
+}
+
+/* --- Stepper --------------------------------------------------------------- */
+
+.stepper {
+    gap: 6px;
+}
+
+.stepper .setting-number {
+    width: calc(var(--a-ctl) + 6px);
+    height: var(--a-ctl);
+    color: var(--ink);
+    font-size: calc(var(--a-title) + 1px);
+    font-weight: 800;
+}
+
+.step,
+.step-fine {
+    min-width: var(--a-ctl);
+    height: var(--a-ctl);
+    border-radius: 12px;
+    background: var(--btn);
+    box-shadow: none;
+    outline: 0;
+    color: var(--btn-ink);
+    font-size: var(--a-font);
+    font-weight: 800;
+}
+
+.step:disabled {
+    background: transparent;
+    box-shadow: inset 0 0 0 2px var(--rule);
+    outline: 0;
+    color: var(--ink-muted);
+    opacity: .7;
+}
+
+/* --- Selects and text fields ----------------------------------------------- */
+
+.setting-select,
+.setting-text,
+.preset-input,
+.share-code {
+    min-height: var(--a-ctl);
+    height: auto;
+    padding: 0 12px 0 14px;
+    border-radius: 12px;
+    background: var(--well);
+    box-shadow: inset 0 0 0 2px var(--line);
+    outline: 0;
+    color: var(--ink);
+    font-size: var(--a-font);
+    font-weight: 700;
+}
+
+.share-code {
+    padding: 12px 14px;
+}
+
+/* --- Buttons: periwinkle; primary jade, danger rose ------------------------ */
+
+.row-button,
+.share-actions button,
+.reset-button {
+    padding: 0 18px;
+    border-color: var(--btn);
+    border-radius: 12px;
+    background: var(--btn);
+    color: var(--btn-ink);
+}
+
+.preset-primary,
+.share-actions .share-apply {
+    border-color: var(--on);
+    background: var(--on);
+    color: var(--on-ink);
+}
+
+.preset-danger {
+    border-color: var(--danger);
+    background: var(--danger);
+    color: var(--danger-ink);
+}
+
+/* --- Bottom sheet ---------------------------------------------------------- */
+
+.select-list {
+    border: 2px solid var(--line);
+    border-radius: 20px 20px 0 0;
+    background: var(--surface);
+    box-shadow: none;
+}
+
+.select-option {
+    min-height: calc(var(--a-ctl) + 4px);
+    border-radius: 12px;
+    font-size: var(--a-title);
+    font-weight: 600;
+}
+
+.select-option[aria-selected="true"] {
+    background: var(--on);
+    box-shadow: none;
+    outline: 0;
+    color: var(--on-ink);
+}
+
+.select-option[aria-selected="true"]::after {
+    background: var(--on-ink);
+}
+
+.select-group {
+    color: var(--accent);
+    font-size: var(--a-help);
+    font-weight: 800;
+}
+
+/* The version line in the foot. */
+.app-title {
+    color: var(--ink-muted);
+    font-family: var(--font-sans);
+    font-size: var(--a-help);
+}

@@ -103,6 +103,22 @@ declare const enum PageMessage {
   /** The settings page's answer to `CopyShareCode`. */
   ShareCodeCopied = 'shareCodeCopied',
   ShareCodeNotCopied = 'shareCodeNotCopied',
+  /** The page style or theme changed on the settings page; re-read both (src/pageStyle.ts). */
+  Style = 'style',
+}
+
+/** The look both pages use: Accessible (the default) or the felt skin. src/pageStyle.ts. */
+declare const enum PageStyle {
+  Accessible = 'a11y',
+  Felt = 'felt',
+}
+
+/** The Accessible style's control and type size (`data-size`, src/a11y.css). Settings page only. */
+declare const enum PageSize {
+  ExtraSmall = 'xs',
+  Small = 's',
+  Medium = 'm',
+  Large = 'l',
 }
 
 /**
@@ -119,6 +135,12 @@ declare const enum StorageKey {
   Settings = 'tsumtsumsettings2',
   /** The named configurations both pages switch between -- see src/presets.ts. */
   Presets = 'tsumtsumpresets',
+  /** 'dark' or 'light' once the user picks one; absent follows the device. */
+  Theme = 'tsumtsumtheme',
+  /** A `PageStyle`; absent is Accessible. */
+  Style = 'tsumtsumstyle',
+  /** A `PageSize`; absent is Small. */
+  Size = 'tsumtsumsize',
 }
 
 /** Anything one settings row can hold. */
@@ -156,6 +178,8 @@ declare const enum RowKey {
   ShareListing = 'shareListing',
   /** The preset export buttons; their status line is inserted under this row. */
   ExportPresets = 'exportPresets',
+  /** The Copy debug info button: device facts and every setting, for a bug report. */
+  CopyDebugInfo = 'copyDebugInfo',
   /** The build stamp on the Debug tab. */
   BuildDate = 'buildDate',
   /** The Report button; its note box and status are inserted under this row. */
@@ -164,6 +188,8 @@ declare const enum RowKey {
   DetectMyTsum = 'detectMyTsum',
   /** The Tsum List export's Now button. */
   ExportTsumList = 'exportTsumList',
+  /** Buy Open Capsule's Now button. */
+  BuyOpenCapsule = 'buyOpenCapsule',
 }
 
 /** One row of the settings schema (a `rows` entry of a `GroupSpec`). */
@@ -175,7 +201,7 @@ interface SettingSpec {
    * value, which is why the skill, bubble, box, round-cap and board-model
    * vocabularies are in the union too.
    */
-  key?: SettingKey | RowKey | SkillType | BubbleStrategy | BoxType | BoxPurchaseSize | MaxRoundAction | StopAfterAction;
+  key?: SettingKey | RowKey | SkillType | BubbleStrategy | BoxType | BoxPurchaseSize | MaxRoundAction | StopAfterAction | GameRegion;
   /** A `UiText` key, resolved at render time -- see `src/strings.d.ts`. */
   title?: UiText;
   /**
@@ -299,6 +325,11 @@ interface SettingButton {
   remote?: string;
   /** GAP Companion only: a question the phone asks before running `remote`. */
   confirm?: UiText;
+  /**
+   * GAP Companion only: `remote` also works with the script stopped, starting a
+   * run for it alone (`ChoreNowFlags`, src/index.ts). Otherwise it needs a run.
+   */
+  whenStopped?: boolean;
 }
 
 /** One card inside a tab panel: a heading, an optional note, and its rows. */

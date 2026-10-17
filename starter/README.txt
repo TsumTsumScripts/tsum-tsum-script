@@ -24,7 +24,8 @@ whether the ending is shown is a setting on your computer, and either way the
 name in front of the dot is the one to look for.) The same page installs the app, exports the
 script log and your round stats as one zip, clears them off the phone, and
 links to Tsum Tsum Stats, which runs alongside it. Keep the terminal window it
-was started from open while you use it; closing it stops the page. Nothing gets
+was started from open while you use it. To stop the tool, press Stop at the
+top of the page; closing the window works too. Nothing gets
 installed on your computer.
 
 The page is served by Tsum Tsum Stats' program, tsum-stats @STATS_VERSION@.
@@ -82,7 +83,7 @@ Double-click            Start-Windows
 
 A console window opens, then the page in your browser; keep the console open
 while you use the page. If Windows SmartScreen asks, choose
-"More info" then "Run anyway" -- Start-Windows.cmd is a two-line text file and
+"More info" then "Run anyway" -- Start-Windows.cmd is a short text file and
 you are welcome to open it in Notepad first.
 
 If your workplace locks PowerShell down and Start-Windows.cmd will not run, see
@@ -236,7 +237,7 @@ ask for help. Chrome and Edge show their own save dialog; other browsers get
 your computer's.
 
 A script keeps its log on the device, under
-/sdcard/Download/GameAutomationPlatform:
+/sdcard/Download/GeneralAutomationPlatform:
 
     script-<id>.log what the script logged, plus its rotated copies
 
@@ -269,6 +270,11 @@ the CSVs off the device; Tsum lists are left alone.
 
 When something goes wrong
 -------------------------
+The window closes straight away (Windows)
+    Each run is logged to starter-log.txt next to this README, and the run
+    before it to starter-log.prev.txt. Send that file along when asking for
+    help.
+
 "No device found"
     The emulator is not running, or the phone is not in USB debugging mode.
     Unusual emulator port? Set GAP_EXTRA_PORTS="12345" before starting.
@@ -279,6 +285,35 @@ When something goes wrong
     instance, or one whose port you changed, needs GAP_EXTRA_PORTS.
     MuMu prints the port under Settings > Other, or run
     MuMuManager.exe adb -v <instance number>.
+
+"Emulators on another computer"
+    Set GAP_REMOTE_HOSTS to that computer's address before starting, e.g.
+    GAP_REMOTE_HOSTS="192.168.1.50" (several: separate with spaces). Its
+    emulators are probed on the same ports as this computer's.
+    Most emulators only accept connections from their own computer, so on a
+    Windows emulator computer, forward the ports onto the network once, in
+    an administrator PowerShell. Set $ip to that computer's address:
+
+        $ip = "192.168.1.50"
+        # MuMu, LDPlayer, MuMu legacy, Nox, MEmu -- the ports probed above
+        $ranges = "16384-16480", "5555-5561", "7555", "62001",
+                  "62025-62027", "21503-21523"
+        foreach ($r in $ranges) {
+          $a, $b = [int[]]($r -split "-"); if (-not $b) { $b = $a }
+          foreach ($p in $a..$b) {
+            netsh interface portproxy add v4tov4 listenaddress=$ip `
+              listenport=$p connectaddress=127.0.0.1 connectport=$p
+          }
+        }
+        New-NetFirewallRule -DisplayName "GAP emulators" -Direction Inbound `
+          -Protocol TCP -LocalPort $ranges -RemoteAddress LocalSubnet `
+          -Action Allow
+
+    Drop the ranges for emulators you don't use. Forwarding a port nothing
+    listens on is harmless. Anyone on the network can then control those
+    emulators, so only do this on a network you trust. Undo with
+    netsh interface portproxy reset and
+    Remove-NetFirewallRule -DisplayName "GAP emulators".
 
 "unauthorized"
     Look at the phone's screen and tap Allow on the USB debugging prompt,
@@ -384,6 +419,8 @@ What is in here
   collected/                             appears when you copy the log off a device
   last-device.txt                        appears once you pick a device: which one
   channel.txt                            appears once you pin a pre-release channel
+  starter-log.txt                        appears on Windows: the last run's log
+                                         (starter-log.prev.txt: the one before)
 
 No program is in this bundle as downloaded. Two binaries land here on the
 first run, each checked against a checksum recorded when this tool was built:

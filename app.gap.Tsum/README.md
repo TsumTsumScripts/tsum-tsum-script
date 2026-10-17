@@ -43,7 +43,7 @@ Here is a brief description of every setting.
 | Setting                            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 |:-----------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Language                           | Changes the language in which the script settings are shown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Japan Version?                     | Activates special behaviour for the JP version of Tsum Tsum.<br>This setting is used to decide if the JP or Int'l version is started when "Auto Launch Tsum App" is enabled.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Game Region                        | Which Tsum Tsum the script opens and plays when both the International and Japanese versions are installed. **Automatic** uses the one already open, else the one installed. Takes effect on the next start.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Special Screen Ratio (Long Screen) | If the script does not do the expected actions like sending/receiving hearts, give this setting a shot. <br>Some smartphones with long displays render black areas over and under the game screen itself. If these areas have different vertical sizing, this setting is needed. Beware that it does not work together with "Auto Launch Tsum App" as the game must already be running when starting the script with this setting enabled.                                                                                                                                                                                                                                               |
 | Device frame rate                  | The frame rate the emulator runs at (default 60). A few of the game's screens dismiss themselves after a fixed number of *frames* rather than after a fixed time, so on a faster device they are up for less time. The script uses this number to work out how long it can expect such a screen to stay, and waits it out instead of tapping into whatever replaces it. Leave it at 60 unless you have changed the emulator's frame rate; getting it wrong only affects those screens. |
 | Auto Launch Tsum App               | This starts the Tsum Tsum game as soon as this script is started. Should only be used if "Special Screen Ratio" is disabled. Depending on the used device, this might or might not work. Successfully tested within LDPlayer 5.0.11 on different screen resolutions.                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -317,7 +317,7 @@ you send it.
 
 - **Share report** packs everything into one zip and hands it to whatever you
   share with — a chat app, mail, a drive. This is the route on a phone.
-- **Save to device** writes the same zip to `Download/GameAutomationPlatform/reports`
+- **Save to device** writes the same zip to `Download/GeneralAutomationPlatform/reports`
   and tells you where that is on your PC. This is the route on an emulator,
   where there is usually nothing to share *to*: on MuMu the folder is already
   inside its shared folder, and for the others the dialog names the folder to
@@ -353,10 +353,10 @@ Everything the script writes goes under one folder on the device's shared
 storage, the app's script root:
 
 ```
-/sdcard/Download/GameAutomationPlatform/
+/sdcard/Download/GeneralAutomationPlatform/
 ```
 
-In a file manager that is **Download ▸ GameAutomationPlatform**. Inside it:
+In a file manager that is **Download ▸ GeneralAutomationPlatform**. Inside it:
 
 | Where | What |
 |:--|:--|
@@ -381,7 +381,7 @@ There is nothing to pull. MuMu mounts its shared folder *as* the device's
 `Download`, so the whole script root is already a folder on your PC:
 
 ```
-C:\Users\<you>\Documents\MuMuSharedFolder\Download\GameAutomationPlatform\
+C:\Users\<you>\Documents\MuMuSharedFolder\Download\GeneralAutomationPlatform\
 ```
 
 `Documents` is wherever Windows keeps yours — under OneDrive on many PCs — and
@@ -421,8 +421,8 @@ effort:
 
    ```sh
    adb connect 127.0.0.1:16384
-   adb pull /sdcard/Download/GameAutomationPlatform/devices .
-   adb pull /sdcard/Download/GameAutomationPlatform/logs .
+   adb pull /sdcard/Download/GeneralAutomationPlatform/devices .
+   adb pull /sdcard/Download/GeneralAutomationPlatform/logs .
    ```
 
    Each `pull` creates the folder inside the target, so those land as
@@ -431,7 +431,7 @@ effort:
    `/sdcard/…` into a path under `C:\Program Files\Git` before adb sees it.
 
 3. **On a phone**, the same folder is under *Download* in the Files app, and
-   over a USB cable it shows up as `Download\GameAutomationPlatform` in
+   over a USB cable it shows up as `Download\GeneralAutomationPlatform` in
    Explorer. For a report, **Share report** is the easier route.
 
 **A screenshot of your own** — what is on the screen right now, floating bar

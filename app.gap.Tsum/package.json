@@ -1,6 +1,6 @@
 {
   "name": "app.gap.tsum",
-  "version": "5.0b1",
+  "version": "5.0",
   "description": "General Automation Platform automation script for Tsum Tsum.",
   "main": "src/index.ts",
   "scripts": {
@@ -26,7 +26,8 @@
     "release:alpha": "node tools/release/release.js --channel Alpha",
     "release:beta": "node tools/release/release.js --channel Beta",
     "release:production": "node tools/release/release.js --channel Production",
-    "adb": "adb shell mkdir -p \"'/sdcard/Download/GameAutomationPlatform/scripts/Tsum Tsum Scripts/Tsum Tsum/Tsum-Tsum/'\" && adb push dist/. \"/sdcard/Download/GameAutomationPlatform/scripts/Tsum Tsum Scripts/Tsum Tsum/Tsum-Tsum/\""
+    "prerelease:alpha": "node tools/release/prerelease.js --channel Alpha",
+    "adb": "adb shell mkdir -p \"'/sdcard/Download/GeneralAutomationPlatform/scripts/Tsum Tsum Scripts/Tsum Tsum/Tsum-Tsum/'\" && adb push dist/. \"/sdcard/Download/GeneralAutomationPlatform/scripts/Tsum Tsum Scripts/Tsum Tsum/Tsum-Tsum/\""
   },
   "keywords": [],
   "author": "Thi Nguyen",

@@ -87,6 +87,12 @@ no_devices_hint() {
   log_line "  - Start your emulator, or plug the phone in with USB debugging enabled."
   log_line "  - Probed for emulators on 127.0.0.1: $EMU_PORTS"
   log_line "    A different port can be added with GAP_EXTRA_PORTS=\"12345\"."
+  if [ -n "$(remote_hosts | tr -d ' ')" ]; then
+    log_line "  - Also probed the same ports on GAP_REMOTE_HOSTS: $GAP_REMOTE_HOSTS"
+    log_line "    Is each emulator's port forwarded onto the LAN and open in the firewall?"
+  else
+    log_line "    Emulators on another computer: set GAP_REMOTE_HOSTS=\"192.168.1.50\"."
+  fi
 }
 
 # ---------------------------------------------------------------- diagnosis

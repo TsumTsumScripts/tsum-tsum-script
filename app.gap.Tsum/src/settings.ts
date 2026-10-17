@@ -455,7 +455,7 @@ var tabs: TabSpec[] = [
                         step: 1,
                         buttons: [
                             {text: i18nThunk(UiText.ButtonNow), onClick: function () { askUnlockLevelsNow(); },
-                                remote: 'unlockLevelsNow', confirm: UiText.CompanionConfirmSpendNow}
+                                remote: 'unlockLevelsNow', confirm: UiText.CompanionConfirmSpendNow, whenStopped: true}
                         ]
                     },
                     {
@@ -488,7 +488,7 @@ var tabs: TabSpec[] = [
                         step: 1,
                         buttons: [
                             {text: i18nThunk(UiText.ButtonNow), onClick: function () { askBuyBoxesNow(); },
-                                remote: 'buyBoxesNow', confirm: UiText.CompanionConfirmSpendNow}
+                                remote: 'buyBoxesNow', confirm: UiText.CompanionConfirmSpendNow, whenStopped: true}
                         ]
                     },
                     {
@@ -536,6 +536,17 @@ var tabs: TabSpec[] = [
                         min: 1,
                         max: 50,
                         step: 1
+                    },
+                    {
+                        // A one-off on the capsule the player opened -- see `askBuyOpenCapsuleNow`.
+                        key: RowKey.BuyOpenCapsule,
+                        title: UiText.SettingBuyOpenCapsule,
+                        help: UiText.SettingBuyOpenCapsuleHelp,
+                        status: ReleaseStatus.Beta,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonNow), onClick: function () { askBuyOpenCapsuleNow(); },
+                                remote: 'buyOpenCapsuleNow', confirm: UiText.CompanionConfirmSpendNow, whenStopped: true}
+                        ]
                     }
                 ]
             },
@@ -551,7 +562,7 @@ var tabs: TabSpec[] = [
                         status: ReleaseStatus.Beta,
                         buttons: [
                             {text: i18nThunk(UiText.ButtonNow), onClick: function () { askExportTsumListNow(); },
-                                remote: 'exportTsumListNow'}
+                                remote: 'exportTsumListNow', whenStopped: true}
                         ]
                     }
                 ]
@@ -615,6 +626,19 @@ var tabs: TabSpec[] = [
                         title: UiText.SettingAutoLaunchApp,
                         help: UiText.SettingAutoLaunchAppHelp,
                         default: SettingDefaults[SettingKey.AutoLaunchApp]
+                    },
+                    {
+                        // Device-specific, so never shared. Read by `buildRun`.
+                        key: SettingKey.GameRegion,
+                        title: UiText.SettingGameRegion,
+                        help: UiText.SettingGameRegionHelp,
+                        default: SettingDefaults[SettingKey.GameRegion],
+                        dropdown: ([
+                            {key: GameRegion.Auto, title: UiText.GameRegionAuto},
+                            {key: GameRegion.Global, title: UiText.GameRegionGlobal},
+                            {key: GameRegion.Japan, title: UiText.GameRegionJapan}
+                        ] satisfies { key: GameRegion; title: UiText }[]),
+                        neverShared: true
                     },
                     // {
                     //     key: SettingKey.ClickAssist,
@@ -779,6 +803,16 @@ var tabs: TabSpec[] = [
             {
                 title: UiText.GroupDiagnostics,
                 rows: [
+                    {
+                        // Device facts and every setting, as text a player can
+                        // paste into a help request -- see `copyDebugInfo`.
+                        key: RowKey.CopyDebugInfo,
+                        title: UiText.SettingCopyDebugInfo,
+                        help: UiText.SettingCopyDebugInfoHelp,
+                        buttons: [
+                            {text: i18nThunk(UiText.ButtonCopy), onClick: function () { copyDebugInfo(); }}
+                        ]
+                    },
                     {
                         key: RowKey.BuildDate,
                         title: UiText.SettingBuildDate
@@ -2235,6 +2269,24 @@ function askBuyBoxesNow(): void {
 }
 
 /**
+ * Buy Open Capsule's Now button. As `askBuyBoxesNow`, except that the run
+ * stops once the open capsule is sold out (`buyOpenCapsuleNow`).
+ */
+// noinspection JSUnusedGlobalSymbols
+function askBuyOpenCapsuleNow(): void {
+    var iface = bridge();
+    if (iface === undefined) {
+        return;
+    }
+    flushSettings();
+    iface.hideMenu();
+    iface.showMenu();
+    iface.runScript('typeof buyOpenCapsuleNow === "function" && buyOpenCapsuleNow('
+        + JSON.stringify(startSettings(settings)) + ');');
+    logInfo(Log.Settings.BuyOpenCapsuleNowAsked, 'Asked the run to buy the open capsule until sold out');
+}
+
+/**
  * The Tsum List export's Now button. As `askBuyBoxesNow`, except that a run
  * started from here stops once the export is done (`exportTsumListNow`).
  */
@@ -2573,6 +2625,115 @@ function onMyTsumDetected(answer: string): void {
         }), !confident);
 }
 
+// --- copying debug info ----------------------------------------------------
+//
+// The Debug tab's Copy button: the device (from the engine's `debugDeviceInfo`,
+// src/report.ts) and every setting, as plain text a player pastes into a help
+// request. In English whatever the page's language, since the developer reads it.
+
+/** The Copy button: asks the engine for the device half; the copy happens in `onDebugDeviceInfo`. */
+function copyDebugInfo(): void {
+    var iface = bridge();
+    if (iface === undefined || typeof iface.runScriptCallback !== 'function') {
+        onDebugDeviceInfo('');
+        return;
+    }
+    iface.runScriptCallback('typeof debugDeviceInfo === "function" ? debugDeviceInfo() : ""',
+        'onDebugDeviceInfo');
+}
+
+/** The engine's answer (JSON, or '' without one): builds the text and copies it. */
+// noinspection JSUnusedGlobalSymbols
+function onDebugDeviceInfo(answer: string): void {
+    var device: any = null;
+    try {
+        device = JSON.parse(String(answer));
+    } catch (e) {
+        device = null;
+    }
+    writeClipboard(buildDebugInfo(device), flashCopyDebugInfo);
+}
+
+/** Yes/No, or "unknown" for a fact the host did not report. */
+function debugYesNo(value: any): string {
+    return value === true ? 'Yes' : value === false ? 'No' : 'unknown';
+}
+
+/** The whole text: version, device, then every setting by tab and group. `*` marks a changed one. */
+function buildDebugInfo(device: any): string {
+    var lines: string[] = [PANEL_TITLE, i18nEnglish(UiText.SettingBuildDate)];
+    var locales = i18nLocales();
+    for (var l = 0; l < locales.length; l++) {
+        if (locales[l].tag === i18nLocale()) {
+            lines.push('Language: ' + locales[l].endonym);
+        }
+    }
+    lines.push('', '[Device]');
+    if (device === null || typeof device !== 'object') {
+        lines.push('unavailable (script not loaded)');
+    } else {
+        lines.push('Name: ' + (device.name || 'unknown'));
+        lines.push('Model: ' + ((device.manufacturer + ' ' + device.model).trim() || 'unknown'));
+        lines.push('Android: ' + (device.android || 'unknown'));
+        lines.push('Resolution: ' + device.width + ' x ' + device.height);
+        lines.push('DPI: ' + (device.density === null ? 'unknown' : device.density));
+        lines.push('Rooted: ' + debugYesNo(device.rooted));
+    }
+    lines.push('', '* = changed from default');
+    var values = collectSettingValues(settings);
+    for (var t = 0; t < tabs.length; t++) {
+        lines.push('', '[' + i18nEnglish(tabs[t].title) + ']');
+        for (var g = 0; g < tabs[t].groups.length; g++) {
+            var group = tabs[t].groups[g];
+            var rows = group.rows;
+            var heading = false;
+            for (var r = 0; r < rows.length; r++) {
+                var row = rows[r];
+                var value = values[row.key as string];
+                if (value === undefined || row.title === undefined || !offeredHere(row.status)) {
+                    continue;
+                }
+                if (!heading && group.title !== undefined) {
+                    lines.push('-- ' + i18nEnglish(group.title) + ' --');
+                }
+                heading = true;
+                var changed = value !== SettingDefaults[row.key as SettingKey];
+                lines.push(i18nEnglish(row.title) + ': ' + debugInfoValue(row, value) + (changed ? ' *' : ''));
+            }
+        }
+    }
+    return lines.join('\n');
+}
+
+/** One row's value: On/Off, the option's English name, or the number as the page shows it. */
+function debugInfoValue(setting: SettingSpec, value: SettingValue): string {
+    if (typeof value === 'boolean') {
+        return value ? 'On' : 'Off';
+    }
+    if (setting.dropdown !== undefined) {
+        for (var i = 0; i < setting.dropdown.length; i++) {
+            var option = setting.dropdown[i];
+            if (option.key === value && option.title !== undefined) {
+                return i18nEnglish(option.title);
+            }
+        }
+    }
+    return typeof value === 'number' ? shownNumber(setting, value) : String(value);
+}
+
+/** The Copy button says Copied / Failed for a moment. */
+function flashCopyDebugInfo(ok: boolean): void {
+    var row = document.getElementById(rowElementId(RowKey.CopyDebugInfo));
+    var button = row !== null ? row.querySelector('button') : null;
+    if (button === null) {
+        return;
+    }
+    button.textContent = i18nText(ok ? UiText.ChromeCopied : UiText.ChromeCopyFailed);
+    setTimeout(function () {
+        button!.textContent = i18nText(UiText.ButtonCopy);
+    }, COPY_FLASH_MS);
+}
+
 /**
  * Builds the box under the Share settings row: the code itself, an Apply
  * button, a status line, and the code again as a QR.
@@ -2715,6 +2876,15 @@ function showShareText(text: string, focus: boolean, qrText?: string): void {
  */
 function applySettingsCodeText(text: string): void {
     ensureSharePanel();
+    // `Name: code` lines are a preset export: save them, and only apply one when
+    // it is the only line, so pasting a whole export does not load its first preset.
+    var named = presetsFromText(text);
+    var imported = named.length > 0 ? importPresets(named) : '';
+    if (named.length > 1) {
+        showShareText(text, false);
+        setShareStatus(imported, imported === i18nText(UiText.PresetStoreFailed));
+        return;
+    }
     var shared = parseSettingsCode(text);
     if (shared === undefined) {
         showShareText(text || '', false);
@@ -2728,7 +2898,7 @@ function applySettingsCodeText(text: string): void {
     // Two sentences rather than one with an optional tail: a language that puts
     // the skipped count somewhere else in the sentence has nowhere to put it
     // when the tail is glued on here.
-    setShareStatus(i18nFormat(
+    setShareStatus((imported !== '' ? imported + ' ' : '') + i18nFormat(
         result.skipped > 0 ? UiText.ShareAppliedSkipped : UiText.ShareApplied,
         {applied: result.applied, from: from, skipped: result.skipped}), false);
 }
@@ -2736,8 +2906,9 @@ function applySettingsCodeText(text: string): void {
 /** localStorage key for the Copy with settings list switch. A page preference, so not a setting. */
 var SHARE_LISTING_KEY = 'tsumtsumsharelisting';
 
+/** On unless the player switched it off. */
 function shareListingOn(): boolean {
-    return localStorage !== undefined && localStorage.getItem(SHARE_LISTING_KEY) === '1';
+    return localStorage === undefined || localStorage.getItem(SHARE_LISTING_KEY) !== '0';
 }
 
 /** The Copy with settings list row: a switch drawn by hand, since it holds no setting. */
@@ -2981,6 +3152,7 @@ function openPresetPanel(): void {
         closePresetPanel();
         return;
     }
+    closeAppearancePanel();
     panel.hidden = false;
     // Opens on whatever is loaded, so the common act -- adjust a setting, save it
     // back -- is one tap. An empty box is what a new preset starts from.
@@ -3128,8 +3300,8 @@ var PRESET_FILE_NAME = 'presets.txt';
  * `SHARE_SLOTS` -- so nothing is lost on the way out and nothing has to be
  * invented on the way in. One line is one whole configuration, and
  * `parseSettingsCode` finds a code inside whatever text is wrapped around it, so
- * a line pasted into the Share settings box applies as it stands. That is the
- * import path, and it is the one that already existed.
+ * a line pasted into the Share settings box applies as it stands, and the same
+ * box saves `Name: code` lines back as presets (`presetsFromText`).
  */
 function presetsExportText(list: Preset[]): string {
     var lines: string[] = [];
@@ -3137,6 +3309,72 @@ function presetsExportText(list: Preset[]): string {
         lines.push(list[i].name + ': ' + buildSettingsCode(list[i].values));
     }
     return lines.join('\n');
+}
+
+/**
+ * The presets in a pasted export: each `Name: code` line whose code decodes.
+ * Values are complete -- every shared row, defaults filled in -- so the preset
+ * matches the form once applied, as one saved from the form would.
+ */
+function presetsFromText(text: string): Preset[] {
+    var found: Preset[] = [];
+    if (!text) {
+        return found;
+    }
+    var line = new RegExp('^\\s*([^\\n]+?)\\s*:\\s*(' + SHARE_PREFIX + '[A-Za-z0-9._%-]+' +
+        SHARE_SUFFIX + ')\\s*$', 'gm');
+    var byKey = sharedSettingsByKey();
+    var match: RegExpExecArray | null;
+    while ((match = line.exec(text)) !== null) {
+        var name = presetCleanName(match[1]);
+        var shared = parseSettingsCode(match[2]);
+        if (name === '' || shared === undefined) {
+            continue;
+        }
+        var values: SettingValues = {};
+        for (var key in byKey) {
+            var value = shared.s.hasOwnProperty(key) ? shared.s[key] : SHARE_DEFAULTS[key];
+            if (value !== undefined) {
+                values[key] = value;
+            }
+        }
+        found.push({name: name, values: values});
+    }
+    return found;
+}
+
+/**
+ * Saves `found` into the store, replacing presets of the same name, and says
+ * what happened. New names past `PRESET_MAX` are left out and reported.
+ */
+function importPresets(found: Preset[]): string {
+    var list = presetsLoad();
+    var names: string[] = [];
+    var left = 0;
+    for (var i = 0; i < found.length; i++) {
+        if (presetIndexOf(list, found[i].name) < 0 && list.length >= PRESET_MAX) {
+            left++;
+            continue;
+        }
+        list = presetsPut(list, found[i].name, found[i].values);
+        names.push(found[i].name);
+    }
+    if (names.length > 0 && !presetsStore(list)) {
+        logError(Log.Settings.PresetStoreFailed, 'The presets could not be stored',
+            {presets: names.length});
+        return i18nText(UiText.PresetStoreFailed);
+    }
+    if (names.length > 0) {
+        logInfo(Log.Settings.PresetImported, 'Saved presets pasted into the share box',
+            {presets: names.length, left: left});
+        presetsChanged();
+    }
+    var message = names.length > 0 ?
+        i18nFormat(UiText.PresetImported, {names: names.join(', ')}) : '';
+    if (left > 0) {
+        message += (message !== '' ? ' ' : '') + i18nFormat(UiText.PresetFull, {max: PRESET_MAX});
+    }
+    return message;
 }
 
 /** The panel under the Export presets row, built the first time it is used. */
@@ -3331,23 +3569,16 @@ function genStartCommand(settings: SettingSpec[][]): string {
     return command;
 }
 
-// --- Theme -----------------------------------------------------------------
+// --- Appearance: theme, style and size -------------------------------------
 //
-// Two states, and the device's own setting decides which one the page opens in.
-// A tap stores an explicit choice; until there is one, the page keeps following
-// the device, so turning the phone to dark at dusk turns this page with it.
-
-/** localStorage key holding an explicit choice, if the user has made one. */
-var THEME_KEY = 'tsumtsumtheme';
-
-/** What the device asks for. Dark, GAP's default, when it has no opinion. */
-function systemTheme(): string {
-    if (typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-color-scheme: light)').matches) {
-        return 'light';
-    }
-    return 'dark';
-}
+// Theme: two states, and the device's own setting decides which one the page
+// opens in. A tap stores an explicit choice; until there is one (or "Device" is
+// picked again), the page keeps following the device, so turning the phone to
+// dark at dusk turns this page with it. Style: Accessible or Felt. Size: the
+// Accessible style's control and type size. src/pageStyle.ts holds the storage
+// and device reads both pages share; the Quick Bar is told of style and theme.
+// The Aa button opens a panel with all three; the sun/moon button flips the
+// theme in one tap.
 
 /** The theme the page is showing right now. */
 function currentTheme(): string {
@@ -3368,15 +3599,176 @@ function setTheme(theme: string, remember: boolean): void {
         toggle.setAttribute('aria-label', i18nText(theme === 'dark' ?
             UiText.ChromeThemeToLight : UiText.ChromeThemeToDark));
     }
-    if (remember && localStorage !== undefined) {
-        localStorage.setItem(THEME_KEY, theme);
+    if (remember) {
+        pageStoreSet(StorageKey.Theme, theme);
+        broadcastStyle();
+    }
+    refreshAppearancePanel();
+}
+
+/** Forgets the stored theme, so the page (and the strip) follow the device again. */
+function followDeviceTheme(): void {
+    pageStoreRemove(StorageKey.Theme);
+    setTheme(systemTheme(), false);
+    broadcastStyle();
+}
+
+/** Switches the style, as `setTheme` does the theme. */
+function setStyle(style: PageStyle, remember: boolean): void {
+    applyPageStyle(style);
+    if (remember) {
+        pageStoreSet(StorageKey.Style, style);
+        broadcastStyle();
+    }
+    refreshAppearancePanel();
+}
+
+/** Switches the Accessible style's size. The strip has none, so nothing is broadcast. */
+function setSize(size: PageSize, remember: boolean): void {
+    applyPageSize(size);
+    if (remember) {
+        pageStoreSet(StorageKey.Size, size);
+    }
+    refreshAppearancePanel();
+}
+
+function appearancePanel(): HTMLElement | null {
+    return document.getElementById('appearancePanel');
+}
+
+/** Opens the panel, or closes it if open. One panel at a time, so Save closes. */
+function toggleAppearancePanel(): void {
+    var panel = appearancePanel();
+    if (panel === null) {
+        return;
+    }
+    if (!panel.hidden) {
+        closeAppearancePanel();
+        return;
+    }
+    closePresetPanel();
+    panel.hidden = false;
+    refreshAppearancePanel();
+    var button = document.getElementById('styleToggle');
+    if (button !== null) {
+        button.setAttribute('aria-expanded', 'true');
+    }
+    var checked = panel.querySelector('input:checked') as HTMLInputElement | null;
+    if (checked !== null) {
+        checked.focus();
     }
 }
 
-/** The stored choice, or null while the page is still following the device. */
-function storedTheme(): string | null {
-    var stored = localStorage !== undefined ? localStorage.getItem(THEME_KEY) : null;
-    return stored === 'dark' || stored === 'light' ? stored : null;
+function closeAppearancePanel(): void {
+    var panel = appearancePanel();
+    if (panel === null || panel.hidden) {
+        return;
+    }
+    panel.hidden = true;
+    var button = document.getElementById('styleToggle');
+    if (button !== null) {
+        button.setAttribute('aria-expanded', 'false');
+        button.focus();
+    }
+}
+
+/** Checks the radios that match what the page shows. Safe before the panel exists. */
+function refreshAppearancePanel(): void {
+    // querySelectorAll: the build's companion step runs this page in a stub DOM that has only that.
+    var check = function (name: string, value: string) {
+        var inputs = document.querySelectorAll('input[name="' + name + '"]');
+        for (var i = 0; i < inputs.length; i++) {
+            (inputs[i] as HTMLInputElement).checked = (inputs[i] as HTMLInputElement).value === value;
+        }
+    };
+    var style = pageStyle();
+    check('pageStyle', style);
+    check('pageTheme', storedTheme() || 'device');
+    check('pageSize', pageSize());
+    // Size only reaches the Accessible style; say so rather than hide the row.
+    var sizes = document.getElementById('sizeChoice') as HTMLFieldSetElement | null;
+    if (sizes !== null) {
+        sizes.disabled = style === PageStyle.Felt;
+    }
+    var note = document.getElementById('sizeFeltNote');
+    if (note !== null) {
+        note.hidden = style !== PageStyle.Felt;
+    }
+}
+
+/** The panel's text, rewritten on every language change by `localiseChrome`. */
+function localiseAppearance(): void {
+    var text = function (id: string, key: UiText) {
+        var element = document.getElementById(id);
+        if (element !== null) {
+            element.textContent = i18nText(key);
+        }
+    };
+    var label = function (id: string, key: UiText) {
+        var element = document.getElementById(id);
+        if (element !== null) {
+            element.setAttribute('aria-label', i18nText(key));
+        }
+    };
+    label('styleToggle', UiText.ChromeAppearance);
+    label('appearancePanel', UiText.ChromeAppearance);
+    text('styleLegend', UiText.ChromeStyle);
+    text('styleA11yText', UiText.ChromeStyleAccessible);
+    text('styleFeltText', UiText.ChromeStyleFelt);
+    text('themeLegend', UiText.ChromeTheme);
+    text('themeDarkText', UiText.ChromeThemeDark);
+    text('themeLightText', UiText.ChromeThemeLight);
+    text('themeDeviceText', UiText.ChromeThemeDevice);
+    text('sizeLegend', UiText.ChromeSize);
+    label('sizeXs', UiText.ChromeSizeXs);
+    label('sizeS', UiText.ChromeSizeS);
+    label('sizeM', UiText.ChromeSizeM);
+    label('sizeL', UiText.ChromeSizeL);
+    text('sizeFeltNote', UiText.ChromeSizeFeltNote);
+    text('appearanceClose', UiText.ChromeAppearanceClose);
+}
+
+/** Wires the Aa button and the panel's radios. Called once from `bootstrap`. */
+function bindAppearance(): void {
+    var button = document.getElementById('styleToggle');
+    if (button !== null) {
+        button.addEventListener('click', toggleAppearancePanel);
+    }
+    var close = document.getElementById('appearanceClose');
+    if (close !== null) {
+        close.addEventListener('click', closeAppearancePanel);
+    }
+    var panel = appearancePanel();
+    if (panel === null) {
+        return;
+    }
+    panel.addEventListener('change', function (event) {
+        var input = event.target as HTMLInputElement;
+        if (input.name === 'pageStyle') {
+            setStyle(input.value as PageStyle, true);
+        } else if (input.name === 'pageSize') {
+            setSize(input.value as PageSize, true);
+        } else if (input.name === 'pageTheme') {
+            if (input.value === 'device') {
+                followDeviceTheme();
+            } else {
+                setTheme(input.value, true);
+            }
+        }
+    });
+    panel.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeAppearancePanel();
+        }
+    });
+}
+
+/** Tells the Quick Bar to re-read the style and theme. */
+function broadcastStyle(): void {
+    var iface = bridge();
+    if (iface !== undefined && iface.broadcast !== undefined) {
+        iface.broadcast(PageMessage.Style);
+    }
 }
 
 /**
@@ -3385,23 +3777,18 @@ function storedTheme(): string | null {
  * setting is not what this page should use.
  */
 function followSystemTheme(): void {
-    if (storedTheme() !== null || typeof window.matchMedia !== 'function') {
-        return;
-    }
-    var query: any = window.matchMedia('(prefers-color-scheme: dark)');
-    var onChange = function () {
-        setTheme(systemTheme(), false);
-    };
-    if (typeof query.addEventListener === 'function') {
-        query.addEventListener('change', onChange);
-    } else if (typeof query.addListener === 'function') {
-        query.addListener(onChange);   // pre-2020 WebViews
-    }
+    onSystemThemeChange(function () {
+        if (storedTheme() === null) {
+            setTheme(systemTheme(), false);
+        }
+    });
 }
 
-// Run at parse time, from <head>: the theme has to be on the root element
-// before the body is laid out, or the page flashes light on a dark device.
+// Run at parse time, from <head>: theme and style have to be on the root element
+// before the body is laid out, or the page flashes the wrong look.
 setTheme(storedTheme() || systemTheme(), false);
+setStyle(pageStyle(), false);
+setSize(pageSize(), false);
 
 // --- Run order -------------------------------------------------------------
 //
@@ -4492,6 +4879,9 @@ function localiseChrome(): void {
     if (note !== null && !note.hidden) {
         note.textContent = i18nText(UiText.ChromeRestartNow);
     }
+    // Relabels the theme button (neither call stores or broadcasts) and the Appearance panel.
+    setTheme(currentTheme(), false);
+    localiseAppearance();
     localisePresets();
 }
 
@@ -4566,8 +4956,10 @@ function bootstrap(): void {
             setTheme(currentTheme() === 'dark' ? 'light' : 'dark', true);
         });
     }
-    // Re-run now that the button exists, so it gets its label.
+    bindAppearance();
+    // Re-run now that the buttons exist, so they get their labels and the panel its state.
     setTheme(currentTheme(), false);
+    setStyle(pageStyle(), false);
     followSystemTheme();
 
     // Wired once: the app bar and the panel under it are not re-rendered, and

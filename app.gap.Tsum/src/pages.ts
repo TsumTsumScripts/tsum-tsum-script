@@ -341,8 +341,11 @@ function preTallyPages(): PageName[] {
 
 /**
  * What the heart sender can be looking at: the screens it branches on, plus the
- * interruptions with a handler able to act while `goal` is ''. Measured over
- * the corpus, 20 entries and 85 probes a pass instead of 58 and 332.
+ * interruptions with a handler able to act while `goal` is ''. A fraction of
+ * the full table's entries and probes a pass.
+ *
+ * `Received` is the mailbox's panel and was dropped from it: the toast's first
+ * fade-in frame fingerprinted as it, and the sender tapped it away.
  *
  * `ClosePage` is deliberately not among them: the single-pixel catch-all only
  * stays honest while the full table outranks it, and in a narrowed sweep it
@@ -1339,11 +1342,15 @@ class PageRouter {
    *
    * This is also the only reader of an entry marked `targeted` (see
    * `PageDef`): `sweep` skips those, this does not.
+   *
+   * `frame`, when given, is read instead of a fresh capture and left for the
+   * caller to release -- a polling loop that already holds a screenshot should
+   * pass it, since each capture costs a full-frame allocation.
    */
-  matches(pageName: PageName): boolean {
+  matches(pageName: PageName, frame?: NativeImage): boolean {
     const tsum = this.owner();
     let found = false;
-    let img: NativeImage | null = null;
+    let img: NativeImage | null = frame ?? null;
     try {
       for (const pageId in Page) {
         const page = (Page as PageMap)[pageId];
@@ -1366,7 +1373,7 @@ class PageRouter {
         }
       }
     } finally {
-      if (img != null) {
+      if (img != null && img !== frame) {
         releaseImage(img);
       }
     }

@@ -2,11 +2,16 @@
   "Game": "Tsum Tsum",
   "Publisher": "Tsum Tsum Scripts",
   "Catalogue": "../../tsum-tsum-catalogue/LineTsumTsum",
-  "DevicePath": "/sdcard/Download/GameAutomationPlatform",
+  "DevicePath": "/sdcard/Download/GeneralAutomationPlatform",
   "DefaultChannel": "Alpha",
   "MessageMaxChars": 0,
   "HistoryLimit": 5,
-  "MinHost": "3.1",
+  "MinHost": "3.3",
+  "Prerelease": {
+    "Remote": "r2:app-assets",
+    "BaseUrl": "https://app-assets.gapapp.app",
+    "Private": ["alpha"]
+  },
   "Channels": {
     "Alpha": {
       "Name": "Tsum Tsum - ALPHA",

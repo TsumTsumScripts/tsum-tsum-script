@@ -436,3 +436,24 @@ function reportIssue(reason?: string, note?: string): string {
   ts.banner('Report saved: ' + id, 6000);
   return id;
 }
+
+/**
+ * The device half of the Debug tab's Copy debug info, as JSON. A global the
+ * settings page evaluates by name; it needs no run. `density` and `rooted` are
+ * null on a host too old to report them.
+ */
+// noinspection JSUnusedGlobalSymbols
+function debugDeviceInfo(): string {
+  const info = deviceInfo();
+  const screen = getScreenSize();
+  return JSON.stringify({
+    android: info ? info.androidRelease : '',
+    model: info ? info.model : '',
+    manufacturer: info ? info.manufacturer : '',
+    name: typeof getDeviceName === 'function' ? getDeviceName() : '',
+    width: screen.width,
+    height: screen.height,
+    density: info && typeof info.density === 'number' && info.density > 0 ? info.density : null,
+    rooted: info && typeof info.rooted === 'boolean' ? info.rooted : null,
+  });
+}

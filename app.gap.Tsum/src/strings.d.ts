@@ -67,6 +67,11 @@ declare const enum UiText {
   SettingDeviceFpsHelp = 'setting.deviceFps.help',
   SettingAutoLaunchApp = 'setting.autoLaunchApp',
   SettingAutoLaunchAppHelp = 'setting.autoLaunchApp.help',
+  SettingGameRegion = 'setting.gameRegion',
+  SettingGameRegionHelp = 'setting.gameRegion.help',
+  GameRegionAuto = 'gameRegion.auto',
+  GameRegionGlobal = 'gameRegion.global',
+  GameRegionJapan = 'gameRegion.japan',
   SettingShareSettings = 'setting.shareSettings',
   SettingShareListing = 'setting.shareListing',
   SettingShareListingHelp = 'setting.shareListing.help',
@@ -141,6 +146,8 @@ declare const enum UiText {
   SettingBuyBoxSizeHelp = 'setting.buyBoxSize.help',
   SettingBuyBoxMax = 'setting.buyBoxMax',
   SettingBuyBoxMaxHelp = 'setting.buyBoxMax.help',
+  SettingBuyOpenCapsule = 'setting.buyOpenCapsule',
+  SettingBuyOpenCapsuleHelp = 'setting.buyOpenCapsule.help',
   BoxPremiumPlus = 'box.premiumPlus',
   BoxPremium = 'box.premium',
   BoxSelect = 'box.select',
@@ -193,6 +200,8 @@ declare const enum UiText {
   SettingAppRestartFrequencyHelp = 'setting.appRestartFrequency.help',
   /** Carries the `$BUILD_DATE` placeholder the build substitutes into the page. */
   SettingBuildDate = 'setting.buildDate',
+  SettingCopyDebugInfo = 'setting.copyDebugInfo',
+  SettingCopyDebugInfoHelp = 'setting.copyDebugInfo.help',
   SettingDebugLogs = 'setting.debugLogs',
   SettingDebugLogsHelp = 'setting.debugLogs.help',
   SettingDebugGame = 'setting.debugGame',
@@ -293,6 +302,25 @@ declare const enum UiText {
   ChromeRestartNow = 'chrome.restartNow',
   ChromeThemeToLight = 'chrome.themeToLight',
   ChromeThemeToDark = 'chrome.themeToDark',
+  /** The Aa button and the panel it opens: style, theme and size. */
+  ChromeAppearance = 'chrome.appearance',
+  ChromeAppearanceClose = 'chrome.appearanceClose',
+  ChromeStyle = 'chrome.style',
+  ChromeStyleAccessible = 'chrome.styleAccessible',
+  ChromeStyleFelt = 'chrome.styleFelt',
+  ChromeTheme = 'chrome.theme',
+  ChromeThemeDark = 'chrome.themeDark',
+  ChromeThemeLight = 'chrome.themeLight',
+  /** Follow the phone's light/dark setting. */
+  ChromeThemeDevice = 'chrome.themeDevice',
+  ChromeSize = 'chrome.size',
+  /** Spoken names; the buttons show XS / S / M / L. */
+  ChromeSizeXs = 'chrome.sizeXs',
+  ChromeSizeS = 'chrome.sizeS',
+  ChromeSizeM = 'chrome.sizeM',
+  ChromeSizeL = 'chrome.sizeL',
+  /** Under the size buttons while Felt is on. */
+  ChromeSizeFeltNote = 'chrome.sizeFeltNote',
   ChromeMoreTabs = 'chrome.moreTabs',
   /** The app bar's short copy-code button; `ChromeCopyCodeLabel` is its spoken name. */
   ChromeCopyCode = 'chrome.copyCode',
@@ -353,6 +381,8 @@ declare const enum UiText {
   PresetExportNoEngine = 'preset.exportNoEngine',
   /** `{error}` is whatever the engine said went wrong. */
   PresetExportFailed = 'preset.exportFailed',
+  /** Saved from a pasted export; `{names}` is the list, comma-separated. */
+  PresetImported = 'preset.imported',
 
   // --- the sentences this page's own log records carry ---------------------
   LogNoSettings = 'log.noSettings',

@@ -388,6 +388,17 @@ var Button = {
     {x: 424, y: 1170},   // 5>4
     {x: 610, y: 1175}    // +Combo
   ] as GameItemToggles,
+  // The right end of each toggle's cost pill, in the same order. An event can
+  // grant an item for free and force it on (JP "流れ星に願いをかけよう!"): its
+  // pill then turns into a pink "1回無料" badge, and tapping the item only raises
+  // a dimming popup. Pink here means "leave this toggle alone".
+  outGameItemBadges: [
+    {x: 288, y: 1032}, {x: 510, y: 1032}, {x: 733, y: 1032}, {x: 955, y: 1032},
+    {x: 288, y: 1304}, {x: 510, y: 1304}, {x: 733, y: 1304}
+  ] as GameItemToggles,
+  // A tap here is harmless on the pre-round screen (the caption box), and
+  // dismisses the free-item popup if one is up.
+  outGameItemsCaption: {x: 540, y: 680},
   outStart: {x: 500, y: 1592, color: {"a":0,"b":129,"g":111,"r":236}}, // 開始
   outClose: {x: 500, y: 1592, color: {"a":0,"b":7,"g":180,"r":236}}, // 關閉
   outReceive: {x: 910, y: 422},
@@ -1019,7 +1030,9 @@ var Page = {
       {x: 300, y: 1050, r: 33, g: 199, b: 239, match: true, threshold: 80},
       {x: 140, y: 1050, r: 24, g: 186, b: 231, match: true, threshold: 80},
       {x: 940, y: 1080, r: 41, g: 207, b: 247, match: true, threshold: 80},
-      {x: 540, y: 890 , r: 49, g: 85 , b: 132, match: true, threshold: 80}
+      // Panel just above the message: the JP wording runs nearly edge to edge
+      // and put a glyph under (540, 890), so the toast never matched there.
+      {x: 540, y: 820 , r: 54, g: 91 , b: 143, match: true, threshold: 80}
     ],
     // The toast swallows a tap anywhere, so aim at the toast itself: if the
     // game ever stops swallowing it, this still lands on the panel rather than
@@ -1475,7 +1488,7 @@ var Page = {
   // `HeartSent` and `LevelCapRaised` -- cyan band, message band, cyan band with
   // the logo -- so it is `targeted` for the reason those are: outside the
   // wording every pixel is theirs too, and a sweep over this toast answers
-  // `HeartSent`, whose centre probe lands between this toast's two lines. Only
+  // `HeartSent`, whose panel probe sits above the wording. Only
   // `awaitBoxDialog` asks for it, by name, right after pressing the button that
   // raises it, which is all `matches()` needs.
   //
@@ -2110,6 +2123,30 @@ var Page = {
     back: {x: 540, y: 1400},
     next: {x: 540, y: 1400}
   },
+  // The JP build's GET! dialog -- here the Premium Ticket a Pick-Up Capsule
+  // pays out once every tsum in it is maxed. Same chrome and title, but the
+  // とじる glyphs run wider than "Close" and cover two of the entry above's
+  // button probes (diff 98 and 132), so the frame read as `FriendInfo` and the
+  // reveal loop tapped the dialog body until it gave up. These read the flat
+  // gold either side of the text and above it instead (worst 14-24 within
+  // +/-8px).
+  EventGiftJp: {
+    name: PageName.EventGift,
+    variant: 'jp',
+    colors: [
+      {x: 431, y:  539, r:  26, g: 193, b: 233, match: true, threshold: 50},  // header band
+      {x: 119, y:  551, r:  26, g: 197, b: 233, match: true, threshold: 50},  // header band
+      {x: 275, y: 1217, r:  31, g: 197, b: 238, match: true, threshold: 50},  // footer band
+      {x: 665, y: 1193, r:  31, g: 199, b: 239, match: true, threshold: 50},  // footer band
+      {x: 452, y:  662, r: 255, g: 251, b: 115, match: true, threshold: 40},  // GET! title
+      {x: 614, y:  662, r: 255, g: 251, b: 115, match: true, threshold: 40},  // GET! title
+      {x: 390, y: 1420, r: 250, g: 174, b:   6, match: true, threshold: 40},  // Close button, left of the text
+      {x: 700, y: 1420, r: 252, g: 175, b:   4, match: true, threshold: 40},  // Close button, right of the text
+      {x: 540, y: 1345, r: 252, g: 180, b:   4, match: true, threshold: 40}   // Close button, above the text
+    ],
+    back: {x: 540, y: 1400},
+    next: {x: 540, y: 1400}
+  },
   ClosePage: { // including EventPage, MyInfo, SettingPage, others
     name: PageName.ClosePage, // the close button at center bottom
     colors: [
@@ -2324,9 +2361,10 @@ var PageProfiles: PageProfileMap = {
     note: 'The GET! gift dialog ("Claim your gift from your mailbox") with its '
         + 'Close. The game\'s generic reward dialog; the event raises it after a '
         + 'card reveal, and the Pick-Up Capsule ends on it when the prize is an '
-        + 'item rather than a tsum. Also "Last Prize!" (the `lastPrize` '
-        + 'configuration), the same dialog over the store once the last capsule '
-        + 'is bought.'
+        + 'item rather than a tsum (a Premium Ticket once its tsums are maxed). '
+        + 'Also "Last Prize!" (the `lastPrize` configuration), the same dialog '
+        + 'over the store once the last capsule is bought, and the JP build\'s '
+        + 'とじる button (the `jp` configuration).'
   },
   MagicalTime: {
     kind: PageKind.Permanent,
@@ -2423,11 +2461,7 @@ var PageProfiles: PageProfileMap = {
 
   // --- Mail / hearts ---
   MailBox: {kind: PageKind.Permanent},
-  Received: {
-    kind: PageKind.Permanent,
-    roles: [PageRole.HeartSweep],
-    note: 'The received-items panel, with OK.'
-  },
+  Received: {kind: PageKind.Permanent, note: 'The received-items panel, with OK.'},
   ReceiveHeart: {kind: PageKind.Permanent},
   ReceiveHeartWithoutCoins: {kind: PageKind.Permanent},
   ReceiveSkillTicket: {kind: PageKind.Permanent},

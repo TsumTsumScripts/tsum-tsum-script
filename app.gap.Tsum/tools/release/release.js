@@ -277,7 +277,12 @@ async function main() {
   console.log('\nRun build-catalogue.sh (or .ps1) in the catalogue to check catalogue.json, then commit and push there.');
 }
 
-main().catch((err) => {
-  console.error(err.message);
-  process.exit(1);
-});
+// prerelease.js reuses the note and the build.
+module.exports = { summaryItems, releaseMessage, runBuild, historyRow, utcTimestamp };
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err.message);
+    process.exit(1);
+  });
+}

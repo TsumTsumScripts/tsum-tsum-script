@@ -5,7 +5,7 @@
 # not: that is device/gap-service.sh, running on the device, and this file only
 # pushes and invokes it. See device/PROTOCOL.md.
 
-$global:Package     = 'com.gameautomation.platform'
+$global:Package     = 'com.generalautomation.platform'
 $global:StageDir    = '/data/local/tmp/gap'
 # Beside the stage dir, not in it: /data/local/tmp is the adb shell's own
 # on every Android, while a rooted device's app makes the stage dir root's.
@@ -18,13 +18,13 @@ $global:ProtoWant   = '1'
 # neither root nor the device script. A service started with --root=PATH needs
 # GAP_STORAGE_ROOT set to the same path.
 $global:DeviceStorage = if ($env:GAP_STORAGE_ROOT) { $env:GAP_STORAGE_ROOT }
-                        else { '/sdcard/Download/GameAutomationPlatform' }
+                        else { '/sdcard/Download/GeneralAutomationPlatform' }
 
 # Where `update` looks for the published APKs. /releases/latest/download/ is a
 # plain redirect to the newest non-draft release, so the asset names have to be
 # stable -- tools/package-release.sh uploads gap-<abi>.apk beside the stamped
 # ones for exactly this. No api.github.com, so no rate limit to hit.
-$global:DefaultReleaseBase = 'https://github.com/game-automation-platform/game-automation-catalogue/releases/latest/download'
+$global:DefaultReleaseBase = 'https://github.com/general-automation-platform/general-automation-catalogue/releases/latest/download'
 $global:ManifestName = 'gap-latest.txt'
 
 # A pre-release channel: one line in channel.txt, the folder URL that holds a
@@ -385,10 +385,10 @@ $global:EmuPorts = @(
 # belonging to something that is not adb can stall the handshake for seconds,
 # and that is exactly what makes a Refresh feel broken.
 function Test-TcpPort {
-  param([int]$Port, [int]$TimeoutMs = 200)
+  param([int]$Port, [string]$HostName = '127.0.0.1', [int]$TimeoutMs = 200)
   $c = New-Object System.Net.Sockets.TcpClient
   try {
-    $iar = $c.BeginConnect('127.0.0.1', $Port, $null, $null)
+    $iar = $c.BeginConnect($HostName, $Port, $null, $null)
     if (-not $iar.AsyncWaitHandle.WaitOne($TimeoutMs, $false)) { return $false }
     $c.EndConnect($iar)
     return $true
@@ -423,6 +423,48 @@ function Connect-Emulators {
   foreach ($p in $ports) {
     if (Test-TcpPort -Port $p) { [void](Invoke-Adb @('connect', "127.0.0.1:$p") -TimeoutMs 8000) }
   }
+  Connect-RemoteEmulators $ports
+}
+
+# A port-forwarded LAN port accepts the connection even with no emulator
+# behind it, and `adb connect` then hangs. So remote connects run in parallel,
+# are cut off after 3 s, and the offline rows they leave are disconnected.
+function Connect-RemoteEmulators {
+  param([int[]]$Ports)
+  $remote = @(Get-RemoteHosts)
+  if ($remote.Count -eq 0) { return }
+  $procs = @()
+  foreach ($h in $remote) {
+    foreach ($p in $Ports) {
+      if (-not (Test-TcpPort -Port $p -HostName $h)) { continue }
+      $psi = New-Object System.Diagnostics.ProcessStartInfo
+      $psi.FileName               = $global:Adb
+      $psi.Arguments              = "connect ${h}:$p"
+      $psi.UseShellExecute        = $false
+      $psi.RedirectStandardOutput = $true
+      $psi.RedirectStandardError  = $true
+      $psi.CreateNoWindow         = $true
+      try { $procs += [System.Diagnostics.Process]::Start($psi) } catch { }
+    }
+  }
+  $deadline = (Get-Date).AddSeconds(3)
+  foreach ($proc in $procs) {
+    $left = [int][Math]::Max(0, ($deadline - (Get-Date)).TotalMilliseconds)
+    if (-not $proc.WaitForExit($left)) { try { $proc.Kill() } catch { } }
+  }
+  foreach ($d in @(Get-Devices | Where-Object { $_.State -eq 'offline' })) {
+    if ($remote -contains ($d.Serial -replace ':\d+$', '')) {
+      [void](Invoke-Adb @('disconnect', $d.Serial) -TimeoutMs 5000)
+    }
+  }
+}
+
+# Emulators on other computers: GAP_REMOTE_HOSTS="192.168.1.50 pc2" probes
+# each host on the same ports as 127.0.0.1. The other computer must forward
+# its emulator ports onto the LAN (README.txt, "Emulators on another computer").
+function Get-RemoteHosts {
+  if (-not $env:GAP_REMOTE_HOSTS) { return @() }
+  return @($env:GAP_REMOTE_HOSTS -split '[,\s]+' | Where-Object { $_ })
 }
 
 # Every state is kept -- unauthorized and offline devices are listed with the
@@ -446,8 +488,13 @@ function Get-Devices {
 # One emulator can listen on several ports and shows up once per port. boot_id
 # is per running device and identical across its ports, so it collapses those
 # without hiding a genuine second device. (tools/deploy.sh lines 87-100.)
+# The 5xxx port is the one kept (easier to read than 16xxx), and a remote
+# emulator's other connections are dropped so adb holds just that one.
 function Merge-Duplicates {
   param($Rows)
+  $five = { $_.Serial -match ':5\d{3}$' }
+  $Rows = @($Rows | Where-Object $five) + @($Rows | Where-Object { -not (& $five) })
+  $remote = @(Get-RemoteHosts)
   $seen = @{}
   $out = @()
   foreach ($row in $Rows) {
@@ -455,7 +502,12 @@ function Merge-Duplicates {
     $r = Invoke-Adb @('-s', $row.Serial, 'shell', 'cat', '/proc/sys/kernel/random/boot_id') -TimeoutMs 10000
     $id = $r.Out.Trim()
     if (-not $id) { $id = $row.Serial }
-    if ($seen.ContainsKey($id)) { continue }
+    if ($seen.ContainsKey($id)) {
+      if ($remote -contains ($row.Serial -replace ':\d+$', '')) {
+        [void](Invoke-Adb @('disconnect', $row.Serial) -TimeoutMs 5000)
+      }
+      continue
+    }
     $seen[$id] = $true
     $out += $row
   }

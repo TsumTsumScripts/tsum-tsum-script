@@ -49,7 +49,7 @@ SCRIPTS_ONLY=""
 CHANNEL_URL=""
 STATS_PIN=""
 RELEASE_URL="https://github.com/TsumTsumScripts/tsum-tsum-script/releases/latest/download"
-MIN_STATS="0.15"
+MIN_STATS="0.17"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -76,7 +76,7 @@ done
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 # The GAP app checkout the gates compare against (Config.kt). Override with GAP_APP_DIR.
-GAP_APP_DIR="${GAP_APP_DIR:-$root/../game-automation-app}"
+GAP_APP_DIR="${GAP_APP_DIR:-$root/../general-automation-app}"
 
 SRC="$root/starter"
 STAGE="$root/build/starter"
@@ -402,7 +402,7 @@ gate "manifest complete" "$(
 # Both hosts name the app's storage folder themselves -- the device protocol has
 # no key for it -- so drift from Config.kt would show up only as "nothing found"
 # when copying or deleting a script's files.
-cfg="$GAP_APP_DIR/app/src/main/java/com/gameautomation/platform/Config.kt"
+cfg="$GAP_APP_DIR/app/src/main/java/com/generalautomation/platform/Config.kt"
 want_parent="$(sed -n 's/.*const val PARENT = "\([^"]*\)".*/\1/p' "$cfg" | head -1)"
 want_folder="$(sed -n 's/.*const val FOLDER = "\([^"]*\)".*/\1/p' "$cfg" | head -1)"
 if [[ -z "$want_parent" || -z "$want_folder" ]]; then
@@ -432,6 +432,12 @@ else
     grep -qF "$want_base" "$BUNDLE/$f" && grep -qF "$want_manifest" "$BUNDLE/$f" \
       || release_bad="$release_bad $f"
   done
+  # The page's Update APK runs in tsum-stats, so its default has to agree too.
+  # Checked in the source beside the pin; the pinned release must include it.
+  stats_apk="$(dirname "$STATS_PIN")/internal/starter/apk.go"
+  if [[ -f "$stats_apk" ]]; then
+    grep -qF "$want_base" "$stats_apk" || release_bad="$release_bad $stats_apk"
+  fi
   if [[ -n "$release_bad" ]]; then
     gate "release channel matches Config.kt" "$want_base / $want_manifest missing from$release_bad"
   else

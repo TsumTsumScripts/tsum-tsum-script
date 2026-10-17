@@ -6,7 +6,7 @@
 # and must never be duplicated here: it is device/gap-service.sh, and this file
 # only invokes it. See device/PROTOCOL.md.
 
-PACKAGE="com.gameautomation.platform"
+PACKAGE="com.generalautomation.platform"
 STAGE_DIR="/data/local/tmp/gap"
 # Beside the stage dir, not in it: /data/local/tmp is the adb shell's own
 # on every Android, while a rooted device's app makes the stage dir root's.
@@ -18,14 +18,14 @@ PROTO_WANT=1
 # against. It is not a protocol key: copying and deleting a script's own files
 # needs neither root nor the device script. A service started with --root=PATH
 # needs GAP_STORAGE_ROOT set to the same path.
-DEVICE_STORAGE="${GAP_STORAGE_ROOT:-/sdcard/Download/GameAutomationPlatform}"
+DEVICE_STORAGE="${GAP_STORAGE_ROOT:-/sdcard/Download/GeneralAutomationPlatform}"
 
 # Where `update` looks for the published APKs. /releases/latest/download/ is a
 # plain redirect to the newest non-draft release, so the asset names have to be
 # stable -- tools/package-release.sh uploads gap-<abi>.apk beside the stamped
 # ones for exactly this. No api.github.com, so no JSON to parse in sh and no
 # 60-per-hour unauthenticated rate limit.
-DEFAULT_RELEASE_BASE="https://github.com/game-automation-platform/game-automation-catalogue/releases/latest/download"
+DEFAULT_RELEASE_BASE="https://github.com/general-automation-platform/general-automation-catalogue/releases/latest/download"
 MANIFEST_NAME="gap-latest.txt"
 
 # A pre-release channel: one line in channel.txt, the folder URL that holds a
@@ -429,8 +429,39 @@ probe_emulators() {
   for p in $EMU_PORTS ${GAP_EXTRA_PORTS:-}; do
     ( "$ADB" connect "127.0.0.1:$p" >/dev/null 2>&1 ) &
     pids="$pids $!"
+    for h in $(remote_hosts); do
+      connect_bounded "$h:$p" &
+      pids="$pids $!"
+    done
   done
   for pid in $pids; do wait "$pid"; done
+  drop_remote_offline
+}
+
+# A port-forwarded LAN port accepts the connection even with no emulator
+# behind it, which leaves an offline row that never comes up. Drop those.
+drop_remote_offline() {
+  for s in $(offline_serials); do
+    for h in $(remote_hosts); do
+      case "$s" in "$h":*) "$ADB" disconnect "$s" >/dev/null 2>&1 ;; esac
+    done
+  done
+}
+
+# Emulators on other computers: GAP_REMOTE_HOSTS="192.168.1.50 pc2" probes
+# each host on the same ports as 127.0.0.1. The other computer must forward
+# its emulator ports onto the LAN (README.txt, "Emulators on another computer").
+remote_hosts() { printf '%s\n' "${GAP_REMOTE_HOSTS:-}" | tr ',' ' '; }
+
+# A firewalled LAN port can hang `adb connect` for over a minute, so give up
+# after 3 s.
+connect_bounded() {
+  "$ADB" connect "$1" >/dev/null 2>&1 &
+  cpid=$!
+  ( sleep 3; kill "$cpid" 2>/dev/null ) &
+  kpid=$!
+  wait "$cpid" 2>/dev/null
+  kill "$kpid" 2>/dev/null
 }
 
 # serial<TAB>state<TAB>model -- every state kept, so the menu can explain an
@@ -449,9 +480,11 @@ list_devices() {
 # One emulator can listen on several ports and shows up once per port. boot_id
 # is per running device and identical across its ports, so it collapses those
 # without hiding a genuine second device. (tools/deploy.sh lines 87-100.)
+# The 5xxx port is the one kept (easier to read than 16xxx), and a remote
+# emulator's other connections are dropped so adb holds just that one.
 merge_duplicates() {
   seen="|"
-  while IFS="$(printf '\t')" read -r serial state model; do
+  prefer_5xxx | while IFS="$(printf '\t')" read -r serial state model; do
     [ -n "$serial" ] || continue
     if [ "$state" != device ]; then
       printf '%s\t%s\t%s\n' "$serial" "$state" "$model"
@@ -459,10 +492,26 @@ merge_duplicates() {
     fi
     id="$("$ADB" -s "$serial" shell cat /proc/sys/kernel/random/boot_id </dev/null 2>/dev/null | tr -d '\r\n')"
     [ -n "$id" ] || id="$serial"
-    case "$seen" in *"|$id|"*) continue ;; esac
+    case "$seen" in *"|$id|"*)
+      is_remote "$serial" && "$ADB" disconnect "$serial" >/dev/null 2>&1
+      continue ;;
+    esac
     seen="$seen$id|"
     printf '%s\t%s\t%s\n' "$serial" "$state" "$model"
   done
+}
+
+# Rows on a 5xxx port first; the rest keep their order.
+prefer_5xxx() {
+  t="$(printf '\t')"
+  awk -F"$t" '{ print ($1 ~ /:5[0-9][0-9][0-9]$/ ? 0 : 1) "\t" $0 }' | sort -s -t "$t" -k1,1n | cut -f2-
+}
+
+is_remote() {
+  for h in $(remote_hosts); do
+    case "$1" in "$h":*) return 0 ;; esac
+  done
+  return 1
 }
 
 # ------------------------------------------------------- the device protocol
