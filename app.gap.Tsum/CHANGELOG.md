@@ -49,8 +49,16 @@ release note; they fold back in here when she ships.
 
 ### Summary
 
+**Additions**
+*Settings*
+- Game Region setting: choose whether the International or Japanese Tsum Tsum is launched when both are installed.
+
 **Fixes**
 - Auto launch no longer waits 30 seconds for a game that is already open on MuMu (Android 15).
+
+### Added
+
+- **Game Region** (`SettingKey.GameRegion`, General › Run): Automatic, International or Japan. A chosen build wins over the one in front (`chosenGameBuild`, `src/appLifecycle.ts`), and the other build in front counts as off, so it gets replaced. A chosen build that is not installed falls back to Automatic with `app.chosenBuildMissing`. Needs a restart to apply; not shared.
 
 ### Changed
 
